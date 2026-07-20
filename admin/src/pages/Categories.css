@@ -1,0 +1,18 @@
+.categories-admin-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 768px) { .categories-admin-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.categories-admin-card { text-align: center; }
+.categories-admin-thumb {
+  width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px;
+}
+.categories-admin-card p { color: rgba(20,17,13,0.55); font-size: 0.82rem; }
+.categories-admin-actions { display: flex; gap: 8px; justify-content: center; }
+
+.image-preview { margin-top: 10px; }
+.image-preview img { width: 100px; height: 100px; object-fit: cover; border-radius: var(--radius); }
+
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }

@@ -1,0 +1,8 @@
+[
+  { "id": "c1", "name": "Attars", "slug": "attars", "image": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=60" },
+  { "id": "c2", "name": "Oud", "slug": "oud", "image": "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=60" },
+  { "id": "c3", "name": "Floral", "slug": "floral", "image": "https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=600&q=60" },
+  { "id": "c4", "name": "Musk", "slug": "musk", "image": "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=600&q=60" },
+  { "id": "c5", "name": "Bakhoor", "slug": "bakhoor", "image": "https://images.unsplash.com/photo-1594736797933-d0f06ba09946?w=600&q=60" },
+  { "id": "c6", "name": "Gift Sets", "slug": "gift-sets", "image": "https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&q=60" }
+]

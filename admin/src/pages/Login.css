@@ -1,0 +1,25 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--charcoal);
+  padding: 24px;
+}
+.login-card {
+  background: var(--white);
+  padding: 40px 32px;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 380px;
+}
+.login-brand { text-align: center; margin-bottom: 28px; }
+.login-brand span {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.14em;
+  color: var(--gold-deep);
+  display: block;
+}
+.login-brand p { color: rgba(20,17,13,0.5); font-size: 0.85rem; margin: 4px 0 0; }
+.login-error { color: var(--danger); font-size: 0.85rem; }

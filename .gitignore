@@ -1,0 +1,33 @@
+# --- Environment files (DO NOT COMMIT) ---
+.env
+
+# --- Dependencies ---
+node_modules/
+
+# --- Build output ---
+dist/
+build/
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+
+# --- Coverage ---
+coverage/
+
+# --- OS garbage ---
+.DS_Store
+Thumbs.db
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Runtime ---
+.env.local
+.env.production
+.env.development
+

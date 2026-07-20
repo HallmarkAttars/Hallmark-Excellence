@@ -1,0 +1,7 @@
+.brand-hero {
+  background: var(--charcoal);
+  color: var(--cream);
+  padding: 56px 0;
+  text-align: center;
+}
+.brand-hero h1 { color: var(--cream); }

@@ -1,0 +1,15 @@
+.products-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius); }
+.products-actions { display: flex; gap: 8px; }
+
+.status-toggle {
+  border: none; border-radius: 999px; padding: 5px 12px;
+  font-size: 0.75rem; background: var(--danger-bg); color: var(--danger);
+}
+.status-toggle.is-active { background: var(--success-bg); color: var(--success); }
+
+.modal-scrim {
+  position: fixed; inset: 0; background: rgba(20,17,13,0.45);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 300;
+}
+.confirm-dialog { max-width: 380px; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }

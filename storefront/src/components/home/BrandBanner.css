@@ -1,0 +1,21 @@
+.brand-banner {
+  position: relative;
+  min-height: 46vh;
+  display: flex;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+}
+.brand-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(26,22,17,0.75) 0%, rgba(26,22,17,0.2) 90%);
+}
+.brand-banner-content {
+  position: relative;
+  z-index: 1;
+  color: var(--cream);
+}
+.brand-banner-content h2 { color: var(--cream); font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.brand-banner-btn { border-color: var(--cream); color: var(--cream); }
+.brand-banner-btn:hover { background: var(--cream); color: var(--charcoal); }

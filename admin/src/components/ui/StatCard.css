@@ -1,0 +1,18 @@
+.stat-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stat-card-label { font-size: 0.78rem; color: rgba(20,17,13,0.55); margin: 0 0 6px; }
+.stat-card-value { font-size: 1.7rem; margin: 0; }
+.stat-card-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--cream-deep);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--gold-deep);
+  flex-shrink: 0;
+}

@@ -1,0 +1,6 @@
+.product-form { max-width: 640px; }
+.image-preview { margin-top: 10px; }
+.image-preview img {
+  width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius);
+  border: 1px solid var(--line);
+}

@@ -1,0 +1,39 @@
+.hero {
+  position: relative;
+  min-height: 78vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('https://images.unsplash.com/photo-1615529182904-14819c35db37?w=1600&q=70');
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(26,22,17,0.55) 0%, rgba(26,22,17,0.78) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: var(--cream);
+  max-width: 640px;
+  padding: 0 24px;
+}
+
+.hero-eyebrow { color: var(--gold); margin-bottom: 16px; }
+
+.hero-content h1 {
+  color: var(--cream);
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  margin-bottom: 20px;
+}
+
+.hero-tagline {
+  color: rgba(248, 243, 234, 0.85);
+  margin-bottom: 32px;
+  font-size: 1.02rem;
+}

@@ -1,0 +1,35 @@
+.category-scroll {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .category-scroll { grid-template-columns: repeat(6, 1fr); }
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.category-image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: var(--shadow-soft);
+  border: 3px solid var(--white);
+  transition: transform 0.3s ease;
+}
+.category-card:hover .category-image { transform: translateY(-4px); }
+
+.category-card span {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--charcoal);
+  font-weight: 500;
+}
