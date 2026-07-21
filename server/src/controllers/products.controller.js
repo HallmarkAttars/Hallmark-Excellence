@@ -196,6 +196,18 @@ async function getAdminProducts(req, res) {
   }
 }
 
+// Generate a URL-friendly slug from a name string
+function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')       // spaces to hyphens
+    .replace(/[^\w-]+/g, '')    // remove non-word chars
+    .replace(/--+/g, '-')       // collapse multiple hyphens
+    .replace(/^-+|-+$/g, '')    // trim hyphens
+}
+
 // POST /api/admin/products
 // Protected. Creates a product. image = Cloudinary URL already uploaded.
 async function createProduct(req, res) {
@@ -208,6 +220,7 @@ async function createProduct(req, res) {
 
     const payload = {
       name,
+      slug: slugify(name),
       description: description ?? null,
       price,
       stock: stock ?? 0,
@@ -243,7 +256,10 @@ async function updateProduct(req, res) {
     const { name, description, price, stock, category_id, brand_id, image, is_active } = req.body
 
     const updates = {}
-    if (name !== undefined) updates.name = name
+    if (name !== undefined) {
+      updates.name = name
+      updates.slug = slugify(name)
+    }
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
     if (stock !== undefined) updates.stock = stock

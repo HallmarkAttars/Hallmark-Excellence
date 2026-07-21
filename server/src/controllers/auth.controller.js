@@ -15,7 +15,6 @@ async function login(req, res) {
       .from('users')
       .select('*')
       .eq('email', email)
-      .eq('role', 'admin')
       .maybeSingle()
 
     if (error) {
