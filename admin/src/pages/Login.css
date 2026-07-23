@@ -14,12 +14,19 @@
   max-width: 380px;
 }
 .login-brand { text-align: center; margin-bottom: 28px; }
-.login-brand span {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  letter-spacing: 0.14em;
-  color: var(--gold-deep);
-  display: block;
+
+.login-logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  display: inline-block;
 }
-.login-brand p { color: rgba(20,17,13,0.5); font-size: 0.85rem; margin: 4px 0 0; }
+
+@media (max-width: 768px) {
+  .login-logo-img { height: 45px; }
+}
+
+@media (max-width: 480px) {
+  .login-logo-img { height: 38px; }
+}
 .login-error { color: var(--danger); font-size: 0.85rem; }

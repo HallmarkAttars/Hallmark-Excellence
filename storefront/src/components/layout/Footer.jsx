@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="container footer-grid">
         <div className="footer-brand">
-          <h3>Arees &amp; Dahab</h3>
+          <img src="/HE white Logo.png" alt="HE Logo" className="footer-logo-img" />
           <p>
             The Art of Significance Attars — small-batch oils crafted from oud, rose, and
             resin, made to be worn close and remembered long after.

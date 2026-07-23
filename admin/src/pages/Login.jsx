@@ -28,8 +28,7 @@ export default function Login() {
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-brand">
-          <span>MAISON</span>
-          <p>Arees &amp; Dahab Admin</p>
+          <img src="/HE Logo.png" alt="HE Logo" className="login-logo-img" />
         </div>
 
         <div className="form-field">

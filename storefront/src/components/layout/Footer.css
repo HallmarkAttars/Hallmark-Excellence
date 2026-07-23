@@ -11,9 +11,20 @@
   grid-template-columns: 1fr;
 }
 
-.footer-brand h3 {
-  color: var(--cream);
-  font-size: 1.5rem;
+.footer-logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .footer-logo-img { height: 45px; }
+}
+
+@media (max-width: 480px) {
+  .footer-logo-img { height: 38px; }
 }
 .footer-brand p {
   color: rgba(248, 243, 234, 0.7);

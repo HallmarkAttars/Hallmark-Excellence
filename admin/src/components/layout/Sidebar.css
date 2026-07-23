@@ -13,14 +13,22 @@
 }
 .sidebar.is-open { transform: translateX(0); }
 
-.sidebar-brand { display: flex; flex-direction: column; padding: 0 12px 28px; }
-.sidebar-brand-main {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  letter-spacing: 0.12em;
-  color: var(--gold);
+.sidebar-brand { display: flex; align-items: center; padding: 0 12px 28px; }
+
+.sidebar-logo-img {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
-.sidebar-brand-sub { font-size: 0.7rem; color: rgba(250,247,241,0.5); letter-spacing: 0.05em; }
+
+@media (max-width: 768px) {
+  .sidebar-logo-img { height: 45px; }
+}
+
+@media (max-width: 480px) {
+  .sidebar-logo-img { height: 38px; }
+}
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
