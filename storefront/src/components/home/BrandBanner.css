@@ -1,21 +1,172 @@
-.brand-banner {
+/* ====================================================
+   Brand Section — Premium Luxury Card Layout
+   ==================================================== */
+
+/* --- Section Wrapper --- */
+.brand-section {
+  padding: 80px 24px;
+}
+
+/* --- Section Heading --- */
+.brand-section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  margin: 0 0 48px;
+  font-weight: 500;
+}
+
+/* --- Brand Card --- */
+.brand-card {
   position: relative;
-  min-height: 46vh;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 380px;
   display: flex;
   align-items: center;
+  justify-content: center;
   background-size: cover;
   background-position: center;
+  border: 2px solid var(--white);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
-.brand-banner-overlay {
+
+.brand-card + .brand-card {
+  margin-top: 40px;
+}
+
+.brand-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.brand-card:hover .brand-card-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* --- Dark Overlay --- */
+.brand-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(26,22,17,0.75) 0%, rgba(26,22,17,0.2) 90%);
-}
-.brand-banner-content {
-  position: relative;
+  background: rgba(0, 0, 0, 0.35);
+  transition: background 0.4s ease;
   z-index: 1;
-  color: var(--cream);
 }
-.brand-banner-content h2 { color: var(--cream); font-size: clamp(1.8rem, 4vw, 2.6rem); }
-.brand-banner-btn { border-color: var(--cream); color: var(--cream); }
-.brand-banner-btn:hover { background: var(--cream); color: var(--charcoal); }
+
+/* --- Content --- */
+.brand-card-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+/* --- Brand Title --- */
+.brand-card-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  color: var(--white);
+  margin: 0 0 24px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Shop Button --- */
+.brand-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 32px;
+  background: var(--white);
+  color: var(--charcoal);
+  border: 1.5px solid var(--white);
+  border-radius: 2px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.brand-card-btn:hover {
+  background: transparent;
+  color: var(--white);
+  border-color: var(--white);
+}
+
+/* --- Desktop: wider cards --- */
+@media (min-width: 1024px) {
+  .brand-card {
+    max-width: 1400px;
+    width: 95%;
+  }
+}
+
+/* ====================================================
+   Responsive
+   ==================================================== */
+
+@media (max-width: 768px) {
+  .brand-section {
+    padding: 60px 16px;
+  }
+
+  .brand-section-heading {
+    margin-bottom: 36px;
+  }
+
+  .brand-card {
+    min-height: 300px;
+    border-width: 1.5px;
+  }
+
+  .brand-card + .brand-card {
+    margin-top: 32px;
+  }
+
+  .brand-card-content {
+    padding: 24px 20px;
+  }
+
+  .brand-card-title {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-section {
+    padding: 48px 12px;
+  }
+
+  .brand-card {
+    max-width: 100%;
+    min-height: 260px;
+    border-radius: 3px;
+  }
+
+  .brand-card + .brand-card {
+    margin-top: 24px;
+  }
+
+  .brand-card-content {
+    padding: 20px 16px;
+  }
+
+  .brand-card-title {
+    margin-bottom: 16px;
+  }
+
+  .brand-card-btn {
+    padding: 8px 24px;
+    font-size: 0.75rem;
+  }
+}
