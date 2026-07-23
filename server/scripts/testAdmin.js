@@ -28,7 +28,10 @@ async function apiGet(path, token) {
 
 async function main() {
   // First login
-  const loginData = JSON.stringify({ email: 'admin@gmail.com', password: 'admin321' });
+  const loginData = JSON.stringify({
+    email: process.env.ADMIN_EMAIL || 'admin@gmail.com',
+    password: process.env.ADMIN_PASSWORD || 'admin321',
+  });
   const token = await new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost', port: 5000, path: '/api/auth/login', method: 'POST',

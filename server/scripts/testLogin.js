@@ -1,7 +1,10 @@
 require('dotenv').config();
 const http = require('http');
 
-const data = JSON.stringify({ email: 'admin@gmail.com', password: 'admin321' });
+const data = JSON.stringify({
+  email: process.env.ADMIN_EMAIL || 'admin@gmail.com',
+  password: process.env.ADMIN_PASSWORD || 'admin321',
+});
 
 const options = {
   hostname: 'localhost',

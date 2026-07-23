@@ -60,8 +60,7 @@ export async function submitContactMessage(payload) {
 }
 
 export async function submitOrder(payload) {
-  // Backend expects: customer_name, phone, address, pincode, message, items, total_amount
-  const res = await api.post('/api/orders', {
+  const requestBody = {
     customer_name: payload.name,
     phone: payload.phone,
     address: payload.address,
@@ -69,8 +68,18 @@ export async function submitOrder(payload) {
     message: payload.message,
     items: payload.items,
     total_amount: payload.total,
-  })
+  }
 
-  return { success: true, orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber }
+  console.log('[submitOrder] Sending payload:', JSON.stringify(requestBody, null, 2))
+
+  try {
+    const res = await api.post('/api/orders', requestBody)
+    console.log('[submitOrder] Response:', JSON.stringify(res, null, 2))
+    return { success: true, orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber }
+  } catch (err) {
+    console.error('[submitOrder] Error:', err.message)
+    // Re-throw with the actual backend error message
+    throw new Error(err.message || 'Failed to place order.')
+  }
 }
 

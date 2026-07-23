@@ -5,10 +5,10 @@ require('dotenv').config()
 const bcrypt = require('bcryptjs')
 const supabase = require('../src/config/supabase')
 
-// --- Edit these before running -------------------------------------------
-const ADMIN_EMAIL = 'admin@gmail.com'
-const ADMIN_NAME = 'Store Admin'
-const ADMIN_PASSWORD = 'admin321'
+// --- Configuration: override via environment variables or .env -------------
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@gmail.com'
+const ADMIN_NAME = process.env.ADMIN_NAME || 'Store Admin'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin321'
 // ---------------------------------------------------------------------------
 
 async function createAdmin() {

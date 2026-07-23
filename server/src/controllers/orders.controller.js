@@ -5,11 +5,69 @@ function generateOrderNumber() {
   return `ORD-${randomSixDigits}`
 }
 
+// Default user for guest checkouts (no auth on storefront)
+// This is the existing admin user in the users table
+const DEFAULT_USER_ID = 'a422c5dd-9b57-4fda-88a1-49c784002b7f'
+
+// Lazily cached default address ID for guest orders
+let _cachedAddressId = null
+
+async function getDefaultAddressId() {
+  if (_cachedAddressId) return _cachedAddressId
+
+  // Check if a "Guest Checkout" address already exists
+  const { data: existing } = await supabase
+    .from('addresses')
+    .select('id')
+    .eq('user_id', DEFAULT_USER_ID)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    _cachedAddressId = existing.id
+    return _cachedAddressId
+  }
+
+  // Create a placeholder address for guest orders
+  const { data: newAddr, error } = await supabase
+    .from('addresses')
+    .insert({
+      user_id: DEFAULT_USER_ID,
+      full_name: 'Guest Checkout',
+      phone: '0000000000',
+      address_line1: 'Guest Address',
+      city: 'N/A',
+      state: 'N/A',
+      postal_code: '000000',
+      country: 'N/A'
+    })
+    .select('id')
+    .single()
+
+  if (error) {
+    console.error('[getDefaultAddressId] Could not create default address:', error.message)
+    return null
+  }
+
+  _cachedAddressId = newAddr.id
+  return _cachedAddressId
+}
+
 // POST /api/orders
 // Public. Storefront checkout.
 async function createOrder(req, res) {
   try {
     const { customer_name, phone, address, pincode, message, items, total_amount } = req.body
+
+    console.log('[createOrder] Received payload:', JSON.stringify({
+      customer_name,
+      phone,
+      address,
+      pincode,
+      message,
+      items_count: items?.length,
+      total_amount
+    }, null, 2))
 
     if (!customer_name || !phone || !address || !pincode || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
@@ -23,39 +81,61 @@ async function createOrder(req, res) {
 
     const orderNumber = generateOrderNumber()
 
-    // Store customer info in notes field as JSON, use total field for amount,
-    // and mark as Cash On Delivery payment.
+    // Get or create default address for guest orders
+    const addressId = await getDefaultAddressId()
+    if (!addressId) {
+      return res.status(500).json({ error: 'Failed to resolve default address for order.' })
+    }
+
+    // Build the insert payload matching the actual Supabase orders table schema:
+    // - user_id references users(id) — using the admin user as default guest
+    // - address_id references addresses(id) — using a placeholder address
+    // - Customer details are stored in the notes JSONB column
+    // - payment_status must be one of the check constraint values ('Pending', 'Paid', etc.)
+    const insertPayload = {
+      order_number: orderNumber,
+      user_id: DEFAULT_USER_ID,
+      address_id: addressId,
+      subtotal: Number(total_amount),
+      total: Number(total_amount),
+      payment_method: 'Cash On Delivery',
+      payment_status: 'Pending',
+      order_status: 'Pending',
+      notes: JSON.stringify({
+        customer_name,
+        phone,
+        address,
+        pincode,
+        message: message ?? '',
+        items,
+        total_amount: Number(total_amount),
+      }),
+    }
+
+    console.log('[createOrder] Insert payload:', JSON.stringify(insertPayload, null, 2))
+
     const { data, error } = await supabase
       .from('orders')
-      .insert({
-        order_number: orderNumber,
-        // Use a default address_id (will be null-able after migration)
-        // We store the shipping details in notes as JSON
-        notes: JSON.stringify({
-          customer_name,
-          phone,
-          address,
-          pincode,
-          message: message ?? '',
-          items,
-        }),
-        subtotal: Number(total_amount),
-        total: Number(total_amount),
-        order_status: 'Pending',
-        payment_method: 'Cash On Delivery',
-        payment_status: 'Cash On Delivery',
-      })
+      .insert(insertPayload)
       .select('*')
       .single()
 
     if (error) {
-      console.error('createOrder error:', error)
-      return res.status(500).json({ error: 'Failed to place order.' })
+      console.error('[createOrder] Supabase error:', JSON.stringify(error, null, 2))
+      console.error('[createOrder] Supabase error code:', error.code)
+      console.error('[createOrder] Supabase error details:', error.details)
+      console.error('[createOrder] Supabase error hint:', error.hint)
+      return res.status(500).json({
+        error: 'Failed to place order.',
+        detail: error.message,
+        code: error.code
+      })
     }
 
+    console.log('[createOrder] Order created successfully:', data.id, data.order_number)
     return res.status(201).json({ order: data })
   } catch (err) {
-    console.error('createOrder error:', err)
+    console.error('[createOrder] Unexpected error:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -69,7 +149,7 @@ async function getOrders(req, res) {
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
 
     if (status) query = query.eq('order_status', status)
-    if (search) query = query.or(`order_number.ilike.%${search}%,notes.ilike.%${search}%`)
+    if (search) query = query.or(`order_number.ilike.%${search}%,customer_name.ilike.%${search}%`)
 
     const { data, error } = await query
 
@@ -78,21 +158,22 @@ async function getOrders(req, res) {
       return res.status(500).json({ error: 'Failed to fetch orders.' })
     }
 
-    // Parse notes JSON to extract customer info for display
+    // Use direct column values with fallback to notes parsing for backward compatibility
     const enriched = (data || []).map((o) => {
-      let customerInfo = {}
+      let notesInfo = {}
       try {
-        if (o.notes) customerInfo = JSON.parse(o.notes)
+        if (o.notes) notesInfo = JSON.parse(o.notes)
       } catch {}
       return {
         ...o,
-        customer_name: customerInfo.customer_name || '',
-        phone: customerInfo.phone || '',
-        address: customerInfo.address || '',
-        pincode: customerInfo.pincode || '',
-        message: customerInfo.message || '',
-        items: customerInfo.items || [],
-        total_amount: Number(o.total),
+        customer_name: o.customer_name || notesInfo.customer_name || '',
+        phone: o.phone || notesInfo.phone || '',
+        address: o.address || notesInfo.address || '',
+        pincode: o.pincode || notesInfo.pincode || '',
+        message: o.message || notesInfo.message || '',
+        items: o.items || notesInfo.items || [],
+        total_amount: Number(o.total_amount || o.total || 0),
+        status: o.order_status || 'Pending',
       }
     })
 
@@ -119,20 +200,21 @@ async function getOrderById(req, res) {
       return res.status(404).json({ error: 'Order not found.' })
     }
 
-    // Parse notes
-    let customerInfo = {}
+    // Use direct column values with fallback to notes parsing for backward compatibility
+    let notesInfo = {}
     try {
-      if (data.notes) customerInfo = JSON.parse(data.notes)
+      if (data.notes) notesInfo = JSON.parse(data.notes)
     } catch {}
     const enriched = {
       ...data,
-      customer_name: customerInfo.customer_name || '',
-      phone: customerInfo.phone || '',
-      address: customerInfo.address || '',
-      pincode: customerInfo.pincode || '',
-      message: customerInfo.message || '',
-      items: customerInfo.items || [],
-      total_amount: Number(data.total),
+      customer_name: data.customer_name || notesInfo.customer_name || '',
+      phone: data.phone || notesInfo.phone || '',
+      address: data.address || notesInfo.address || '',
+      pincode: data.pincode || notesInfo.pincode || '',
+      message: data.message || notesInfo.message || '',
+      items: data.items || notesInfo.items || [],
+      total_amount: Number(data.total_amount || data.total || 0),
+      status: data.order_status || 'Pending',
     }
 
     return res.json({ order: enriched })
@@ -175,16 +257,17 @@ async function updateOrderStatus(req, res) {
       return res.status(404).json({ error: 'Order not found.' })
     }
 
-    // Parse notes for response
-    let customerInfo = {}
-    try { if (data.notes) customerInfo = JSON.parse(data.notes) } catch {}
+    // Use direct column values with fallback to notes parsing
+    let notesInfo = {}
+    try { if (data.notes) notesInfo = JSON.parse(data.notes) } catch {}
     const enriched = {
       ...data,
-      customer_name: customerInfo.customer_name || '',
-      phone: customerInfo.phone || '',
-      address: customerInfo.address || '',
-      items: customerInfo.items || [],
-      total_amount: Number(data.total),
+      customer_name: data.customer_name || notesInfo.customer_name || '',
+      phone: data.phone || notesInfo.phone || '',
+      address: data.address || notesInfo.address || '',
+      items: data.items || notesInfo.items || [],
+      total_amount: Number(data.total_amount || data.total || 0),
+      status: data.order_status || 'Pending',
     }
 
     return res.json({ order: enriched })
@@ -211,20 +294,24 @@ async function getDashboardStats(req, res) {
 
     const totalOrders = allOrders.length
 
-    // Count unique customers from parsed notes
+    // Count unique customers from phone column
     const customerPhones = new Set()
     allOrders.forEach((o) => {
-      try {
-        if (o.notes) {
-          const info = JSON.parse(o.notes)
-          if (info.phone) customerPhones.add(info.phone)
-        }
-      } catch {}
+      if (o.phone) customerPhones.add(o.phone)
+      else {
+        // Fallback: try parsing notes for backward compatibility
+        try {
+          if (o.notes) {
+            const info = JSON.parse(o.notes)
+            if (info.phone) customerPhones.add(info.phone)
+          }
+        } catch {}
+      }
     })
 
     const totalRevenue = allOrders
       .filter((o) => o.order_status !== 'Cancelled')
-      .reduce((sum, o) => sum + Number(o.total), 0)
+      .reduce((sum, o) => sum + Number(o.total_amount || o.total || 0), 0)
 
     const { data: recentOrders, error: recentError } = await supabase
       .from('orders')
@@ -237,16 +324,16 @@ async function getDashboardStats(req, res) {
       return res.status(500).json({ error: 'Failed to compute stats.' })
     }
 
-    // Enrich recent orders
+    // Enrich recent orders - use direct column values with fallback to notes
     const enrichedRecent = (recentOrders || []).map((o) => {
-      let info = {}
-      try { if (o.notes) info = JSON.parse(o.notes) } catch {}
+      let notesInfo = {}
+      try { if (o.notes) notesInfo = JSON.parse(o.notes) } catch {}
       return {
         id: o.id,
         order_number: o.order_number,
-        customer_name: info.customer_name || '',
-        status: o.order_status,
-        total_amount: Number(o.total),
+        customer_name: o.customer_name || notesInfo.customer_name || '',
+        status: o.order_status || 'Pending',
+        total_amount: Number(o.total_amount || o.total || 0),
         created_at: o.created_at,
       }
     })
