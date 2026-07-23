@@ -16,7 +16,7 @@
 .sidebar-brand { display: flex; align-items: center; padding: 0 12px 28px; }
 
 .sidebar-logo-img {
-  height: 50px;
+  height: 110px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -27,7 +27,7 @@
 }
 
 @media (max-width: 480px) {
-  .sidebar-logo-img { height: 38px; }
+  .sidebar-logo-img { height: 90px; }
 }
 
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }

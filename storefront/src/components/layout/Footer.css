@@ -12,7 +12,7 @@
 }
 
 .footer-logo-img {
-  height: 50px;
+  height: 110px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -24,7 +24,7 @@
 }
 
 @media (max-width: 480px) {
-  .footer-logo-img { height: 38px; }
+  .footer-logo-img { height: 90px; }
 }
 .footer-brand p {
   color: rgba(248, 243, 234, 0.7);
