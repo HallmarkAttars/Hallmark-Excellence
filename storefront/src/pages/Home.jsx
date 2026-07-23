@@ -17,9 +17,14 @@ export default function Home() {
     <div>
       <Hero />
       {categories.length > 0 && <CategoryGrid categories={categories} />}
-      {brands.map((brand) => (
-        <BrandBanner key={brand.id} brand={brand} />
-      ))}
+      {brands.length > 0 && (
+        <section className="brand-section">
+          <h2 className="brand-section-heading">OUR BRANDS</h2>
+          {brands.map((brand) => (
+            <BrandBanner key={brand.id} brand={brand} />
+          ))}
+        </section>
+      )}
     </div>
   )
 }
