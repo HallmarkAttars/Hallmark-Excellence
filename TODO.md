@@ -1,30 +1,18 @@
-# Task: Push Changes to GitHub Safely Without Secrets
+# API Configuration Fix - TODO
 
-## Steps
+## Completed Steps
 
-### Step 1: Clean up hardcoded credentials from script files
-- [x] `server/scripts/createAdmin.js` - Read `ADMIN_PASSWORD` from `.env` with fallback
-- [x] `server/scripts/testLogin.js` - Read password from `.env` with fallback
-- [x] `server/scripts/testAdmin.js` - Read password from `.env` with fallback
-- [x] `server/scripts/testVerify.js` - Read password from `.env` with fallback
+- [x] Audit all source files for `localhost:5000` references
+- [x] Create fix plan and get approval
 
-### Step 2: Create .env.example files for documentation
-- [x] `server/.env.example` - Document all required env vars
-- [x] `storefront/.env.example` - Document storefront env vars
-- [x] `admin/.env.example` - Document admin env vars
+## Remaining Steps
 
-### Step 3: Stage all changed files
-- [x] `server/src/controllers/orders.controller.js`
-- [x] `storefront/src/services/mockApi.js`
-- [x] `server/db/migration_fix_orders.sql`
-- [x] `server/db/migration_fix_orders_v2.sql`
-- [x] `server/scripts/runMigration.js`
-- [x] Cleaned script files
-- [x] New `.env.example` files
-
-### Step 4: Commit with descriptive message
-- [x] Committed: "Clean up secrets, add .env.example files, fix orders controller & add migration scripts"
-
-### Step 5: Push to GitHub
-- [x] Pushed to `origin/blackboxai/fix-product-creation`
+- [ ] Fix 1: `admin/src/services/api.js` - Replace fallback URL
+- [ ] Fix 2: `storefront/src/services/api.js` - Replace fallback URL
+- [ ] Fix 3: `admin/.env` - Replace development URL
+- [ ] Fix 4: `admin/.env.example` - Update example URL
+- [ ] Fix 5: `storefront/.env.example` - Update example URL
+- [ ] Build `admin/` and verify no localhost in dist
+- [ ] Build `storefront/` and verify no localhost in dist
+- [ ] Final confirmation
 

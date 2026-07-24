@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://hallmark-excellence.onrender.com'
 
 async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
   const url = `${API_BASE_URL}${path}`
