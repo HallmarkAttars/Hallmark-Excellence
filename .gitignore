@@ -1,5 +1,9 @@
-# --- Environment files (DO NOT COMMIT) ---
+# --- Environment files ---
+# Keep .env.example, .env.development, .env.production tracked in git
+# Ignore files that contain secrets / local overrides
 .env
+.env.local
+.env.*.local
 
 # --- Dependencies ---
 node_modules/
@@ -25,9 +29,4 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-
-# --- Runtime ---
-.env.local
-.env.production
-.env.development
 
