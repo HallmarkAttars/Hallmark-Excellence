@@ -6,6 +6,10 @@ insert into brands (name, slug) values
   ('Dahab', 'dahab')
 on conflict (slug) do nothing;
 
+insert into categories (name, slug) values
+  ('Attar', 'attar')
+on conflict (slug) do nothing;
+
 insert into categories (name, slug, display_order) values
   ('Caps & Pumps', 'caps-and-pumps', 1),
   ('Fragrance Oil', 'fragrance-oil', 2),

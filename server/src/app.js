@@ -22,16 +22,14 @@ app.use(
       // Allow non-browser requests (curl, server-to-server, no Origin header)
       if (!origin) return callback(null, true)
 
-      // In dev, your frontend ports may shift (5173/5174/5175...).
-      // If no explicit allowlist is provided, fall back to allowing localhost.
-      if (allowedOrigins.length === 0) {
-        if (/^https?:\/\/localhost:\d+$/.test(origin) || /^https?:\/\/127\.0\.0\.1:\d+$/.test(origin)) {
-          return callback(null, true)
-        }
-        return callback(new Error('Not allowed by CORS'))
+      // Allow any of the configured origins
+      if (allowedOrigins.includes(origin)) return callback(null, true)
+
+      // In dev, allow any localhost:port origin (handles --host 0.0.0.0)
+      if (/^https?:\/\/localhost:\d+$/.test(origin) || /^https?:\/\/127\.0\.0\.1:\d+$/.test(origin)) {
+        return callback(null, true)
       }
 
-      if (allowedOrigins.includes(origin)) return callback(null, true)
       return callback(new Error('Not allowed by CORS'))
     },
   })

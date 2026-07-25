@@ -33,7 +33,10 @@ async function getCategories(req, res) {
 
     const counts = await buildProductCounts(true)
 
-    const categories = data.map((c) => ({ ...c, product_count: counts[c.id] || 0 }))
+    // Filter out hidden categories from public view (e.g., "Attar" is admin-only)
+    const categories = data
+      .filter((c) => c.slug !== 'attar')
+      .map((c) => ({ ...c, product_count: counts[c.id] || 0 }))
 
     return res.json({ categories })
   } catch (err) {

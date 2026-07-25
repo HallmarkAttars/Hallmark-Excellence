@@ -38,6 +38,20 @@ export default function ProductForm() {
     }
   }, [id, isEdit])
 
+  const handleCategoryChange = (e) => {
+    const categoryId = e.target.value
+    const selectedCat = categories.find((c) => String(c.id) === categoryId)
+    // If changing from Attar to a non-Attar category, clear the brand selection
+    if (selectedCat && selectedCat.slug !== 'attar' && selectedCat.name !== 'Attar') {
+      setForm((f) => ({ ...f, category_id: categoryId, brand_id: '' }))
+    } else {
+      setForm((f) => ({ ...f, category_id: categoryId }))
+    }
+  }
+
+  const selectedCategory = categories.find((c) => String(c.id) === String(form.category_id))
+  const isAttarCategory = selectedCategory?.slug === 'attar' || selectedCategory?.name === 'Attar'
+
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
 
   // Only preview locally here — the actual Cloudinary upload happens on
@@ -54,6 +68,13 @@ export default function ProductForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    
+    // Validate brand is required for Attar category
+    if (isAttarCategory && !form.brand_id) {
+      setError('Please select a brand.')
+      return
+    }
+    
     setSaving(true)
     try {
       let image = existingImages[0] || null
@@ -117,17 +138,26 @@ export default function ProductForm() {
         <div className="form-row form-row-2">
           <div className="form-field">
             <label htmlFor="category_id">Category</label>
-            <select id="category_id" name="category_id" value={form.category_id} onChange={handleChange} required>
+            <select id="category_id" name="category_id" value={form.category_id} onChange={handleCategoryChange} required>
               <option value="">Select category</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div className="form-field">
             <label htmlFor="brand_id">Brand</label>
-            <select id="brand_id" name="brand_id" value={form.brand_id} onChange={handleChange} required>
-              <option value="">Select brand</option>
+            <select
+              id="brand_id"
+              name="brand_id"
+              value={form.brand_id}
+              onChange={handleChange}
+              required={isAttarCategory}
+              disabled={!isAttarCategory}
+              style={!isAttarCategory ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+            >
+              <option value="">Select Brand</option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
+            {isAttarCategory && <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>Brand is required for Attar products</small>}
           </div>
         </div>
 

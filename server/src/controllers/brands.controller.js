@@ -41,7 +41,18 @@ async function getBrandProducts(req, res) {
       return res.status(404).json({ error: 'Brand not found.' })
     }
 
-    const { data: products, error: prodError } = await supabase
+    // For Arees and Dahab brands, only return products in the Attar category
+    let attarCategoryId = null
+    if (slug === 'arees' || slug === 'dahab') {
+      const { data: attarCat } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', 'attar')
+        .maybeSingle()
+      if (attarCat) attarCategoryId = attarCat.id
+    }
+
+    let query = supabase
       .from('products')
       .select(`
         id, name, description, price, stock, image,
@@ -50,6 +61,12 @@ async function getBrandProducts(req, res) {
       `)
       .eq('brand_id', brand.id)
       .eq('is_active', true)
+
+    if (attarCategoryId) {
+      query = query.eq('category_id', attarCategoryId)
+    }
+
+    const { data: products, error: prodError } = await query
       .order('created_at', { ascending: false })
 
     if (prodError) {

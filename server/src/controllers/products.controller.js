@@ -218,6 +218,18 @@ async function createProduct(req, res) {
       return res.status(400).json({ error: 'name and price are required.' })
     }
 
+    // If the selected category is "Attar", brand is required
+    if (category_id) {
+      const { data: category } = await supabase
+        .from('categories')
+        .select('slug')
+        .eq('id', category_id)
+        .maybeSingle()
+      if (category && category.slug === 'attar' && !brand_id) {
+        return res.status(400).json({ error: 'Brand is required for Attar products.' })
+      }
+    }
+
     const payload = {
       name,
       slug: slugify(name),
@@ -254,6 +266,18 @@ async function updateProduct(req, res) {
   try {
     const { id } = req.params
     const { name, description, price, stock, category_id, brand_id, image, is_active } = req.body
+
+    // If the category is being updated to "Attar", brand is required
+    if (category_id !== undefined) {
+      const { data: category } = await supabase
+        .from('categories')
+        .select('slug')
+        .eq('id', category_id)
+        .maybeSingle()
+      if (category && category.slug === 'attar' && !brand_id) {
+        return res.status(400).json({ error: 'Brand is required for Attar products.' })
+      }
+    }
 
     const updates = {}
     if (name !== undefined) {
