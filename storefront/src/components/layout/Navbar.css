@@ -20,7 +20,7 @@
 }
 
 .navbar-logo-img {
-  height: 110px;
+  height: 70px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -31,7 +31,7 @@
 }
 
 @media (max-width: 480px) {
-  .navbar-logo-img { height: 90px; }
+  .navbar-logo-img { height: 50px; }
 }
 
 .navbar-links {

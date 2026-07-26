@@ -19,7 +19,7 @@ export default function Navbar() {
     <header className="navbar">
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo" onClick={() => setOpen(false)}>
-          <img src="/HE logo black.png" alt="HE Logo" className="navbar-logo-img" />
+          <img src="/HE color Logo.png" alt="HE Logo" className="navbar-logo-img" />
         </Link>
 
         <nav className={`navbar-links ${open ? 'is-open' : ''}`} aria-label="Main navigation">
