@@ -66,8 +66,10 @@
 
 .footer-bottom {
   border-top: 1px solid rgba(248, 243, 234, 0.12);
-  padding: 20px 0;
+  padding: 20px 0px;
+  
 }
+
 .footer-bottom p {
   margin: 0;
   font-size: 0.8rem;

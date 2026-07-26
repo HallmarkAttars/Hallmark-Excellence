@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Hero from '../components/home/Hero'
 import CategoryGrid from '../components/home/CategoryGrid'
 import BrandBanner from '../components/home/BrandBanner'
+import WhyChooseUs from '../components/home/WhyChooseUs'
 import { getCategories, getBrands } from '../services/mockApi'
 
 export default function Home() {
@@ -25,6 +26,7 @@ export default function Home() {
           ))}
         </section>
       )}
+      <WhyChooseUs />
     </div>
   )
 }
