@@ -24,7 +24,7 @@ export default function Sidebar({ open, onClose }) {
     <>
       <aside className={`sidebar ${open ? 'is-open' : ''}`}>
         <div className="sidebar-brand">
-          <img src="/HE logo white.png" alt="HE Logo" className="sidebar-logo-img" />
+          <img src="/HE white Logo.png" alt="HE Logo" className="sidebar-logo-img" />
         </div>
 
         <nav className="sidebar-nav">
