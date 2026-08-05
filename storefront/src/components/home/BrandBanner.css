@@ -120,7 +120,7 @@
   height: 52px;
   background: var(--white);
   color: #000000;
-  border: 2px solid var(--white);
+  border: none;
   border-radius: 0;
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -131,9 +131,11 @@
   transition: all 0.3s ease;
 }
 
-.brand-card:hover .brand-card-btn {
+/* The button style changes ONLY when hovering directly over it */
+.brand-card-btn:hover {
   background: transparent;
   color: var(--white);
+  border: 2px solid var(--white);
 }
 
 /* ====================================================
