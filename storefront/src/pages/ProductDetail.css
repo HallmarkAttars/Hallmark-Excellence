@@ -29,6 +29,49 @@
 
 .product-detail-actions { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
 
+/* --- Variant selector ---------------------------------------------------- */
+.variant-selector { margin-top: 20px; }
+.variant-selector-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.variant-option {
+  padding: 10px 18px;
+  border: 1px solid rgba(36, 31, 25, 0.35);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.variant-option:hover {
+  background: #A84A6B; /* light maroon */
+  border-color: #A84A6B;
+  color: var(--white);
+}
+.variant-option.is-active {
+  background: #5C0634;
+  border-color: #5C0634;
+  color: var(--white);
+}
+
+/* Stock status colors */
+.product-detail-stock.in-stock { color: #2e7d32; }
+.product-detail-stock.low-stock { color: #b26a00; }
+.product-detail-stock.out-of-stock { color: #b71c1c; }
+
 .qty-selector {
   display: flex; align-items: center; gap: 16px;
   border: 1px solid rgba(36,31,25,0.2); border-radius: var(--radius);

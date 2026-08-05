@@ -1,34 +1,41 @@
-# API Configuration Fix - COMPLETED ✅
+# TODO: Implement Product Variants in Admin Panel
 
-## All Steps Completed
+## Steps
+- [x] Analyze current ProductForm, mockApi, backend variants support
+- [x] Confirm plan with user (refinements applied)
 
-- [x] Audit all source files for `localhost:5000` references
-- [x] Create fix plan and get approval
-- [x] Fix 1: `admin/src/services/api.js` - Fallback URL changed to `https://hallmark-excellence.onrender.com`
-- [x] Fix 2: `storefront/src/services/api.js` - Fallback URL changed to `https://hallmark-excellence.onrender.com`
-- [x] Fix 3: `admin/.env` - Contains `http://localhost:5000` (local dev only, not used in production)
-- [x] Fix 4: `admin/.env.development` - Contains `http://localhost:5000` (local dev only)
-- [x] Fix 5: `admin/.env.production` - Set to `https://hallmark-excellence.onrender.com` ✅
-- [x] Fix 6: `storefront/.env.development` - Contains `http://localhost:5000` (local dev only)
-- [x] Fix 7: `storefront/.env.production` - Set to `https://hallmark-excellence.onrender.com` ✅
-- [x] Build `admin/` - Verified: No `localhost:5000` in dist, only `hallmark-excellence.onrender.com` ✅
-- [x] Build `storefront/` - Verified: No `localhost:5000` in dist, only `hallmark-excellence.onrender.com` ✅
-- [x] Final confirmation - All APIs use `https://hallmark-excellence.onrender.com` in production
+## ProductForm.jsx
+- [x] Add `variants` state + UNITS constants
+- [x] Add addVariant / updateVariant / removeVariant / default helpers
+- [x] Searchable Unit combobox (preset + custom typing)
+- [x] Load existing variants in edit mode
+- [x] Validation (≥1 variant, exactly 1 default, no dup quantity+unit, price>0, stock>=0)
+- [x] Disable Price field when variants exist + helper message
+- [x] Send `variants[]` in payload on save
 
-## Current State
+## ProductForm.css
+- [x] Style variant section, cards, combobox, radio, delete trash
 
-| File | Content | Purpose |
-|------|---------|---------|
-| `storefront/.env.development` | `VITE_API_BASE_URL=http://localhost:5000` | Local dev only |
-| `storefront/.env.production` | `VITE_API_BASE_URL=https://hallmark-excellence.onrender.com` | Production ✅ |
-| `storefront/src/services/api.js` | Fallback: `https://hallmark-excellence.onrender.com` | Production ✅ |
-| `admin/.env` | `VITE_API_BASE_URL=http://localhost:5000` | Local dev only |
-| `admin/.env.development` | `VITE_API_BASE_URL=http://localhost:5000` | Local dev only |
-| `admin/.env.production` | `VITE_API_BASE_URL=https://hallmark-excellence.onrender.com` | Production ✅ |
-| `admin/src/services/api.js` | Fallback: `https://hallmark-excellence.onrender.com` | Production ✅ |
+## Verify
+- [x] Confirm HMR / build works (vite build succeeded)
 
-## Servers Running
-- Backend: `http://localhost:5000` (with Attar branding logic)
-- Storefront: `http://localhost:5173`
-- Admin: `http://localhost:5174`
+# Storefront Product Variants on Product Details Page
 
+## ProductDetail.jsx
+- [x] Add selectedVariant state (default or first variant)
+- [x] "Select Quantity" section with variant buttons
+- [x] Price from selectedVariant.price (never product.price if variants exist)
+- [x] Stock from selectedVariant.stock (In Stock / Only X left / Out of Stock)
+- [x] Disable Add to Cart at stock 0; prevent qty > stock
+- [x] Add to Cart sends complete variant info
+
+## CartContext.jsx
+- [x] Store complete variant info in cart item
+- [x] Subtotal uses selected variant price
+
+## ProductDetail.css
+- [x] Style variant buttons (#5C0634 active, light maroon hover)
+- [x] Responsive wrapping (2-3 mobile, 3-6 desktop, 12px gap)
+
+## Verify
+- [x] Build compiles (vite build succeeded)

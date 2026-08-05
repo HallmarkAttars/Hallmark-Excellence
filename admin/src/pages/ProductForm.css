@@ -4,3 +4,126 @@
   width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius);
   border: 1px solid var(--line);
 }
+
+/* -------- Price hint -------- */
+.price-hint {
+  color: #b8860b;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* -------- Product Variants section -------- */
+.variants-section {
+  margin: 24px 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.variants-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.variants-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.variants-empty {
+  color: rgba(20, 17, 13, 0.5);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.variant-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--cream);
+}
+
+.variant-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.variant-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(20, 17, 13, 0.75);
+}
+
+.variant-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--danger);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.variant-delete:hover {
+  background: var(--danger-bg);
+}
+
+.variant-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 560px) {
+  .variant-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 720px) {
+  .variant-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.variant-grid .form-field { margin-bottom: 0; }
+
+.field-example {
+  color: rgba(20, 17, 13, 0.4);
+  font-size: 0.72rem;
+}
+
+.unit-combobox input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-size: 0.92rem;
+}
+
+.variant-default {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(20, 17, 13, 0.15);
+}
+
+.default-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: rgba(20, 17, 13, 0.75);
+}
+.default-radio input[type="radio"] {
+  accent-color: var(--gold-deep);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+

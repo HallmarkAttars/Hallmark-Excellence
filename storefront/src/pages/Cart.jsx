@@ -25,20 +25,21 @@ export default function Cart() {
       <h1>Your Cart</h1>
 
       <div className="cart-items">
-        {items.map((item) => (
-          <div key={item.id} className="cart-item">
+{items.map((item) => (
+          <div key={item._key} className="cart-item">
             <img src={item.image} alt={item.name} className="cart-item-image" />
             <div className="cart-item-info">
               <h3>{item.name}</h3>
-              <p className="cart-item-price">₹{item.price.toLocaleString('en-IN')}</p>
+              {item.variant_label && <p className="cart-item-variant">{item.variant_label}</p>}
+              <p className="cart-item-price">₹{Number(item.price).toLocaleString('en-IN')}</p>
             </div>
             <div className="cart-item-qty">
-              <button onClick={() => updateQty(item.id, item.qty - 1)} aria-label={`Decrease quantity of ${item.name}`}>−</button>
+              <button onClick={() => updateQty(item._key, item.qty - 1)} aria-label={`Decrease quantity of ${item.name}`}>−</button>
               <span>{item.qty}</span>
-              <button onClick={() => updateQty(item.id, item.qty + 1)} aria-label={`Increase quantity of ${item.name}`}>+</button>
+              <button onClick={() => updateQty(item._key, item.qty + 1)} aria-label={`Increase quantity of ${item.name}`}>+</button>
             </div>
-            <p className="cart-item-subtotal">₹{(item.price * item.qty).toLocaleString('en-IN')}</p>
-            <button className="cart-item-remove" onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name} from cart`}>
+            <p className="cart-item-subtotal">₹{(Number(item.price) * item.qty).toLocaleString('en-IN')}</p>
+            <button className="cart-item-remove" onClick={() => removeItem(item._key)} aria-label={`Remove ${item.name} from cart`}>
               &times;
             </button>
           </div>

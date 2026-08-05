@@ -1,11 +1,78 @@
- const supabase = require('../config/supabase')
+const supabase = require('../config/supabase')
 
+// Base product select WITHOUT the embedded variants relationship. Variants
+// are fetched separately (see fetchVariantsForProducts) so the code works
+// even if PostgREST cannot infer the relationship between products and
+// product_variants.
 const PRODUCT_SELECT = `
   id, name, description, price, stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
+
+const VARIANT_SELECT = `
+  id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default
+`
+
+// Return the variant that should drive the product-level price/stock.
+// Defaults to the variant flagged is_default, otherwise the first one.
+function defaultVariant(variants) {
+  if (!Array.isArray(variants) || variants.length === 0) return null
+  return variants.find((v) => v.is_default) || variants[0]
+}
+
+// Sort variants by quantity_value ascending.
+function sortVariants(variants) {
+  return (variants || []).slice().sort((a, b) => Number(a.quantity_value) - Number(b.quantity_value))
+}
+
+// Public-shaped variant object.
+function toVariant(v) {
+  return {
+    id: v.id,
+    quantity_value: v.quantity_value,
+    quantity_unit: v.quantity_unit,
+    display_label: v.display_label,
+    price: v.price,
+    stock: v.stock,
+    is_default: v.is_default ?? false,
+  }
+}
+
+// Fetch all variants for a set of product ids, grouped by product_id.
+async function fetchVariantsByProducts(productIds) {
+  if (!Array.isArray(productIds) || productIds.length === 0) return {}
+
+  const { data, error } = await supabase
+    .from('product_variants')
+    .select(VARIANT_SELECT)
+    .in('product_id', productIds)
+
+  if (error) throw error
+
+  const grouped = {}
+  for (const v of data || []) {
+    if (!grouped[v.product_id]) grouped[v.product_id] = []
+    grouped[v.product_id].push(toVariant(v))
+  }
+  // Sort each group by quantity_value ASC
+  for (const pid of Object.keys(grouped)) {
+    grouped[pid] = sortVariants(grouped[pid])
+  }
+  return grouped
+}
+
+// Attach variants to an array of flattened product rows.
+function attachVariants(rows, variantsByProduct) {
+  return rows.map((row) => {
+    const variants = variantsByProduct[row.id] || []
+    const dv = defaultVariant(variants)
+    const price = variants.length > 0 ? dv.price : row.price
+    const stock = variants.length > 0 ? dv.stock : row.stock
+    return { ...row, price, stock, variants }
+  })
+}
 
 function flattenProduct(row) {
   if (!row) return null
@@ -49,7 +116,17 @@ async function getProducts(req, res) {
       return res.status(500).json({ error: 'Failed to fetch products.' })
     }
 
-    return res.json({ products: data.map(flattenProduct) })
+    const rows = data.map(flattenProduct)
+    // Fetch variants separately so listing works regardless of PostgREST
+    // relationship inference.
+    let variantsByProduct = {}
+    try {
+      variantsByProduct = await fetchVariantsByProducts(rows.map((r) => r.id))
+    } catch (varErr) {
+      console.error('getProducts fetchVariants error:', varErr)
+    }
+
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -78,7 +155,27 @@ async function getProductById(req, res) {
       return res.status(404).json({ error: 'Product not found.' })
     }
 
-    return res.json({ product: flattenProduct(data) })
+    const product = flattenProduct(data)
+
+    // Fetch variants separately, sorted by quantity_value ASC.
+    let variants = []
+    try {
+      const { data: vs, error: vErr } = await supabase
+        .from('product_variants')
+        .select(VARIANT_SELECT)
+        .eq('product_id', id)
+      if (!vErr) {
+        variants = sortVariants((vs || []).map(toVariant))
+      }
+    } catch (varErr) {
+      console.error('getProductById fetchVariants error:', varErr)
+    }
+
+    const dv = defaultVariant(variants)
+    const price = variants.length > 0 ? dv.price : product.price
+    const stock = variants.length > 0 ? dv.stock : product.stock
+
+    return res.json({ product: { ...product, price, stock, variants } })
   } catch (err) {
     console.error('getProductById error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -140,7 +237,16 @@ async function getRelatedProducts(req, res) {
       related = data
     }
 
-    return res.json({ products: related.map(flattenProduct) })
+    const rows = related.map(flattenProduct)
+
+    let variantsByProduct = {}
+    try {
+      variantsByProduct = await fetchVariantsByProducts(rows.map((r) => r.id))
+    } catch (varErr) {
+      console.error('getRelatedProducts fetchVariants error:', varErr)
+    }
+
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getRelatedProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -168,7 +274,26 @@ async function getAdminProductById(req, res) {
       return res.status(404).json({ error: 'Product not found.' })
     }
 
-    return res.json({ product: flattenProduct(data) })
+    const product = flattenProduct(data)
+
+    let variants = []
+    try {
+      const { data: vs, error: vErr } = await supabase
+        .from('product_variants')
+        .select(VARIANT_SELECT)
+        .eq('product_id', id)
+      if (!vErr) {
+        variants = sortVariants((vs || []).map(toVariant))
+      }
+    } catch (varErr) {
+      console.error('getAdminProductById fetchVariants error:', varErr)
+    }
+
+    const dv = defaultVariant(variants)
+    const price = variants.length > 0 ? dv.price : product.price
+    const stock = variants.length > 0 ? dv.stock : product.stock
+
+    return res.json({ product: { ...product, price, stock, variants } })
   } catch (err) {
     console.error('getAdminProductById error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -189,7 +314,16 @@ async function getAdminProducts(req, res) {
       return res.status(500).json({ error: 'Failed to fetch products.' })
     }
 
-    return res.json({ products: data.map(flattenProduct) })
+    const rows = data.map(flattenProduct)
+
+    let variantsByProduct = {}
+    try {
+      variantsByProduct = await fetchVariantsByProducts(rows.map((r) => r.id))
+    } catch (varErr) {
+      console.error('getAdminProducts fetchVariants error:', varErr)
+    }
+
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getAdminProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -208,11 +342,41 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '')    // trim hyphens
 }
 
+// Normalize an incoming variants array into rows for product_variants.
+function normalizeVariants(variants) {
+  if (!Array.isArray(variants) || variants.length === 0) return []
+  return variants.map((v) => ({
+    quantity_value: v.quantity_value ?? 0,
+    quantity_unit: v.quantity_unit ?? 'ML',
+    display_label: v.display_label ?? '',
+    price: v.price,
+    stock: v.stock ?? 0,
+    is_default: v.is_default ?? false,
+  }))
+}
+
+// Insert variants for a product. Returns the sorted, inserted variant rows.
+async function insertVariants(productId, variants) {
+  const rows = normalizeVariants(variants)
+  if (rows.length === 0) return []
+
+  const payload = rows.map((r) => ({ ...r, product_id: productId }))
+
+  const { data, error } = await supabase
+    .from('product_variants')
+    .insert(payload)
+    .select(VARIANT_SELECT)
+
+  if (error) throw error
+
+  return sortVariants((data || []).map(toVariant))
+}
+
 // POST /api/admin/products
 // Protected. Creates a product. image = Cloudinary URL already uploaded.
 async function createProduct(req, res) {
   try {
-    const { name, description, price, stock, category_id, brand_id, image, is_active } = req.body
+    const { name, description, price, stock, category_id, brand_id, image, is_active, variants } = req.body
 
     if (!name || price === undefined || price === null) {
       return res.status(400).json({ error: 'name and price are required.' })
@@ -253,7 +417,23 @@ async function createProduct(req, res) {
       return res.status(500).json({ error: 'Failed to create product.' })
     }
 
-    return res.status(201).json({ product: flattenProduct(data) })
+    // Insert variants (if any) after the product exists.
+    let inserted = []
+    if (Array.isArray(variants) && variants.length > 0) {
+      try {
+        inserted = await insertVariants(data.id, variants)
+      } catch (varErr) {
+        console.error('createProduct insertVariants error:', varErr)
+        return res.status(500).json({ error: 'Failed to create product variants.' })
+      }
+    }
+
+    const product = flattenProduct(data)
+    const dv = defaultVariant(inserted)
+    const pPrice = inserted.length > 0 ? dv.price : product.price
+    const pStock = inserted.length > 0 ? dv.stock : product.stock
+
+    return res.status(201).json({ product: { ...product, price: pPrice, stock: pStock, variants: inserted } })
   } catch (err) {
     console.error('createProduct error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -265,7 +445,7 @@ async function createProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const { id } = req.params
-    const { name, description, price, stock, category_id, brand_id, image, is_active } = req.body
+    const { name, description, price, stock, category_id, brand_id, image, is_active, variants } = req.body
 
     // If the category is being updated to "Attar", brand is required
     if (category_id !== undefined) {
@@ -308,7 +488,31 @@ async function updateProduct(req, res) {
       return res.status(404).json({ error: 'Product not found.' })
     }
 
-    return res.json({ product: flattenProduct(data) })
+    // If variants were provided, replace the old set with the new one.
+    let inserted = []
+    if (Array.isArray(variants)) {
+      try {
+        const { error: delError } = await supabase
+          .from('product_variants')
+          .delete()
+          .eq('product_id', id)
+        if (delError) throw delError
+
+        if (variants.length > 0) {
+          inserted = await insertVariants(id, variants)
+        }
+      } catch (varErr) {
+        console.error('updateProduct variants error:', varErr)
+        return res.status(500).json({ error: 'Failed to update product variants.' })
+      }
+    }
+
+    const product = flattenProduct(data)
+    const dv = defaultVariant(inserted)
+    const pPrice = inserted.length > 0 ? dv.price : product.price
+    const pStock = inserted.length > 0 ? dv.stock : product.stock
+
+    return res.json({ product: { ...product, price: pPrice, stock: pStock, variants: inserted } })
   } catch (err) {
     console.error('updateProduct error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -316,7 +520,7 @@ async function updateProduct(req, res) {
 }
 
 // DELETE /api/admin/products/:id
-// Protected. Hard delete.
+// Protected. Hard delete. Variants are removed automatically via ON DELETE CASCADE.
 async function deleteProduct(req, res) {
   try {
     const { id } = req.params

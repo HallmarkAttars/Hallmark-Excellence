@@ -21,6 +21,13 @@
 }
 .cart-item-image { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius); }
 .cart-item-info h3 { font-size: 0.98rem; margin: 0; }
+.cart-item-variant {
+  color: var(--gold-deep);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin: 2px 0 0;
+}
 .cart-item-price { color: var(--charcoal-soft); font-size: 0.85rem; margin: 0; }
 
 .cart-item-qty { display: flex; align-items: center; gap: 10px; }

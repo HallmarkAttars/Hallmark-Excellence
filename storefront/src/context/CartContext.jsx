@@ -19,32 +19,57 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  const addItem = useCallback((product, qty = 1) => {
+  const addItem = useCallback((product, qty = 1, variant = null) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id)
-      if (existing) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i))
+      // Items are keyed by product id + variant id so quantity variants
+      // (e.g. 3 ML vs 12 ML) are treated as separate cart lines.
+      const key = variant ? `${product.id}-${variant.variant_id}` : `${product.id}-`
+      const existing = prev.find((i) => i._key === key)
+
+      // When a variant is present, store the complete variant info so the
+      // cart can display labels/prices without a further API request.
+      // The price always comes from the selected variant when one exists.
+      const basePrice = variant ? Number(variant.price) : Number(product.price)
+      const newItem = {
+        id: product.id,
+        _key: key,
+        name: product.name,
+        price: basePrice,
+        image: product.image,
+        qty,
+        ...(variant
+          ? {
+              variant_id: variant.variant_id,
+              variant_label: variant.variant_label,
+              quantity_value: variant.quantity_value,
+              quantity_unit: variant.quantity_unit,
+              stock: variant.stock,
+            }
+          : {}),
       }
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          price: Number(product.price),
-          image: product.image,
-          qty,
-        },
-      ]
+
+      if (existing) {
+        const combined = Math.max(1, existing.qty + qty)
+        // Respect the selected variant's stock limit when applicable.
+        const capped =
+          variant && variant.stock != null ? Math.min(combined, variant.stock) : combined
+        return prev.map((i) => (i._key === key ? { ...i, qty: capped } : i))
+      }
+      return [...prev, newItem]
     })
   }, [])
 
-  const removeItem = useCallback((id) => {
-    setItems((prev) => prev.filter((i) => i.id !== id))
+  const removeItem = useCallback((key) => {
+    setItems((prev) => prev.filter((i) => i._key !== key))
   }, [])
 
-  const updateQty = useCallback((id, qty) => {
+  const updateQty = useCallback((key, qty) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+      prev.map((i) =>
+        i._key === key
+          ? { ...i, qty: i.stock != null ? Math.min(Math.max(1, qty), i.stock) : Math.max(1, qty) }
+          : i
+      )
     )
   }, [])
 
@@ -63,3 +88,4 @@ export function useCart() {
   if (!ctx) throw new Error('useCart must be used within a CartProvider')
   return ctx
 }
+
