@@ -1,3 +1,7 @@
+/* ====================================================
+   Shop Page — Luxury Filter Drawer UI (Row style)
+   ==================================================== */
+
 .shop-layout {
   display: grid;
   gap: 32px;
@@ -5,72 +9,236 @@
   grid-template-columns: 1fr;
 }
 
-.shop-filter-toggle { display: inline-flex; margin-bottom: 8px; width: fit-content; }
-
-.shop-filters {
-  display: none;
-  flex-direction: column;
-  gap: 20px;
-  background: var(--white);
-  padding: 20px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
-  height: fit-content;
+/* --- Top Bar --- */
+.shop-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.shop-filters.is-open { display: flex; }
 
-.shop-filter-group { display: flex; flex-direction: column; gap: 6px; }
-.shop-filter-group label {
-  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--charcoal-soft);
-}
-.shop-filter-group select {
-  padding: 10px 12px;
-  border: 1px solid rgba(36,31,25,0.15);
-  border-radius: var(--radius);
-  background: var(--cream);
+.shop-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 22px;
+  background: #000000;
+  color: #fff;
+  border: none;
+  border-radius: 0;
   font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+.shop-filter-btn:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+.shop-filter-btn:focus-visible {
+  outline: 2px solid #C8A96B;
+  outline-offset: 2px;
 }
 
-@media (min-width: 900px) {
-  .shop-layout { grid-template-columns: 240px minmax(0, 1fr); }
-  .shop-filter-toggle { display: none; }
-  .shop-filters { display: flex; }
+/* --- Backdrop --- */
+.filter-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: filterBackdropFade 0.3s ease;
+}
+@keyframes filterBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-  /* Shop-only product grid sizing (prevents global .grid-products from producing tiny columns) */
-  .shop-results {
-    width: 100%;
-    min-width: 0;
-  }
+/* --- Drawer --- */
+.filter-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 320px;
+  max-width: 85vw;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream, #F8F5F2);
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.25);
+  transform: translateX(-110%);
+  transition: transform 0.3s ease;
+  visibility: hidden;
+}
+.filter-drawer.is-open {
+  transform: translateX(0);
+  visibility: visible;
+}
 
+/* --- Drawer Header --- */
+.filter-drawer-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  background: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.filter-drawer-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0;
+  font-weight: 500;
+}
+.filter-drawer-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.filter-drawer-close:hover {
+  opacity: 0.75;
+  transform: rotate(90deg);
+}
+
+/* --- Drawer Body --- */
+.filter-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* --- Filter Card (section) --- */
+.filter-card {
+  background: #fff;
+  border: 1px solid #E6E0D7;
+  padding: 20px;
+  border-radius: 0;
+}
+.filter-card-title {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #000000;
+  margin: 0 0 16px;
+  font-weight: 700;
+}
+
+/* --- Filter Row List --- */
+.filter-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #eee;
+  padding: 13px 12px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: #222222;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.filter-row:last-child {
+  border-bottom: none;
+}
+.filter-row:hover {
+  background: #F8F5F2;
+  color: #070707;
+}
+.filter-row:focus-visible {
+  outline: 2px solid #C8A96B;
+  outline-offset: -2px;
+}
+
+/* Active row */
+.filter-row.is-active {
+  background: #000000;
+  color: #fff;
+  border-left: 4px solid #C8A96B;
+  font-weight: 600;
+}
+
+/* --- Results --- */
+.shop-results {
+  width: 100%;
+  min-width: 0;
+}
+
+.shop-layout .grid-products {
+  width: 100%;
+  max-width: none;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
+}
+
+.shop-layout .grid-products > * {
+  min-width: 0;
+  width: 100%;
+}
+
+.shop-layout .grid-products .product-card {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+/* ====================================================
+   Responsive
+   ==================================================== */
+
+/* Tablet */
+@media (max-width: 1199px) {
   .shop-layout .grid-products {
-    width: 100%;
-    max-width: none;
-    display: grid;
-    gap: 24px;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+  }
+}
 
-    /* match required desktop columns */
-    grid-template-columns: repeat(4, minmax(260px, 1fr));
+@media (max-width: 899px) {
+  .shop-layout .grid-products {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 1023px) {
+  .filter-drawer {
+    width: 300px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .filter-drawer {
+    width: 85vw;
+    max-width: 320px;
   }
 
-  /* allow 3/2 columns at smaller desktop widths without changing mobile/tablet layout */
-  @media (max-width: 1199px) {
-    .shop-layout .grid-products { grid-template-columns: repeat(3, minmax(240px, 1fr)); }
-  }
-
-  @media (max-width: 899px) {
-    .shop-layout .grid-products { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
-  }
-
-  .shop-layout .grid-products > * {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .shop-layout .grid-products .product-card {
-    width: 100%;
-    max-width: none;
-    min-width: 0;
+  .filter-row {
+    padding: 14px 12px;
   }
 }
 
