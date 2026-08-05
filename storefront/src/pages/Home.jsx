@@ -21,9 +21,11 @@ export default function Home() {
       {brands.length > 0 && (
         <section className="brand-section">
           <h2 className="brand-section-heading">OUR BRANDS</h2>
-          {brands.map((brand) => (
-            <BrandBanner key={brand.id} brand={brand} />
-          ))}
+          <div className="brand-grid">
+            {brands.map((brand) => (
+              <BrandBanner key={brand.id} brand={brand} />
+            ))}
+          </div>
         </section>
       )}
       <WhyChooseUs />

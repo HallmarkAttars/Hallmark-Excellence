@@ -8,17 +8,18 @@ const IMAGES = {
 
 export default function BrandBanner({ brand }) {
   return (
-    <article
+    <Link
+      to={`/brand/${brand.slug}`}
       className="brand-card"
       style={{ backgroundImage: `url(${IMAGES[brand.slug] || IMAGES.arees})` }}
+      aria-label={`Shop ${brand.name} collection`}
     >
       <div className="brand-card-overlay" />
       <div className="brand-card-content">
-        <h3 className="brand-card-title">{brand.name} Product</h3>
-        <Link to={`/brand/${brand.slug}`} className="brand-card-btn">
-          Shop
-        </Link>
+        {brand.tagline && <p className="brand-card-subtitle">{brand.tagline}</p>}
+        <h3 className="brand-card-title">{brand.name}</h3>
+        <span className="brand-card-btn">Shop Now</span>
       </div>
-    </article>
+    </Link>
   )
 }
