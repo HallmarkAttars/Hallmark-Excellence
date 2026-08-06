@@ -37,13 +37,37 @@ export default function Contact() {
     setSubmitting(true)
     try {
       if (isCheckout) {
+        // Build a complete snapshot of every item so orders remain
+        // historically accurate even if the product/variant is edited later.
+        const items = checkout.checkoutItems.map((item) => {
+          const unit_price = Number(item.selected_price ?? item.price ?? 0)
+          const quantity = Number(item.quantity ?? item.qty ?? 1)
+          const hasVariant = item.variant_id != null
+          return {
+            product_id: item.product_id ?? item.id,
+            product_name: item.name,
+            image: item.image,
+            quantity,
+            unit_price,
+            subtotal: unit_price * quantity,
+            ...(hasVariant
+              ? {
+                  variant_id: item.variant_id,
+                  variant_label: item.variant_label,
+                  quantity_value: item.quantity_value,
+                  quantity_unit: item.quantity_unit,
+                }
+              : {}),
+          }
+        })
+
         const payload = {
           name: form.name,
           phone: form.phone,
           address: form.address,
           pincode: form.pincode,
           message: form.message,
-          items: checkout.checkoutItems,
+          items,
           total: checkout.total,
         }
         const res = await submitOrder(payload)
@@ -90,12 +114,25 @@ export default function Contact() {
               {isCheckout && (
                 <div className="order-summary">
                   <h3>Order Summary</h3>
-                  {checkout.checkoutItems.map((item) => (
-                    <div key={item.id} className="order-summary-row">
-                      <span>{item.name} × {item.qty}</span>
-                      <span>₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
-                    </div>
-                  ))}
+                  {checkout.checkoutItems.map((item) => {
+                    const unitPrice = Number(item.selected_price ?? item.price ?? 0)
+                    const quantity = Number(item.quantity ?? item.qty ?? 1)
+                    const label = item.variant_label
+                      || (item.quantity_value != null && item.quantity_unit
+                          ? `${item.quantity_value} ${item.quantity_unit}`
+                          : '')
+                    return (
+                      <div key={item.product_id ?? item.id} className="order-summary-item">
+                        <div className="order-summary-item-info">
+                          <span className="order-summary-name">{item.name}</span>
+                          {label && <span className="order-summary-variant">{label}</span>}
+                        </div>
+                        <div className="order-summary-item-right">
+                          <span>₹{(unitPrice * quantity).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
                   <div className="order-summary-row order-summary-total">
                     <span>Total</span>
                     <span>₹{checkout.total.toLocaleString('en-IN')}</span>

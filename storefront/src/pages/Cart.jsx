@@ -25,31 +25,40 @@ export default function Cart() {
       <h1>Your Cart</h1>
 
       <div className="cart-items">
-{items.map((item) => (
-          <div key={item._key} className="cart-item">
-            <img src={item.image} alt={item.name} className="cart-item-image" />
-            <div className="cart-item-info">
-              <h3>{item.name}</h3>
-              {item.variant_label && <p className="cart-item-variant">{item.variant_label}</p>}
-              <p className="cart-item-price">₹{Number(item.price).toLocaleString('en-IN')}</p>
+        {items.map((item) => {
+          const key = item.variant_id != null
+            ? `${item.product_id}-v${item.variant_id}`
+            : `${item.product_id}-`
+          const label = item.variant_label
+            || (item.quantity_value != null && item.quantity_unit
+                ? `${item.quantity_value} ${item.quantity_unit}`
+                : '')
+          return (
+            <div key={key} className="cart-item">
+              <img src={item.image} alt={item.name} className="cart-item-image" />
+              <div className="cart-item-info">
+                <h3>{item.name}</h3>
+                {label && <p className="cart-item-variant">{label}</p>}
+                <p className="cart-item-price">₹{Number(item.selected_price).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="cart-item-qty">
+                <button onClick={() => updateQty(key, item.quantity - 1)} aria-label={`Decrease quantity of ${item.name}`}>−</button>
+                <span>{item.quantity}</span>
+                <button onClick={() => updateQty(key, item.quantity + 1)} aria-label={`Increase quantity of ${item.name}`}>+</button>
+              </div>
+              <p className="cart-item-subtotal">₹{(Number(item.selected_price) * item.quantity).toLocaleString('en-IN')}</p>
+              <button className="cart-item-remove" onClick={() => removeItem(key)} aria-label={`Remove ${item.name} from cart`}>
+                &times;
+              </button>
             </div>
-            <div className="cart-item-qty">
-              <button onClick={() => updateQty(item._key, item.qty - 1)} aria-label={`Decrease quantity of ${item.name}`}>−</button>
-              <span>{item.qty}</span>
-              <button onClick={() => updateQty(item._key, item.qty + 1)} aria-label={`Increase quantity of ${item.name}`}>+</button>
-            </div>
-            <p className="cart-item-subtotal">₹{(Number(item.price) * item.qty).toLocaleString('en-IN')}</p>
-            <button className="cart-item-remove" onClick={() => removeItem(item._key)} aria-label={`Remove ${item.name} from cart`}>
-              &times;
-            </button>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="cart-summary">
         <div className="cart-summary-row">
           <span>Total</span>
-          <span>₹{total.toLocaleString('en-IN')}</span>
+          <span>₹{Number(total).toLocaleString('en-IN')}</span>
         </div>
         <button className="btn btn-primary cart-checkout-btn" onClick={handleCheckout}>
           Confirm Order

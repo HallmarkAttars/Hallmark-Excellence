@@ -1,41 +1,24 @@
-# TODO: Implement Product Variants in Admin Panel
+# TODO: Full Product Variant support in Checkout, Orders, Admin Orders, Order History
 
-## Steps
-- [x] Analyze current ProductForm, mockApi, backend variants support
-- [x] Confirm plan with user (refinements applied)
+## Goal
+Persist a complete snapshot of every purchased item inside `orders.items` (JSONB) and display it across checkout, admin orders, and order history. Never fetch current product/variant data for completed orders — always use the saved snapshot. Legacy orders (no variants) keep working.
 
-## ProductForm.jsx
-- [x] Add `variants` state + UNITS constants
-- [x] Add addVariant / updateVariant / removeVariant / default helpers
-- [x] Searchable Unit combobox (preset + custom typing)
-- [x] Load existing variants in edit mode
-- [x] Validation (≥1 variant, exactly 1 default, no dup quantity+unit, price>0, stock>=0)
-- [x] Disable Price field when variants exist + helper message
-- [x] Send `variants[]` in payload on save
+## Checkout (storefront/src/pages/Contact.jsx)
+- [x] Map each cart item to snapshot shape: product_id, product_name, image, quantity, unit_price, subtotal, variant_id, variant_label, quantity_value, quantity_unit
+- [x] unit_price = selected_price (variant price if variant, else product.price); subtotal = unit_price × quantity
+- [x] Order Summary UI shows variant label under product name; use product_name/quantity/unit_price
 
-## ProductForm.css
-- [x] Style variant section, cards, combobox, radio, delete trash
+## Backend (server/src/controllers/orders.controller.js)
+- [x] Persist normalized items into `orders.items` jsonb column (complete snapshot)
+- [x] Keep `notes` for backward compatibility
+- [x] Keep customer info in direct columns + notes
 
-## Verify
-- [x] Confirm HMR / build works (vite build succeeded)
-
-# Storefront Product Variants on Product Details Page
-
-## ProductDetail.jsx
-- [x] Add selectedVariant state (default or first variant)
-- [x] "Select Quantity" section with variant buttons
-- [x] Price from selectedVariant.price (never product.price if variants exist)
-- [x] Stock from selectedVariant.stock (In Stock / Only X left / Out of Stock)
-- [x] Disable Add to Cart at stock 0; prevent qty > stock
-- [x] Add to Cart sends complete variant info
-
-## CartContext.jsx
-- [x] Store complete variant info in cart item
-- [x] Subtotal uses selected variant price
-
-## ProductDetail.css
-- [x] Style variant buttons (#5C0634 active, light maroon hover)
-- [x] Responsive wrapping (2-3 mobile, 3-6 desktop, 12px gap)
+## Admin Orders (admin/src/pages/Orders.jsx)
+- [x] Show image, product name, variant label, unit price, quantity, subtotal per item
+- [x] Read from saved snapshot (product_name, variant_label, unit_price, quantity, subtotal)
+- [x] Legacy fallback (name, qty, price); hide variant line if variant_label missing
 
 ## Verify
-- [x] Build compiles (vite build succeeded)
+- [x] Storefront build passes (68 modules, 4.91s)
+- [x] Admin build passes (63 modules, 4.96s)
+- [x] Dev servers healthy (storefront :5173, admin :5174, backend :5000)

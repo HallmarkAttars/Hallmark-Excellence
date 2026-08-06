@@ -92,6 +92,33 @@ async function createOrder(req, res) {
     // - address_id references addresses(id) — using a placeholder address
     // - Customer details are stored in the notes JSONB column
     // - payment_status must be one of the check constraint values ('Pending', 'Paid', etc.)
+// Normalize the incoming items into a durable snapshot. Each item
+    // carries the full variant info so orders stay historically accurate
+    // even if the product/variant is edited (or deleted) later.
+    const normalizedItems = (Array.isArray(items) ? items : []).map((item) => {
+      const unit_price = Number(item.unit_price ?? item.selected_price ?? item.price ?? 0)
+      const quantity = Number(item.quantity ?? item.qty ?? 1)
+      const hasVariant = item.variant_id != null
+      return {
+        product_id: item.product_id ?? item.id,
+        product_name: item.name ?? item.product_name,
+        image: item.image,
+        quantity,
+        unit_price,
+        subtotal: unit_price * quantity,
+        ...(hasVariant
+          ? {
+              variant_id: item.variant_id,
+              variant_label: item.variant_label,
+              quantity_value: item.quantity_value,
+              quantity_unit: item.quantity_unit,
+            }
+          : {}),
+      }
+    })
+
+    // Persist the snapshot into the `items` jsonb column (the source of
+    // truth for order history), and keep `notes` for backward compatibility.
     const insertPayload = {
       order_number: orderNumber,
       user_id: DEFAULT_USER_ID,
@@ -101,13 +128,18 @@ async function createOrder(req, res) {
       payment_method: 'Cash On Delivery',
       payment_status: 'Pending',
       order_status: 'Pending',
+      items: normalizedItems,
+      customer_name,
+      phone,
+      address,
+      pincode,
       notes: JSON.stringify({
         customer_name,
         phone,
         address,
         pincode,
         message: message ?? '',
-        items,
+        items: normalizedItems,
         total_amount: Number(total_amount),
       }),
     }

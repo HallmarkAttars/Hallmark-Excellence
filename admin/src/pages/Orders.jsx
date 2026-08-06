@@ -70,9 +70,37 @@ export default function Orders() {
                             </div>
                             <div>
                               <h4>Items</h4>
-                              {o.items.map((item, i) => (
-                                <p key={i}>{item.name} × {item.qty} — ₹{Number(item.price * item.qty).toLocaleString('en-IN')}</p>
-                              ))}
+                              {o.items.map((item, i) => {
+                                const name = item.product_name ?? item.name ?? 'Item'
+                                const unitPrice = Number(item.unit_price ?? item.price ?? 0)
+                                const qty = Number(item.quantity ?? item.qty ?? 1)
+                                const subtotal = Number(item.subtotal ?? unitPrice * qty)
+                                const label = item.variant_label
+                                  || (item.quantity_value != null && item.quantity_unit
+                                      ? `${item.quantity_value} ${item.quantity_unit}`
+                                      : '')
+                                return (
+                                  <div key={i} className="orders-item">
+                                    {item.image && (
+                                      <img
+                                        src={item.image}
+                                        alt={name}
+                                        className="orders-item-image"
+                                      />
+                                    )}
+                                    <div className="orders-item-info">
+                                      <span className="orders-item-name">{name}</span>
+                                      {label && <span className="orders-item-variant">{label}</span>}
+                                      <span className="orders-item-meta">
+                                        ₹{unitPrice.toLocaleString('en-IN')} × {qty}
+                                      </span>
+                                    </div>
+                                    <span className="orders-item-subtotal">
+                                      ₹{subtotal.toLocaleString('en-IN')}
+                                    </span>
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         </td>
