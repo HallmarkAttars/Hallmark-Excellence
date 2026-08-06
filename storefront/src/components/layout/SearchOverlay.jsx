@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { getProducts } from '../../services/mockApi'
+import ProductCard from '../product/ProductCard'
 import './SearchOverlay.css'
 
 export default function SearchOverlay({ open, onClose }) {
@@ -52,8 +52,6 @@ export default function SearchOverlay({ open, onClose }) {
       .slice(0, 8)
   }, [query, open, ready])
 
-  const formatPrice = (price) => `₹${Number(price).toLocaleString('en-IN')}`
-
   return (
     <div className={`search-overlay ${open ? 'is-open' : ''}`} role="dialog" aria-modal="true" aria-label="Search products" aria-hidden={!open}>
       <div className="search-overlay-head">
@@ -93,21 +91,11 @@ export default function SearchOverlay({ open, onClose }) {
             {query.trim() ? 'No products match your search.' : 'Start typing to find your scent.'}
           </p>
         ) : (
-          <ul className="search-overlay-list">
+          <div className="search-overlay-grid">
             {results.map((p) => (
-              <li key={p.id}>
-                <Link to={`/product/${p.id}`} className="search-result" onClick={onClose}>
-                  <span className="search-result-image">
-                    {p.image && <img src={p.image} alt="" loading="lazy" />}
-                  </span>
-                  <span className="search-result-info">
-                    <span className="search-result-name">{p.name}</span>
-                    <span className="search-result-price">{formatPrice(p.price)}</span>
-                  </span>
-                </Link>
-              </li>
+              <ProductCard key={p.id} product={p} onNavigate={onClose} />
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>

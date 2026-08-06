@@ -3,7 +3,13 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
 import './ProductForm.css'
 
-const EMPTY = { name: '', description: '', price: '', stock: '', category_id: '', brand_id: '' }
+const EMPTY = {
+  name: '', description: '', price: '', stock: '',
+  compare_at_price: '', bulk_price: '', bulk_min_qty: '',
+  rating: '', review_count: '',
+  is_featured: false,
+  category_id: '', brand_id: '',
+}
 
 // Preset units for the searchable dropdown. Admin can also type a custom one.
 const UNIT_OPTIONS = ['ML', 'PC', 'GM', 'KG', 'LTR', 'Bottle', 'Box', 'Pack', 'Piece']
@@ -37,6 +43,12 @@ export default function ProductForm() {
           setForm({
             name: p.name, description: p.description ?? '', price: p.price,
             stock: p.stock, category_id: p.category_id ?? '', brand_id: p.brand_id ?? '',
+            compare_at_price: p.compare_at_price ?? '',
+            bulk_price: p.bulk_price ?? '',
+            bulk_min_qty: p.bulk_min_qty ?? '',
+            rating: p.rating ?? '',
+            review_count: p.review_count ?? '',
+            is_featured: Boolean(p.is_featured),
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
@@ -221,6 +233,12 @@ export default function ProductForm() {
         name: form.name,
         description: form.description,
         price: basePrice,
+        compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
+        bulk_price: form.bulk_price ? Number(form.bulk_price) : null,
+        bulk_min_qty: form.bulk_min_qty ? Number(form.bulk_min_qty) : null,
+        rating: form.rating ? Number(form.rating) : null,
+        review_count: form.review_count ? Number(form.review_count) : null,
+        is_featured: Boolean(form.is_featured),
         stock: baseStock,
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
@@ -281,6 +299,99 @@ export default function ProductForm() {
           <div className="form-field">
             <label htmlFor="stock">Stock</label>
             <input id="stock" name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required={!hasVariants} />
+          </div>
+        </div>
+
+        <div className="form-field featured-field">
+          <label className="featured-toggle">
+            <input
+              type="checkbox"
+              name="is_featured"
+              checked={form.is_featured}
+              onChange={(e) => setForm((f) => ({ ...f, is_featured: e.target.checked }))}
+            />
+            <span className="featured-switch" aria-hidden="true" />
+            <span className="featured-toggle-text">
+              Featured on Homepage
+              <small>Shows this product in the “Featured Products” section on the storefront.</small>
+            </span>
+          </label>
+        </div>
+
+        {/* -------- Optional pricing: MRP + bulk (shown on the storefront only when set) -------- */}
+        <div className="form-row form-row-2">
+          <div className="form-field">
+            <label htmlFor="compare_at_price">MRP / Original Price (₹)</label>
+            <input
+              id="compare_at_price"
+              name="compare_at_price"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Optional"
+              value={form.compare_at_price}
+              onChange={handleChange}
+            />
+            <small className="field-example">Shown struck-through when higher than the selling price.</small>
+          </div>
+          <div className="form-field">
+            <label htmlFor="bulk_price">Bulk Price (₹)</label>
+            <input
+              id="bulk_price"
+              name="bulk_price"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Optional"
+              value={form.bulk_price}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+        <div className="form-field">
+          <label htmlFor="bulk_min_qty">Bulk Minimum Quantity</label>
+          <input
+            id="bulk_min_qty"
+            name="bulk_min_qty"
+            type="number"
+            min="1"
+            placeholder="e.g. 91"
+            value={form.bulk_min_qty}
+            onChange={handleChange}
+          />
+          <small className="field-example">Displayed as “Bulk: ₹42 (91+)” on the storefront.</small>
+        </div>
+
+        {/* -------- Ratings (shown on the storefront cards only when set) -------- */}
+        <div className="form-row form-row-2">
+          <div className="form-field">
+            <label htmlFor="rating">Rating (0–5)</label>
+            <input
+              id="rating"
+              name="rating"
+              type="number"
+              min="0"
+              max="5"
+              step="0.1"
+              placeholder="e.g. 4.8"
+              value={form.rating}
+              onChange={handleChange}
+            />
+            <small className="field-example">Displayed as “★ 4.8” on the storefront cards.</small>
+          </div>
+          <div className="form-field">
+            <label htmlFor="review_count">Review Count</label>
+            <input
+              id="review_count"
+              name="review_count"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 81"
+              value={form.review_count}
+              onChange={handleChange}
+            />
+            <small className="field-example">Displayed as “| (81)” next to the rating.</small>
           </div>
         </div>
 

@@ -1,5 +1,9 @@
 /* ============================================================
    Hero — wide editorial composition
+   NOTE: .hero-content does NOT use the global .container class.
+   It carries its own width / max-width / margin / padding so the
+   global `.container { padding }` rule can never override it in
+   the cascade (index.css is injected after component CSS).
    ============================================================ */
 
 .hero {
@@ -35,20 +39,18 @@
 .hero-content {
   position: relative;
   z-index: 1;
-  padding-top: 56px;
-  padding-bottom: 56px;
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 56px 32px; /* mirrors .container desktop gutters + 56px vertical */
   color: var(--cream);
-}
-
-.hero-eyebrow {
-  color: var(--gold-light);
-  margin-bottom: 18px;
+  box-sizing: border-box;
 }
 
 .hero-title {
   color: var(--cream);
-  font-size: clamp(3.375rem, 5vw, 4.75rem); /* desktop 54–76px */
-  line-height: 1.02;
+  font-size: clamp(3rem, 4.5vw, 4rem); /* desktop 48–64px */
+  line-height: 1.05;
   font-weight: 500;
   letter-spacing: -0.01em;
   margin: 0 0 22px;
@@ -75,53 +77,90 @@
 /* ---------- Tablet ---------- */
 @media (min-width: 768px) and (max-width: 1023px) {
   .hero { min-height: 560px; }
-  .hero-title { font-size: clamp(2.75rem, 5.5vw, 3.6rem); }
+  .hero-title { font-size: clamp(2.4rem, 4.4vw, 2.75rem); } /* 34–44px */
+  .hero-content { padding: 56px 24px; } /* mirrors .container tablet gutters */
 }
 
-/* ---------- Mobile ---------- */
+/* ---------- Mobile ----------
+   Content-driven hero: height grows from content — no fixed height,
+   no vh units, no vertical centering, no absolute positioning.
+   Both CTAs sit in normal document flow with safe space below. */
 @media (max-width: 767px) {
   .hero {
-    min-height: 520px;
-    align-items: flex-end;
+    display: block;   /* normal flow — the hero grows to fit its content */
+    min-height: 0;    /* never taller or shorter than its content */
   }
-  .hero-overlay {
-    background: linear-gradient(
-      180deg,
-      rgba(20, 17, 13, 0.35) 0%,
-      rgba(20, 17, 13, 0.62) 45%,
-      rgba(20, 17, 13, 0.85) 100%
-    );
-  }
+
   .hero-content {
-    padding-top: 64px;
-    padding-bottom: 48px;
-  }
-  .hero-title {
-    font-size: clamp(2.4rem, 10vw, 3rem); /* 38–48px mobile */
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     max-width: none;
+    padding: clamp(48px, 10vw, 72px) 14px 28px; /* 28px safe space under the last CTA */
   }
-  .hero-tagline { font-size: 0.95rem; }
-  .hero-actions { flex-direction: column; align-items: stretch; }
-  .hero-btn { width: 100%; }
-}
 
-@media (max-width: 360px) {
-  .hero { min-height: 500px; }
-  .hero-title { font-size: clamp(2.35rem, 10vw, 2.5rem); }
-}
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(38px, 10vw, 48px);
+    font-weight: 500;
+    line-height: 1.05;
+    max-width: none;
+    margin: 0;
+  }
 
-/* ---------- Landscape phones ---------- */
-@media (max-height: 480px) and (orientation: landscape) {
-  .hero {
-    min-height: 100vh;
+  .hero-tagline {
+    margin: 22px 0 0;      /* natural spacing — no forced <br>, wraps freely */
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 340px;
+  }
+
+  /* CTAs: full-width column, both fully inside the hero */
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    margin-top: 26px;
+  }
+
+  .hero-btn {
+    width: 100%;
+    height: 46px;
+    min-height: 46px;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
-  .hero-content {
-    padding-top: 28px;
-    padding-bottom: 28px;
+
+  .hero-actions .btn-outline-light {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--white);
   }
-  .hero-title { font-size: clamp(2rem, 6vw, 2.6rem); margin-bottom: 14px; }
-  .hero-tagline { margin-bottom: 20px; }
+}
+
+/* ---------- Very small phones (≤360px): slightly tighter, never hidden ---------- */
+@media (max-width: 360px) {
+  .hero-title { font-size: clamp(36px, 10vw, 40px); }
+  .hero-tagline { font-size: 13.5px; }
+  .hero-content { padding-left: 12px; padding-right: 12px; }
+  .hero-btn { height: 44px; min-height: 44px; }
+}
+
+/* ---------- Landscape phones ----------
+   Content-driven like portrait — no vh units, so the hero can never
+   exceed the visible viewport on mobile browsers. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero { min-height: 0; }
+  .hero-content { padding-top: 24px; padding-bottom: 24px; }
+  .hero-title { font-size: clamp(1.75rem, 5vw, 2.2rem); margin-bottom: 12px; }
+  .hero-tagline { margin-bottom: 16px; }
   .hero-actions { flex-direction: row; }
-  .hero-btn { width: auto; }
+  .hero-btn { width: auto; height: 44px; min-height: 44px; padding: 0 28px; }
 }

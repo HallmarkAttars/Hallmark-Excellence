@@ -5,11 +5,41 @@ const supabase = require('../config/supabase')
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, stock,
+  id, name, description, price, compare_at_price, bulk_price, bulk_min_qty, rating, review_count, is_featured, stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
+
+// Fallback select for databases where the pricing migration
+// (migration_add_pricing_fields.sql — compare_at_price / bulk_price /
+// bulk_min_qty) has not been applied yet. is_featured is kept because the
+// column already exists in the production schema.
+const PRODUCT_SELECT_BASE = `
+  id, name, description, price, is_featured, stock,
+  category_id, brand_id, image, is_active, created_at,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
+// True when a PostgREST error means a column does not exist in the DB yet
+// (the pricing migration hasn't been applied). SELECTs report
+// "...does not exist", UPDATEs/INSERTs report "Could not find ... in the
+// schema cache".
+function isMissingColumnError(error) {
+  return Boolean(error && /does not exist|could not find/i.test(error.message))
+}
+
+// Runs a product query, retrying against the base select when the pricing
+// columns are missing. Lets the API work both before and after the pricing
+// migration is applied.
+async function selectProducts(build) {
+  let res = await build(PRODUCT_SELECT)
+  if (isMissingColumnError(res.error)) {
+    res = await build(PRODUCT_SELECT_BASE)
+  }
+  return res
+}
 
 const VARIANT_SELECT = `
   id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default
@@ -25,6 +55,25 @@ function defaultVariant(variants) {
 // Sort variants by quantity_value ascending.
 function sortVariants(variants) {
   return (variants || []).slice().sort((a, b) => Number(a.quantity_value) - Number(b.quantity_value))
+}
+
+// Optional columns that may not exist in every database until their
+// migration (migration_add_pricing_fields.sql / migration_add_ratings.sql)
+// is applied. These are stripped from writes on pre-migration databases so
+// admin saves keep working; the values simply stay dormant until the
+// columns exist.
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'bulk_price', 'bulk_min_qty', 'rating', 'review_count']
+
+// Runs an insert/update against the full payload, retrying without the
+// optional (migration-dependent) fields when their columns are missing.
+async function withOptionalFieldRetry(operation, payload, select, baseSelect) {
+  const res = await operation(payload, select)
+  if (isMissingColumnError(res.error)) {
+    const basePayload = { ...payload }
+    for (const key of OPTIONAL_FIELD_KEYS) delete basePayload[key]
+    return operation(basePayload, baseSelect)
+  }
+  return res
 }
 
 // Public-shaped variant object.
@@ -92,24 +141,26 @@ async function getProducts(req, res) {
   try {
     const { category_id, brand_id, search, sort } = req.query
 
-    let query = supabase
-      .from('products')
-      .select(PRODUCT_SELECT)
-      .eq('is_active', true)
+    const { data, error } = await selectProducts((select) => {
+      let q = supabase
+        .from('products')
+        .select(select)
+        .eq('is_active', true)
 
-    if (category_id) query = query.eq('category_id', category_id)
-    if (brand_id) query = query.eq('brand_id', brand_id)
-    if (search) query = query.ilike('name', `%${search}%`)
+      if (category_id) q = q.eq('category_id', category_id)
+      if (brand_id) q = q.eq('brand_id', brand_id)
+      if (search) q = q.ilike('name', `%${search}%`)
 
-    if (sort === 'price_asc') {
-      query = query.order('price', { ascending: true })
-    } else if (sort === 'price_desc') {
-      query = query.order('price', { ascending: false })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
+      if (sort === 'price_asc') {
+        q = q.order('price', { ascending: true })
+      } else if (sort === 'price_desc') {
+        q = q.order('price', { ascending: false })
+      } else {
+        q = q.order('created_at', { ascending: false })
+      }
 
-    const { data, error } = await query
+      return q
+    })
 
     if (error) {
       console.error('getProducts error:', error)
@@ -139,12 +190,14 @@ async function getProductById(req, res) {
   try {
     const { id } = req.params
 
-    const { data, error } = await supabase
-      .from('products')
-      .select(PRODUCT_SELECT)
-      .eq('id', id)
-      .eq('is_active', true)
-      .maybeSingle()
+    const { data, error } = await selectProducts((select) =>
+      supabase
+        .from('products')
+        .select(select)
+        .eq('id', id)
+        .eq('is_active', true)
+        .maybeSingle()
+    )
 
     if (error) {
       console.error('getProductById error:', error)
@@ -207,14 +260,16 @@ async function getRelatedProducts(req, res) {
 
     async function fetchRelated(column, value) {
       if (!value) return []
-      const { data, error } = await supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq(column, value)
-        .eq('is_active', true)
-        .neq('id', id)
-        .order('created_at', { ascending: false })
-        .limit(limit)
+      const { data, error } = await selectProducts((select) =>
+        supabase
+          .from('products')
+          .select(select)
+          .eq(column, value)
+          .eq('is_active', true)
+          .neq('id', id)
+          .order('created_at', { ascending: false })
+          .limit(limit)
+      )
       if (error) throw error
       return data
     }
@@ -226,13 +281,15 @@ async function getRelatedProducts(req, res) {
     }
 
     if (related.length === 0) {
-      const { data, error } = await supabase
-        .from('products')
-        .select(PRODUCT_SELECT)
-        .eq('is_active', true)
-        .neq('id', id)
-        .order('created_at', { ascending: false })
-        .limit(limit)
+      const { data, error } = await selectProducts((select) =>
+        supabase
+          .from('products')
+          .select(select)
+          .eq('is_active', true)
+          .neq('id', id)
+          .order('created_at', { ascending: false })
+          .limit(limit)
+      )
       if (error) throw error
       related = data
     }
@@ -259,11 +316,13 @@ async function getAdminProductById(req, res) {
   try {
     const { id } = req.params
 
-    const { data, error } = await supabase
-      .from('products')
-      .select(PRODUCT_SELECT)
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await selectProducts((select) =>
+      supabase
+        .from('products')
+        .select(select)
+        .eq('id', id)
+        .maybeSingle()
+    )
 
     if (error) {
       console.error('getAdminProductById error:', error)
@@ -304,10 +363,12 @@ async function getAdminProductById(req, res) {
 // Protected. ALL products (active + inactive), newest first.
 async function getAdminProducts(req, res) {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select(PRODUCT_SELECT)
-      .order('created_at', { ascending: false })
+    const { data, error } = await selectProducts((select) =>
+      supabase
+        .from('products')
+        .select(select)
+        .order('created_at', { ascending: false })
+    )
 
     if (error) {
       console.error('getAdminProducts error:', error)
@@ -376,7 +437,10 @@ async function insertVariants(productId, variants) {
 // Protected. Creates a product. image = Cloudinary URL already uploaded.
 async function createProduct(req, res) {
   try {
-    const { name, description, price, stock, category_id, brand_id, image, is_active, variants } = req.body
+    const {
+      name, description, price, compare_at_price, bulk_price, bulk_min_qty,
+      rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants
+    } = req.body
 
     if (!name || price === undefined || price === null) {
       return res.status(400).json({ error: 'name and price are required.' })
@@ -399,18 +463,25 @@ async function createProduct(req, res) {
       slug: slugify(name),
       description: description ?? null,
       price,
+      compare_at_price: compare_at_price ?? null,
+      bulk_price: bulk_price ?? null,
+      bulk_min_qty: bulk_min_qty ?? null,
+      rating: rating ?? null,
+      review_count: review_count ?? null,
       stock: stock ?? 0,
       category_id: category_id ?? null,
       brand_id: brand_id ?? null,
       image: image ?? null,
       is_active: is_active ?? true,
+      is_featured: is_featured ?? false,
     }
 
-    const { data, error } = await supabase
-      .from('products')
-      .insert(payload)
-      .select(PRODUCT_SELECT)
-      .single()
+    const { data, error } = await withOptionalFieldRetry(
+      (pl, select) => supabase.from('products').insert(pl).select(select).single(),
+      payload,
+      PRODUCT_SELECT,
+      PRODUCT_SELECT_BASE
+    )
 
     if (error) {
       console.error('createProduct error:', error)
@@ -445,7 +516,10 @@ async function createProduct(req, res) {
 async function updateProduct(req, res) {
   try {
     const { id } = req.params
-    const { name, description, price, stock, category_id, brand_id, image, is_active, variants } = req.body
+    const {
+      name, description, price, compare_at_price, bulk_price, bulk_min_qty,
+      rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants
+    } = req.body
 
     // If the category is being updated to "Attar", brand is required
     if (category_id !== undefined) {
@@ -466,18 +540,24 @@ async function updateProduct(req, res) {
     }
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
+    if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
+    if (bulk_price !== undefined) updates.bulk_price = bulk_price
+    if (bulk_min_qty !== undefined) updates.bulk_min_qty = bulk_min_qty
+    if (rating !== undefined) updates.rating = rating
+    if (review_count !== undefined) updates.review_count = review_count
     if (stock !== undefined) updates.stock = stock
     if (category_id !== undefined) updates.category_id = category_id
     if (brand_id !== undefined) updates.brand_id = brand_id
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
+    if (is_featured !== undefined) updates.is_featured = is_featured
 
-    const { data, error } = await supabase
-      .from('products')
-      .update(updates)
-      .eq('id', id)
-      .select(PRODUCT_SELECT)
-      .maybeSingle()
+    const { data, error } = await withOptionalFieldRetry(
+      (pl, select) => supabase.from('products').update(pl).eq('id', id).select(select).maybeSingle(),
+      updates,
+      PRODUCT_SELECT,
+      PRODUCT_SELECT_BASE
+    )
 
     if (error) {
       console.error('updateProduct error:', error)

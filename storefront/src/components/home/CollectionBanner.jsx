@@ -10,11 +10,13 @@ const COPY = {
   arees: {
     eyebrow: 'Arees Collection',
     lines: ['Timeless Scents', 'Pure Elegance'],
+    description: 'Discover timeless fragrances crafted with refined elegance.',
     button: 'Shop Now',
   },
   dahab: {
     eyebrow: 'Dahab Collection',
     lines: ['Rich Heritage', 'Lasting Impressions'],
+    description: 'A rich fragrance collection created to leave a lasting impression.',
     button: 'Shop Now',
   },
 }
@@ -39,7 +41,7 @@ export default function CollectionBanner({ brand }) {
               </span>
             ))}
           </h2>
-          {brand.tagline && <p className="collection-banner-tagline">{brand.tagline}</p>}
+          {copy.description && <p className="collection-banner-tagline">{copy.description}</p>}
           <Link to={`/brand/${brand.slug}`} className={`btn collection-banner-btn collection-banner-btn--${theme}`}>
             {copy.button}
             <span aria-hidden="true">→</span>

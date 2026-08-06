@@ -25,6 +25,11 @@ export default function Home() {
     .map((slug) => brands.find((b) => b.slug === slug))
     .filter(Boolean)
 
+  // Admin-controlled featured products — uses the same is_featured field the
+  // admin panel toggles. No extra API read: it reuses the products already
+  // fetched above.
+  const featuredProducts = products.filter((p) => p.is_featured === true)
+
   return (
     <div>
       <Hero />
@@ -34,9 +39,10 @@ export default function Home() {
           <CollectionBanner key={brand.id} brand={brand} />
         ))}
       </div>
-      <FeaturedProducts products={products} />
-      <WhyChooseUs />
+      <FeaturedProducts products={featuredProducts} />
       <SocialStrip products={products} />
+      {/* Why Choose Us closes the page — immediately before the footer */}
+      <WhyChooseUs />
     </div>
   )
 }

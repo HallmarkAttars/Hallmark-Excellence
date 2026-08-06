@@ -1,151 +1,161 @@
 /* ============================================================
-   Arees & Dahab collection banners — same dimensions, two moods
-   Arees: warm cream / soft blush · Dahab: deep brown / gold
+   Arees & Dahab collection cards — compact horizontal promos
+   IMAGE (left) | CONTENT (right) on every breakpoint.
+   Arees: warm cream / muted gold · Dahab: deep brown / gold.
+   Same dimensions, ratios, type hierarchy and CTA on both.
    ============================================================ */
 
+/* ---------- Section wrapper (one premium collection block) ---------- */
+.collections-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;                 /* 12–16px between the two cards */
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 12px;        /* mobile: 12px gutters, card = 100% − 24px */
+}
+
+/* ---------- Card ---------- */
 .collection-banner {
+  width: 100%;
+  min-height: 220px;         /* mobile 200–230px — never excessively tall */
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* The inner element carries the `.container` class — neutralize it so the
+   grid fills the card edge to edge. */
+.collection-banner .container {
+  max-width: none;
   padding: 0;
+  height: 100%;
 }
 
 .collection-banner-inner {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0;
+  grid-template-columns: 42% 58%;  /* IMAGE | CONTENT (image-first) */
+  height: 100%;
+}
+
+.collection-banner-image {
+  order: 1;
+  min-height: 220px;
+  background-size: cover;     /* object-fit: cover equivalent */
+  background-position: center;
 }
 
 .collection-banner-content {
+  order: 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: 48px 32px;
+  padding: 16px 18px;
+  min-width: 0;
 }
 
+/* ---------- Content hierarchy: label · 6px · title · 10px · desc · 14px · CTA ---------- */
 .collection-banner-eyebrow {
   font-family: var(--font-body);
-  font-size: 0.74rem; /* 11.8px — small label, uppercase gold */
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-size: 0.66rem;         /* 10.5px */
   font-weight: 600;
-  margin: 0 0 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
 }
 
 .collection-banner-title {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 5.5vw, 2.125rem); /* mobile 28–34px */
+  font-size: clamp(1.375rem, 6vw, 1.625rem); /* 22–26px mobile */
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: 0.01em;
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   display: flex;
   flex-direction: column;
-  text-wrap: balance;
 }
 
 .collection-banner-tagline {
-  font-size: 0.95rem;
-  line-height: 1.7;
-  margin: 0 0 30px;
-  max-width: 38ch;
+  font-family: var(--font-body);
+  font-size: 0.78rem;         /* 12.5px */
+  line-height: 1.45;
+  margin: 0 0 14px;
+  max-width: 30ch;
 }
 
-.collection-banner-btn { min-width: 180px; }
-
-.collection-banner-image {
-  background-size: cover;
-  background-position: center;
-  min-height: 260px;
+/* ---------- Compact CTA (never full width) ----------
+   Chained selector beats the global `.btn` regardless of CSS order. */
+.collection-banner .collection-banner-btn {
+  min-width: 0;
+  height: 38px;               /* 36–40px */
+  padding: 0 18px;            /* 16–20px */
+  font-size: 0.7rem;          /* 11.2px */
+  letter-spacing: 0.08em;
 }
 
-/* ---------- Arees — light cream ---------- */
+.collection-banner-btn > span { line-height: 1; }
+
+/* ---------- Arees — cream / elegant ---------- */
 .collection-banner--arees {
   background: var(--cream-deep);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  border: 1px solid var(--line);
 }
 .collection-banner--arees .collection-banner-eyebrow { color: var(--gold-deep); }
 .collection-banner--arees .collection-banner-title { color: var(--charcoal); }
 .collection-banner--arees .collection-banner-tagline { color: var(--charcoal-soft); }
 .collection-banner--arees .collection-banner-btn { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
 .collection-banner--arees .collection-banner-btn:hover { background: var(--ink); }
-.collection-banner--arees .collection-banner-image { border-top: 1px solid rgba(185, 146, 79, 0.3); }
 
-/* ---------- Dahab — dark luxury ---------- */
+/* ---------- Dahab — dark / gold ---------- */
 .collection-banner--dahab {
   background: var(--charcoal);
+  border: 1px solid rgba(201, 167, 108, 0.25);
 }
 .collection-banner--dahab .collection-banner-eyebrow { color: var(--gold-light); }
 .collection-banner--dahab .collection-banner-title { color: var(--cream); }
 .collection-banner--dahab .collection-banner-tagline { color: rgba(248, 243, 234, 0.72); }
 .collection-banner--dahab .collection-banner-btn { background: var(--gold); color: var(--ink); border-color: var(--gold); }
 .collection-banner--dahab .collection-banner-btn:hover { background: var(--gold-deep); color: var(--white); }
-.collection-banner--dahab .collection-banner-image { border-top: 1px solid rgba(201, 167, 108, 0.25); }
 
-/* ---------- Tablet ---------- */
+/* ---------- Tablet (768–1023px): 45/55, roomier ---------- */
 @media (min-width: 768px) {
-  .collection-banner-inner {
-    grid-template-columns: 1.05fr 1fr;
-    align-items: stretch;
-  }
-  .collection-banner-content { padding: 64px 48px; }
-  .collection-banner-image { min-height: 0; border-top: none; }
+  .collections-section { padding: 56px 24px; gap: 16px; }
+  .collection-banner,
+  .collection-banner-image { min-height: 240px; }
+  .collection-banner-inner { grid-template-columns: 45% 55%; }
+  .collection-banner-content { padding: 24px 28px; }
+  .collection-banner-title { font-size: clamp(1.5rem, 3vw, 1.75rem); }
+  .collection-banner-tagline { font-size: 0.82rem; }
 }
 
-/* ---------- Desktop (1024px+): compact banners in one centered section ----------
-   Below 1024px this wrapper is display: contents (inert) so the existing
-   mobile/tablet layout is untouched. */
-.collections-section { display: contents; }
-
+/* ---------- Desktop (1024–1199px): stacked cards, 1200–1280px container ---------- */
 @media (min-width: 1024px) {
-  .collections-section {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;                 /* 24–32px gap between banners */
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 72px 48px;        /* 64–80px vertical rhythm */
-  }
-
-  .collection-banner {
-    height: 400px;             /* compact banner (360–420px) — never full-screen */
-  }
-
-  .collection-banner .container {
-    max-width: none;
-    padding: 0;
-    height: 100%;
-  }
-
-  .collection-banner-inner {
-    grid-template-columns: 2fr 3fr; /* TEXT 40% / IMAGE 60% */
-    height: 100%;
-  }
-
-  .collection-banner-content {
-    padding: 40px 56px;
-    max-width: 380px;          /* text block cap (vertically centered via base rule) */
-  }
-
-  .collection-banner-title {
-    font-size: clamp(2.375rem, 3vw, 2.875rem); /* desktop 38–46px */
-    margin-bottom: 14px;
-    overflow-wrap: break-word; /* insurance for long lines at 1024px */
-  }
-
-  .collection-banner-tagline { margin-bottom: 24px; }
-
-  /* Image fills its cell (background cover == object-fit: cover) */
-  .collection-banner-image {
-    min-height: 0;
-    height: 100%;
-  }
-
-  .collection-banner--arees { border: none; }
+  .collections-section { padding: 64px 40px; gap: 20px; }
+  .collection-banner,
+  .collection-banner-image { min-height: 300px; }
+  .collection-banner-content { padding: 28px 32px; }
+  .collection-banner-title { font-size: clamp(1.75rem, 2.4vw, 2rem); }
+  .collection-banner-tagline { font-size: 0.85rem; }
+  .collection-banner .collection-banner-btn { height: 40px; padding: 0 20px; }
 }
 
-/* ---------- Mobile ---------- */
-@media (max-width: 480px) {
-  .collection-banner-content { padding: 40px 20px; }
-  .collection-banner-image { min-height: 220px; }
-  .collection-banner-btn { width: 100%; }
+/* ---------- Large desktop (1200px+): two cards side by side ---------- */
+@media (min-width: 1200px) {
+  .collections-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 72px 40px;
+  }
+}
+
+/* ---------- Subtle hover (pointer devices only) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .collection-banner {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .collection-banner:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(29, 25, 20, 0.08);
+  }
 }

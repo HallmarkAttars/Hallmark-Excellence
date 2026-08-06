@@ -74,6 +74,11 @@
   .navbar-link:hover::after, .navbar-link.is-active::after { transform: scaleX(1); }
 }
 
+/* Mobile header is compact (64–72px), desktop uses --header-h (76–88px) */
+@media (max-width: 767px) {
+  .navbar-inner { height: 68px; }
+}
+
 /* ---------- Actions ---------- */
 .navbar-actions {
   display: flex;

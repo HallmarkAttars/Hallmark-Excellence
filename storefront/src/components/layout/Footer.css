@@ -36,12 +36,12 @@
 }
 
 .footer-description {
-  font-family: var(--font-display); /* brand statement — editorial serif */
-  font-weight: 500;
+  font-family: var(--font-body); /* body copy — Manrope per global type system */
+  font-weight: 400;
   color: rgba(232, 225, 214, 0.78);
   max-width: 340px; /* 320–360px target */
-  font-size: clamp(1.1rem, 1.8vw, 1.25rem); /* 17.6–20px */
-  line-height: 1.55;
+  font-size: 0.9rem; /* 14.4px */
+  line-height: 1.65;
   margin: 0 0 24px;
 }
 
@@ -159,7 +159,7 @@ a.footer-contact-row:hover { color: var(--gold-light); }
    ============================================================ */
 @media (max-width: 767px) {
   .footer-inner { padding: 32px 20px 28px; }
-  .footer-grid { gap: 32px; }
+  .footer-grid { gap: 26px; }
   .footer-logo-img { width: 84px; }
-  .footer-bottom-inner { padding: 20px 20px; }
+  .footer-bottom-inner { padding: 18px 20px; }
 }

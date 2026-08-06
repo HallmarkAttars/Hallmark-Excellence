@@ -5,6 +5,20 @@
   border: none; border-radius: 999px; padding: 5px 12px;
   font-size: 0.75rem; background: var(--danger-bg); color: var(--danger);
 }
+
+.featured-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(198, 161, 91, 0.16);
+  color: #8a6a2f;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
 .status-toggle.is-active { background: var(--success-bg); color: var(--success); }
 
 .modal-scrim {

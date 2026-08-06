@@ -3,9 +3,9 @@ import ProductCard from '../product/ProductCard'
 import './FeaturedProducts.css'
 
 export default function FeaturedProducts({ products }) {
-  // Featured = the first 5 products in the API's default order (no extra reads,
-  // no filtered query — the label is presentation only).
-  const items = (products || []).slice(0, 5)
+  // Renders exactly the admin-marked featured products (filtered in Home.jsx
+  // via the is_featured field). Hidden until at least one product is featured.
+  const items = products || []
   if (items.length === 0) return null
 
   return (

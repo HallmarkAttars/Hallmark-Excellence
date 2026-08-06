@@ -6,8 +6,7 @@ export default function Hero() {
     <section className="hero">
       <div className="hero-bg" role="img" aria-label="Amber attar bottle on a dark background" />
       <div className="hero-overlay" aria-hidden="true" />
-      <div className="container hero-content">
-        <p className="eyebrow hero-eyebrow">Arees &amp; Dahab</p>
+      <div className="hero-content">
         <h1 className="hero-title">
           The Art of
           <br />

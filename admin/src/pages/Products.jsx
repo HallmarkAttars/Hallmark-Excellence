@@ -57,7 +57,10 @@ export default function Products() {
                 {products.map((p) => (
                   <tr key={p.id}>
                     <td><img src={p.image} alt="" className="products-thumb" /></td>
-                    <td>{p.name}</td>
+                    <td>
+                      {p.name}
+                      {p.is_featured && <span className="featured-badge">Featured</span>}
+                    </td>
                     <td>{categoryName(p.category_id)}</td>
                     <td>₹{Number(p.price).toLocaleString('en-IN')}</td>
                     <td>{p.stock}</td>

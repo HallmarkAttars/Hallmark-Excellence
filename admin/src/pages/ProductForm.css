@@ -5,6 +5,75 @@
   border: 1px solid var(--line);
 }
 
+/* -------- Featured on homepage toggle -------- */
+.featured-field { margin-bottom: 20px; }
+
+.featured-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.featured-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.featured-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(20, 17, 13, 0.15);
+  transition: background 0.2s ease;
+}
+
+.featured-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 1px 3px rgba(20, 17, 13, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.featured-toggle input:checked + .featured-switch {
+  background: var(--gold);
+}
+
+.featured-toggle input:checked + .featured-switch::after {
+  transform: translateX(20px);
+}
+
+.featured-toggle input:focus-visible + .featured-switch {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+.featured-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.85);
+}
+
+.featured-toggle-text small {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: rgba(20, 17, 13, 0.5);
+}
+
 /* -------- Price hint -------- */
 .price-hint {
   color: #b8860b;

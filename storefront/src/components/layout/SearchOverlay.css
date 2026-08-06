@@ -66,55 +66,15 @@
   padding: 24px 2px;
 }
 
-.search-overlay-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
+/* ---------- Results: shared ProductCard in a responsive grid ----------
+   Same card component and information hierarchy as every storefront grid.
+   2-up on mobile, 3-up once there is room, cards never overflow. */
+.search-overlay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding-bottom: 40px;
 }
-
-.search-result {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 4px;
-  border-bottom: 1px solid var(--line-soft);
-  transition: background-color 0.2s ease, padding-left 0.25s ease;
-}
-.search-result:hover { background: var(--cream-deep); padding-left: 12px; }
-
-.search-result-image {
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--white);
-  border: 1px solid var(--line-soft);
-}
-.search-result-image img { width: 100%; height: 100%; object-fit: cover; }
-
-.search-result-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.search-result-name {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  color: var(--charcoal);
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.search-result-price {
-  font-size: 0.85rem;
-  color: var(--gold-deep);
-  font-weight: 500;
-  letter-spacing: 0.04em;
+@media (min-width: 560px) {
+  .search-overlay-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
 }

@@ -1,6 +1,7 @@
 /* ============================================================
    Product Card — premium, compact, consistent
-   Image · Name · Variant · Price · Add to Cart
+   Image · Tag · Name · Variant · Rating · Price · Qty / Add
+   One shared card for every storefront product grid.
    ============================================================ */
 
 .product-card {
@@ -13,35 +14,31 @@
   border: 1px solid rgba(80, 60, 30, 0.10);
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(80, 60, 30, 0.05); /* extremely subtle warm shadow */
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
 }
 
-/* ---------- Image area (noticeably larger, never cropped) ---------- */
+/* ---------- Image area: consistent 1:1 stage, never cropped ---------- */
 .product-card-image-link {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: clamp(140px, 40vw, 165px); /* mobile 140–165px */
-  padding: 8px;                      /* mobile 6–10px */
+  aspect-ratio: 1 / 1;
+  padding: 12px;               /* 12–16px — bottle stays large, no dead margins */
   overflow: hidden;
   background: var(--stage);
 }
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  object-fit: contain;               /* no cropping, no distortion */
+  object-fit: contain;         /* no cropping, no distortion */
   object-position: center;
   display: block;
   /* Source photos carry white margins around the bottle — this visually
      enlarges the product inside the clipped stage so the bottle is the
-     hero, not the white space. Original files are never touched.
-     Tunable per asset: 1.05–1.15. Escape hatch: if a future image is
-     near-full-bleed, add a per-card modifier class that lowers the scale
-     rather than changing this global value. */
-  transform: scale(1.08);
+     hero, not the white space. Original files are never touched. */
+  transform: scale(1.05);
   transform-origin: center;
   transition: transform 0.22s ease;
 }
@@ -66,14 +63,29 @@
   flex-direction: column;
   flex: 1;
   gap: 5px;
-  padding: 12px;                     /* mobile 10–12px */
+  padding: 12px;
   min-width: 0;
 }
-.product-card-body h3 {
-  font-size: 16px;                   /* mobile 15–17px */
+
+/* Category / brand label — only when real data exists */
+.product-card-tag {
+  font-family: var(--font-body);
+  font-size: 0.66rem;          /* ~10.5px */
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.product-card-name-link { min-width: 0; }
+.product-card-name {
+  font-family: var(--font-display);
+  font-size: 18px;             /* mobile 18–20px */
   font-weight: 600;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.15;
   display: -webkit-box;
   line-clamp: 2;
   -webkit-line-clamp: 2;
@@ -83,7 +95,7 @@
 
 .product-card-variant {
   color: var(--gold-deep);
-  font-size: 0.72rem;                /* 11.5px — 11–12px */
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -91,53 +103,140 @@
   line-height: 1.4;
 }
 
-.product-card-price {
-  color: var(--gold-deep);
-  font-weight: 700; /* Manrope bold — price is instantly identifiable */
-  margin: 4px 0 0;
-  font-size: 0.95rem;                /* mobile 15–16px · desktop 17.6px */
-  line-height: 1.4;
+/* Rating — only when real rating data exists */
+.product-card-rating {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.product-card-rating span {
+  color: var(--gold);
+  font-size: 0.92rem;
+  line-height: 1;
 }
 
-/* ---------- Add to cart (full width, pinned to bottom) ---------- */
+/* Price row */
+.product-card-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.product-card-price {
+  color: var(--gold-deep);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.125rem;         /* 18px mobile */
+  line-height: 1.3;
+}
+.product-card-compare {
+  color: var(--charcoal-soft);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: line-through;
+  line-height: 1.3;
+}
+
+/* Bulk price — only when actual bulk data exists */
+.product-card-bulk {
+  font-family: var(--font-body);
+  font-size: 0.72rem;          /* 11.5px */
+  font-weight: 500;
+  color: var(--gold-deep);
+  margin: 0;
+}
+
+/* ---------- Add to cart / quantity controls (pinned to bottom) ----------
+   Muted luxury gold CTA with off-white text (deep gold shade keeps the
+   label legible at 4.5:1+ contrast). */
 .product-card-btn {
   margin-top: auto;
   width: 100%;
-  height: 40px;                      /* mobile 38–42px */
-  font-size: 0.7rem;                 /* mobile 11.2px — 11–12px band */
-  letter-spacing: 0.08em;
+  height: 44px;
+  font-size: 0.78rem;          /* 12.5px */
+  letter-spacing: 0.06em;
   padding: 0 10px;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  background: var(--gold-deep);
+  color: var(--cream);
+  border-color: var(--gold-deep);
+  transition: background-color 0.25s ease, border-color 0.25s ease,
+    color 0.25s ease, filter 0.25s ease, transform 0.15s ease;
 }
-.product-card-btn.is-added {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--ink);
+.product-card-btn:hover {
+  background: var(--gold-deep);
+  border-color: var(--gold-deep);
+  filter: brightness(0.94);
+}
+
+.product-card-qty {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+  background: var(--gold-deep);
+  color: var(--cream);
+  border-radius: 2px;
+}
+.product-card-qty button {
+  flex: 0 0 48px;              /* generous touch targets */
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--cream);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.product-card-qty button:hover {
+  background: rgba(248, 243, 234, 0.12);
+  color: var(--cream);
+}
+.product-card-qty span {
+  flex: 1;
+  min-width: 32px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cream);
 }
 
 /* ---------- Tablet (768–1023px) ---------- */
 @media (min-width: 768px) {
-  .product-card-image-link { height: clamp(180px, 22vw, 200px); padding: 10px; } /* tablet 180–200px */
+  .product-card-image-link { padding: 14px; }
   .product-card-body { padding: 14px; }
-  .product-card-body h3 { font-size: 18px; } /* tablet 17–19px */
-  .product-card-variant { font-size: 0.75rem; }
-  .product-card-price { font-size: 1rem; }
-  .product-card-btn { height: 42px; }
+  .product-card-name { font-size: 19px; }
+  .product-card-price { font-size: 1.125rem; }
 }
 
 /* ---------- Desktop (1024px+) ---------- */
 @media (min-width: 1024px) {
-  .product-card-image-link { height: clamp(200px, 20vw, 220px); padding: 12px; } /* laptop 200–220px */
+  .product-card-image-link { padding: 16px; }
   .product-card-body { padding: 16px; }
-  .product-card-body h3 { font-size: 20px; } /* desktop 19–21px */
-  .product-card-price { font-size: 1.1rem; }
-  .product-card-btn { height: 44px; font-size: 0.75rem; }
+  .product-card-name { font-size: 21px; }  /* desktop 20–22px */
+  .product-card-price { font-size: 1.25rem; } /* 20px */
 }
-@media (min-width: 1200px) {
-  .product-card-image-link { height: clamp(220px, 17vw, 240px); padding: 14px; } /* desktop 220–240px */
+
+/* Narrow screens (2-up cards): keep the Add button unclipped */
+@media (max-width: 399px) {
+  .product-card-btn { font-size: 0.66rem; letter-spacing: 0.05em; padding: 0 6px; }
+  .product-card-btn svg { display: none; }
 }
 
 /* ---------- Hover only on devices that actually hover ---------- */
@@ -147,5 +246,5 @@
     box-shadow: 0 4px 8px rgba(80, 60, 30, 0.08);
     border-color: rgba(184, 137, 56, 0.35); /* subtle gold edge */
   }
-  .product-card:hover .product-card-image-link img { transform: scale(1.10); }
+  .product-card:hover .product-card-image-link img { transform: scale(1.08); }
 }
