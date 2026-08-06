@@ -9,7 +9,12 @@
 .categories-admin-thumb {
   width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px;
 }
-.categories-admin-card p { color: rgba(20,17,13,0.55); font-size: 0.82rem; }
+.categories-admin-card h3 {
+  font-size: 18px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.categories-admin-card p { color: rgba(20,17,13,0.55); font-size: 13px; }
 .categories-admin-actions { display: flex; gap: 8px; justify-content: center; }
 
 .image-preview { margin-top: 10px; }

@@ -5,6 +5,7 @@ const {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  deleteOrder,
   getDashboardStats,
 } = require('../controllers/orders.controller')
 
@@ -18,5 +19,6 @@ router.get('/admin/stats', requireAuth, getDashboardStats)
 router.get('/admin/orders', requireAuth, getOrders)
 router.get('/admin/orders/:id', requireAuth, getOrderById)
 router.patch('/admin/orders/:id/status', requireAuth, updateOrderStatus)
+router.delete('/admin/orders/:id', requireAuth, deleteOrder)
 
 module.exports = router

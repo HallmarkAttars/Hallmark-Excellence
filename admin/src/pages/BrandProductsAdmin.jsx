@@ -57,7 +57,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
                 {products.map((p) => (
                   <tr key={p.id}>
                     <td><img src={p.images?.[0]} alt="" className="products-thumb" /></td>
-                    <td>{p.name}</td>
+                    <td className="products-name">{p.name}</td>
                     <td>{categoryName(p.category_id)}</td>
                     <td>₹{Number(p.price).toLocaleString('en-IN')}</td>
                     <td>{p.stock}</td>

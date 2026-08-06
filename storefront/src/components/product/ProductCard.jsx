@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
+import QuantityControl from './QuantityControl'
 import './ProductCard.css'
 
 function BagIcon() {
@@ -63,6 +64,16 @@ export default function ProductCard({ product, onNavigate }) {
   const lineKey = hasVariants
     ? `${product.id}-v${defaultVariant.id}`
     : `${product.id}-`
+
+  // Stock cap for the quantity control — uses existing stock data only.
+  // Variant lines carry their own stock; legacy products use product.stock.
+  // When no stock field exists, no cap is applied.
+  const maxStock =
+    cartLine?.stock != null
+      ? cartLine.stock
+      : Number(product.stock) > 0
+        ? Number(product.stock)
+        : null
 
   // Conditional rows — only render when real data exists. No invented values.
   const tag = product.category_name || product.brand_name || ''
@@ -135,27 +146,19 @@ export default function ProductCard({ product, onNavigate }) {
         )}
 
         {cartLine ? (
-          <div className="product-card-qty" aria-label={`Quantity for ${product.name}`}>
-            <button
-              type="button"
-              onClick={() =>
-                cartLine.quantity > 1
-                  ? updateQty(lineKey, cartLine.quantity - 1)
-                  : removeItem(lineKey)
-              }
-              aria-label={`Decrease quantity of ${product.name}`}
-            >
-              −
-            </button>
-            <span aria-live="polite">{cartLine.quantity}</span>
-            <button
-              type="button"
-              onClick={() => updateQty(lineKey, cartLine.quantity + 1)}
-              aria-label={`Increase quantity of ${product.name}`}
-            >
-              +
-            </button>
-          </div>
+          <QuantityControl
+            className="product-card-qty"
+            value={cartLine.quantity}
+            max={maxStock}
+            onChange={(n) => updateQty(lineKey, n)}
+            onRemove={() => removeItem(lineKey)}
+            labels={{
+              label: `Quantity for ${product.name}`,
+              decrease: `Decrease quantity of ${product.name}`,
+              increase: `Increase quantity of ${product.name}`,
+              input: `Quantity of ${product.name}`,
+            }}
+          />
         ) : (
           <button
             type="button"

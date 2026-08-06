@@ -87,12 +87,19 @@ async function createOrder(req, res) {
       return res.status(500).json({ error: 'Failed to resolve default address for order.' })
     }
 
-    // Build the insert payload matching the actual Supabase orders table schema:
-    // - user_id references users(id) — using the admin user as default guest
-    // - address_id references addresses(id) — using a placeholder address
-    // - Customer details are stored in the notes JSONB column
-    // - payment_status must be one of the check constraint values ('Pending', 'Paid', etc.)
-// Normalize the incoming items into a durable snapshot. Each item
+    // Build the insert payload matching the ACTUAL live Supabase orders table
+    // (verified against the project database on 2026-08-06). Live columns:
+    //   id, user_id, address_id, order_number, subtotal, shipping_charge,
+    //   discount, total, payment_method, payment_status, order_status,
+    //   tracking_number, notes, created_at, updated_at
+    //
+    // customer_name / phone / address / pincode / items are NOT columns on the
+    // live table (schema.sql describes a newer design that was never migrated
+    // onto the database). Sending them caused PGRST204 ("Could not find the ...
+    // column of 'orders'") which broke checkout. Customer details + item
+    // snapshots are persisted in the `notes` JSONB column instead, which the
+    // admin order reader already parses back out.
+    // Normalize the incoming items into a durable snapshot. Each item
     // carries the full variant info so orders stay historically accurate
     // even if the product/variant is edited (or deleted) later.
     const normalizedItems = (Array.isArray(items) ? items : []).map((item) => {
@@ -117,8 +124,8 @@ async function createOrder(req, res) {
       }
     })
 
-    // Persist the snapshot into the `items` jsonb column (the source of
-    // truth for order history), and keep `notes` for backward compatibility.
+    // Persist the full snapshot into the `notes` JSONB column — the single
+    // source of truth for order history and what the admin order reader parses.
     const insertPayload = {
       order_number: orderNumber,
       user_id: DEFAULT_USER_ID,
@@ -128,11 +135,6 @@ async function createOrder(req, res) {
       payment_method: 'Cash On Delivery',
       payment_status: 'Pending',
       order_status: 'Pending',
-      items: normalizedItems,
-      customer_name,
-      phone,
-      address,
-      pincode,
       notes: JSON.stringify({
         customer_name,
         phone,
@@ -143,8 +145,6 @@ async function createOrder(req, res) {
         total_amount: Number(total_amount),
       }),
     }
-
-    console.log('[createOrder] Insert payload:', JSON.stringify(insertPayload, null, 2))
 
     const { data, error } = await supabase
       .from('orders')
@@ -181,7 +181,9 @@ async function getOrders(req, res) {
     let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
 
     if (status) query = query.eq('order_status', status)
-    if (search) query = query.or(`order_number.ilike.%${search}%,customer_name.ilike.%${search}%`)
+    // customer_name is not a column on the live orders table — it lives inside
+    // the notes JSON text, so search notes instead of a phantom column.
+    if (search) query = query.or(`order_number.ilike.%${search}%,notes.ilike.%${search}%`)
 
     const { data, error } = await query
 
@@ -263,7 +265,11 @@ async function updateOrderStatus(req, res) {
     const { id } = req.params
     const { status } = req.body
 
-    const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+    // Canonical values accepted by the live orders_order_status_check
+    // constraint (after migration_add_processing_status.sql). Kept in sync
+    // with the Admin dropdown — matching is case-insensitive so the UI can
+    // send either case safely.
+    const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned']
     // Case-insensitive match
     const matched = validStatuses.find(
       (s) => s.toLowerCase() === (status || '').toLowerCase()
@@ -305,6 +311,46 @@ async function updateOrderStatus(req, res) {
     return res.json({ order: enriched })
   } catch (err) {
     console.error('updateOrderStatus error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// DELETE /api/admin/orders/:id
+// Protected. Permanently removes an order.
+//
+// Order line items are snapshotted inside the orders.notes JSONB column, but
+// there is also an `order_items` child table (order_items.order_id → orders.id
+// with ON DELETE CASCADE, verified 2026-08-06). We delete child rows first so
+// no orphaned order-item records can survive even if the FK rule ever changes.
+async function deleteOrder(req, res) {
+  try {
+    const { id } = req.params
+
+    // Remove any child order_items first (cascade makes the order delete
+    // sufficient today, but deleting children first is safe under any FK rule).
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', id)
+
+    if (itemsError) {
+      console.error('deleteOrder order_items error:', itemsError)
+      return res.status(500).json({ error: 'Failed to delete order items.' })
+    }
+
+    const { data, error } = await supabase.from('orders').delete().eq('id', id).select('id')
+
+    if (error) {
+      console.error('deleteOrder error:', error)
+      return res.status(500).json({ error: 'Failed to delete order.' })
+    }
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: 'Order not found.' })
+    }
+
+    return res.json({ success: true, id: data[0].id })
+  } catch (err) {
+    console.error('deleteOrder error:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -388,6 +434,7 @@ module.exports = {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  deleteOrder,
   getDashboardStats,
 }
 

@@ -1,0 +1,55 @@
+/* ============================================================
+   QuantityControl — shared [ −  N  + ] control
+   Structural + shared styles only. Per-surface look (gold card
+   vs light cart) is applied by the consumer's own CSS.
+   ============================================================ */
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 44px;
+}
+
+.qty-control-btn {
+  flex: 0 0 48px;              /* generous touch targets (≥44px) */
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* The center number is the input — invisible chrome, looks like text */
+.qty-control-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 4px;
+  color: inherit;
+  -moz-appearance: textfield;   /* hide Firefox spinners */
+  appearance: textfield;
+}
+.qty-control-input::-webkit-outer-spin-button,
+.qty-control-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;     /* hide Chrome/Safari spinners */
+  margin: 0;
+}
+.qty-control-input:focus { outline: none; }
+
+.qty-control:focus-within {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28) inset;
+}

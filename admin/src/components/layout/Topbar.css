@@ -26,18 +26,24 @@
   color: rgba(20,17,13,0.5);
 }
 .topbar-search input {
-  border: none; background: none; outline: none; flex: 1; font-size: 0.88rem; color: var(--ink);
+  border: none; background: none; outline: none; flex: 1;
+  font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--ink);
 }
+.topbar-search input::placeholder { font-weight: 400; color: rgba(20, 17, 13, 0.45); }
 
 .topbar-actions { display: flex; align-items: center; gap: 18px; margin-left: auto; }
 .topbar-bell { background: none; border: none; color: var(--ink); }
 
-.topbar-admin { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 500; }
+.topbar-admin {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-body); font-size: 14px; font-weight: 600;
+}
 .topbar-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--gold); color: var(--ink);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 0.85rem;
+  font-family: var(--font-body);
+  font-weight: 600; font-size: 14px;
 }
 
 @media (min-width: 1024px) {

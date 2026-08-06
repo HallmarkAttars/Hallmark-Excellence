@@ -181,40 +181,24 @@
 
 .product-card-qty {
   margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   width: 100%;
   height: 44px;
   background: var(--gold-deep);
   color: var(--cream);
   border-radius: 2px;
 }
-.product-card-qty button {
-  flex: 0 0 48px;              /* generous touch targets */
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
+.product-card-qty .qty-control-btn {
   color: var(--cream);
-  font-size: 1.15rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
-.product-card-qty button:hover {
+.product-card-qty .qty-control-btn:hover {
   background: rgba(248, 243, 234, 0.12);
   color: var(--cream);
 }
-.product-card-qty span {
-  flex: 1;
-  min-width: 32px;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
+.product-card-qty .qty-control-input {
   color: var(--cream);
+}
+.product-card-qty:focus-within {
+  box-shadow: 0 0 0 2px rgba(248, 243, 234, 0.28) inset;
 }
 
 /* ---------- Tablet (768–1023px) ---------- */

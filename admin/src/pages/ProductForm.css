@@ -99,7 +99,7 @@
 
 .variants-header h3 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: clamp(21px, 1.6vw, 24px);
 }
 
 .variants-empty {
@@ -124,10 +124,10 @@
 }
 
 .variant-title {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.95rem;
-  color: rgba(20, 17, 13, 0.75);
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.8);
 }
 
 .variant-delete {

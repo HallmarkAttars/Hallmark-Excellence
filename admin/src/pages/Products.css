@@ -1,5 +1,11 @@
 .products-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius); }
+.products-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
 .products-actions { display: flex; gap: 8px; }
+.confirm-dialog-text { font-size: 13px; color: rgba(20, 17, 13, 0.75); }
 
 .status-toggle {
   border: none; border-radius: 999px; padding: 5px 12px;

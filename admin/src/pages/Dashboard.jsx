@@ -57,7 +57,7 @@ export default function Dashboard() {
                     <td>{o.customer_name}</td>
                     <td>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
                     <td>₹{Number(o.total_amount).toLocaleString('en-IN')}</td>
-                    <td><span className={`status-pill status-${o.status}`}>{o.status}</span></td>
+                    <td><span className={`status-pill status-${String(o.status).toLowerCase()}`}>{o.status}</span></td>
                   </tr>
                 ))}
               </tbody>

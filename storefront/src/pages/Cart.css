@@ -91,35 +91,29 @@
 }
 
 .cart-item-qty {
-  display: flex;
-  align-items: center;
-  height: 44px;
+  width: auto;
+  max-width: 190px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   overflow: hidden;
+  flex-shrink: 0;
 }
-.cart-item-qty button {
-  width: 44px;                 /* proper touch targets */
-  height: 100%;
-  background: none;
-  border: none;
+.cart-item-qty .qty-control-btn {
+  flex: 0 0 44px;              /* proper touch targets, matches prior look */
   font-size: 1.1rem;
-  line-height: 1;
   color: var(--charcoal);
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
-.cart-item-qty button:hover {
+.cart-item-qty .qty-control-btn:hover {
   background: var(--gold);
-  border-color: var(--gold);
   color: var(--ink);
 }
-.cart-item-qty span {
-  min-width: 40px;
-  text-align: center;
+.cart-item-qty .qty-control-input {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 15px;
   color: var(--ink);
+}
+.cart-item-qty:focus-within {
+  box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.55) inset;
 }
 
 /* Subtotal sits outside the quantity container — natural flow, never overlaps */

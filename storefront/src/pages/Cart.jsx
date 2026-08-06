@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import QuantityControl from '../components/product/QuantityControl'
 import './Cart.css'
 
 export default function Cart() {
@@ -55,25 +56,18 @@ export default function Cart() {
 
               {/* Quantity + subtotal row — never overlapping */}
               <div className="cart-item-row">
-                <div className="cart-item-qty">
-                  <button
-                    onClick={() =>
-                      item.quantity > 1
-                        ? updateQty(key, item.quantity - 1)
-                        : removeItem(key)
-                    }
-                    aria-label={`Decrease quantity of ${item.name}`}
-                  >
-                    −
-                  </button>
-                  <span aria-live="polite">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQty(key, item.quantity + 1)}
-                    aria-label={`Increase quantity of ${item.name}`}
-                  >
-                    +
-                  </button>
-                </div>
+                <QuantityControl
+                  className="cart-item-qty"
+                  value={item.quantity}
+                  max={item.stock != null ? item.stock : null}
+                  onChange={(n) => updateQty(key, n)}
+                  onRemove={() => removeItem(key)}
+                  labels={{
+                    decrease: `Decrease quantity of ${item.name}`,
+                    increase: `Increase quantity of ${item.name}`,
+                    input: `Quantity of ${item.name}`,
+                  }}
+                />
                 <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
               </div>
 

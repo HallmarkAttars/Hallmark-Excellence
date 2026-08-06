@@ -2,15 +2,97 @@
 .orders-row:hover { background: var(--cream); }
 .orders-expand-icon { width: 24px; text-align: center; color: var(--gold-deep); font-weight: 600; }
 
-.orders-status-select {
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--cream);
-  font-size: 0.82rem;
-  text-transform: capitalize;
+/* ---------- Order data typography (Manrope, per admin system) ---------- */
+.orders-order-number { font-weight: 600; font-size: 13px; white-space: nowrap; }
+.orders-customer { font-weight: 500; font-size: 13px; }
+.orders-date { font-weight: 400; font-size: 13px; white-space: nowrap; }
+.orders-amount {
+  font-weight: 600;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
+/* ---------- Status: compact pill select with muted per-status colors ---------- */
+.orders-status-cell { display: inline-flex; align-items: center; gap: 6px; }
+.orders-status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0 26px 0 10px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-color: var(--cream-deep);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23504a3f' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: var(--charcoal);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.orders-status-select:disabled { opacity: 0.55; cursor: wait; }
+.orders-status-select:hover:not(:disabled) { border-color: rgba(20, 17, 13, 0.2); }
+.orders-status-select option { font-family: var(--font-body); font-size: 12px; font-weight: 500; }
+
+.orders-status-pending { background-color: var(--cream-deep); color: #6b6457; }
+.orders-status-processing { background-color: var(--warning-bg); color: var(--warning); }
+.orders-status-shipped { background-color: var(--charcoal); color: var(--cream); }
+.orders-status-delivered { background-color: var(--success-bg); color: var(--success); }
+.orders-status-cancelled { background-color: var(--danger-bg); color: var(--danger); }
+
+.orders-updating {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(20, 17, 13, 0.45);
+  animation: orders-pulse 1.2s ease-in-out infinite;
+}
+@keyframes orders-pulse { 50% { opacity: 0.35; } }
+
+/* ---------- Compact delete action (small, muted — not a huge red button) ---------- */
+.orders-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(178, 58, 50, 0.28);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.orders-delete-btn:hover { background: var(--danger); color: var(--white); border-color: var(--danger); }
+
+/* ---------- Delete confirmation dialog (self-contained for this page) ---------- */
+.modal-scrim {
+  position: fixed; inset: 0;
+  background: rgba(20, 17, 13, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 300;
+}
+.confirm-dialog { max-width: 380px; width: 100%; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+.confirm-dialog-text { font-size: 13px; color: rgba(20, 17, 13, 0.75); }
+
+/* ---------- Feedback bar ---------- */
+.orders-feedback {
+  margin-bottom: 16px;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+}
+.orders-feedback--success { background: var(--success-bg); color: var(--success); }
+.orders-feedback--error { background: var(--danger-bg); color: var(--danger); }
+
+/* ---------- Expanded detail ---------- */
 .orders-detail-row td { background: var(--cream); padding: 0; }
 .orders-detail {
   display: grid;
@@ -18,8 +100,16 @@
   grid-template-columns: 1fr 1fr;
   padding: 20px 14px;
 }
-.orders-detail h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold-deep); margin-bottom: 8px; }
-.orders-detail p { margin: 2px 0; font-size: 0.88rem; }
+.orders-detail h4 {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-deep);
+  margin-bottom: 8px;
+}
+.orders-detail p { margin: 2px 0; font-size: 13px; line-height: 1.5; }
 
 .orders-item {
   display: flex;
@@ -43,14 +133,15 @@
   flex: 1;
   min-width: 0;
 }
-.orders-item-name { font-size: 0.88rem; font-weight: 500; color: var(--charcoal); }
-.orders-item-variant { font-size: 0.78rem; color: var(--gold-deep); font-weight: 500; }
-.orders-item-meta { font-size: 0.78rem; color: var(--charcoal-soft); }
+.orders-item-name { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.orders-item-variant { font-size: 12px; color: var(--gold-deep); font-weight: 500; }
+.orders-item-meta { font-size: 12px; color: rgba(20, 17, 13, 0.55); font-variant-numeric: tabular-nums; }
 .orders-item-subtotal {
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 600;
   color: var(--charcoal);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 640px) {

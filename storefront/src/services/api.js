@@ -20,7 +20,13 @@ async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
       detail = null
     }
     const msg = detail?.error || detail?.message || `Request failed (${res.status})`
-    throw new Error(msg)
+    const err = new Error(msg)
+    // Attach backend error metadata (code/detail/hint) so dev console logs
+    // can show the real Supabase error without changing the user-facing message.
+    if (detail?.code) err.code = detail.code
+    if (detail?.detail) err.detail = detail.detail
+    if (detail?.hint) err.hint = detail.hint
+    throw err
   }
 
   // Some endpoints return no body in future; keep safe.

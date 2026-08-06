@@ -7,8 +7,23 @@
   align-items: center;
   justify-content: space-between;
 }
-.stat-card-label { font-size: 0.78rem; color: rgba(20,17,13,0.55); margin: 0 0 6px; }
-.stat-card-value { font-size: 1.7rem; margin: 0; }
+.stat-card-label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(20, 17, 13, 0.55);
+  margin: 0 0 6px;
+}
+.stat-card-value {
+  font-family: var(--font-body);
+  font-size: clamp(26px, 2vw, 30px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
 .stat-card-icon {
   width: 44px; height: 44px; border-radius: 50%;
   background: var(--cream-deep);

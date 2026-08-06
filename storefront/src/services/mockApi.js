@@ -77,7 +77,11 @@ export async function submitOrder(payload) {
     console.log('[submitOrder] Response:', JSON.stringify(res, null, 2))
     return { success: true, orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber }
   } catch (err) {
+    // Log the real error in development while keeping the user-facing message.
     console.error('[submitOrder] Error:', err.message)
+    console.error('[submitOrder] Error code:', err.code)
+    console.error('[submitOrder] Error detail:', err.detail)
+    console.error('[submitOrder] Error hint:', err.hint)
     // Re-throw with the actual backend error message
     throw new Error(err.message || 'Failed to place order.')
   }

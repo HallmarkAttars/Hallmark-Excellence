@@ -106,6 +106,11 @@ export async function updateOrderStatus(id, status) {
   return res.order ?? res ?? null
 }
 
+export async function deleteOrder(id) {
+  await adminApi.del(`/api/admin/orders/${id}`, readToken())
+  return { success: true }
+}
+
 // --- Dashboard stats ---------------------------------------------------------
 export async function getDashboardStats() {
   const data = await adminApi.get('/api/admin/stats', readToken())

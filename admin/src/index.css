@@ -16,8 +16,20 @@
   --danger: #B23A32;
   --danger-bg: #F8E4E2;
 
+  /* ----------------------------------------------------------------
+     ADMIN TYPOGRAPHY SYSTEM
+     Cormorant Garamond  → page titles, section headings, modal titles
+     Manrope             → everything else (nav, stats, tables, forms,
+                            buttons, statuses, toasts, inputs)
+     ---------------------------------------------------------------- */
   --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+
+  --admin-text-xs: 11px;
+  --admin-text-sm: 12px;
+  --admin-text-base: 14px;
+  --admin-text-lg: 16px;
+
   --radius: 6px;
   --shadow-soft: 0 6px 20px rgba(20, 17, 13, 0.06);
   --sidebar-width: 240px;
@@ -28,23 +40,32 @@
 body {
   margin: 0;
   font-family: var(--font-body);
+  font-size: var(--admin-text-base);
+  font-weight: 400;
+  line-height: 1.5;
   background: var(--cream);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 
+/* Display (serif) hierarchy — titles only */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   font-weight: 600;
   margin: 0 0 0.4em;
   color: var(--ink);
 }
+h1 { font-size: clamp(30px, 2.2vw, 38px); line-height: 1.05; letter-spacing: -0.015em; }
+h2 { font-size: clamp(26px, 2vw, 32px); line-height: 1.1; letter-spacing: -0.01em; }
+h3 { font-size: clamp(21px, 1.6vw, 26px); line-height: 1.15; }
+h4 { font-size: var(--admin-text-lg); line-height: 1.25; }
 
 p { margin: 0 0 0.8em; line-height: 1.6; }
 a { text-decoration: none; color: inherit; }
 button { font-family: var(--font-body); cursor: pointer; }
 input, select, textarea { font-family: var(--font-body); }
 
+/* Buttons — Manrope SemiBold */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -53,8 +74,9 @@ input, select, textarea { font-family: var(--font-body); }
   padding: 11px 22px;
   border-radius: var(--radius);
   border: 1px solid transparent;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   transition: all 0.2s ease;
 }
 .btn-gold { background: var(--gold); color: var(--ink); }
@@ -65,7 +87,7 @@ input, select, textarea { font-family: var(--font-body); }
 .btn-outline:hover { background: var(--cream-deep); }
 .btn-danger { background: var(--danger-bg); color: var(--danger); }
 .btn-danger:hover { background: var(--danger); color: var(--white); }
-.btn-sm { padding: 7px 14px; font-size: 0.78rem; }
+.btn-sm { padding: 7px 14px; font-size: 12px; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .card {
@@ -75,42 +97,66 @@ input, select, textarea { font-family: var(--font-body); }
   padding: 24px;
 }
 
+/* Status badges — Manrope 600, muted premium colors */
 .status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  height: 26px;
+  padding: 0 10px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: capitalize;
+  white-space: nowrap;
 }
+.status-pending { background: var(--cream-deep); color: #6b6457; }
 .status-delivered { background: var(--success-bg); color: var(--success); }
 .status-shipped { background: var(--charcoal); color: var(--cream); }
 .status-processing { background: var(--warning-bg); color: var(--warning); }
 .status-cancelled { background: var(--danger-bg); color: var(--danger); }
 
+/* Tables — Manrope, subtle uppercase headers, tabular numbers */
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 12px 14px; font-size: 0.88rem; }
-th { color: rgba(20,17,13,0.5); font-weight: 500; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--line); }
+th, td { text-align: left; padding: 12px 14px; font-size: 13px; }
+td { font-variant-numeric: tabular-nums; }
+th {
+  color: rgba(20, 17, 13, 0.5);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
 tbody tr { border-bottom: 1px solid var(--line); }
 tbody tr:last-child { border-bottom: none; }
 
+/* Forms — Manrope labels/inputs */
 .form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.form-field label { font-size: 0.78rem; color: rgba(20,17,13,0.6); }
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.75);
+}
 .form-field input, .form-field select, .form-field textarea {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--cream);
-  font-size: 0.92rem;
+  font-size: var(--admin-text-base);
+  font-weight: 400;
+  color: var(--ink);
 }
+.form-field input::placeholder, .form-field textarea::placeholder { color: rgba(20, 17, 13, 0.4); }
+.form-field select option { font-size: 13px; }
 .form-row { display: grid; gap: 16px; grid-template-columns: 1fr; }
 @media (min-width: 640px) { .form-row-2 { grid-template-columns: 1fr 1fr; } }
 
 .loading-state, .empty-state {
   text-align: center;
   padding: 48px 24px;
-  color: rgba(20,17,13,0.5);
+  color: rgba(20, 17, 13, 0.5);
+  font-size: 13px;
 }
 
 *:focus-visible { outline: 2px solid var(--gold-deep); outline-offset: 2px; }

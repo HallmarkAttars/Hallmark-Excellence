@@ -57,7 +57,7 @@ export default function Products() {
                 {products.map((p) => (
                   <tr key={p.id}>
                     <td><img src={p.image} alt="" className="products-thumb" /></td>
-                    <td>
+                    <td className="products-name">
                       {p.name}
                       {p.is_featured && <span className="featured-badge">Featured</span>}
                     </td>
