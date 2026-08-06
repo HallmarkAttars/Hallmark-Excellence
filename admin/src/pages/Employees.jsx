@@ -150,7 +150,10 @@ export default function Employees() {
       }
       closeModal()
     } catch (err) {
-      setModalError(err.message || 'Failed to save employee. Please try again.')
+      // Never swallow the real error — log it for development; the server
+      // message (duplicate email, missing migration, permission…) is shown.
+      console.error('Create/update employee failed:', err)
+      setModalError(err.message || 'Unable to save the employee. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -165,6 +168,7 @@ export default function Employees() {
       setEmployees((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
       notify('success', `${updated.name} ${updated.is_active ? 'activated' : 'deactivated'}.`)
     } catch (err) {
+      console.error('Toggle employee status failed:', err)
       notify('error', err.message || 'Unable to update employee status.')
     } finally {
       setTogglingId(null)
@@ -181,6 +185,7 @@ export default function Employees() {
       setConfirmDelete(null)
       notify('success', 'Employee deleted successfully')
     } catch (err) {
+      console.error('Delete employee failed:', err)
       setConfirmDelete(null)
       notify('error', err.message || 'Unable to delete employee.')
     } finally {

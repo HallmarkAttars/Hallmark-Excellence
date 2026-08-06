@@ -26,6 +26,23 @@ function toEmployee(row, selfId) {
   }
 }
 
+// The live users table is (or was) created with a CHECK constraint that only
+// accepts role 'admin'. Until the employee-roles migration is applied, any
+// insert/update with role 'manager'/'staff' fails with 23514. Map that to a
+// clear, actionable message instead of a generic 500 — without leaking
+// database internals.
+function roleConstraintError(error) {
+  const msg = String(error?.message || '')
+  const isRoleCheck =
+    error?.code === '23514' &&
+    (error?.constraint === 'users_role_check' || msg.includes('users_role_check'))
+  if (!isRoleCheck) return null
+  return (
+    'The selected role is not enabled in the database yet. Run the employee roles ' +
+    'migration in Supabase (server/db/migration_add_employees.sql), then try again.'
+  )
+}
+
 // Count of ACTIVE admins — used by the last-admin protection rules.
 async function countActiveAdmins() {
   const { count, error } = await supabase
@@ -103,8 +120,14 @@ async function createEmployee(req, res) {
       if (error.code === '23505') {
         return res.status(409).json({ error: 'An employee with this email already exists.' })
       }
+      const roleIssue = roleConstraintError(error)
+      if (roleIssue) {
+        // Log the FULL error server-side (never sent to the browser).
+        console.error('createEmployee role constraint error:', error)
+        return res.status(400).json({ error: roleIssue })
+      }
       console.error('createEmployee error:', error)
-      return res.status(500).json({ error: 'Failed to create employee.' })
+      return res.status(500).json({ error: 'Unable to create the employee. Please try again.' })
     }
 
     return res.status(201).json({
@@ -214,8 +237,13 @@ async function updateEmployee(req, res) {
       if (error.code === '23505') {
         return res.status(409).json({ error: 'An employee with this email already exists.' })
       }
+      const roleIssue = roleConstraintError(error)
+      if (roleIssue) {
+        console.error('updateEmployee role constraint error:', error)
+        return res.status(400).json({ error: roleIssue })
+      }
       console.error('updateEmployee error:', error)
-      return res.status(500).json({ error: 'Failed to update employee.' })
+      return res.status(500).json({ error: 'Unable to update the employee. Please try again.' })
     }
 
     return res.json({
