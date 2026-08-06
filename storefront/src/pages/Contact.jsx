@@ -26,8 +26,15 @@ function itemImage(item) {
 // order-success page. Image comes from the cart snapshot (no extra reads);
 // a neutral placeholder is shown only when no image exists.
 function OrderSummaryItem({ item }) {
-  const unitPrice = Number(item.selected_price ?? item.price ?? 0)
-  const quantity = Number(item.quantity ?? item.qty ?? 1)
+  // Reuse the exact values the cart/checkout already compute — never a new
+  // pricing system. selected_price (unit) × quantity = line total.
+  const rawPrice = item.selected_price ?? item.price
+  const rawQty = item.quantity ?? item.qty
+  // Finite guards only: corrupt/missing data falls back gracefully instead of
+  // ever rendering ₹NaN / undefined.
+  const unitPrice = Number.isFinite(Number(rawPrice)) ? Number(rawPrice) : 0
+  const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
+  const lineTotal = unitPrice * quantity
   const label =
     item.variant_label ||
     (item.quantity_value != null && item.quantity_unit
@@ -55,9 +62,17 @@ function OrderSummaryItem({ item }) {
       <div className="order-summary-item-info">
         <span className="order-summary-name">{item.name}</span>
         {label && <span className="order-summary-variant">{label}</span>}
-        <span className="order-summary-qty">Qty: {quantity}</span>
+        <span className="order-summary-qty">
+          ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
+        </span>
       </div>
-      <span className="order-summary-price">₹{unitPrice.toLocaleString('en-IN')}</span>
+      {/* Right side = LINE TOTAL (unit price × quantity), never the unit price */}
+      <span
+        className="order-summary-price"
+        aria-label={`Line total ₹${lineTotal.toLocaleString('en-IN')}`}
+      >
+        ₹{lineTotal.toLocaleString('en-IN')}
+      </span>
     </div>
   )
 }

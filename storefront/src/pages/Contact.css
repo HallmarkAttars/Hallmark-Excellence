@@ -175,32 +175,33 @@
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 24px;
+  padding: 28px 32px;
   margin-bottom: 20px;
 }
 .order-summary h3 { margin-bottom: 12px; }
 
-/* Product row — image | details | price */
+/* Product row — image | product info (unit price × qty) | line total */
 .order-summary-item {
   display: grid;
   /* minmax(0, 1fr) lets the middle column shrink so long names can never push
      the price outside the card */
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 14px;
+  gap: 18px;
   align-items: center;
-  padding: 10px 0;
-  font-size: 0.92rem;
+  padding: 16px 0;
   color: var(--charcoal-soft);
   border-bottom: 1px solid var(--line-soft);
 }
 .order-summary-item:last-of-type { border-bottom: none; }
 .order-summary-item-img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;          /* never crop or stretch the product */
+  object-position: center;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--stage);
+  padding: 6px;
   flex-shrink: 0;
 }
 .order-summary-item-img--placeholder {
@@ -212,27 +213,41 @@
 .order-summary-item-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 .order-summary-name {
+  font-family: var(--font-display);   /* product names use the serif display font */
   color: var(--charcoal);
   font-weight: 600;
-  font-size: 0.95rem;
-  line-height: 1.35;
+  font-size: 19px;
+  line-height: 1.25;
+  /* Long names clamp to 2 lines — they can never push the price out */
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 .order-summary-variant {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--gold-deep);
   font-weight: 500;
 }
+/* "₹400 × 4" — explains how the line total is built */
 .order-summary-qty {
-  font-size: 0.8rem;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
   color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
 }
+/* Right side = LINE TOTAL (unit price × quantity) */
 .order-summary-price {
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
   color: var(--charcoal);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -242,12 +257,23 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 20px;
-  padding: 6px 0; font-size: 0.92rem; color: var(--charcoal-soft);
+  padding: 8px 0; font-size: 0.92rem; color: var(--charcoal-soft);
 }
 .order-summary-total {
   border-top: 1px solid rgba(36,31,25,0.12);
-  margin-top: 8px; padding-top: 12px;
-  font-weight: 600; color: var(--charcoal);
+  margin-top: 8px; padding-top: 14px;
+  color: var(--charcoal);
+}
+.order-summary-total span:first-child {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 600;
+}
+.order-summary-total span:last-child {
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .contact-info-block {
@@ -365,9 +391,18 @@
   border-top: 1px solid var(--line);
   margin-top: 6px;
   padding-top: 14px;
-  font-weight: 700;
   color: var(--charcoal);
-  font-size: 1rem;
+}
+.order-success-total span:first-child {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+}
+.order-success-total span:last-child {
+  font-family: var(--font-body);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 .order-status-pill {
   display: inline-flex;
@@ -397,7 +432,33 @@
   .order-success-actions { flex-direction: column; }
   .order-success-actions .btn { width: 100%; }
 }
+/* Mobile: compact but complete — image | info | line total, no overflow */
+@media (max-width: 767px) {
+  .order-summary { padding: 20px 16px; }
+  .order-summary-item {
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 14px 0;
+  }
+  .order-summary-item-img {
+    width: 76px;
+    height: 76px;
+    padding: 4px;
+  }
+  .order-summary-name {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+  .order-summary-qty { font-size: 12px; }
+  .order-summary-price { font-size: 16px; }
+  .order-summary-total span:first-child { font-size: 16px; }
+  .order-summary-total span:last-child { font-size: 18px; }
+}
+
 @media (max-width: 480px) {
-  .order-summary-item-img { width: 70px; height: 70px; }
-  .order-summary-item { gap: 12px; }
+  .order-summary-item {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .order-summary-item-img { width: 72px; height: 72px; }
 }
