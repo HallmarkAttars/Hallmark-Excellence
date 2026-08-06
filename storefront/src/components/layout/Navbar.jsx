@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/brand/dahab', label: 'Dahab' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
+  { to: '/track-order', label: 'Track Order' },
 ]
 
 function SearchIcon() {

@@ -1,0 +1,420 @@
+/* ============================================================
+   Track Order — customer-facing, premium cream/black/gold
+   ============================================================ */
+
+.track-layout {
+  width: 100%;
+  max-width: 1000px; /* centered, never stretched across 1920px */
+  margin: 0 auto;
+  padding: 0 16px 88px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .track-layout { padding: 0 24px 104px; }
+}
+
+/* ---------- Card ---------- */
+.track-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+}
+@media (min-width: 768px) {
+  .track-card { padding: 28px 32px; }
+}
+
+.track-card-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin-bottom: 18px;
+}
+
+/* ---------- Form ---------- */
+.track-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.track-form .form-field { display: flex; flex-direction: column; gap: 6px; }
+.track-form .form-field label {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-soft);
+}
+.track-form input {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--cream);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.track-form input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: var(--white);
+}
+
+/* Fixed +91 prefix + 10-digit national number (same pattern as checkout) */
+.track-phone-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.track-phone-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  background: var(--cream-deep);
+  user-select: none;
+}
+/* Specificity (0,2,0) deliberately beats the base .track-form input (0,1,1)
+   so border-left / border-radius overrides actually apply — otherwise the
+   number field renders as a separate box instead of joining the +91 prefix. */
+.track-form .track-phone-input {
+  flex: 1;
+  min-width: 0;
+  border-left: 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.track-phone-row:focus-within .track-phone-prefix,
+.track-phone-row:focus-within .track-phone-input {
+  border-color: var(--gold);
+}
+
+/* Inline helpers (reused pattern from checkout) */
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--gold-deep);
+}
+.field-hint--error { color: #a3372f; }
+.required-star {
+  color: #b42318;
+  margin-left: 3px;
+  font-weight: 600;
+}
+
+.track-error {
+  color: #a3372f;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.track-submit { width: 100%; }
+@media (min-width: 768px) {
+  .track-submit { width: auto; align-self: flex-start; }
+}
+
+/* ---------- Verified result header ---------- */
+.track-found-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.track-found-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.track-found-head h2 {
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+  margin-bottom: 6px;
+}
+.track-order-number {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.track-placed-on {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.track-current-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+  margin: 0 0 8px;
+}
+.track-status-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--cream-deep);
+  color: var(--charcoal);
+}
+.track-status-pending { background: #f4ead6; color: #8a6a2f; }
+.track-status-processing { background: #e9e2d4; color: #6b5a3e; }
+.track-status-shipped { background: #e3e8dd; color: #4f5d44; }
+.track-status-delivered { background: #dde6d8; color: #3f5a38; }
+.track-status-cancelled { background: #f3deda; color: #a3372f; }
+.track-status-returned { background: #eee4d8; color: #7a5a33; }
+
+/* ---------- Cancelled notice (never shown as progress) ---------- */
+.track-cancelled {
+  background: #faf0ee;
+  border: 1px solid rgba(163, 55, 47, 0.3);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.track-cancelled h2 {
+  color: #a3372f;
+  font-size: clamp(1.4rem, 3vw, 1.7rem);
+  margin-bottom: 8px;
+}
+.track-cancelled p { color: var(--charcoal-soft); margin: 0; }
+
+.track-note { color: var(--charcoal-soft); font-size: 0.9rem; }
+
+/* ---------- Progress tracker: horizontal desktop ---------- */
+.track-steps {
+  display: flex;
+  align-items: flex-start;
+}
+.track-step {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  text-align: center;
+}
+/* Connector line to the NEXT step, at the icon's vertical centre */
+.track-step::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: calc(50% + 24px);
+  right: calc(-50% + 24px);
+  height: 2px;
+  background: var(--line);
+  transition: background-color 0.3s ease;
+}
+.track-step:last-child::after { display: none; }
+/* Filled when the step leading into the next one is complete/current */
+.track-step.is-done::after,
+.track-step.is-current::after { background: var(--gold); }
+
+.track-step-icon {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--white);
+  border: 2px solid var(--line);
+  color: var(--charcoal-soft);
+  flex-shrink: 0;
+}
+.track-step.is-current .track-step-icon {
+  border-color: var(--gold-deep);
+  background: var(--white);
+  box-shadow: 0 0 0 1px var(--gold-deep);
+}
+/* Filled inner dot — the current step reads as ●, never a hollow circle */
+.track-step.is-current .track-step-icon::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold-deep);
+}
+.track-step.is-done .track-step-icon {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--white);
+}
+.track-step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  white-space: nowrap;
+}
+.track-step.is-current .track-step-label { color: var(--charcoal); }
+.track-step.is-done .track-step-label { color: var(--gold-deep); }
+
+/* ---------- Progress tracker: vertical mobile ---------- */
+@media (max-width: 767px) {
+  .track-steps { flex-direction: column; align-items: stretch; }
+  .track-step {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+  }
+  /* Vertical connector from this icon down to the next */
+  .track-step::after {
+    top: 36px;
+    bottom: -8px;
+    left: 17px;
+    right: auto;
+    width: 2px;
+    height: auto;
+  }
+  .track-step:last-child::after { display: none; }
+  .track-step-label { white-space: normal; }
+}
+
+/* ---------- Order summary items ---------- */
+.track-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.track-item:first-of-type { padding-top: 0; }
+.track-item:last-of-type { border-bottom: none; }
+.track-item-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  object-position: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--stage);
+  padding: 5px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.track-item-img--placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(95, 88, 78, 0.4);
+}
+.track-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.track-item-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--charcoal);
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.track-item-variant {
+  font-size: 0.78rem;
+  color: var(--gold-deep);
+  font-weight: 500;
+}
+.track-item-qty {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+}
+.track-item-price {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--charcoal);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.track-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 8px 0;
+  font-size: 0.92rem;
+  color: var(--charcoal-soft);
+}
+.track-total {
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+  padding-top: 14px;
+  color: var(--charcoal);
+}
+.track-total span:first-child {
+  font-size: 17px;
+  font-weight: 600;
+}
+.track-total span:last-child {
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Actions ---------- */
+.track-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.track-actions .track-note {
+  width: 100%;
+  margin: 0 0 4px;
+  color: var(--gold-deep);
+}
+@media (max-width: 767px) {
+  .track-actions { flex-direction: column; }
+  .track-actions .btn { width: 100%; }
+}
+
+/* ---------- Narrow mobile polish ---------- */
+@media (max-width: 480px) {
+  .track-item {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .track-item-img { width: 64px; height: 64px; }
+  .track-item-name { font-size: 16px; }
+  .track-item-price { font-size: 15px; }
+  .track-phone-prefix { padding: 0 12px; }
+}

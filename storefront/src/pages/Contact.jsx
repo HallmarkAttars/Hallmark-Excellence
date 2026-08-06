@@ -388,6 +388,11 @@ export default function Contact() {
           </section>
 
           <div className="order-success-actions">
+            {/* Track the just-created order — prefill carries the real Order ID
+                via router state; the phone is never prefilled. */}
+            <Link to="/track-order" state={{ orderNumber }} className="btn btn-gold">
+              Track Your Order
+            </Link>
             <Link to="/shop" className="btn btn-primary">Continue Shopping</Link>
             <a href="#order-summary" className="btn btn-outline">View Order</a>
           </div>

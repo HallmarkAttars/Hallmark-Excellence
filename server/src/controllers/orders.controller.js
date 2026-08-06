@@ -98,6 +98,99 @@ async function lookupPincode(req, res) {
   }
 }
 
+// GET /api/orders/track?order_id=ORD-571848&phone=9876543210
+// Public. Customer order tracking. Verifies the order number AGAINST the
+// customer's phone (never the order number alone) and queries ONLY the single
+// matching order row — never the full table. Returns a minimal customer-safe
+// projection (no internal UUIDs, no raw notes, no admin data).
+//
+// Every failure — missing order, wrong phone, malformed input — returns the
+// SAME generic 404 so a caller can never learn whether an order number exists
+// or a phone number is registered.
+function normalizeOrderId(raw) {
+  // Accept ORD-571848 or #ORD-571848 (visual '#' from the success screen).
+  return String(raw || '').replace(/^#/, '').trim().toUpperCase()
+}
+
+// Stored checkout phones are E.164 (+919876543210). Customers may type the
+// 10-digit national number, with or without +91 / spaces / dashes. Compare the
+// last 10 digits so every reasonable input matches the stored value.
+function normalizePhone(raw) {
+  return String(raw || '').replace(/\D/g, '').slice(-10)
+}
+
+async function trackOrder(req, res) {
+  try {
+    const orderId = normalizeOrderId(req.query.order_id || req.query.orderId || '')
+    const phone = normalizePhone(req.query.phone || '')
+
+    if (!orderId || !/^\d{10}$/.test(phone)) {
+      return res.status(404).json({
+        error: 'Order not found. Please check your Order ID and phone number.',
+      })
+    }
+
+    // Only the one matching order is ever read — never a table scan.
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_number', orderId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('trackOrder error:', error)
+      return res.status(500).json({ error: 'Unable to check your order. Please try again.' })
+    }
+    if (!data) {
+      return res.status(404).json({
+        error: 'Order not found. Please check your Order ID and phone number.',
+      })
+    }
+
+    // Verify the phone against the stored value. Checkout persists it inside
+    // the notes JSONB; fall back to a legacy phone column for older orders.
+    let notesInfo = {}
+    try {
+      if (data.notes) notesInfo = JSON.parse(data.notes)
+    } catch {}
+    const storedPhone = normalizePhone(data.phone || notesInfo.phone || '')
+    if (!storedPhone || storedPhone !== phone) {
+      // Deliberately identical to the "no order" response above.
+      return res.status(404).json({
+        error: 'Order not found. Please check your Order ID and phone number.',
+      })
+    }
+
+    // Minimal customer-safe projection — never the full row.
+    const items = (data.items || notesInfo.items || []).map((it) => ({
+      product_name: it.product_name || it.name || 'Product',
+      image: it.image || null,
+      quantity: Number(it.quantity ?? it.qty ?? 1),
+      unit_price: Number(it.unit_price ?? it.price ?? 0),
+      subtotal: Number(it.subtotal ?? (Number(it.unit_price ?? it.price ?? 0) * Number(it.quantity ?? it.qty ?? 1))),
+      ...(it.variant_label ? { variant_label: it.variant_label } : {}),
+      ...(it.quantity_value != null && it.quantity_unit
+        ? { quantity_value: it.quantity_value, quantity_unit: it.quantity_unit }
+        : {}),
+    }))
+
+    return res.json({
+      order: {
+        order_number: data.order_number,
+        status: data.order_status || 'Pending',
+        created_at: data.created_at,
+        customer_name: data.customer_name || notesInfo.customer_name || '',
+        payment_method: data.payment_method || 'Cash On Delivery',
+        total: Number(data.total ?? data.total_amount ?? notesInfo.total_amount ?? 0),
+        items,
+      },
+    })
+  } catch (err) {
+    console.error('trackOrder error:', err)
+    return res.status(500).json({ error: 'Unable to check your order. Please try again.' })
+  }
+}
+
 // POST /api/orders
 // Public. Storefront checkout.
 async function createOrder(req, res) {
@@ -490,6 +583,7 @@ async function getDashboardStats(req, res) {
 
 module.exports = {
   lookupPincode,
+  trackOrder,
   createOrder,
   getOrders,
   getOrderById,

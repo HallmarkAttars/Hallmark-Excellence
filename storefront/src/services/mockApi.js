@@ -59,6 +59,15 @@ export async function submitContactMessage(payload) {
   return { success: true }
 }
 
+// GET /api/orders/track — secure customer order lookup. The backend requires
+// BOTH the order number and the customer's phone to match; it never returns
+// other customers' orders or full internal records.
+export async function trackOrder(orderId, phone) {
+  const params = new URLSearchParams({ order_id: orderId, phone })
+  const data = await api.get(`/api/orders/track?${params.toString()}`)
+  return data.order ?? null
+}
+
 export async function submitOrder(payload) {
   const requestBody = {
     customer_name: payload.name,

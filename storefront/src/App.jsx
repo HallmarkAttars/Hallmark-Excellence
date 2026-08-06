@@ -12,6 +12,7 @@ import ProductDetail from './pages/ProductDetail'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Cart from './pages/Cart'
+import TrackOrder from './pages/TrackOrder'
 
 // Scroll the window back to the top on every route change — the single scroll
 // handler for the app. Checkout must always open at the top, never inheriting
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/checkout" element={<Contact />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/track-order" element={<TrackOrder />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>
