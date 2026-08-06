@@ -286,15 +286,40 @@
 .contact-info-block h3 { color: var(--gold); }
 .contact-info-block p { color: rgba(248,243,234,0.8); margin: 4px 0; }
 
-.contact-map-placeholder {
-  aspect-ratio: 16/9;
-  background: var(--cream-deep);
+/* Real interactive map — fills the container, no padding gaps */
+.contact-map {
   border-radius: var(--radius);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--charcoal-soft);
-  letter-spacing: 0.1em;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--cream-deep);
+}
+.contact-map iframe {
+  border: 0;
+  display: block;
+  width: 100%;
+  height: 320px; /* desktop 290–340px */
+}
+.contact-map-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  color: var(--gold-deep);
+  background: var(--white);
+  border-top: 1px solid var(--line);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.contact-map-link:hover {
+  background: var(--cream-deep);
+  color: var(--charcoal);
+}
+@media (max-width: 767px) {
+  .contact-map iframe { height: 280px; } /* mobile 260–300px */
 }
 
 /* ============================================================

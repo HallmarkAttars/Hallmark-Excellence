@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProductsByBrand, getCategories, deleteProduct, toggleProductStatus, getBrands } from '../services/mockApi'
+import AdminProductCard from '../components/ui/AdminProductCard'
 import './Products.css'
 
 export default function BrandProductsAdmin({ brandSlug }) {
@@ -36,7 +37,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
   }
 
   return (
-    <div>
+    <div className="products-page">
       <div className="page-header">
         <h1>{brandName} Products</h1>
         <Link to="/admin/products/new" className="btn btn-gold">Add Product</Link>
@@ -48,7 +49,10 @@ export default function BrandProductsAdmin({ brandSlug }) {
         ) : products.length === 0 ? (
           <div className="empty-state">No {brandName} products yet.</div>
         ) : (
-          <div className="table-scroll">
+          <>
+            {/* Desktop table — kept as-is, shown at >= 768px */}
+            <div className="products-desktop">
+              <div className="table-scroll">
             <table>
               <thead>
                 <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
@@ -76,8 +80,23 @@ export default function BrandProductsAdmin({ brandSlug }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+              </div>
+            </div>
+
+            {/* Mobile product cards — same products array, shown below 768px */}
+            <div className="products-mobile">
+              {products.map((p) => (
+                <AdminProductCard
+                  key={p.id}
+                  product={p}
+                  category={categoryName(p.category_id)}
+                  onToggle={handleToggle}
+                  onDelete={setConfirmDelete}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

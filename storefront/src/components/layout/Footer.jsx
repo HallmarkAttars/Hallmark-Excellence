@@ -81,7 +81,7 @@ export default function Footer() {
             </a>
             <p className="footer-contact-row">
               <LocationIcon />
-              <span>12 Attar Lane, Chennai, Tamil Nadu 600001</span>
+              <span>83 Moore Street, Mannady, Chennai, Tamil Nadu 600001</span>
             </p>
           </div>
         </div>

@@ -12,6 +12,42 @@ function statusKey(value) {
   return STATUSES.find((s) => s.toLowerCase() === String(value ?? '').toLowerCase()) || value
 }
 
+// Shared item rows used by BOTH the desktop expanded detail and the mobile
+// expanded card — one renderer, same order data.
+function OrderItemsList({ items }) {
+  return items.map((item, i) => {
+    const name = item.product_name ?? item.name ?? 'Item'
+    const unitPrice = Number(item.unit_price ?? item.price ?? 0)
+    const qty = Number(item.quantity ?? item.qty ?? 1)
+    const subtotal = Number(item.subtotal ?? unitPrice * qty)
+    const label = item.variant_label
+      || (item.quantity_value != null && item.quantity_unit
+          ? `${item.quantity_value} ${item.quantity_unit}`
+          : '')
+    return (
+      <div key={i} className="orders-item">
+        {item.image && (
+          <img
+            src={item.image}
+            alt={name}
+            className="orders-item-image"
+          />
+        )}
+        <div className="orders-item-info">
+          <span className="orders-item-name">{name}</span>
+          {label && <span className="orders-item-variant">{label}</span>}
+          <span className="orders-item-meta">
+            ₹{unitPrice.toLocaleString('en-IN')} × {qty}
+          </span>
+        </div>
+        <span className="orders-item-subtotal">
+          ₹{subtotal.toLocaleString('en-IN')}
+        </span>
+      </div>
+    )
+  })
+}
+
 export default function Orders() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -84,7 +120,7 @@ export default function Orders() {
   }
 
   return (
-    <div>
+    <div className="orders-page">
       <div className="page-header">
         <h1>Orders</h1>
       </div>
@@ -101,7 +137,10 @@ export default function Orders() {
         ) : orders.length === 0 ? (
           <div className="empty-state">No orders yet.</div>
         ) : (
-          <div className="table-scroll">
+          <>
+            {/* Desktop table — kept exactly as-is, shown at >= 768px */}
+            <div className="orders-desktop">
+              <div className="table-scroll">
             <table>
               <thead>
                 <tr>
@@ -165,37 +204,7 @@ export default function Orders() {
                               </div>
                               <div>
                                 <h4>Items</h4>
-                                {o.items.map((item, i) => {
-                                  const name = item.product_name ?? item.name ?? 'Item'
-                                  const unitPrice = Number(item.unit_price ?? item.price ?? 0)
-                                  const qty = Number(item.quantity ?? item.qty ?? 1)
-                                  const subtotal = Number(item.subtotal ?? unitPrice * qty)
-                                  const label = item.variant_label
-                                    || (item.quantity_value != null && item.quantity_unit
-                                        ? `${item.quantity_value} ${item.quantity_unit}`
-                                        : '')
-                                  return (
-                                    <div key={i} className="orders-item">
-                                      {item.image && (
-                                        <img
-                                          src={item.image}
-                                          alt={name}
-                                          className="orders-item-image"
-                                        />
-                                      )}
-                                      <div className="orders-item-info">
-                                        <span className="orders-item-name">{name}</span>
-                                        {label && <span className="orders-item-variant">{label}</span>}
-                                        <span className="orders-item-meta">
-                                          ₹{unitPrice.toLocaleString('en-IN')} × {qty}
-                                        </span>
-                                      </div>
-                                      <span className="orders-item-subtotal">
-                                        ₹{subtotal.toLocaleString('en-IN')}
-                                      </span>
-                                    </div>
-                                  )
-                                })}
+                                <OrderItemsList items={o.items} />
                               </div>
                             </div>
                           </td>
@@ -205,8 +214,113 @@ export default function Orders() {
                   )
                 })}
               </tbody>
-            </table>
-          </div>
+              </table>
+              </div>
+            </div>
+
+            {/* Mobile order cards — same orders array, shown below 768px */}
+            <div className="orders-mobile">
+              {orders.map((o) => {
+                const key = statusKey(o.status)
+                const isOpen = expanded === o.id
+                return (
+                  <div className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
+                    {/* Header row — order id (truncated) + status badge; clickable */}
+                    <div
+                      className="order-card-head"
+                      onClick={() => setExpanded(isOpen ? null : o.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setExpanded(isOpen ? null : o.id)
+                        }
+                      }}
+                      aria-expanded={isOpen}
+                    >
+                      <span className="order-card-id" title={o.order_number}>{o.order_number}</span>
+                      <span className={`status-pill status-${String(key).toLowerCase()}`}>{o.status}</span>
+                    </div>
+
+                    <span className="order-card-customer">{o.customer_name}</span>
+
+                    <div className="order-card-bottom">
+                      <span className="order-card-date">
+                        {new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="order-card-amount">₹{Number(o.total_amount).toLocaleString('en-IN')}</span>
+                    </div>
+
+                    {isOpen && (
+                      <div className="order-card-details">
+                        <div>
+                          <h4>Order Details</h4>
+                          <p><strong>Order ID</strong> {o.order_number}</p>
+                          {o.phone && <p><strong>Phone</strong> {o.phone}</p>}
+                          {o.address && (
+                            <p><strong>Address</strong> {o.address}{o.pincode ? `, ${o.pincode}` : ''}</p>
+                          )}
+                          {(o.city || o.state) && (
+                            <p><strong>Area</strong> {[o.locality, o.city, o.state].filter(Boolean).join(', ')}</p>
+                          )}
+                          {o.message && <p><strong>Message</strong> "{o.message}"</p>}
+                        </div>
+
+                        <div>
+                          <h4>Products</h4>
+                          <OrderItemsList items={o.items} />
+                        </div>
+
+                        <div>
+                          <h4>Status</h4>
+                          <select
+                            id={`order-status-${o.id}`}
+                            className={`orders-status-select orders-status-${String(key).toLowerCase()} order-card-status-select`}
+                            value={key}
+                            disabled={updatingId === o.id}
+                            onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                            aria-label={`Status of order ${o.order_number}`}
+                          >
+                            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                            {!STATUSES.some((s) => s.toLowerCase() === String(o.status ?? '').toLowerCase()) && (
+                              <option value={o.status} disabled>{o.status}</option>
+                            )}
+                          </select>
+                          {updatingId === o.id && <span className="orders-updating">Updating…</span>}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="order-card-delete"
+                          onClick={() => setConfirmDelete(o)}
+                          aria-label={`Delete order ${o.order_number}`}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
+                          </svg>
+                          Delete Order
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      className="order-card-toggle"
+                      onClick={() => setExpanded(isOpen ? null : o.id)}
+                      aria-expanded={isOpen}
+                      aria-label={isOpen ? `Hide details for order ${o.order_number}` : `View details for order ${o.order_number}`}
+                    >
+                      {isOpen ? 'Hide' : 'View'}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 

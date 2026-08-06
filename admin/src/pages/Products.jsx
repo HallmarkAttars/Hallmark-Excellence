@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProducts, getCategories, deleteProduct, toggleProductStatus } from '../services/mockApi'
+import AdminProductCard from '../components/ui/AdminProductCard'
 import './Products.css'
 
 export default function Products() {
@@ -34,7 +35,7 @@ export default function Products() {
   }
 
   return (
-    <div>
+    <div className="products-page">
       <div className="page-header">
         <h1>Products</h1>
         <Link to="/admin/products/new" className="btn btn-gold">Add Product</Link>
@@ -46,7 +47,10 @@ export default function Products() {
         ) : products.length === 0 ? (
           <div className="empty-state">No products yet.</div>
         ) : (
-          <div className="table-scroll">
+          <>
+            {/* Desktop table — kept as-is, shown at >= 768px */}
+            <div className="products-desktop">
+              <div className="table-scroll">
             <table>
               <thead>
                 <tr>
@@ -80,8 +84,23 @@ export default function Products() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </table>
+              </div>
+            </div>
+
+            {/* Mobile product cards — same products array, shown below 768px */}
+            <div className="products-mobile">
+              {products.map((p) => (
+                <AdminProductCard
+                  key={p.id}
+                  product={p}
+                  category={categoryName(p.category_id)}
+                  onToggle={handleToggle}
+                  onDelete={setConfirmDelete}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 

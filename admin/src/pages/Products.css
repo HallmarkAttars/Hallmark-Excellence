@@ -33,3 +33,35 @@
 }
 .confirm-dialog { max-width: 380px; }
 .confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+
+/* ============================================================
+   Products pages — responsive: desktop table vs mobile cards.
+   Shared by Products, Arees Products and Dahab Products.
+   ============================================================ */
+.products-desktop { display: block; }
+.products-mobile { display: none; }
+
+@media (max-width: 767px) {
+  .products-desktop { display: none; }
+  .products-mobile { display: grid; gap: 12px; }
+
+  /* Page header — heading + Add Product, stacks only when needed (e.g. 320px) */
+  .products-page .page-header {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .products-page .page-header h1 {
+    font-size: clamp(24px, 7vw, 30px);
+    line-height: 1.1;
+    min-width: 0;
+  }
+  .products-page .page-header .btn {
+    height: 42px;
+    padding: 0 16px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Compact card container instead of the oversized white table card */
+  .products-page .card { padding: 12px; }
+}

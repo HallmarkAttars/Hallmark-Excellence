@@ -1,0 +1,117 @@
+/* ============================================================
+   Shared admin mobile product card (rendered below 768px)
+   ============================================================ */
+.product-card-mobile {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+}
+
+/* Image | product information */
+.product-card-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.product-card-image {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  background: #faf8f2;
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.product-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;      /* never crop or stretch */
+  padding: 5px;
+  box-sizing: border-box;
+}
+.product-card-image-placeholder {
+  display: inline-flex;
+  color: rgba(20, 17, 13, 0.35);
+}
+
+.product-card-info {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Name (max 2 lines) + featured badge on one row */
+.product-card-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.product-card-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--charcoal);
+  overflow: hidden;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+/* Featured pill stays full-size next to a clamped name, even at 320px */
+.product-card-name-wrap .featured-badge { flex-shrink: 0; }
+
+.product-card-category {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.6);
+}
+.product-card-price {
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stock (left) + status toggle (right) */
+.product-card-stock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.product-card-stock-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(20, 17, 13, 0.7);
+}
+
+/* Edit | Delete — equal 44px touch targets */
+.product-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.product-card-actions .btn {
+  width: 100%;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}

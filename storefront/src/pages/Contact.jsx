@@ -527,9 +527,28 @@ export default function Contact() {
               <h3>Visit or Reach Us</h3>
               <p>+91 98765 43210</p>
               <p>hello@areesdahab.com</p>
-              <p>12 Attar Lane, Chennai, Tamil Nadu 600001</p>
+              <p>83 Moore Street, Mannady, Chennai, Tamil Nadu 600001</p>
             </div>
-            <div className="contact-map-placeholder" aria-hidden="true">Map</div>
+            {/* Real Arees Attars location — interactive Google Maps embed.
+                The q= query pins the business address so the marker lands on
+                the actual shop, not the centre of Chennai. */}
+            <div className="contact-map">
+              <iframe
+                src="https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed"
+                title="Arees Attars Chennai Location"
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              <a
+                className="contact-map-link"
+                href="https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Get Directions
+              </a>
+            </div>
           </div>
         )}
       </div>
