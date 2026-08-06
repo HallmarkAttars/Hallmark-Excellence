@@ -9,12 +9,16 @@
 
 .categories-card {
   background: var(--white);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: var(--shadow-soft);
   text-align: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
-.categories-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+.categories-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lift);
+}
 .categories-image { aspect-ratio: 4/3; background-size: cover; background-position: center; }
 .categories-card h3 { padding: 16px; font-size: 1.1rem; }

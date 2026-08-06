@@ -24,7 +24,7 @@
 .product-detail-thumb.is-active { border-color: var(--gold); }
 .product-detail-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-.product-detail-price { font-size: 1.4rem; color: var(--gold-deep); font-weight: 500; }
+.product-detail-price { font-size: 1.5rem; color: var(--gold-deep); font-weight: 700; }
 .product-detail-stock { font-size: 0.85rem; color: var(--charcoal-soft); }
 
 .product-detail-actions { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
@@ -57,14 +57,14 @@
   transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 .variant-option:hover {
-  background: #A84A6B; /* light maroon */
-  border-color: #A84A6B;
-  color: var(--white);
+  background: var(--cream-deep);
+  border-color: var(--gold);
+  color: var(--charcoal);
 }
 .variant-option.is-active {
-  background: #5C0634;
-  border-color: #5C0634;
-  color: var(--white);
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--cream);
 }
 
 /* Stock status colors */
@@ -74,7 +74,7 @@
 
 .qty-selector {
   display: flex; align-items: center; gap: 16px;
-  border: 1px solid rgba(36,31,25,0.2); border-radius: var(--radius);
+  border: 1px solid var(--line); border-radius: var(--radius);
   padding: 8px 16px;
 }
 .qty-selector button { background: none; border: none; font-size: 1.1rem; color: var(--charcoal); }

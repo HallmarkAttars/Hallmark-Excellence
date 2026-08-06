@@ -1,7 +1,167 @@
-.brand-hero {
-  background: var(--charcoal);
+/* ============================================================
+   Brand collection page (Arees / Dahab) — compact premium
+   Header → toolbar → product grid · no giant hero, no dead space
+   ============================================================ */
+
+/* ---------- Compact collection header (180–220px desktop) ---------- */
+.brand-header {
+  background: #1B1814;
   color: var(--cream);
-  padding: 56px 0;
   text-align: center;
+  border-bottom: 1px solid rgba(198, 154, 75, 0.25);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 44px 24px;
 }
-.brand-hero h1 { color: var(--cream); }
+
+.brand-header-label {
+  font-family: var(--font-body);
+  font-size: 0.78rem; /* 12.5px · gold · uppercase · tracked */
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--gold-light);
+  margin: 0 0 12px;
+}
+
+.brand-header h1 {
+  color: var(--cream);
+  font-size: clamp(2.5rem, 4vw, 3rem); /* 40–48px luxury serif */
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+
+.brand-header-desc {
+  color: rgba(232, 225, 214, 0.82); /* muted warm cream */
+  font-size: 0.95rem; /* 15.2px */
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  .brand-header { min-height: 160px; padding: 36px 20px; }
+  .brand-header h1 { font-size: clamp(1.9rem, 9vw, 2.4rem); }
+  .brand-header-desc { font-size: 0.88rem; }
+}
+
+/* ---------- Body: 1440px container with scaled gutters ---------- */
+.brand-body {
+  max-width: 1440px;
+  padding-inline: 40px;
+  padding-top: 40px; /* header → toolbar 40–48px */
+  padding-bottom: 80px;
+}
+@media (max-width: 1023px) {
+  .brand-body { padding-inline: 24px; padding-top: 32px; }
+}
+@media (max-width: 767px) {
+  .brand-body { padding-inline: 16px; padding-top: 24px; padding-bottom: 56px; }
+}
+@media (max-width: 360px) {
+  .brand-body { padding-inline: 12px; }
+}
+
+/* Grid columns per spec: 4 at 1200–1439px, 5 at ≥1440px (container caps at 1440) */
+@media (min-width: 1400px) and (max-width: 1439px) {
+  .brand-body .grid-products { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---------- Toolbar ---------- */
+.brand-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px; /* toolbar → products 24–32px */
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand-count {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+}
+.brand-count span { color: var(--gold-deep); font-weight: 600; }
+
+.brand-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Dropdown buttons + menus ---------- */
+.brand-menu { position: relative; }
+
+.brand-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  font-size: 0.75rem; /* 12px — 12–14px */
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--charcoal);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.brand-menu-btn:hover { border-color: var(--gold); color: var(--gold-deep); }
+.brand-menu-btn.is-active { border-color: var(--gold); color: var(--gold-deep); }
+.brand-menu-btn svg { transition: transform 0.2s ease; }
+.brand-menu-btn[aria-expanded='true'] svg { transform: rotate(180deg); }
+
+.brand-menu-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-drawer);
+  min-width: 224px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: var(--shadow-lift);
+}
+.brand-menu-list li { margin: 0; }
+.brand-menu-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  color: var(--charcoal-soft);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.brand-menu-list button:hover { background: var(--cream); color: var(--charcoal); }
+.brand-menu-list button.is-active { color: var(--gold-deep); font-weight: 600; }
+
+.brand-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer-backdrop);
+}
+
+@media (max-width: 767px) {
+  .brand-menu-btn { height: 40px; padding: 0 12px; font-size: 0.7rem; }
+  .brand-menu-list { right: auto; left: 0; min-width: 200px; }
+}

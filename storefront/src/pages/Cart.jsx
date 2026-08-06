@@ -13,8 +13,14 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="cart-empty">
+        <span className="cart-empty-icon" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
+            <path d="M8.5 10V6.5a3.5 3.5 0 0 1 7 0V10" />
+          </svg>
+        </span>
         <h1>Your Cart is Empty</h1>
-        <p>Looks like you haven't added any attars yet.</p>
+        <p>Looks like you haven't added any attars yet. Explore the collection and find your signature scent.</p>
         <Link to="/shop" className="btn btn-gold">Continue Shopping</Link>
       </div>
     )

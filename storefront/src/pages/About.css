@@ -15,8 +15,8 @@
   aspect-ratio: 4/3;
   background-size: cover;
   background-position: center;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
 }
 
 .about-values {
@@ -24,7 +24,7 @@
   gap: 32px;
   grid-template-columns: 1fr;
   padding: 48px 0;
-  border-top: 1px solid rgba(36,31,25,0.1);
+  border-top: 1px solid var(--line);
 }
 @media (min-width: 768px) {
   .about-values { grid-template-columns: repeat(3, 1fr); }

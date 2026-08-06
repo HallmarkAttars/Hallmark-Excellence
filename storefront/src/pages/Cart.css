@@ -1,8 +1,23 @@
 .cart-empty {
   text-align: center;
   padding: 100px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.cart-empty p { color: var(--charcoal-soft); margin-bottom: 24px; }
+.cart-empty-icon {
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.cart-empty h1 { margin-bottom: 10px; }
+.cart-empty p { color: var(--charcoal-soft); margin-bottom: 28px; max-width: 40ch; }
 
 .cart-page { padding: 48px 24px 80px; }
 .cart-page h1 { margin-bottom: 32px; }
@@ -15,9 +30,9 @@
   align-items: center;
   gap: 16px;
   background: var(--white);
+  border: 1px solid var(--line);
   padding: 14px;
   border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
 }
 .cart-item-image { width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius); }
 .cart-item-info h3 { font-size: 0.98rem; margin: 0; }
@@ -28,12 +43,27 @@
   letter-spacing: 0.03em;
   margin: 2px 0 0;
 }
-.cart-item-price { color: var(--charcoal-soft); font-size: 0.85rem; margin: 0; }
+.cart-item-price { color: var(--gold-deep); font-size: 0.85rem; font-weight: 600; margin: 0; }
 
 .cart-item-qty { display: flex; align-items: center; gap: 10px; }
-.cart-item-qty button { background: var(--cream-deep); border: none; border-radius: var(--radius); width: 26px; height: 26px; }
+.cart-item-qty button {
+  background: var(--cream-deep);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--charcoal);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.cart-item-qty button:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--ink);
+}
 
-.cart-item-subtotal { font-weight: 500; white-space: nowrap; }
+.cart-item-subtotal { font-weight: 600; white-space: nowrap; }
 
 .cart-item-remove {
   background: none; border: none; font-size: 1.2rem; color: var(--charcoal-soft);
@@ -42,8 +72,8 @@
 
 .cart-summary {
   background: var(--white);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
   padding: 24px;
   max-width: 360px;
   margin-left: auto;

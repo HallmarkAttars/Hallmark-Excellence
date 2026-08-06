@@ -1,0 +1,60 @@
+/* ============================================================
+   Featured Products — premium responsive grid
+   5 / 5 / 4 / 3 / 2 / 2 / 1 columns · no carousel, no overflow
+   ============================================================ */
+
+.featured-section {
+  background: var(--cream);
+}
+
+/* ---------- Scoped container gutters (this section only) ---------- */
+.featured-section .container {
+  padding-inline: 16px; /* mobile */
+}
+@media (max-width: 360px) {
+  .featured-section .container { padding-inline: 12px; } /* small mobile */
+}
+@media (min-width: 768px) {
+  .featured-section .container { padding-inline: 24px; } /* tablet */
+}
+@media (min-width: 1024px) {
+  .featured-section .container { padding-inline: 40px; } /* desktop */
+}
+
+/* ---------- Scoped section rhythm ---------- */
+.featured-section { padding: 40px 0; } /* mobile 36–44px */
+@media (min-width: 768px) { .featured-section { padding: 52px 0; } } /* tablet 48–56px */
+@media (min-width: 1024px) { .featured-section { padding: 64px 0; } } /* desktop 64–72px */
+
+/* ---------- Scoped header tuning ---------- */
+.featured-section .section-head { margin-bottom: 28px; }
+@media (min-width: 768px) { .featured-section .section-head { margin-bottom: 36px; } }
+
+/* Tablet heading kept inside the 26–30px band (global clamp runs hot at ~34px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .featured-section .section-title-upper {
+    font-size: clamp(1.65rem, 3.2vw, 1.9rem);
+  }
+}
+
+/* ---------- Product grid ---------- */
+.featured-track {
+  display: grid;
+  grid-template-columns: 1fr; /* very small mobile (<360px) */
+  gap: 14px;
+}
+@media (min-width: 360px) {
+  .featured-track { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* mobile 2-up */
+}
+@media (min-width: 480px) {
+  .featured-track { gap: 16px; } /* large mobile keeps 2-up, roomier gaps */
+}
+@media (min-width: 768px) {
+  .featured-track { grid-template-columns: repeat(3, 1fr); gap: 20px; } /* tablet 3-up */
+}
+@media (min-width: 1024px) {
+  .featured-track { grid-template-columns: repeat(4, 1fr); gap: 24px; } /* laptop 4-up */
+}
+@media (min-width: 1200px) {
+  .featured-track { grid-template-columns: repeat(5, 1fr); } /* desktop / large desktop 5-up */
+}

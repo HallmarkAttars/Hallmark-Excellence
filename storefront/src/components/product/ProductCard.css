@@ -1,42 +1,50 @@
+/* ============================================================
+   Product Card — premium, compact, consistent
+   Image · Name · Variant · Price · Add to Cart
+   ============================================================ */
+
 .product-card {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: none;
   height: 100%;
-  background: #ffffff;
-  border: 1px solid #EEE7DC;
-  border-radius: var(--radius);
+  min-width: 0; /* grid-item insurance: no overflow from long names / nowrap buttons */
+  background: #FFFFFF;
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(36, 31, 25, 0.04);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
-}
-.product-card:hover {
-  box-shadow: 0 12px 28px rgba(36, 31, 25, 0.1);
-  transform: translateY(-3px);
+  box-shadow: 0 2px 8px rgba(80, 60, 30, 0.05); /* extremely subtle warm shadow */
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
-/* --- Image section (never cropped, never stretched) --- */
+/* ---------- Image area (noticeably larger, never cropped) ---------- */
 .product-card-image-link {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  padding: 10px;
+  height: clamp(140px, 40vw, 165px); /* mobile 140–165px */
+  padding: 8px;                      /* mobile 6–10px */
   overflow: hidden;
-  background: #ffffff;
+  background: var(--stage);
 }
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  object-fit: contain;
+  object-fit: contain;               /* no cropping, no distortion */
+  object-position: center;
   display: block;
-  transition: transform 0.4s ease;
+  /* Source photos carry white margins around the bottle — this visually
+     enlarges the product inside the clipped stage so the bottle is the
+     hero, not the white space. Original files are never touched.
+     Tunable per asset: 1.05–1.15. Escape hatch: if a future image is
+     near-full-bleed, add a per-card modifier class that lowers the scale
+     rather than changing this global value. */
+  transform: scale(1.08);
+  transform-origin: center;
+  transition: transform 0.22s ease;
 }
-.product-card:hover .product-card-image-link img { transform: scale(1.05); }
 
 .product-card-badge {
   position: absolute;
@@ -44,66 +52,100 @@
   left: 10px;
   background: var(--charcoal);
   color: var(--cream);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   padding: 4px 8px;
-  border-radius: 2px;
+  border-radius: 3px;
   z-index: 1;
 }
 
-/* --- Content section --- */
+/* ---------- Content (sits directly below the image) ---------- */
 .product-card-body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 16px;
-  gap: 6px;
+  gap: 5px;
+  padding: 12px;                     /* mobile 10–12px */
   min-width: 0;
 }
 .product-card-body h3 {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;                   /* mobile 15–17px */
+  font-weight: 600;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
   display: -webkit-box;
   line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.product-card-price {
-  color: #B47C2C;
-  font-weight: 600;
-  margin: 6px 0 0;
-  font-size: 0.95rem;
+
+.product-card-variant {
+  color: var(--gold-deep);
+  font-size: 0.72rem;                /* 11.5px — 11–12px */
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
   line-height: 1.4;
 }
+
+.product-card-price {
+  color: var(--gold-deep);
+  font-weight: 700; /* Manrope bold — price is instantly identifiable */
+  margin: 4px 0 0;
+  font-size: 0.95rem;                /* mobile 15–16px · desktop 17.6px */
+  line-height: 1.4;
+}
+
+/* ---------- Add to cart (full width, pinned to bottom) ---------- */
 .product-card-btn {
   margin-top: auto;
   width: 100%;
-  height: 46px;
-  font-size: 0.75rem;
+  height: 40px;                      /* mobile 38–42px */
+  font-size: 0.7rem;                 /* mobile 11.2px — 11–12px band */
+  letter-spacing: 0.08em;
   padding: 0 10px;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
+.product-card-btn.is-added {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--ink);
+}
 
-/* --- Mobile card tweaks (below 768px) --- */
-@media (max-width: 767px) {
-  .product-card-body {
-    padding: 14px 12px;
+/* ---------- Tablet (768–1023px) ---------- */
+@media (min-width: 768px) {
+  .product-card-image-link { height: clamp(180px, 22vw, 200px); padding: 10px; } /* tablet 180–200px */
+  .product-card-body { padding: 14px; }
+  .product-card-body h3 { font-size: 18px; } /* tablet 17–19px */
+  .product-card-variant { font-size: 0.75rem; }
+  .product-card-price { font-size: 1rem; }
+  .product-card-btn { height: 42px; }
+}
+
+/* ---------- Desktop (1024px+) ---------- */
+@media (min-width: 1024px) {
+  .product-card-image-link { height: clamp(200px, 20vw, 220px); padding: 12px; } /* laptop 200–220px */
+  .product-card-body { padding: 16px; }
+  .product-card-body h3 { font-size: 20px; } /* desktop 19–21px */
+  .product-card-price { font-size: 1.1rem; }
+  .product-card-btn { height: 44px; font-size: 0.75rem; }
+}
+@media (min-width: 1200px) {
+  .product-card-image-link { height: clamp(220px, 17vw, 240px); padding: 14px; } /* desktop 220–240px */
+}
+
+/* ---------- Hover only on devices that actually hover ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(80, 60, 30, 0.08);
+    border-color: rgba(184, 137, 56, 0.35); /* subtle gold edge */
   }
-  .product-card-body h3 {
-    font-size: 16px;
-  }
-  .product-card-price {
-    font-size: 0.88rem;
-  }
-  .product-card-btn {
-    height: 46px;
-    font-size: 0.72rem;
-  }
+  .product-card:hover .product-card-image-link img { transform: scale(1.10); }
 }

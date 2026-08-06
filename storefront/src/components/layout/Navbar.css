@@ -1,126 +1,199 @@
+/* ============================================================
+   Navbar — compact luxury header (64–72px, sticky)
+   ============================================================ */
+
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: rgba(248, 243, 234, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(36, 31, 25, 0.08);
+  z-index: var(--z-navbar);
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
 }
 
 .navbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 76px;
+  gap: 12px;
+  height: var(--header-h);
 }
 
-.navbar-logo {
-  display: flex;
-  align-items: center;
-}
-
+.navbar-logo { display: flex; align-items: center; flex-shrink: 0; }
 .navbar-logo-img {
-  height: 70px;
+  height: 54px;
   width: auto;
   object-fit: contain;
   display: block;
 }
 
-@media (max-width: 768px) {
-  .navbar-logo-img { height: 45px; }
+@media (max-width: 767px) {
+  .navbar-logo { flex: 1 1 auto; min-width: 0; }
+  .navbar-logo-img { height: 44px; max-width: 100%; }
 }
 
-@media (max-width: 480px) {
-  .navbar-logo-img { height: 50px; }
+/* ---------- Desktop nav ---------- */
+.navbar-nav { display: none; }
+
+@media (min-width: 1200px) {
+  .navbar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 30px;
+    min-width: 0;
+  }
+
+  .navbar-link {
+    font-size: 0.83rem; /* 13.3px — Manrope 500 */
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--charcoal-soft);
+    padding: 8px 0;
+    position: relative;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+  }
+  @media (min-width: 1200px) and (max-width: 1399px) {
+    .navbar-nav { gap: 22px; }
+  }
+  .navbar-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 2px;
+    height: 1px;
+    background: var(--gold-deep);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s ease;
+  }
+  .navbar-link:hover, .navbar-link.is-active { color: var(--ink); }
+  .navbar-link:hover::after, .navbar-link.is-active::after { transform: scaleX(1); }
 }
 
-.navbar-links {
-  display: none;
-}
-
-.navbar-link {
-  font-size: 0.82rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--charcoal-soft);
-  padding: 8px 0;
-  border-bottom: 1px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
-}
-.navbar-link:hover, .navbar-link.is-active {
-  color: var(--charcoal);
-  border-color: var(--gold);
-}
-
+/* ---------- Actions ---------- */
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
-.navbar-cart {
-  position: relative;
+.navbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
   color: var(--charcoal);
-  display: flex;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+.navbar-icon-btn:hover { background: var(--cream-deep); color: var(--gold-deep); }
+
+.navbar-cart { position: relative; }
 
 .navbar-cart-badge {
   position: absolute;
-  top: -8px;
-  right: -10px;
+  top: 2px;
+  right: 2px;
   background: var(--gold-deep);
   color: var(--white);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  min-width: 17px;
-  height: 17px;
+  min-width: 16px;
+  height: 16px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+  letter-spacing: 0;
 }
 
-.navbar-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: none;
-  border: none;
-  padding: 6px;
-}
-.navbar-toggle span {
-  display: block;
-  width: 22px;
-  height: 1.5px;
-  background: var(--charcoal);
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-.navbar-toggle.is-open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-.navbar-toggle.is-open span:nth-child(2) { opacity: 0; }
-.navbar-toggle.is-open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-
-@media (min-width: 768px) {
-  .navbar-links {
-    display: flex;
-    gap: 32px;
-  }
+/* Menu toggle only below full desktop nav */
+.navbar-toggle { display: inline-flex; }
+@media (min-width: 1200px) {
   .navbar-toggle { display: none; }
 }
 
+/* Compact icons on small screens (min 40px touch target) */
 @media (max-width: 767px) {
-  .navbar-links {
-    position: absolute;
-    top: 76px;
-    left: 0;
-    right: 0;
-    background: var(--cream);
-    border-bottom: 1px solid rgba(36, 31, 25, 0.08);
-    flex-direction: column;
-    padding: 12px 24px 24px;
-    gap: 4px;
-    box-shadow: var(--shadow-soft);
-  }
-  .navbar-links.is-open { display: flex; }
-  .navbar-link { padding: 12px 0; border-bottom: 1px solid rgba(36,31,25,0.06); }
+  .navbar-actions { gap: 0; }
+  .navbar-icon-btn { width: 44px; height: 44px; }
+}
+@media (max-width: 360px) {
+  .navbar-icon-btn { width: 40px; height: 40px; }
+}
+
+/* ---------- Mobile drawer ---------- */
+.navbar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 25, 20, 0.45);
+  z-index: var(--z-drawer-backdrop);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.navbar-backdrop.is-visible { opacity: 1; visibility: visible; }
+
+.navbar-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(340px, 88vw);
+  z-index: var(--z-drawer);
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  padding: 20px 24px 28px;
+  transform: translateX(105%);
+  visibility: hidden;
+  transition: transform 0.34s ease, visibility 0.34s ease;
+  overflow-y: auto;
+  box-shadow: -16px 0 40px rgba(29, 25, 20, 0.18);
+}
+.navbar-drawer.is-open { transform: translateX(0); visibility: visible; }
+
+.navbar-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.navbar-drawer-head .eyebrow { margin: 0; }
+
+.navbar-drawer-links {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  margin-bottom: 28px;
+}
+
+.navbar-drawer-link {
+  font-family: var(--font-body); /* navigation is functional — Manrope */
+  font-size: 1.02rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--charcoal);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line-soft);
+  transition: color 0.2s ease, padding-left 0.25s ease;
+}
+.navbar-drawer-link:hover, .navbar-drawer-link.is-active {
+  color: var(--gold-deep);
+  padding-left: 8px;
+}
+
+.navbar-drawer-cta {
+  margin-top: auto;
+  width: 100%;
 }

@@ -1,5 +1,5 @@
 /* ====================================================
-   Shop Page — Luxury Filter Drawer UI (Row style)
+   Shop Page — luxury filter drawer (shared design system)
    ==================================================== */
 
 .shop-layout {
@@ -9,11 +9,11 @@
   grid-template-columns: 1fr;
 }
 
-/* --- Top Bar --- */
+/* --- Top bar --- */
 .shop-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
 .shop-filter-btn {
@@ -22,33 +22,37 @@
   gap: 10px;
   height: 48px;
   padding: 0 22px;
-  background: #000000;
-  color: #fff;
-  border: none;
-  border-radius: 0;
+  background: var(--charcoal);
+  color: var(--cream);
+  border: 1px solid var(--charcoal);
+  border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  font-size: 0.8rem; /* 12.8px */
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
-.shop-filter-btn:hover {
-  background: #000000;
-  transform: translateY(-1px);
+.shop-filter-btn:hover { background: var(--ink); border-color: var(--ink); }
+
+.shop-filter-btn.is-outline {
+  background: transparent;
+  color: var(--charcoal);
+  border-color: var(--line-strong);
 }
-.shop-filter-btn:focus-visible {
-  outline: 2px solid #C8A96B;
-  outline-offset: 2px;
+.shop-filter-btn.is-outline:hover {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--cream);
 }
 
 /* --- Backdrop --- */
 .filter-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  background: rgba(29, 25, 20, 0.5);
+  z-index: var(--z-backdrop);
   animation: filterBackdropFade 0.3s ease;
 }
 @keyframes filterBackdropFade {
@@ -64,13 +68,13 @@
   bottom: 0;
   width: 320px;
   max-width: 85vw;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
-  background: var(--cream, #F8F5F2);
-  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.25);
+  background: var(--cream);
+  box-shadow: 8px 0 40px rgba(29, 25, 20, 0.22);
   transform: translateX(-110%);
-  transition: transform 0.3s ease;
+  transition: transform 0.32s ease;
   visibility: hidden;
 }
 .filter-drawer.is-open {
@@ -78,32 +82,28 @@
   visibility: visible;
 }
 
-/* --- Drawer Header --- */
+/* --- Drawer header --- */
 .filter-drawer-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 22px;
-  background: #000000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--charcoal);
 }
 .filter-drawer-title {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  letter-spacing: 0.06em;
+  font-family: var(--font-body); /* functional control — Manrope, not serif */
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--cream);
   margin: 0;
-  font-weight: 500;
+  font-weight: 600;
 }
 .filter-drawer-close {
   background: none;
   border: none;
-  color: #fff;
-  font-size: 1.6rem;
+  color: var(--cream);
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
   padding: 4px 8px;
@@ -114,7 +114,7 @@
   transform: rotate(90deg);
 }
 
-/* --- Drawer Body --- */
+/* --- Drawer body --- */
 .filter-drawer-body {
   flex: 1;
   overflow-y: auto;
@@ -124,24 +124,24 @@
   gap: 24px;
 }
 
-/* --- Filter Card (section) --- */
+/* --- Filter card (section) --- */
 .filter-card {
-  background: #fff;
-  border: 1px solid #E6E0D7;
+  background: var(--white);
+  border: 1px solid var(--line);
   padding: 20px;
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 .filter-card-title {
   font-family: var(--font-body);
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #000000;
-  margin: 0 0 16px;
-  font-weight: 700;
+  color: var(--charcoal);
+  margin: 0 0 14px;
+  font-weight: 600;
 }
 
-/* --- Filter Row List --- */
+/* --- Filter rows --- */
 .filter-rows {
   display: flex;
   flex-direction: column;
@@ -153,34 +153,24 @@
   text-align: left;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--line-soft);
   padding: 13px 12px;
   font-family: var(--font-body);
   font-size: 0.95rem;
-  color: #222222;
+  color: var(--charcoal-soft);
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-.filter-row:last-child {
-  border-bottom: none;
-}
-.filter-row:hover {
-  background: #F8F5F2;
-  color: #070707;
-}
-.filter-row:focus-visible {
-  outline: 2px solid #C8A96B;
-  outline-offset: -2px;
-}
+.filter-row:last-child { border-bottom: none; }
+.filter-row:hover { background: var(--cream-deep); color: var(--ink); }
 
-/* Active row */
 .filter-row.is-active {
-  background: #000000;
-  color: #fff;
-  border-left: 4px solid #C8A96B;
-  font-weight: 600;
+  background: var(--charcoal);
+  color: var(--cream);
+  font-weight: 500;
 }
+.filter-row.is-active:hover { background: var(--ink); }
 
 /* --- Results --- */
 .shop-results {
@@ -216,6 +206,13 @@
 @media (max-width: 1199px) {
   .shop-layout .grid-products {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Large desktop (1400px+) — 5 per row */
+@media (min-width: 1400px) {
+  .shop-layout .grid-products {
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
@@ -269,4 +266,3 @@
     padding: 14px 12px;
   }
 }
-

@@ -1,39 +1,127 @@
+/* ============================================================
+   Hero — wide editorial composition
+   ============================================================ */
+
 .hero {
   position: relative;
-  min-height: calc(100vh - 80px);
   display: flex;
   align-items: center;
-  justify-content: center;
+  min-height: 600px;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
   background-image: url('/Hero.png');
   background-size: cover;
   background-position: center;
+  transform: scale(1.02);
 }
 
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(26,22,17,0.55) 0%, rgba(26,22,17,0.78) 100%);
+  background: linear-gradient(
+    100deg,
+    rgba(20, 17, 13, 0.86) 0%,
+    rgba(20, 17, 13, 0.62) 42%,
+    rgba(20, 17, 13, 0.28) 72%,
+    rgba(20, 17, 13, 0.55) 100%
+  );
 }
 
 .hero-content {
   position: relative;
   z-index: 1;
-  text-align: center;
+  padding-top: 56px;
+  padding-bottom: 56px;
   color: var(--cream);
-  max-width: 640px;
-  padding: 0 24px;
 }
 
-.hero-eyebrow { color: var(--gold); margin-bottom: 16px; }
+.hero-eyebrow {
+  color: var(--gold-light);
+  margin-bottom: 18px;
+}
 
-.hero-content h1 {
+.hero-title {
   color: var(--cream);
-  font-size: clamp(2.4rem, 6vw, 4rem);
-  margin-bottom: 20px;
+  font-size: clamp(3.375rem, 5vw, 4.75rem); /* desktop 54–76px */
+  line-height: 1.02;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0 0 22px;
+  max-width: 12ch;
 }
 
 .hero-tagline {
-  color: rgba(248, 243, 234, 0.85);
-  margin-bottom: 32px;
+  color: rgba(248, 243, 234, 0.86);
   font-size: 1.02rem;
+  line-height: 1.65;
+  max-width: 33rem; /* ~528px, readability band 480–560px */
+  margin: 0 0 34px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-btn-arrow { font-size: 1.05em; line-height: 1; }
+
+/* ---------- Tablet ---------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hero { min-height: 560px; }
+  .hero-title { font-size: clamp(2.75rem, 5.5vw, 3.6rem); }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 767px) {
+  .hero {
+    min-height: 520px;
+    align-items: flex-end;
+  }
+  .hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(20, 17, 13, 0.35) 0%,
+      rgba(20, 17, 13, 0.62) 45%,
+      rgba(20, 17, 13, 0.85) 100%
+    );
+  }
+  .hero-content {
+    padding-top: 64px;
+    padding-bottom: 48px;
+  }
+  .hero-title {
+    font-size: clamp(2.4rem, 10vw, 3rem); /* 38–48px mobile */
+    max-width: none;
+  }
+  .hero-tagline { font-size: 0.95rem; }
+  .hero-actions { flex-direction: column; align-items: stretch; }
+  .hero-btn { width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .hero { min-height: 500px; }
+  .hero-title { font-size: clamp(2.35rem, 10vw, 2.5rem); }
+}
+
+/* ---------- Landscape phones ---------- */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero {
+    min-height: 100vh;
+    align-items: center;
+  }
+  .hero-content {
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+  .hero-title { font-size: clamp(2rem, 6vw, 2.6rem); margin-bottom: 14px; }
+  .hero-tagline { margin-bottom: 20px; }
+  .hero-actions { flex-direction: row; }
+  .hero-btn { width: auto; }
 }

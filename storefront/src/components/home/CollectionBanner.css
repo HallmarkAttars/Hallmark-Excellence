@@ -1,0 +1,151 @@
+/* ============================================================
+   Arees & Dahab collection banners — same dimensions, two moods
+   Arees: warm cream / soft blush · Dahab: deep brown / gold
+   ============================================================ */
+
+.collection-banner {
+  padding: 0;
+}
+
+.collection-banner-inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.collection-banner-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.collection-banner-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.74rem; /* 11.8px — small label, uppercase gold */
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.collection-banner-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 5.5vw, 2.125rem); /* mobile 28–34px */
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  margin: 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  text-wrap: balance;
+}
+
+.collection-banner-tagline {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0 0 30px;
+  max-width: 38ch;
+}
+
+.collection-banner-btn { min-width: 180px; }
+
+.collection-banner-image {
+  background-size: cover;
+  background-position: center;
+  min-height: 260px;
+}
+
+/* ---------- Arees — light cream ---------- */
+.collection-banner--arees {
+  background: var(--cream-deep);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.collection-banner--arees .collection-banner-eyebrow { color: var(--gold-deep); }
+.collection-banner--arees .collection-banner-title { color: var(--charcoal); }
+.collection-banner--arees .collection-banner-tagline { color: var(--charcoal-soft); }
+.collection-banner--arees .collection-banner-btn { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
+.collection-banner--arees .collection-banner-btn:hover { background: var(--ink); }
+.collection-banner--arees .collection-banner-image { border-top: 1px solid rgba(185, 146, 79, 0.3); }
+
+/* ---------- Dahab — dark luxury ---------- */
+.collection-banner--dahab {
+  background: var(--charcoal);
+}
+.collection-banner--dahab .collection-banner-eyebrow { color: var(--gold-light); }
+.collection-banner--dahab .collection-banner-title { color: var(--cream); }
+.collection-banner--dahab .collection-banner-tagline { color: rgba(248, 243, 234, 0.72); }
+.collection-banner--dahab .collection-banner-btn { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+.collection-banner--dahab .collection-banner-btn:hover { background: var(--gold-deep); color: var(--white); }
+.collection-banner--dahab .collection-banner-image { border-top: 1px solid rgba(201, 167, 108, 0.25); }
+
+/* ---------- Tablet ---------- */
+@media (min-width: 768px) {
+  .collection-banner-inner {
+    grid-template-columns: 1.05fr 1fr;
+    align-items: stretch;
+  }
+  .collection-banner-content { padding: 64px 48px; }
+  .collection-banner-image { min-height: 0; border-top: none; }
+}
+
+/* ---------- Desktop (1024px+): compact banners in one centered section ----------
+   Below 1024px this wrapper is display: contents (inert) so the existing
+   mobile/tablet layout is untouched. */
+.collections-section { display: contents; }
+
+@media (min-width: 1024px) {
+  .collections-section {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;                 /* 24–32px gap between banners */
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 72px 48px;        /* 64–80px vertical rhythm */
+  }
+
+  .collection-banner {
+    height: 400px;             /* compact banner (360–420px) — never full-screen */
+  }
+
+  .collection-banner .container {
+    max-width: none;
+    padding: 0;
+    height: 100%;
+  }
+
+  .collection-banner-inner {
+    grid-template-columns: 2fr 3fr; /* TEXT 40% / IMAGE 60% */
+    height: 100%;
+  }
+
+  .collection-banner-content {
+    padding: 40px 56px;
+    max-width: 380px;          /* text block cap (vertically centered via base rule) */
+  }
+
+  .collection-banner-title {
+    font-size: clamp(2.375rem, 3vw, 2.875rem); /* desktop 38–46px */
+    margin-bottom: 14px;
+    overflow-wrap: break-word; /* insurance for long lines at 1024px */
+  }
+
+  .collection-banner-tagline { margin-bottom: 24px; }
+
+  /* Image fills its cell (background cover == object-fit: cover) */
+  .collection-banner-image {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .collection-banner--arees { border: none; }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 480px) {
+  .collection-banner-content { padding: 40px 20px; }
+  .collection-banner-image { min-height: 220px; }
+  .collection-banner-btn { width: 100%; }
+}

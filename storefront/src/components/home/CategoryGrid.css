@@ -1,35 +1,63 @@
+/* ============================================================
+   Shop by Category — circular image grid
+   ============================================================ */
+
 .category-scroll {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 28px 20px;
 }
-@media (min-width: 768px) {
-  .category-scroll { grid-template-columns: repeat(6, 1fr); }
+
+/* Tablet: 3 columns x 2 rows */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .category-scroll { grid-template-columns: repeat(3, 1fr); gap: 32px 24px; }
+}
+
+/* Desktop: 6 in one row */
+@media (min-width: 1024px) {
+  .category-scroll { grid-template-columns: repeat(6, 1fr); gap: 24px; }
+}
+
+/* Very narrow devices: 2 columns x 3 rows */
+@media (max-width: 360px) {
+  .category-scroll { grid-template-columns: repeat(2, 1fr); gap: 24px 16px; }
 }
 
 .category-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-align: center;
+  min-width: 0;
 }
 
 .category-image {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 999px;
+  border-radius: 50%;
   background-size: cover;
   background-position: center;
-  box-shadow: var(--shadow-soft);
-  border: 3px solid var(--white);
-  transition: transform 0.3s ease;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  display: block;
 }
-.category-card:hover .category-image { transform: translateY(-4px); }
+.category-card:hover .category-image {
+  transform: translateY(-4px);
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lift);
+}
 
-.category-card span {
+.category-name {
   font-size: 0.85rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--charcoal);
   font-weight: 500;
+  line-height: 1.3;
+}
+
+@media (max-width: 480px) {
+  .category-card { gap: 10px; }
+  .category-name { font-size: 0.75rem; letter-spacing: 0.04em; }
 }
