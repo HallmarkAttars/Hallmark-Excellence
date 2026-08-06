@@ -5,7 +5,7 @@ import './AdminProductCard.css'
 // (Products, Arees, Dahab). Rendered only below 768px — the desktop table is
 // untouched. Consumes the SAME product data and reuses the SAME handlers as
 // the table: no new fetching, no new CRUD.
-export default function AdminProductCard({ product, category, onToggle, onDelete }) {
+export default function AdminProductCard({ product, category, onToggle, onDelete, canEdit = true, canDelete = true }) {
   // Products pages store the image on `image`; brand pages use `images[0]`.
   const image = product.image || (Array.isArray(product.images) ? product.images[0] : null)
   const isActive = product.is_active !== false
@@ -52,12 +52,16 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
       </div>
 
       <div className="product-card-actions">
-        <Link to={`/admin/products/${product.id}/edit`} className="btn btn-outline">
-          Edit
-        </Link>
-        <button type="button" className="btn btn-danger" onClick={() => onDelete(product)}>
-          Delete
-        </button>
+        {canEdit && (
+          <Link to={`/admin/products/${product.id}/edit`} className="btn btn-outline">
+            Edit
+          </Link>
+        )}
+        {canDelete && (
+          <button type="button" className="btn btn-danger" onClick={() => onDelete(product)}>
+            Delete
+          </button>
+        )}
       </div>
     </div>
   )

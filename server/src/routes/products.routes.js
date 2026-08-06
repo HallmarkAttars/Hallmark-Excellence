@@ -1,5 +1,5 @@
 const express = require('express')
-const { requireAuth } = require('../middleware/auth.middleware')
+const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
 const {
   getProducts,
   getProductById,
@@ -19,10 +19,10 @@ router.get('/products/:id/related', getRelatedProducts)
 router.get('/products/:id', getProductById)
 
 // --- Admin (protected) ---
-router.get('/admin/products', requireAuth, getAdminProducts)
-router.get('/admin/products/:id', requireAuth, getAdminProductById)
-router.post('/admin/products', requireAuth, createProduct)
-router.patch('/admin/products/:id', requireAuth, updateProduct)
-router.delete('/admin/products/:id', requireAuth, deleteProduct)
+router.get('/admin/products', requireAuth, requirePermission('products.view'), getAdminProducts)
+router.get('/admin/products/:id', requireAuth, requirePermission('products.view'), getAdminProductById)
+router.post('/admin/products', requireAuth, requirePermission('products.create'), createProduct)
+router.patch('/admin/products/:id', requireAuth, requirePermission('products.edit'), updateProduct)
+router.delete('/admin/products/:id', requireAuth, requirePermission('products.delete'), deleteProduct)
 
 module.exports = router

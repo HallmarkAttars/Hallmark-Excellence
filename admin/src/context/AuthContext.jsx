@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { login as apiLogin, verifyToken } from '../services/mockApi'
+import { can as canWithRole } from '../config/roles'
 
 const AuthContext = createContext(null)
 const STORAGE_KEY = 'ad_admin_auth'
@@ -67,8 +68,17 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(TOKEN_KEY)
   }, [])
 
+  // UI-gating helper backed by the frontend permission mirror. The server
+  // independently enforces the same matrix on every protected route.
+  const can = useCallback(
+    (permission) => canWithRole(admin?.role, permission),
+    [admin]
+  )
+
   return (
-    <AuthContext.Provider value={{ admin, isAuthenticated: Boolean(admin), checkingSession, login, logout }}>
+    <AuthContext.Provider
+      value={{ admin, isAuthenticated: Boolean(admin), checkingSession, login, logout, can }}
+    >
       {children}
     </AuthContext.Provider>
   )

@@ -1,4 +1,14 @@
+import { WHY_CHOOSE_US } from '../../data/content'
 import './WhyChooseUs.css'
+
+// Inline SVG icons — resolved by the item `key` from content.js, mirroring the
+// reference project's assets.js icon-key lookup (WHY_ICONS[item.key]).
+const ICONS = {
+  natural: <LeafIcon />,
+  authenticity: <ShieldIcon />,
+  delivery: <TruckIcon />,
+  craft: <CraftIcon />,
+}
 
 function LeafIcon() {
   return (
@@ -37,39 +47,16 @@ function CraftIcon() {
   )
 }
 
-const FEATURES = [
-  {
-    icon: <LeafIcon />,
-    title: 'Natural Ingredients',
-    subtitle: 'Sustainably Sourced',
-  },
-  {
-    icon: <ShieldIcon />,
-    title: 'Authenticity Guaranteed',
-    subtitle: 'Official Retailer',
-  },
-  {
-    icon: <TruckIcon />,
-    title: 'Free Delivery',
-    subtitle: 'On Orders Over ₹999',
-  },
-  {
-    icon: <CraftIcon />,
-    title: 'Master Crafted',
-    subtitle: 'Award-Winning',
-  },
-]
-
 export default function WhyChooseUs() {
   return (
     <section className="choose-section" aria-label="Why choose us">
       <div className="container">
-        <h2 className="section-title-upper choose-title-heading">Why Choose Us</h2>
+        <h2 className="section-title-upper choose-title-heading">{WHY_CHOOSE_US.title}</h2>
         <div className="choose-grid">
-          {FEATURES.map((feature) => (
-            <div key={feature.title} className="choose-item">
+          {WHY_CHOOSE_US.items.map((feature) => (
+            <div key={feature.key} className="choose-item">
               <span className="choose-icon-ring" aria-hidden="true">
-                {feature.icon}
+                {ICONS[feature.key]}
               </span>
               <h3 className="choose-title">{feature.title}</h3>
               <p className="choose-subtitle">{feature.subtitle}</p>

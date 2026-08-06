@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
+import { NAV_LINKS } from '../../data/content'
+import { IMAGES } from '../../config/assets'
 import SearchOverlay from './SearchOverlay'
 import './Navbar.css'
-
-const NAV_LINKS = [
-  { to: '/', label: 'Home', end: true },
-  { to: '/shop', label: 'Shop' },
-  { to: '/categories', label: 'Categories' },
-  { to: '/brand/arees', label: 'Arees' },
-  { to: '/brand/dahab', label: 'Dahab' },
-  { to: '/about', label: 'About Us' },
-  { to: '/contact', label: 'Contact' },
-  { to: '/track-order', label: 'Track Order' },
-]
 
 function SearchIcon() {
   return (
@@ -80,7 +71,7 @@ export default function Navbar() {
       <header className="navbar">
         <div className="container navbar-inner">
           <Link to="/" className="navbar-logo" aria-label="Arees and Dahab — home">
-            <img src="/HE color Logo.png" alt="Arees & Dahab" className="navbar-logo-img" />
+            <img src={IMAGES.logo} alt="Arees & Dahab" className="navbar-logo-img" />
           </Link>
 
           <nav className="navbar-nav" aria-label="Main navigation">

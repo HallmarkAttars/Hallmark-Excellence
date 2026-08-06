@@ -123,6 +123,27 @@ export async function getDashboardStats() {
   }
 }
 
+// --- Employees --------------------------------------------------------------
+export async function getEmployees() {
+  const data = await adminApi.get('/api/admin/employees', readToken())
+  return data.employees ?? []
+}
+
+export async function createEmployee(data) {
+  const res = await adminApi.post('/api/admin/employees', data, readToken())
+  return res.employee ?? res ?? null
+}
+
+export async function updateEmployee(id, data) {
+  const res = await adminApi.patch(`/api/admin/employees/${id}`, data, readToken())
+  return res.employee ?? res ?? null
+}
+
+export async function deleteEmployee(id) {
+  await adminApi.del(`/api/admin/employees/${id}`, readToken())
+  return { success: true }
+}
+
 // --- Auth ----------------------------------------------------------------
 export async function login(email, password) {
   try {

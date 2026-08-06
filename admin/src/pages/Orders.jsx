@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { getOrders, updateOrderStatus, deleteOrder } from '../services/mockApi'
+import { useAuth } from '../context/AuthContext'
 import './Orders.css'
 
 // Canonical statuses — Title Case, matching the values the backend writes
@@ -49,6 +50,7 @@ function OrderItemsList({ items }) {
 }
 
 export default function Orders() {
+  const { can } = useAuth()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
@@ -176,16 +178,18 @@ export default function Orders() {
                           </div>
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
-                          <button
-                            className="orders-delete-btn"
-                            onClick={() => setConfirmDelete(o)}
-                            aria-label={`Delete order ${o.order_number}`}
-                          >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
-                            </svg>
-                            Delete
-                          </button>
+                          {can('orders.delete') && (
+                            <button
+                              className="orders-delete-btn"
+                              onClick={() => setConfirmDelete(o)}
+                              aria-label={`Delete order ${o.order_number}`}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
+                              </svg>
+                              Delete
+                            </button>
+                          )}
                         </td>
                       </tr>
                       {expanded === o.id && (
@@ -290,17 +294,19 @@ export default function Orders() {
                           {updatingId === o.id && <span className="orders-updating">Updating…</span>}
                         </div>
 
-                        <button
-                          type="button"
-                          className="order-card-delete"
-                          onClick={() => setConfirmDelete(o)}
-                          aria-label={`Delete order ${o.order_number}`}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
-                          </svg>
-                          Delete Order
-                        </button>
+                        {can('orders.delete') && (
+                          <button
+                            type="button"
+                            className="order-card-delete"
+                            onClick={() => setConfirmDelete(o)}
+                            aria-label={`Delete order ${o.order_number}`}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" />
+                            </svg>
+                            Delete Order
+                          </button>
+                        )}
                       </div>
                     )}
 

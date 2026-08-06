@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCategories } from '../services/mockApi'
+import { CATEGORIES_PAGE } from '../data/content'
 import './Categories.css'
 
 export default function Categories() {
@@ -14,9 +15,9 @@ export default function Categories() {
   return (
     <div>
       <div className="page-heading">
-        <p className="eyebrow">Browse</p>
-        <h1>All Categories</h1>
-        <p>Find your signature scent by fragrance family.</p>
+        <p className="eyebrow">{CATEGORIES_PAGE.eyebrow}</p>
+        <h1>{CATEGORIES_PAGE.title}</h1>
+        <p>{CATEGORIES_PAGE.subtitle}</p>
       </div>
 
       <div className="container">

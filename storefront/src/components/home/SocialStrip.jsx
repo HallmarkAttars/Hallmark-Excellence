@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { SOCIAL_STRIP } from '../../data/content'
 import './SocialStrip.css'
 
 export default function SocialStrip({ products }) {
@@ -9,10 +10,8 @@ export default function SocialStrip({ products }) {
     <section className="social-section">
       <div className="container">
         <div className="social-head">
-          <h2 className="section-title-upper">Follow Our Journey</h2>
-          <p className="social-sub">
-            Scent, made by hand — oud, rose and amber from our atelier.
-          </p>
+          <h2 className="section-title-upper">{SOCIAL_STRIP.title}</h2>
+          <p className="social-sub">{SOCIAL_STRIP.subtitle}</p>
         </div>
 
         <div className="social-grid">
@@ -29,8 +28,8 @@ export default function SocialStrip({ products }) {
         </div>
 
         <div className="social-cta">
-          <a href="#" className="btn btn-outline social-cta-btn">
-            Follow Us on Instagram
+          <a href={SOCIAL_STRIP.cta.href} className="btn btn-outline social-cta-btn">
+            {SOCIAL_STRIP.cta.label}
           </a>
         </div>
       </div>

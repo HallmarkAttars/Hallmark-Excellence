@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProducts, getCategories, deleteProduct, toggleProductStatus } from '../services/mockApi'
+import { useAuth } from '../context/AuthContext'
 import AdminProductCard from '../components/ui/AdminProductCard'
 import './Products.css'
 
 export default function Products() {
+  const { can } = useAuth()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,7 +40,7 @@ export default function Products() {
     <div className="products-page">
       <div className="page-header">
         <h1>Products</h1>
-        <Link to="/admin/products/new" className="btn btn-gold">Add Product</Link>
+        {can('products.create') && <Link to="/admin/products/new" className="btn btn-gold">Add Product</Link>}
       </div>
 
       <div className="card">
@@ -78,8 +80,8 @@ export default function Products() {
                       </button>
                     </td>
                     <td className="products-actions">
-                      <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>
-                      <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>
+                      {can('products.edit') && <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>}
+                      {can('products.delete') && <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>}
                     </td>
                   </tr>
                 ))}
@@ -97,6 +99,8 @@ export default function Products() {
                   category={categoryName(p.category_id)}
                   onToggle={handleToggle}
                   onDelete={setConfirmDelete}
+                  canEdit={can('products.edit')}
+                  canDelete={can('products.delete')}
                 />
               ))}
             </div>

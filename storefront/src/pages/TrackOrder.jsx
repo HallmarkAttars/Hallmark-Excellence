@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { trackOrder } from '../services/mockApi'
+import { TRACK_ORDER_PAGE } from '../data/content'
 import './TrackOrder.css'
 
 // Canonical admin workflow — the tracker only ever reflects the EXISTING
@@ -238,9 +239,9 @@ export default function TrackOrder() {
   return (
     <div>
       <div className="page-heading">
-        <p className="eyebrow">Track Your Order</p>
-        <h1>Track Your Order</h1>
-        <p>Enter your order details to check the latest status.</p>
+        <p className="eyebrow">{TRACK_ORDER_PAGE.eyebrow}</p>
+        <h1>{TRACK_ORDER_PAGE.title}</h1>
+        <p>{TRACK_ORDER_PAGE.subtitle}</p>
       </div>
 
       <div className="track-layout">

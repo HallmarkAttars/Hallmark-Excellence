@@ -26,20 +26,37 @@ async function login(req, res) {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }
 
+    // Deactivated employees must NOT be able to sign in. (A deleted account
+    // is simply "not found" above; a deactivated one gets an explicit notice.)
+    if (admin.is_active === false) {
+      return res.status(403).json({ error: 'Your account has been deactivated. Contact an administrator.' })
+    }
+
     const passwordMatches = await bcrypt.compare(password, admin.password_hash)
     if (!passwordMatches) {
       return res.status(401).json({ error: 'Invalid email or password.' })
     }
 
+    const name = [admin.first_name, admin.last_name].filter(Boolean).join(' ') || admin.email
+    const role = admin.role || 'staff'
+
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, name: admin.name },
+      { id: admin.id, email: admin.email, name, role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     )
 
+    // Record the login time (best-effort — never fails the login).
+    supabase
+      .from('users')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', admin.id)
+      .then(() => {})
+      .catch((err) => console.error('last_login update error:', err.message))
+
     return res.json({
       token,
-      admin: { id: admin.id, email: admin.email, name: admin.name },
+      admin: { id: admin.id, email: admin.email, name, role },
     })
   } catch (err) {
     console.error('login error:', err)

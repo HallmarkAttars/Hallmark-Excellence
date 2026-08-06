@@ -1,5 +1,5 @@
 const express = require('express')
-const { requireAuth } = require('../middleware/auth.middleware')
+const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
 const {
   getCategories,
   getCategoryProducts,
@@ -16,9 +16,9 @@ router.get('/categories', getCategories)
 router.get('/categories/:slug/products', getCategoryProducts)
 
 // --- Admin (protected) ---
-router.get('/admin/categories', requireAuth, getAdminCategories)
-router.post('/admin/categories', requireAuth, createCategory)
-router.patch('/admin/categories/:id', requireAuth, updateCategory)
-router.delete('/admin/categories/:id', requireAuth, deleteCategory)
+router.get('/admin/categories', requireAuth, requirePermission('categories.view'), getAdminCategories)
+router.post('/admin/categories', requireAuth, requirePermission('categories.create'), createCategory)
+router.patch('/admin/categories/:id', requireAuth, requirePermission('categories.edit'), updateCategory)
+router.delete('/admin/categories/:id', requireAuth, requirePermission('categories.delete'), deleteCategory)
 
 module.exports = router

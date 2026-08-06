@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import RequirePermission from './components/RequirePermission'
 import AdminLayout from './components/layout/AdminLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -10,6 +11,7 @@ import Orders from './pages/Orders'
 import Categories from './pages/Categories'
 import BrandArees from './pages/BrandArees'
 import BrandDahab from './pages/BrandDahab'
+import Employees from './pages/Employees'
 
 export default function App() {
   return (
@@ -28,6 +30,14 @@ export default function App() {
               <Route path="/admin/categories" element={<Categories />} />
               <Route path="/admin/brands/arees" element={<BrandArees />} />
               <Route path="/admin/brands/dahab" element={<BrandDahab />} />
+              <Route
+                path="/admin/employees"
+                element={
+                  <RequirePermission permission="employees.view">
+                    <Employees />
+                  </RequirePermission>
+                }
+              />
             </Route>
           </Route>
 

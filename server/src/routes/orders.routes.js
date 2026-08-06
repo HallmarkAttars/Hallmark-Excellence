@@ -1,5 +1,5 @@
 const express = require('express')
-const { requireAuth } = require('../middleware/auth.middleware')
+const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
 const {
   lookupPincode,
   trackOrder,
@@ -18,11 +18,11 @@ router.post('/orders', createOrder)
 router.get('/orders/track', trackOrder)
 router.get('/pincode/:pincode', lookupPincode)
 
-// --- Admin (protected) ---
-router.get('/admin/stats', requireAuth, getDashboardStats)
-router.get('/admin/orders', requireAuth, getOrders)
-router.get('/admin/orders/:id', requireAuth, getOrderById)
-router.patch('/admin/orders/:id/status', requireAuth, updateOrderStatus)
-router.delete('/admin/orders/:id', requireAuth, deleteOrder)
+// --- Admin (protected + permission-checked) ---
+router.get('/admin/stats', requireAuth, requirePermission('dashboard.view'), getDashboardStats)
+router.get('/admin/orders', requireAuth, requirePermission('orders.view'), getOrders)
+router.get('/admin/orders/:id', requireAuth, requirePermission('orders.view'), getOrderById)
+router.patch('/admin/orders/:id/status', requireAuth, requirePermission('orders.update_status'), updateOrderStatus)
+router.delete('/admin/orders/:id', requireAuth, requirePermission('orders.delete'), deleteOrder)
 
 module.exports = router

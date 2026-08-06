@@ -2,17 +2,20 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import './Sidebar.css'
 
+// Each item may declare the permission required to see it. Items without a
+// permission are visible to every authenticated role.
 const NAV_ITEMS = [
-  { to: '/admin/dashboard', label: 'Dashboard' },
-  { to: '/admin/products', label: 'Products' },
-  { to: '/admin/orders', label: 'Orders' },
-  { to: '/admin/categories', label: 'Categories' },
-  { to: '/admin/brands/arees', label: 'Arees Brand' },
-  { to: '/admin/brands/dahab', label: 'Dahab Brand' },
+  { to: '/admin/dashboard', label: 'Dashboard', permission: 'dashboard.view' },
+  { to: '/admin/products', label: 'Products', permission: 'products.view' },
+  { to: '/admin/orders', label: 'Orders', permission: 'orders.view' },
+  { to: '/admin/categories', label: 'Categories', permission: 'categories.view' },
+  { to: '/admin/brands/arees', label: 'Arees Brand', permission: 'brands.view' },
+  { to: '/admin/brands/dahab', label: 'Dahab Brand', permission: 'brands.view' },
+  { to: '/admin/employees', label: 'Employees', permission: 'employees.view' },
 ]
 
 export default function Sidebar({ open, onClose }) {
-  const { logout } = useAuth()
+  const { logout, can } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -28,7 +31,7 @@ export default function Sidebar({ open, onClose }) {
         </div>
 
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.filter((item) => can(item.permission)).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { HOME_CATEGORIES } from '../../data/content'
 import './CategoryGrid.css'
 
 export default function CategoryGrid({ categories }) {
@@ -6,9 +7,9 @@ export default function CategoryGrid({ categories }) {
     <section className="section category-section">
       <div className="container">
         <div className="section-head">
-          <h2 className="section-title-upper">Shop by Category</h2>
-          <Link to="/categories" className="view-all">
-            View All
+          <h2 className="section-title-upper">{HOME_CATEGORIES.title}</h2>
+          <Link to={HOME_CATEGORIES.viewAll.to} className="view-all">
+            {HOME_CATEGORIES.viewAll.label}
             <span className="view-all-arrow" aria-hidden="true">→</span>
           </Link>
         </div>

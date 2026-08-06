@@ -1,0 +1,196 @@
+/* ============================================================
+   Employees — internal staff account management
+   Desktop table >= 768px · card list below 768px (no overflow)
+   ============================================================ */
+
+/* ---------- Feedback toast ---------- */
+.employees-feedback {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.employees-feedback--success { background: var(--success-bg); color: var(--success); }
+.employees-feedback--error { background: var(--danger-bg); color: var(--danger); }
+
+/* ---------- Toolbar / search ---------- */
+.employees-toolbar {
+  margin-bottom: 16px;
+}
+.employees-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  padding: 0 14px;
+  height: 44px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: rgba(20, 17, 13, 0.45);
+}
+.employees-search:focus-within {
+  border-color: var(--gold-deep);
+}
+.employees-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--admin-text-base);
+  color: var(--ink);
+  min-width: 0;
+}
+
+/* ---------- Desktop table ---------- */
+.employees-desktop { display: block; }
+.employees-mobile { display: none; }
+
+.employees-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.employees-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  color: var(--gold-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.employees-you-chip {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  color: rgba(20, 17, 13, 0.55);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.is-self-row td { background: rgba(198, 161, 91, 0.05); }
+
+.employees-contact-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.employees-email { font-size: 13px; color: var(--ink); }
+.employees-phone { font-size: 12px; color: rgba(20, 17, 13, 0.5); }
+
+.employees-role {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.employees-role--admin { background: var(--charcoal); color: var(--cream); }
+.employees-role--manager { background: var(--warning-bg); color: var(--warning); }
+.employees-role--staff { background: var(--cream-deep); color: #6b6457; }
+
+/* Status pills for Active / Inactive (companions to .status-pill) */
+.status-active { background: var(--success-bg); color: var(--success); }
+.status-inactive { background: var(--danger-bg); color: var(--danger); }
+
+.employees-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Mobile cards (below 768px) ---------- */
+@media (max-width: 767px) {
+  .employees-desktop { display: none; }
+  .employees-mobile { display: grid; gap: 12px; }
+}
+
+.employee-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.employee-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.employee-card-id {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.employee-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.employee-card-email {
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.employee-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.employee-card-phone {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.55);
+}
+.employee-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+/* ---------- Form helpers ---------- */
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin: 0;
+}
+.field-hint {
+  color: rgba(20, 17, 13, 0.5);
+  font-size: 12px;
+  margin: 0;
+}
+
+.confirm-delete-employee {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.confirm-delete-employee strong { font-weight: 700; }

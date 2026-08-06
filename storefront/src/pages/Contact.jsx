@@ -3,11 +3,8 @@ import { Navigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../services/api'
 import { submitContactMessage, submitOrder } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
+import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
-
-// Business phone number — the same number shown in the site footer/contact.
-const BUSINESS_PHONE_DISPLAY = '+91 98765 43210'
-const BUSINESS_PHONE_TEL = 'tel:+919876543210'
 
 // Format the order's STORED Supabase timestamp for the customer, in
 // Asia/Kolkata. The database created_at is the single source of truth — we
@@ -352,7 +349,7 @@ export default function Contact() {
               <li>We will contact you regarding transport or delivery charges once your order is ready for dispatch.</li>
               <li>
                 Please save our contact number:{' '}
-                <a href={BUSINESS_PHONE_TEL}>{BUSINESS_PHONE_DISPLAY}</a>
+                <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a>
               </li>
             </ul>
           </section>
@@ -405,8 +402,8 @@ export default function Contact() {
   return (
     <div>
       <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : ''}`}>
-        <p className="eyebrow">{isCheckout ? 'Checkout' : 'Get in Touch'}</p>
-        <h1>{isCheckout ? 'Complete Your Order' : 'Contact Us'}</h1>
+        <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
+        <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>
       </div>
 
       <div className={`container contact-layout ${isCheckout ? 'contact-layout--checkout' : ''}`}>
@@ -563,17 +560,17 @@ export default function Contact() {
         {!isCheckout && (
           <div className="contact-info-col">
             <div className="contact-info-block">
-              <h3>Visit or Reach Us</h3>
-              <p>+91 98765 43210</p>
-              <p>hello@areesdahab.com</p>
-              <p>83 Moore Street, Mannady, Chennai, Tamil Nadu 600001</p>
+              <h3>{CONTACT.info.title}</h3>
+              <p>{BUSINESS.phoneDisplay}</p>
+              <p>{BUSINESS.email}</p>
+              <p>{BUSINESS.address}</p>
             </div>
             {/* Real Arees Attars location — interactive Google Maps embed.
                 The q= query pins the business address so the marker lands on
                 the actual shop, not the centre of Chennai. */}
             <div className="contact-map">
               <iframe
-                src="https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed"
+                src={BUSINESS.mapEmbedUrl}
                 title="Arees Attars Chennai Location"
                 loading="lazy"
                 allowFullScreen
@@ -581,7 +578,7 @@ export default function Contact() {
               />
               <a
                 className="contact-map-link"
-                href="https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai"
+                href={BUSINESS.mapDirectionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >

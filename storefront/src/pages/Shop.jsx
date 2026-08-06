@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductGrid from '../components/product/ProductGrid'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
+import { SHOP_PAGE } from '../data/content'
 import './Shop.css'
 
 const SORT_OPTIONS = [
@@ -90,9 +91,9 @@ export default function Shop() {
   return (
     <div>
       <div className="page-heading">
-        <p className="eyebrow">Our Collection</p>
-        <h1>Find Your Signature Scent</h1>
-        <p>Explore attars and fragrances from Arees and Dahab, crafted for every mood and occasion.</p>
+        <p className="eyebrow">{SHOP_PAGE.eyebrow}</p>
+        <h1>{SHOP_PAGE.title}</h1>
+        <p>{SHOP_PAGE.subtitle}</p>
       </div>
 
       <div className="container shop-layout">

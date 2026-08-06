@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { ROLE_LABELS } from '../../config/roles'
 import './Topbar.css'
 
 export default function Topbar({ onMenuClick }) {
@@ -43,6 +44,9 @@ export default function Topbar({ onMenuClick }) {
         <div className="topbar-admin">
           <div className="topbar-avatar">{admin?.name?.[0]?.toUpperCase() || 'A'}</div>
           <span>{admin?.name || 'Admin'}</span>
+          {admin?.role && (
+            <span className="topbar-role">{ROLE_LABELS[admin.role] || admin.role}</span>
+          )}
         </div>
       </div>
     </header>

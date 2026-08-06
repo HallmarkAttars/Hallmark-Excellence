@@ -15,10 +15,12 @@
   overflow: hidden;
 }
 
+/* The hero image itself is injected inline from src/config/assets.js
+   (IMAGES.heroBackground) so it can be swapped from one place. Only the
+   positioning / scaling rules live here. */
 .hero-bg {
   position: absolute;
   inset: 0;
-  background-image: url('/Hero.png');
   background-size: cover;
   background-position: center;
   transform: scale(1.02);

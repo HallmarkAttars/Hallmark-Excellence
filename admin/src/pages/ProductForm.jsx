@@ -261,7 +261,7 @@ export default function ProductForm() {
   if (loading) return <div className="loading-state">Loading product…</div>
 
   return (
-    <div>
+    <div className="product-form-container">
       <div className="page-header">
         <h1>{isEdit ? 'Edit Product' : 'Add Product'}</h1>
         <Link to="/admin/products" className="btn btn-outline btn-sm">Back to Products</Link>

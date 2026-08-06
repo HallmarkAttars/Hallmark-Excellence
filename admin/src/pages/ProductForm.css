@@ -1,4 +1,26 @@
-.product-form { max-width: 640px; }
+/* ---------- Centered page layout ----------
+   Both the page header and the form live inside one centered container so
+   they share the same left/right edges, centered within the admin main
+   content (the area AFTER the sidebar) — never the whole viewport. */
+.product-form-container {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+}
+
+.product-form {
+  width: 100%;
+  max-width: none; /* fills the centered container — no 640px squeeze */
+}
+
+/* Mobile: full-width form, 1 column, flush to the page gutters */
+@media (max-width: 767px) {
+  .product-form-container {
+    max-width: none;
+    margin: 0;
+  }
+}
+
 .image-preview { margin-top: 10px; }
 .image-preview img {
   width: 120px; height: 120px; object-fit: cover; border-radius: var(--radius);

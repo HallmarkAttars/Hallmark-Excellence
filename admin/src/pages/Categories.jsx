@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getCategories, createCategory, updateCategory, deleteCategory, getProducts, uploadImage } from '../services/mockApi'
+import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
 import './Categories.css'
 
 const EMPTY = { name: '', slug: '' }
 
 export default function Categories() {
+  const { can } = useAuth()
   const [categories, setCategories] = useState([])
   const [productCounts, setProductCounts] = useState({})
   const [loading, setLoading] = useState(true)
@@ -100,7 +102,7 @@ export default function Categories() {
     <div>
       <div className="page-header">
         <h1>Categories</h1>
-        <button className="btn btn-gold" onClick={openAdd}>Add Category</button>
+        {can('categories.create') && <button className="btn btn-gold" onClick={openAdd}>Add Category</button>}
       </div>
 
       {error && !modalMode && <p className="login-error">{error}</p>}
@@ -115,8 +117,8 @@ export default function Categories() {
               <h3>{cat.name}</h3>
               <p>{productCounts[cat.id] || 0} products</p>
               <div className="categories-admin-actions">
-                <button className="btn btn-outline btn-sm" onClick={() => openEdit(cat)}>Edit</button>
-                <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(cat)}>Delete</button>
+                {can('categories.edit') && <button className="btn btn-outline btn-sm" onClick={() => openEdit(cat)}>Edit</button>}
+                {can('categories.delete') && <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(cat)}>Delete</button>}
               </div>
             </div>
           ))}

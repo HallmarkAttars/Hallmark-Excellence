@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import ProductCard from '../product/ProductCard'
+import { HOME_FEATURED } from '../../data/content'
 import './FeaturedProducts.css'
 
 export default function FeaturedProducts({ products }) {
@@ -12,9 +13,9 @@ export default function FeaturedProducts({ products }) {
     <section className="section featured-section">
       <div className="container">
         <div className="section-head">
-          <h2 className="section-title-upper">Featured Products</h2>
-          <Link to="/shop" className="view-all">
-            View All
+          <h2 className="section-title-upper">{HOME_FEATURED.title}</h2>
+          <Link to={HOME_FEATURED.viewAll.to} className="view-all">
+            {HOME_FEATURED.viewAll.label}
             <span className="view-all-arrow" aria-hidden="true">→</span>
           </Link>
         </div>

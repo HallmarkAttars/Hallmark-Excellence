@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StatCard from '../components/ui/StatCard'
 import { getDashboardStats } from '../services/mockApi'
+import { useAuth } from '../context/AuthContext'
 import './Dashboard.css'
 
 const ICONS = {
@@ -12,6 +13,7 @@ const ICONS = {
 }
 
 export default function Dashboard() {
+  const { can } = useAuth()
   const [stats, setStats] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +91,7 @@ export default function Dashboard() {
         <div className="card quick-actions">
           <h3>Quick Actions</h3>
           <div className="quick-actions-buttons">
-            <Link to="/admin/products/new" className="btn btn-dark">Add New Product</Link>
+            {can('products.create') && <Link to="/admin/products/new" className="btn btn-dark">Add New Product</Link>}
             <button className="btn btn-outline">Create Coupon</button>
             <button className="btn btn-outline">Export Orders</button>
           </div>
