@@ -37,8 +37,10 @@ async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
     }
     const msg = detail?.error || detail?.message || `Request failed (${res.status})`
     const err = new Error(msg)
-    // Attach backend error metadata (code/detail/hint) so dev console logs
-    // can show the real Supabase error without changing the user-facing message.
+    // Attach the HTTP status + backend error metadata (code/detail/hint) so
+    // callers can tell a definitive 401 (invalid token) from a transient
+    // failure (network blip, backend cold start, 5xx) without re-parsing.
+    err.status = res.status
     if (detail?.code) err.code = detail.code
     if (detail?.detail) err.detail = detail.detail
     if (detail?.hint) err.hint = detail.hint
@@ -82,7 +84,9 @@ async function uploadFile(path, file, token) {
       handleExpiredSession()
     }
 
-    throw new Error(msg)
+    const err = new Error(msg)
+    err.status = res.status
+    throw err
   }
 
   return res.json()

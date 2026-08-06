@@ -29,16 +29,21 @@ export function AuthProvider({ children }) {
         setCheckingSession(false)
         return
       }
-      const verifiedAdmin = await verifyToken()
+      const verified = await verifyToken()
       if (cancelled) return
-      if (verifiedAdmin) {
-        setAdmin(verifiedAdmin)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(verifiedAdmin))
-      } else {
+      if (verified.status === 'valid') {
+        setAdmin(verified.admin)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(verified.admin))
+      } else if (verified.status === 'invalid') {
+        // Token definitively rejected (expired/revoked) → genuine logout.
         setAdmin(null)
         localStorage.removeItem(STORAGE_KEY)
         localStorage.removeItem(TOKEN_KEY)
       }
+      // 'none' (nothing stored) and 'error' (transient failure) keep the
+      // current stored state: the admin stays authenticated until a real 401
+      // proves the token is dead. This prevents a backend cold start or a
+      // network blip from silently logging the admin out.
       setCheckingSession(false)
     }
     checkSession()

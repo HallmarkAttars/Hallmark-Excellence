@@ -138,13 +138,19 @@ export async function login(email, password) {
 }
 
 // Confirms a stored token is still valid (called on app load/refresh).
+// Returns a tagged result so the caller can distinguish:
+//   'valid'   → token accepted, session is good
+//   'invalid' → token definitively rejected (expired/revoked) → real logout
+//   'error'   → transient failure (network blip, backend cold start, 5xx) →
+//               keep the stored session; a genuine 401 later still logs out
+//   'none'    → no token stored
 export async function verifyToken() {
   const token = readToken()
-  if (!token) return null
+  if (!token) return { status: 'none' }
   try {
     const res = await adminApi.get('/api/auth/verify', token)
-    return res.admin ?? null
-  } catch {
-    return null
+    return { status: 'valid', admin: res.admin ?? null }
+  } catch (err) {
+    return { status: err?.status === 401 ? 'invalid' : 'error' }
   }
 }

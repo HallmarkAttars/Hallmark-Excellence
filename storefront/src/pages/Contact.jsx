@@ -9,6 +9,33 @@ import './Contact.css'
 const BUSINESS_PHONE_DISPLAY = '+91 98765 43210'
 const BUSINESS_PHONE_TEL = 'tel:+919876543210'
 
+// Format the order's STORED Supabase timestamp for the customer, in
+// Asia/Kolkata. The database created_at is the single source of truth — we
+// never use new Date() as an authoritative order time. Returns null when no
+// real timestamp exists so nothing fake is ever shown.
+function formatOrderPlacedAt(value) {
+  if (!value) return null
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return null
+  const date = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(d)
+  // Normalize the meridiem to uppercase (en-IN engines vary: am/pm vs AM/PM).
+  const time = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+    .format(d)
+    .replace(/\bam\b/i, 'AM')
+    .replace(/\bpm\b/i, 'PM')
+  return { date, time }
+}
+
 // Resolve the primary image from the cart snapshot. Cart items store
 // `image` (from the product), but we also accept the common alternate field
 // names and the first entry of an `images` array — all without any extra
@@ -293,6 +320,8 @@ export default function Contact() {
     const paymentMethod = order?.payment_method || 'Cash On Delivery'
     const orderStatus = order?.order_status || 'Pending'
     const orderNumber = result.orderNumber
+    // Real Supabase creation timestamp from the persisted order row.
+    const placedAt = formatOrderPlacedAt(order?.created_at)
 
     return (
       <div className="order-success-wrapper">
@@ -305,6 +334,11 @@ export default function Contact() {
             <p className="order-success-id">
               Order ID: <strong>#{orderNumber}</strong>
             </p>
+            {placedAt && (
+              <p className="order-success-placed">
+                Placed on {placedAt.date} • {placedAt.time}
+              </p>
+            )}
             <p className="order-success-sub">
               Thank you for your order. We have received your order successfully.
             </p>

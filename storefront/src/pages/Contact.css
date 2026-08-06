@@ -360,7 +360,15 @@
 .order-success-id {
   font-size: 1.05rem;
   color: var(--charcoal-soft);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+/* Real order creation date + time (Asia/Kolkata) from the stored timestamp */
+.order-success-placed {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+  font-variant-numeric: tabular-nums;
 }
 /* Large readable Order ID — hero number on mobile and desktop */
 .order-success-id strong {
