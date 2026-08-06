@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { getOrders, updateOrderStatus, deleteOrder } from '../services/mockApi'
 import './Orders.css'
 
@@ -20,18 +20,20 @@ export default function Orders() {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const feedbackTimer = useRef(null)
 
   useEffect(() => {
     getOrders().then((o) => {
       setOrders([...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
       setLoading(false)
     })
+    return () => window.clearTimeout(feedbackTimer.current)
   }, [])
 
   const notify = (type, message) => {
     setFeedback({ type, message })
-    window.clearTimeout(notify._t)
-    notify._t = window.setTimeout(() => setFeedback(null), 4000)
+    window.clearTimeout(feedbackTimer.current)
+    feedbackTimer.current = window.setTimeout(() => setFeedback(null), 4000)
   }
 
   const handleStatusChange = async (id, status) => {

@@ -75,7 +75,14 @@ export async function submitOrder(payload) {
   try {
     const res = await api.post('/api/orders', requestBody)
     console.log('[submitOrder] Response:', JSON.stringify(res, null, 2))
-    return { success: true, orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber }
+    return {
+      success: true,
+      orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber,
+      // Full persisted order row so the success page can show the real
+      // total / payment method / status from the database. Only the
+      // customer-friendly fields are read — the internal UUID is never used.
+      order: res.order ?? null,
+    }
   } catch (err) {
     // Log the real error in development while keeping the user-facing message.
     console.error('[submitOrder] Error:', err.message)

@@ -45,6 +45,7 @@ export default function QuantityControl({ value, max, onChange, onRemove, classN
 
   return (
     <div className={`qty-control ${className}`} aria-label={labels.label || 'Quantity'}>
+      <span className="qty-control-live" role="status" aria-live="polite">{value}</span>
       <button
         type="button"
         className="qty-control-btn"
