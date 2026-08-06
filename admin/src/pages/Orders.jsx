@@ -158,6 +158,9 @@ export default function Orders() {
                                 <p>{o.customer_name}</p>
                                 <p>{o.phone}</p>
                                 <p>{o.address}, {o.pincode}</p>
+                                {(o.city || o.state) && (
+                                  <p>{[o.locality, o.city, o.state].filter(Boolean).join(', ')}</p>
+                                )}
                                 {o.message && <p>"{o.message}"</p>}
                               </div>
                               <div>

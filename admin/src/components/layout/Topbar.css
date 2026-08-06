@@ -46,6 +46,62 @@
   font-weight: 600; font-size: 14px;
 }
 
+/* ============================================================
+   Mobile header (< 768px): menu · search · bell · avatar
+   "Admin" text is hidden; controls become fixed 40px targets.
+   ============================================================ */
+@media (max-width: 767px) {
+  .topbar {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .topbar-menu-btn {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .topbar-search {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    padding: 0 12px;
+  }
+  .topbar-search input {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .topbar-actions { gap: 2px; }
+
+  .topbar-bell {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* Hide ONLY the "Admin" text label; keep the avatar */
+  .topbar-admin { gap: 0; }
+  .topbar-admin > span { display: none; }
+  .topbar-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+}
+
 @media (min-width: 1024px) {
   .topbar-menu-btn { display: none; }
 }

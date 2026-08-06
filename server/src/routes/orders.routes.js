@@ -1,6 +1,7 @@
 const express = require('express')
 const { requireAuth } = require('../middleware/auth.middleware')
 const {
+  lookupPincode,
   createOrder,
   getOrders,
   getOrderById,
@@ -13,6 +14,7 @@ const router = express.Router()
 
 // --- Public ---
 router.post('/orders', createOrder)
+router.get('/pincode/:pincode', lookupPincode)
 
 // --- Admin (protected) ---
 router.get('/admin/stats', requireAuth, getDashboardStats)

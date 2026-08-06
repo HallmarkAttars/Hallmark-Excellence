@@ -53,6 +53,51 @@ async function getDefaultAddressId() {
   return _cachedAddressId
 }
 
+// GET /api/pincode/:pincode
+// Public. Indian PIN-code lookup proxied through this server because
+// api.postalpincode.in sends no CORS headers (browsers cannot call it
+// directly). Returns the real postal data — never hardcoded.
+async function lookupPincode(req, res) {
+  try {
+    const pincode = String(req.params.pincode || '').replace(/\D/g, '').slice(0, 6)
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: 'Enter a valid 6-digit PIN code.' })
+    }
+
+    const upstream = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
+      // Never let a hanging upstream stall the checkout lookup.
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!upstream.ok) throw new Error(`Upstream lookup failed: ${upstream.status}`)
+
+    const raw = await upstream.json()
+    const entry = Array.isArray(raw) ? raw[0] : null
+    const offices =
+      entry && entry.Status === 'Success' && Array.isArray(entry.PostOffice)
+        ? entry.PostOffice
+        : []
+
+    const localities = offices.map((o) => ({
+      name: (o.Name || '').trim(),
+      district: o.District || '',
+      state: o.State || '',
+      country: o.Country || 'India',
+    }))
+
+    return res.json({
+      pincode,
+      status: localities.length ? 'found' : 'not_found',
+      localities,
+      city: localities[0]?.district || '',
+      state: localities[0]?.state || '',
+      country: localities[0]?.country || 'India',
+    })
+  } catch (err) {
+    console.error('lookupPincode error:', err)
+    return res.status(502).json({ error: 'Unable to verify this PIN code. Please try again.' })
+  }
+}
+
 // POST /api/orders
 // Public. Storefront checkout.
 async function createOrder(req, res) {
@@ -140,6 +185,11 @@ async function createOrder(req, res) {
         phone,
         address,
         pincode,
+        // Optional location details from the checkout PIN lookup. Stored inside
+        // the existing notes JSONB — no schema change.
+        ...(req.body.locality ? { locality: req.body.locality } : {}),
+        ...(req.body.city ? { city: req.body.city } : {}),
+        ...(req.body.state ? { state: req.body.state } : {}),
         message: message ?? '',
         items: normalizedItems,
         total_amount: Number(total_amount),
@@ -204,6 +254,9 @@ async function getOrders(req, res) {
         phone: o.phone || notesInfo.phone || '',
         address: o.address || notesInfo.address || '',
         pincode: o.pincode || notesInfo.pincode || '',
+        locality: notesInfo.locality || '',
+        city: notesInfo.city || '',
+        state: notesInfo.state || '',
         message: o.message || notesInfo.message || '',
         items: o.items || notesInfo.items || [],
         total_amount: Number(o.total_amount || o.total || 0),
@@ -245,6 +298,9 @@ async function getOrderById(req, res) {
       phone: data.phone || notesInfo.phone || '',
       address: data.address || notesInfo.address || '',
       pincode: data.pincode || notesInfo.pincode || '',
+      locality: notesInfo.locality || '',
+      city: notesInfo.city || '',
+      state: notesInfo.state || '',
       message: data.message || notesInfo.message || '',
       items: data.items || notesInfo.items || [],
       total_amount: Number(data.total_amount || data.total || 0),
@@ -303,6 +359,9 @@ async function updateOrderStatus(req, res) {
       customer_name: data.customer_name || notesInfo.customer_name || '',
       phone: data.phone || notesInfo.phone || '',
       address: data.address || notesInfo.address || '',
+      locality: notesInfo.locality || '',
+      city: notesInfo.city || '',
+      state: notesInfo.state || '',
       items: data.items || notesInfo.items || [],
       total_amount: Number(data.total_amount || data.total || 0),
       status: data.order_status || 'Pending',
@@ -430,6 +489,7 @@ async function getDashboardStats(req, res) {
 }
 
 module.exports = {
+  lookupPincode,
   createOrder,
   getOrders,
   getOrderById,

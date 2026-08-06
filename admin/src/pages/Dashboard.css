@@ -1,7 +1,7 @@
 .stat-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 24px;
 }
 @media (min-width: 900px) { .stat-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -15,5 +15,103 @@
 
 .table-scroll { overflow-x: auto; }
 
+/* Mobile order cards — hidden on desktop, shown only below 768px */
+.recent-orders-cards { display: none; }
+
 .quick-actions-buttons { display: flex; flex-direction: column; gap: 10px; }
 .quick-actions-buttons .btn { width: 100%; }
+
+/* ============================================================
+   Mobile (< 768px)
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Dashboard title — balanced, not oversized */
+  .dashboard-page .page-header h1 {
+    font-size: 28px;
+    line-height: 1.15;
+    font-weight: 600;
+  }
+
+  /* Recent Orders: compact cards instead of the squeezed table */
+  .recent-orders-table { display: none; }
+  .recent-orders-cards { display: block; }
+
+  /* Tighter section spacing */
+  .dashboard-grid { gap: 16px; }
+
+  /* Section cards: 16px padding so cards use the full width */
+  .card.recent-orders,
+  .card.quick-actions { padding: 16px; }
+
+  /* "Recent Orders" heading — serif, 21–23px */
+  .recent-orders .page-header { margin-bottom: 16px; }
+  .recent-orders .page-header h3 { font-size: 22px; line-height: 1.15; }
+  .recent-orders .page-header .btn-sm { padding: 8px 14px; font-size: 12px; }
+
+  /* --- Order card --- */
+  .recent-order-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 16px;
+    background: var(--white);
+    border: 1px solid rgba(80, 60, 30, 0.10);
+    border-radius: var(--radius);
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+  .recent-order-card:last-child { margin-bottom: 0; }
+
+  /* Order ID (left, truncated) + status badge (right) */
+  .recent-order-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .recent-order-id {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--charcoal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-order-card .status-pill { font-size: 10px; padding: 0 8px; height: 22px; }
+
+  /* Customer name — readable, up to ~2 lines if truly needed */
+  .recent-order-customer {
+    display: block;
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.3;
+    font-weight: 500;
+    color: rgba(20, 17, 13, 0.75);
+    overflow-wrap: anywhere;
+  }
+
+  /* Date (left, muted) + amount (right) */
+  .recent-order-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .recent-order-date {
+    font-size: 12px;
+    color: rgba(20, 17, 13, 0.55);
+    white-space: nowrap;
+  }
+  .recent-order-amount {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--charcoal);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Quick Actions — full-width tappable buttons */
+  .quick-actions-buttons .btn { min-height: 44px; }
+}

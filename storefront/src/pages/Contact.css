@@ -40,6 +40,111 @@
 
 .contact-error { color: #a3372f; font-size: 0.85rem; margin: 0; }
 
+/* Red asterisk beside required field labels */
+.required-star {
+  color: #b42318;
+  margin-left: 3px;
+  font-weight: 600;
+}
+
+/* ---------- Phone: fixed +91 prefix + 10-digit national number ---------- */
+.phone-field-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.form-field .phone-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  background: var(--cream-deep);
+  user-select: none;
+}
+.form-field .phone-national-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--cream);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.form-field .phone-national-input:focus,
+.phone-field-row:focus-within .phone-prefix {
+  outline: none;
+  border-color: var(--gold);
+}
+.form-field .phone-national-input:focus {
+  background-color: var(--white);
+}
+
+/* Inline helper text under fields */
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--gold-deep);
+}
+.field-hint--error { color: #a3372f; }
+
+/* ---------- Pincode auto-location ---------- */
+.pincode-result {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pincode-location {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+.pincode-check {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+.pincode-locality-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+}
+.pincode-locality-select {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--cream);
+  width: 100%;
+}
+.pincode-locality-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  background-color: var(--white);
+}
+
+/* Narrow screens: keep the +91 prefix + number on one row, never overflow */
+@media (max-width: 480px) {
+  .form-field .phone-prefix { padding: 0 12px; }
+  .form-field .phone-prefix,
+  .form-field .phone-national-input { height: 48px; }
+}
+
 .contact-toast {
   background: var(--white);
   border: 1px solid var(--gold);
@@ -52,11 +157,15 @@
 }
 .contact-toast strong { font-family: var(--font-display); font-size: 1.2rem; color: var(--charcoal); }
 
-/* Checkout: centered single column so the page is balanced on desktop */
+/* Checkout container — everything stays inside the viewport at any width. */
 .contact-layout--checkout {
   grid-template-columns: 1fr;
-  max-width: 1000px;
-  margin-inline: auto;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-inline: clamp(16px, 4vw, 40px);
+  box-sizing: border-box;
+  min-width: 0;
 }
 @media (max-width: 767px) {
   .page-heading--checkout { padding-bottom: 12px; }
@@ -74,7 +183,9 @@
 /* Product row — image | details | price */
 .order-summary-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  /* minmax(0, 1fr) lets the middle column shrink so long names can never push
+     the price outside the card */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
   padding: 10px 0;
@@ -109,6 +220,7 @@
   font-weight: 600;
   font-size: 0.95rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .order-summary-variant {
   font-size: 0.8rem;
@@ -126,7 +238,10 @@
   font-variant-numeric: tabular-nums;
 }
 .order-summary-row {
-  display: flex; justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
   padding: 6px 0; font-size: 0.92rem; color: var(--charcoal-soft);
 }
 .order-summary-total {
@@ -238,9 +353,10 @@
 /* Order summary rows on the success page */
 .order-success-summary { scroll-margin-top: calc(var(--header-h) + 16px); }
 .order-success-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
   padding: 8px 0;
   font-size: 0.92rem;
   color: var(--charcoal-soft);

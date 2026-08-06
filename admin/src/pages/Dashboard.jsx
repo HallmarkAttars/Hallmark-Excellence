@@ -27,7 +27,7 @@ export default function Dashboard() {
   if (loading) return <div className="loading-state">Loading dashboard…</div>
 
   return (
-    <div>
+    <div className="dashboard-page">
       <div className="page-header">
         <h1>Dashboard</h1>
       </div>
@@ -45,7 +45,8 @@ export default function Dashboard() {
             <h3>Recent Orders</h3>
             <Link to="/admin/orders" className="btn btn-outline btn-sm">View All</Link>
           </div>
-          <div className="table-scroll">
+          {/* Desktop table — shown at >= 768px */}
+          <div className="table-scroll recent-orders-table">
             <table>
               <thead>
                 <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th></tr>
@@ -62,6 +63,26 @@ export default function Dashboard() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile order cards — same recentOrders array, shown only below 768px.
+              No additional data fetching; the desktop table above is hidden on mobile. */}
+          <div className="recent-orders-cards">
+            {recentOrders.map((o) => (
+              <div className="recent-order-card" key={o.id}>
+                <div className="recent-order-top">
+                  <span className="recent-order-id" title={o.order_number}>{o.order_number}</span>
+                  <span className={`status-pill status-${String(o.status).toLowerCase()}`}>{o.status}</span>
+                </div>
+                <span className="recent-order-customer">{o.customer_name}</span>
+                <div className="recent-order-bottom">
+                  <span className="recent-order-date">
+                    {new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="recent-order-amount">₹{Number(o.total_amount).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useLocation, Link } from 'react-router-dom'
+import { api } from '../services/api'
 import { submitContactMessage, submitOrder } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import './Contact.css'
@@ -73,28 +74,135 @@ export default function Contact() {
   const location = useLocation()
   const { clearCart } = useCart()
 
+  // Checkout lives on its own route (/checkout) so the navbar never highlights
+  // "Contact" and the URL stays clean. The cart snapshot travels via router state.
   const checkout = location.state?.checkoutItems ? location.state : null
-  const isCheckout = Boolean(checkout)
+  const isCheckout = location.pathname === '/checkout'
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', pincode: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null) // { orderNumber, order } | { sent: true }
   const [error, setError] = useState('')
+  const [phoneTouched, setPhoneTouched] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({}) // per-field messages shown next to each input
+  // PIN-code lookup state: idle | loading | found | error
+  const [pinInfo, setPinInfo] = useState({ status: 'idle', localities: [], city: '', state: '', locality: '', error: '', pinNotFound: false })
+  const pinCache = useRef(new Map()) // session-only lookup cache
+  const pinTimer = useRef(null)
+  const currentPin = useRef('') // guards against stale async responses
+
+  // Indian mobile numbers only: exactly 10 digits. The +91 prefix is rendered
+  // in the UI and prepended on submit — the user never types it.
+  const phoneValid = /^\d{10}$/.test(form.phone)
+  // Live feedback once the user interacts, plus the message set on submit.
+  const showPhoneError = Boolean(fieldErrors.phone) || (phoneTouched && form.phone && !phoneValid)
 
   // Order placed successfully (checkout only). Inline state — refreshing the
   // page can never create a duplicate order because the submit handler is the
   // only place an order is created.
   const orderPlaced = isCheckout && Boolean(result?.orderNumber)
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
+
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    setForm((f) => ({ ...f, [name]: value }))
+    clearFieldError(name)
+  }
+
+  // Fixed Indian format: digits only, capped at 10, never a leading "+".
+  const handlePhoneChange = (e) => {
+    setPhoneTouched(true)
+    setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))
+    clearFieldError('phone')
+  }
+
+  const applyPinResult = (result) => {
+    if (result.status !== 'found' || !result.localities.length) {
+      setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Enter a valid 6-digit PIN code.', pinNotFound: true })
+      return
+    }
+    setPinInfo({
+      status: 'found',
+      localities: result.localities,
+      city: result.city,
+      state: result.state,
+      locality: result.localities.length === 1 ? result.localities[0].name : '',
+      error: '',
+      pinNotFound: false,
+    })
+  }
+
+  const lookupPincode = (pin) => {
+    if (pinCache.current.has(pin)) {
+      applyPinResult(pinCache.current.get(pin))
+      return
+    }
+    setPinInfo({ status: 'loading', localities: [], city: '', state: '', locality: '', error: '', pinNotFound: false })
+    // Same origin-safe api helper as every other storefront call.
+    api.get(`/api/pincode/${pin}`)
+      .then((data) => {
+        // Ignore stale responses if the user has since changed the PIN.
+        if (currentPin.current !== pin) return
+        const result = {
+          status: data.status,
+          localities: Array.isArray(data.localities) ? data.localities : [],
+          city: data.city || '',
+          state: data.state || '',
+        }
+        pinCache.current.set(pin, result)
+        applyPinResult(result)
+      })
+      .catch(() => {
+        if (currentPin.current !== pin) return
+        setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Unable to verify this PIN code. Please try again.', pinNotFound: false })
+      })
+  }
+
+  // Lookup only fires once exactly 6 digits exist, debounced slightly.
+  const handlePincodeChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 6)
+    currentPin.current = digits
+    setForm((f) => ({ ...f, pincode: digits }))
+    clearFieldError('pincode')
+    setPinInfo({ status: 'idle', localities: [], city: '', state: '', locality: '', error: '', pinNotFound: false })
+    window.clearTimeout(pinTimer.current)
+    if (digits.length === 6) {
+      pinTimer.current = window.setTimeout(() => lookupPincode(digits), 350)
+    }
+  }
+
+  const handleLocalityChange = (e) => setPinInfo((p) => ({ ...p, locality: e.target.value }))
+
+  useEffect(() => () => window.clearTimeout(pinTimer.current), [])
+
+  // /checkout requires the cart snapshot carried in router state. A direct
+  // visit (or a refresh after the order cleared the cart) safely falls back
+  // to the cart page instead of rendering a broken checkout.
+  if (isCheckout && !checkout) {
+    return <Navigate to="/cart" replace />
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
     if (isCheckout) {
-      if (!form.name || !form.phone || !form.address || !form.pincode) {
-        setError('Please fill in all required fields.')
+      // Per-field validation — each message renders next to its own input.
+      const errs = {}
+      if (!form.name.trim()) errs.name = 'Name is required.'
+      if (!phoneValid) errs.phone = 'Enter a valid 10-digit mobile number.'
+      if (!form.address.trim()) errs.address = 'Address is required.'
+      if (!/^\d{6}$/.test(form.pincode)) errs.pincode = 'Enter a valid 6-digit PIN code.'
+      if (Object.keys(errs).length > 0) {
+        setFieldErrors(errs)
+        setError('')
+        return
+      }
+      // Block submitting a PIN the postal lookup confirmed does not exist.
+      // (Network failures do not hard-block ordering.)
+      if (pinInfo.status === 'error' && pinInfo.pinNotFound) {
+        setError(pinInfo.error)
         return
       }
     } else {
@@ -133,9 +241,15 @@ export default function Contact() {
 
         const payload = {
           name: form.name,
-          phone: form.phone,
+          // Full Indian number in E.164 form (e.g. +919876543210) — the same
+          // phone format the order system already expects.
+          phone: `+91${form.phone}`,
           address: form.address,
           pincode: form.pincode,
+          // Location details discovered from the PIN lookup (optional extras).
+          ...(pinInfo.status === 'found'
+            ? { locality: pinInfo.locality, city: pinInfo.city, state: pinInfo.state }
+            : {}),
           message: form.message,
           items,
           total: checkout.total,
@@ -270,23 +384,104 @@ export default function Contact() {
 
               <form className="contact-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-field">
-                  <label htmlFor="name">Name</label>
+                  <label htmlFor="name">
+                    Name <span className="required-star">*</span>
+                  </label>
                   <input id="name" name="name" value={form.name} onChange={handleChange} required />
+                  {fieldErrors.name && <p className="field-hint field-hint--error">{fieldErrors.name}</p>}
                 </div>
 
                 {isCheckout ? (
                   <>
                     <div className="form-field">
-                      <label htmlFor="phone">Phone Number</label>
-                      <input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required />
+                      <label htmlFor="phone">
+                        Phone Number <span className="required-star">*</span>
+                        <span className="visually-hidden"> (Indian country code +91 is included)</span>
+                      </label>
+                      <div className="phone-field-row">
+                        <span className="phone-prefix" aria-hidden="true">+91</span>
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={10}
+                          autoComplete="tel-national"
+                          pattern="[0-9]{10}"
+                          className="phone-national-input"
+                          placeholder="9876543210"
+                          value={form.phone}
+                          onChange={handlePhoneChange}
+                          onBlur={() => setPhoneTouched(true)}
+                          aria-invalid={showPhoneError || undefined}
+                          aria-describedby={showPhoneError ? 'phone-error' : undefined}
+                          required
+                        />
+                      </div>
+                      {showPhoneError && (
+                        <p className="field-hint field-hint--error" id="phone-error">
+                          {fieldErrors.phone || 'Enter a valid 10-digit mobile number.'}
+                        </p>
+                      )}
                     </div>
                     <div className="form-field">
-                      <label htmlFor="address">Address</label>
+                      <label htmlFor="address">
+                        Address <span className="required-star">*</span>
+                      </label>
                       <textarea id="address" name="address" rows={3} value={form.address} onChange={handleChange} required />
+                      {fieldErrors.address && <p className="field-hint field-hint--error">{fieldErrors.address}</p>}
                     </div>
                     <div className="form-field">
-                      <label htmlFor="pincode">Pincode</label>
-                      <input id="pincode" name="pincode" value={form.pincode} onChange={handleChange} required />
+                      <label htmlFor="pincode">
+                        Pincode <span className="required-star">*</span>
+                      </label>
+                      <input
+                        id="pincode"
+                        name="pincode"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="postal-code"
+                        value={form.pincode}
+                        onChange={handlePincodeChange}
+                        placeholder="600001"
+                        required
+                      />
+                      {fieldErrors.pincode && (
+                        <p className="field-hint field-hint--error">{fieldErrors.pincode}</p>
+                      )}
+                      {pinInfo.status === 'loading' && (
+                        <p className="field-hint" role="status">Finding location…</p>
+                      )}
+                      {pinInfo.status === 'found' && (
+                        <div className="pincode-result">
+                          <p className="pincode-location">
+                            <span className="pincode-check" aria-hidden="true">✓</span>{' '}
+                            {pinInfo.city}, {pinInfo.state}
+                          </p>
+                          {pinInfo.localities.length > 1 && (
+                            <label className="pincode-locality-label" htmlFor="pincode-locality">
+                              Locality / Post Office
+                            </label>
+                          )}
+                          {pinInfo.localities.length > 1 && (
+                            <select
+                              id="pincode-locality"
+                              className="pincode-locality-select"
+                              value={pinInfo.locality}
+                              onChange={handleLocalityChange}
+                            >
+                              <option value="">Select locality</option>
+                              {pinInfo.localities.map((l, i) => (
+                                <option key={`${l.name}-${i}`} value={l.name}>{l.name}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+                      {pinInfo.status === 'error' && (
+                        <p className="field-hint field-hint--error">{pinInfo.error}</p>
+                      )}
                     </div>
                   </>
                 ) : (

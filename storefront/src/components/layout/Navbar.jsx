@@ -138,10 +138,10 @@ export default function Navbar() {
         aria-hidden={!menuOpen}
       >
         <div className="navbar-drawer-head">
-          <span className="eyebrow">Menu</span>
+          <span className="navbar-drawer-title">Menu</span>
           <button
             type="button"
-            className="navbar-icon-btn"
+            className="navbar-icon-btn navbar-drawer-close"
             onClick={() => setMenuOpen(false)}
             aria-label="Close menu"
           >
@@ -164,10 +164,6 @@ export default function Navbar() {
             </NavLink>
           ))}
         </div>
-
-        <Link to="/shop" className="btn btn-gold navbar-drawer-cta" onClick={() => setMenuOpen(false)}>
-          Shop the Collection
-        </Link>
       </nav>
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />

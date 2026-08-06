@@ -8,7 +8,7 @@ export default function Cart() {
   const navigate = useNavigate()
 
   const handleCheckout = () => {
-    navigate('/contact', { state: { checkoutItems: items, total } })
+    navigate('/checkout', { state: { checkoutItems: items, total } })
   }
 
   if (items.length === 0) {

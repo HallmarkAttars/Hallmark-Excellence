@@ -1,8 +1,19 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import './Topbar.css'
 
 export default function Topbar({ onMenuClick }) {
   const { admin } = useAuth()
+
+  // Short, unclipped placeholder on mobile; full description on larger screens.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const onChange = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   return (
     <header className="topbar">
@@ -16,7 +27,11 @@ export default function Topbar({ onMenuClick }) {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
         </svg>
-        <input type="search" placeholder="Search products, orders…" aria-label="Search" />
+        <input
+          type="search"
+          placeholder={isMobile ? 'Search…' : 'Search products, orders…'}
+          aria-label="Search"
+        />
       </div>
 
       <div className="topbar-actions">

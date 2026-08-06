@@ -1,6 +1,18 @@
 .admin-layout { min-height: 100vh; }
 .admin-main { min-height: 100vh; }
-.admin-content { padding: 24px; max-width: 1400px; }
+.admin-content { padding: 24px; max-width: 1400px; width: 100%; box-sizing: border-box; }
+
+/* Mobile: full-width page container — no desktop margins */
+@media (max-width: 767px) {
+  .admin-content {
+    padding: 20px 16px 32px;
+    max-width: 100%;
+  }
+}
+/* Extremely narrow screens (e.g. 320px) */
+@media (max-width: 360px) {
+  .admin-content { padding-inline: 12px; }
+}
 
 @media (min-width: 1024px) {
   .admin-main { margin-left: var(--sidebar-width); }
