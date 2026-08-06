@@ -4,7 +4,7 @@
 Persist a complete snapshot of every purchased item inside `orders.items` (JSONB) and display it across checkout, admin orders, and order history. Never fetch current product/variant data for completed orders — always use the saved snapshot. Legacy orders (no variants) keep working.
 
 ## Checkout (storefront/src/pages/Contact.jsx)
-- [x] Map each cart item to snapshot shape: product_id, product_name, image, quantity, unit_price, subtotal, variant_id, variant_label, quantity_value, quantity_unit
+- [x] Map each cart item to snapshot shape: product_id, product_name, image, quantity, unit_price, subtotal, variant_id, variant_label, quantity_value, quantity_unit it
 - [x] unit_price = selected_price (variant price if variant, else product.price); subtotal = unit_price × quantity
 - [x] Order Summary UI shows variant label under product name; use product_name/quantity/unit_price
 
