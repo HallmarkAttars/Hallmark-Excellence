@@ -1,8 +1,14 @@
 const supabase = require('../config/supabase')
+const { sendOrderEmails } = require('../services/orderEmailService')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
   return `ORD-${randomSixDigits}`
+}
+
+// Round monetary values to 2 decimals (the orders table stores numeric(10,2)).
+function round2(n) {
+  return Math.round((Number(n) + Number.EPSILON) * 100) / 100
 }
 
 // Default user for guest checkouts (no auth on storefront)
@@ -193,9 +199,14 @@ async function trackOrder(req, res) {
 
 // POST /api/orders
 // Public. Storefront checkout.
+//
+// Money is computed HERE from the database — product/variant prices fetched
+// from Supabase are the only authority. Frontend-supplied prices, subtotals
+// and totals (req.body.total_amount etc.) are IGNORED so a customer can never
+// manipulate the frontend request to change what they pay.
 async function createOrder(req, res) {
   try {
-    const { customer_name, phone, address, pincode, message, items, total_amount } = req.body
+    const { customer_name, email, phone, address, pincode, message, items, idempotency_key } = req.body
 
     console.log('[createOrder] Received payload:', JSON.stringify({
       customer_name,
@@ -204,7 +215,6 @@ async function createOrder(req, res) {
       pincode,
       message,
       items_count: items?.length,
-      total_amount
     }, null, 2))
 
     if (!customer_name || !phone || !address || !pincode || !Array.isArray(items) || items.length === 0) {
@@ -213,9 +223,132 @@ async function createOrder(req, res) {
       })
     }
 
-    if (total_amount === undefined || total_amount === null || isNaN(Number(total_amount))) {
-      return res.status(400).json({ error: 'total_amount is required and must be a number.' })
+    // Customer email is REQUIRED — it is the recipient of the order
+    // confirmation email.
+    const customerEmail = String(email || '').trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      return res.status(400).json({ error: 'A valid email address is required.' })
     }
+
+    // --- Duplicate-order / duplicate-email protection -----------------------
+    // The checkout generates one idempotency key per checkout session. If a
+    // duplicate submission (double click, network retry, browser retry) reaches
+    // this endpoint again, the SAME existing order is returned — no second
+    // order is created, so no second pair of emails is ever sent.
+    if (idempotency_key) {
+      try {
+        const { data: existing, error: dupError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('notes->>idempotency_key', String(idempotency_key))
+          .maybeSingle()
+        if (!dupError && existing) {
+          console.log(`[createOrder] Duplicate submission blocked (idempotency_key ${idempotency_key}); returning existing order ${existing.order_number}`)
+          return res.status(200).json({ order: existing })
+        }
+      } catch (dupErr) {
+        // Never let the idempotency check break checkout — proceed on failure.
+        console.error('[createOrder] Idempotency check failed (proceeding):', dupErr.message)
+      }
+    }
+
+    // --- Fetch authoritative product / variant data from the database --------
+    const productIds = items
+      .map((it) => it.product_id ?? it.id)
+      .filter((id) => id != null && String(id).trim() !== '')
+      .map((id) => String(id))
+
+    if (productIds.length !== items.length) {
+      return res.status(400).json({ error: 'Every order item must include a product_id.' })
+    }
+
+    const { data: dbProducts, error: prodError } = await supabase
+      .from('products')
+      .select('id, name, price, image')
+      .in('id', productIds)
+
+    if (prodError) {
+      console.error('[createOrder] products fetch error:', prodError.message)
+      return res.status(500).json({ error: 'Failed to validate products. Please try again.' })
+    }
+
+    const variantIds = items
+      .filter((it) => it.variant_id != null)
+      .map((it) => String(it.variant_id))
+
+    let dbVariants = []
+    if (variantIds.length > 0) {
+      const { data: vs, error: vErr } = await supabase
+        .from('product_variants')
+        .select('id, product_id, price, display_label, quantity_value, quantity_unit')
+        .in('id', variantIds)
+      if (vErr) {
+        console.error('[createOrder] variants fetch error:', vErr.message)
+        return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
+      }
+      dbVariants = vs || []
+    }
+
+    const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
+    const variantMap = new Map(dbVariants.map((v) => [String(v.id), v]))
+
+    // Recompute every line from database prices. Any frontend-supplied
+    // unit_price / subtotal / total_amount is ignored.
+    let normalizedItems
+    try {
+      normalizedItems = items.map((item) => {
+        const product = productMap.get(String(item.product_id ?? item.id))
+        if (!product) {
+          throw new Error('One of the products in your cart is no longer available. Please refresh and try again.')
+        }
+        const quantity = Math.floor(Number(item.quantity ?? item.qty ?? 1))
+        if (!Number.isFinite(quantity) || quantity < 1) {
+          throw new Error(`Invalid quantity for ${product.name}.`)
+        }
+
+        let unitPrice
+        let variantFields = {}
+        if (item.variant_id != null) {
+          const variant = variantMap.get(String(item.variant_id))
+          if (!variant || String(variant.product_id) !== String(product.id)) {
+            throw new Error(`The selected size/variant of ${product.name} is no longer available. Please refresh and try again.`)
+          }
+          unitPrice = Number(variant.price)
+          variantFields = {
+            variant_id: variant.id,
+            variant_label: variant.display_label,
+            quantity_value: variant.quantity_value,
+            quantity_unit: variant.quantity_unit,
+          }
+        } else {
+          unitPrice = Number(product.price)
+        }
+
+        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+          throw new Error(`Invalid price for ${product.name}.`)
+        }
+
+        return {
+          product_id: product.id,
+          product_name: product.name,
+          image: product.image || null,
+          quantity,
+          unit_price: round2(unitPrice),
+          subtotal: round2(unitPrice * quantity),
+          ...variantFields,
+        }
+      })
+    } catch (err) {
+      return res.status(400).json({ error: err.message })
+    }
+
+    // Authoritative totals. The current system has no discount/shipping/tax
+    // logic — the columns exist on the live table and stay 0 (free shipping).
+    const subtotal = round2(normalizedItems.reduce((sum, it) => sum + Number(it.subtotal), 0))
+    const discount = 0
+    const shippingCharge = 0
+    const tax = 0
+    const total = round2(subtotal + shippingCharge - discount + tax)
 
     const orderNumber = generateOrderNumber()
 
@@ -237,56 +370,38 @@ async function createOrder(req, res) {
     // column of 'orders'") which broke checkout. Customer details + item
     // snapshots are persisted in the `notes` JSONB column instead, which the
     // admin order reader already parses back out.
-    // Normalize the incoming items into a durable snapshot. Each item
-    // carries the full variant info so orders stay historically accurate
-    // even if the product/variant is edited (or deleted) later.
-    const normalizedItems = (Array.isArray(items) ? items : []).map((item) => {
-      const unit_price = Number(item.unit_price ?? item.selected_price ?? item.price ?? 0)
-      const quantity = Number(item.quantity ?? item.qty ?? 1)
-      const hasVariant = item.variant_id != null
-      return {
-        product_id: item.product_id ?? item.id,
-        product_name: item.name ?? item.product_name,
-        image: item.image,
-        quantity,
-        unit_price,
-        subtotal: unit_price * quantity,
-        ...(hasVariant
-          ? {
-              variant_id: item.variant_id,
-              variant_label: item.variant_label,
-              quantity_value: item.quantity_value,
-              quantity_unit: item.quantity_unit,
-            }
-          : {}),
-      }
-    })
+    //
+    // Each item carries the full variant info so orders stay historically
+    // accurate even if the product/variant is edited (or deleted) later.
+    const notes = {
+      customer_name,
+      email: customerEmail,
+      phone,
+      address,
+      pincode,
+      // Optional location details from the checkout PIN lookup. Stored inside
+      // the existing notes JSONB — no schema change.
+      ...(req.body.locality ? { locality: req.body.locality } : {}),
+      ...(req.body.city ? { city: req.body.city } : {}),
+      ...(req.body.state ? { state: req.body.state } : {}),
+      message: message ?? '',
+      items: normalizedItems,
+      total_amount: total,
+      ...(idempotency_key ? { idempotency_key: String(idempotency_key) } : {}),
+    }
 
-    // Persist the full snapshot into the `notes` JSONB column — the single
-    // source of truth for order history and what the admin order reader parses.
     const insertPayload = {
       order_number: orderNumber,
       user_id: DEFAULT_USER_ID,
       address_id: addressId,
-      subtotal: Number(total_amount),
-      total: Number(total_amount),
+      subtotal,
+      shipping_charge: shippingCharge,
+      discount,
+      total,
       payment_method: 'Cash On Delivery',
       payment_status: 'Pending',
       order_status: 'Pending',
-      notes: JSON.stringify({
-        customer_name,
-        phone,
-        address,
-        pincode,
-        // Optional location details from the checkout PIN lookup. Stored inside
-        // the existing notes JSONB — no schema change.
-        ...(req.body.locality ? { locality: req.body.locality } : {}),
-        ...(req.body.city ? { city: req.body.city } : {}),
-        ...(req.body.state ? { state: req.body.state } : {}),
-        message: message ?? '',
-        items: normalizedItems,
-        total_amount: Number(total_amount),
-      }),
+      notes: JSON.stringify(notes),
     }
 
     const { data, error } = await supabase
@@ -296,6 +411,20 @@ async function createOrder(req, res) {
       .single()
 
     if (error) {
+      // Unique-violation on the idempotency index (notes->>idempotency_key):
+      // a parallel request with the same key won the insert. Return the
+      // existing order instead of creating a duplicate.
+      if (error.code === '23505' && idempotency_key) {
+        const { data: existing, error: dupError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('notes->>idempotency_key', String(idempotency_key))
+          .maybeSingle()
+        if (!dupError && existing) {
+          console.log(`[createOrder] Concurrent duplicate blocked (idempotency_key ${idempotency_key}); returning existing order ${existing.order_number}`)
+          return res.status(200).json({ order: existing })
+        }
+      }
       console.error('[createOrder] Supabase error:', JSON.stringify(error, null, 2))
       console.error('[createOrder] Supabase error code:', error.code)
       console.error('[createOrder] Supabase error details:', error.details)
@@ -307,7 +436,17 @@ async function createOrder(req, res) {
       })
     }
 
+    // --- ORDER IS SAVED. Only now are the Brevo emails sent. ----------------
+    // Both emails use the same params object built from THIS saved order row.
+    // Email failures are handled independently and never fail the order.
     console.log('[createOrder] Order created successfully:', data.id, data.order_number)
+    try {
+      await sendOrderEmails({ order: data })
+    } catch (emailErr) {
+      // sendOrderEmails never throws by contract; this is a last-resort guard.
+      console.error('[ORDER EMAIL ERROR] Unexpected error sending order emails:', emailErr.message || emailErr)
+    }
+
     return res.status(201).json({ order: data })
   } catch (err) {
     console.error('[createOrder] Unexpected error:', err)
@@ -512,7 +651,7 @@ async function deleteOrder(req, res) {
 async function getDashboardStats(req, res) {
   try {
     const totalProductsQuery = supabase.from('products').select('id', { count: 'exact', head: true })
-    const allOrdersQuery = supabase.from('orders').select('id, total, order_status')
+    const allOrdersQuery = supabase.from('orders').select('id, total, order_status, notes')
 
     const [{ count: totalProducts, error: prodError }, { data: allOrders, error: ordersError }] =
       await Promise.all([totalProductsQuery, allOrdersQuery])
@@ -524,19 +663,23 @@ async function getDashboardStats(req, res) {
 
     const totalOrders = allOrders.length
 
-    // Count unique customers from phone column
-    const customerPhones = new Set()
+    // Count UNIQUE customers from the stored checkout phone (fallback: email).
+    // The live orders table has no phone/email columns — both live inside the
+    // notes JSONB written at checkout. notes is now included in the select above
+    // (previously neither column was selected, which is why Customers showed 0).
+    const customerKeys = new Set()
     allOrders.forEach((o) => {
-      if (o.phone) customerPhones.add(o.phone)
-      else {
-        // Fallback: try parsing notes for backward compatibility
-        try {
-          if (o.notes) {
-            const info = JSON.parse(o.notes)
-            if (info.phone) customerPhones.add(info.phone)
-          }
-        } catch {}
-      }
+      let phone = ''
+      let email = ''
+      try {
+        if (o.notes) {
+          const info = JSON.parse(o.notes)
+          phone = info.phone || ''
+          email = info.email || ''
+        }
+      } catch {}
+      if (phone) customerKeys.add(phone)
+      else if (email) customerKeys.add(email)
     })
 
     const totalRevenue = allOrders
@@ -565,13 +708,14 @@ async function getDashboardStats(req, res) {
         status: o.order_status || 'Pending',
         total_amount: Number(o.total_amount || o.total || 0),
         created_at: o.created_at,
+        items_count: Array.isArray(notesInfo.items) ? notesInfo.items.length : 0,
       }
     })
 
     return res.json({
       total_products: totalProducts ?? 0,
       total_orders: totalOrders,
-      total_customers: customerPhones.size,
+      total_customers: customerKeys.size,
       total_revenue: totalRevenue,
       recent_orders: enrichedRecent,
     })

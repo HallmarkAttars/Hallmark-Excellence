@@ -126,7 +126,7 @@ a, button { -webkit-tap-highlight-color: transparent; }
     border-color 0.25s ease, transform 0.25s ease;
 }
 
-.btn:active { transform: translateY(1px); }
+.btn:active { transform: scale(0.98); }
 
 .btn-primary {
   background: var(--charcoal);

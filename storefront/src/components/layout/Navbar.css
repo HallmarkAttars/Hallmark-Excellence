@@ -98,9 +98,10 @@
   border: none;
   border-radius: 50%;
   color: var(--charcoal);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 .navbar-icon-btn:hover { background: var(--cream-deep); color: var(--gold-deep); }
+.navbar-icon-btn:active { transform: scale(0.94); }
 
 .navbar-cart { position: relative; }
 

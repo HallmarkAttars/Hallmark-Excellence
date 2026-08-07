@@ -41,12 +41,19 @@ export default function Topbar({ onMenuClick }) {
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" />
           </svg>
         </button>
+
+        {/* Admin identity — avatar + stacked name/role. Role is shown once,
+            beneath the name, never duplicated inline. */}
         <div className="topbar-admin">
-          <div className="topbar-avatar">{admin?.name?.[0]?.toUpperCase() || 'A'}</div>
-          <span>{admin?.name || 'Admin'}</span>
-          {admin?.role && (
-            <span className="topbar-role">{ROLE_LABELS[admin.role] || admin.role}</span>
-          )}
+          <div className="topbar-avatar" aria-hidden="true">
+            {admin?.name?.[0]?.toUpperCase() || 'A'}
+          </div>
+          <div className="topbar-identity">
+            <span className="topbar-identity-name">{admin?.name || 'Admin'}</span>
+            {admin?.role && (
+              <span className="topbar-identity-role">{ROLE_LABELS[admin.role] || admin.role}</span>
+            )}
+          </div>
         </div>
       </div>
     </header>

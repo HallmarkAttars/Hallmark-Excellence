@@ -17,6 +17,17 @@
 }
 .search-overlay.is-open { opacity: 1; visibility: visible; }
 
+/* Premium open: the panel fades (above) while its content rises in a
+   short stagger — shared fade-up keyframes from the animation system.
+   Results are never staggered per keystroke (search stays instant). */
+.js .search-overlay.is-open .search-overlay-head,
+.js .search-overlay.is-open .search-overlay-form,
+.js .search-overlay.is-open .search-overlay-results {
+  animation: fade-up 0.4s ease-out both;
+}
+.js .search-overlay.is-open .search-overlay-form { animation-delay: 60ms; }
+.js .search-overlay.is-open .search-overlay-results { animation-delay: 120ms; }
+
 .search-overlay-head {
   max-width: 720px;
   width: 100%;

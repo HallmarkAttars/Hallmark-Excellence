@@ -14,7 +14,7 @@
   border: 1px solid rgba(80, 60, 30, 0.10);
   border-radius: 4px;
   overflow: hidden;
-  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* ---------- Image area: consistent 1:1 stage, never cropped ---------- */
@@ -40,7 +40,7 @@
      hero, not the white space. Original files are never touched. */
   transform: scale(1.05);
   transform-origin: center;
-  transition: transform 0.22s ease;
+  transition: transform 0.4s ease; /* slow, contained zoom */
 }
 
 .product-card-badge {
@@ -226,9 +226,14 @@
 /* ---------- Hover only on devices that actually hover ---------- */
 @media (hover: hover) and (pointer: fine) {
   .product-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(80, 60, 30, 0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(80, 60, 30, 0.12); /* slightly stronger */
     border-color: rgba(184, 137, 56, 0.35); /* subtle gold edge */
   }
-  .product-card:hover .product-card-image-link img { transform: scale(1.08); }
+  .product-card:hover .product-card-image-link img { transform: scale(1.06); }
+}
+
+/* Mobile: press feedback on the whole card (not hover-dependent) */
+@media (hover: none) {
+  .product-card:active { transform: scale(0.985); }
 }

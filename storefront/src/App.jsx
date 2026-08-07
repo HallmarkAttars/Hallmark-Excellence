@@ -25,6 +25,34 @@ function ScrollToTop() {
   return null
 }
 
+// Very subtle page-content fade on every route change (200–300ms, transform +
+// opacity only). Keying by pathname remounts the current page so the fade
+// replays on navigation — browser back/forward is unaffected, no routes or
+// duplicate pages are created, and reduced-motion users get no movement.
+function PageContent() {
+  const { pathname } = useLocation()
+  return (
+    <main id="main-content">
+      <div key={pathname} className="page-fade">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/categories/:slug" element={<CategoryProducts />} />
+          <Route path="/brand/:slug" element={<BrandProducts />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/checkout" element={<Contact />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/track-order" element={<TrackOrder />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </div>
+    </main>
+  )
+}
+
 export default function App() {
   return (
     <CartProvider>
@@ -32,22 +60,7 @@ export default function App() {
         <ScrollToTop />
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <Navbar />
-        <main id="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/categories" element={<Categories />} />
-            <Route path="/categories/:slug" element={<CategoryProducts />} />
-            <Route path="/brand/:slug" element={<BrandProducts />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/checkout" element={<Contact />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/track-order" element={<TrackOrder />} />
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
+        <PageContent />
         <Footer />
       </BrowserRouter>
     </CartProvider>

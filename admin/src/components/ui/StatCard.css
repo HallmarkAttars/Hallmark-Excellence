@@ -3,6 +3,7 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
   padding: 22px;
+  min-height: 128px;
   display: flex;
   align-items: center;
   justify-content: space-between;

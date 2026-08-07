@@ -114,6 +114,7 @@ input, select, textarea { font-family: var(--font-body); }
 .status-shipped { background: var(--charcoal); color: var(--cream); }
 .status-processing { background: var(--warning-bg); color: var(--warning); }
 .status-cancelled { background: var(--danger-bg); color: var(--danger); }
+.status-returned { background: var(--cream-deep); color: #6b6457; }
 
 /* Tables — Manrope, subtle uppercase headers, tabular numbers */
 table { width: 100%; border-collapse: collapse; }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Reveal from '../../animations/Reveal'
 import ProductCard from '../product/ProductCard'
 import { HOME_FEATURED } from '../../data/content'
 import './FeaturedProducts.css'
@@ -10,7 +11,7 @@ export default function FeaturedProducts({ products }) {
   if (items.length === 0) return null
 
   return (
-    <section className="section featured-section">
+    <Reveal as="section" className="section featured-section">
       <div className="container">
         <div className="section-head">
           <h2 className="section-title-upper">{HOME_FEATURED.title}</h2>
@@ -20,12 +21,12 @@ export default function FeaturedProducts({ products }) {
           </Link>
         </div>
 
-        <div className="featured-track">
+        <div className="featured-track stagger-fade">
           {items.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>
-    </section>
+    </Reveal>
   )
 }

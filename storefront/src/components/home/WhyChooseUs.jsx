@@ -1,3 +1,4 @@
+import Reveal from '../../animations/Reveal'
 import { WHY_CHOOSE_US } from '../../data/content'
 import './WhyChooseUs.css'
 
@@ -49,10 +50,10 @@ function CraftIcon() {
 
 export default function WhyChooseUs() {
   return (
-    <section className="choose-section" aria-label="Why choose us">
+    <Reveal as="section" className="choose-section" aria-label="Why choose us">
       <div className="container">
         <h2 className="section-title-upper choose-title-heading">{WHY_CHOOSE_US.title}</h2>
-        <div className="choose-grid">
+        <div className="choose-grid stagger-fade">
           {WHY_CHOOSE_US.items.map((feature) => (
             <div key={feature.key} className="choose-item">
               <span className="choose-icon-ring" aria-hidden="true">
@@ -64,6 +65,6 @@ export default function WhyChooseUs() {
           ))}
         </div>
       </div>
-    </section>
+    </Reveal>
   )
 }

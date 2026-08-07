@@ -71,12 +71,14 @@ export async function trackOrder(orderId, phone) {
 export async function submitOrder(payload) {
   const requestBody = {
     customer_name: payload.name,
+    email: payload.email,
     phone: payload.phone,
     address: payload.address,
     pincode: payload.pincode,
     message: payload.message,
     items: payload.items,
     total_amount: payload.total,
+    idempotency_key: payload.idempotencyKey,
   }
 
   console.log('[submitOrder] Sending payload:', JSON.stringify(requestBody, null, 2))

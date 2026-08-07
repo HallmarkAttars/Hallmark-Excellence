@@ -1,3 +1,4 @@
+import Reveal from '../../animations/Reveal'
 import ProductCard from './ProductCard'
 
 export default function ProductGrid({ products, loading, emptyMessage = 'No products found.' }) {
@@ -8,10 +9,12 @@ export default function ProductGrid({ products, loading, emptyMessage = 'No prod
     return <div className="empty-state">{emptyMessage}</div>
   }
   return (
-    <div className="grid-products">
-      {products.map((p) => (
-        <ProductCard key={p.id} product={p} />
-      ))}
-    </div>
+    <Reveal className="product-grid-reveal">
+      <div className="grid-products stagger-fade">
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
+    </Reveal>
   )
 }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { FOOTER, BUSINESS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
+import Reveal from '../../animations/Reveal'
 import './Footer.css'
 
 function PhoneIcon() {
@@ -47,7 +48,7 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-inner">
-        <div className="footer-grid">
+        <Reveal as="div" className="footer-grid stagger-fade">
           {/* Brand */}
           <div className="footer-brand">
             <img src={IMAGES.logoLight} alt={BUSINESS.name} className="footer-logo-img" loading="lazy" />
@@ -89,7 +90,7 @@ export default function Footer() {
               <span>{BUSINESS.address}</span>
             </p>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       <div className="footer-bottom">

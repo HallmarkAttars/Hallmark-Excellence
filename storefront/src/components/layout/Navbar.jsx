@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { NAV_LINKS } from '../../data/content'
@@ -41,6 +41,17 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false)
   const { itemCount } = useCart()
   const location = useLocation()
+
+  // One subtle cart-badge pop whenever the count increases (an item was
+  // added). Keying the badge re-runs the CSS pop; decreases and quantity
+  // edits don't. The cart itself is untouched — animation only. The ref
+  // starts at the mount-time count so a persisted cart never pops on load.
+  const prevCount = useRef(itemCount)
+  const [badgePop, setBadgePop] = useState(0)
+  useEffect(() => {
+    if (itemCount > prevCount.current) setBadgePop((k) => k + 1)
+    prevCount.current = itemCount
+  }, [itemCount])
 
   // Close the mobile menu whenever the route changes.
   useEffect(() => {
@@ -101,7 +112,7 @@ export default function Navbar() {
             <Link to="/cart" className="navbar-icon-btn navbar-cart" aria-label={`Cart, ${itemCount} items`}>
               <CartIcon />
               <span className="navbar-cart-badge-wrap" aria-live="polite">
-                {itemCount > 0 && <span className="navbar-cart-badge">{itemCount}</span>}
+                {itemCount > 0 && <span key={badgePop} className="navbar-cart-badge cart-badge-pop">{itemCount}</span>}
               </span>
             </Link>
 

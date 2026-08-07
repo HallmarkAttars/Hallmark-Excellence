@@ -30,22 +30,42 @@
   gap: 14px;
   text-align: center;
   min-width: 0;
+  transition: transform 0.3s ease;
 }
 
-.category-image {
+/* Circular media stage — clips the image zoom so it stays inside the card */
+.category-media {
+  display: block;
   width: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  background: var(--stage);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.category-image {
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
-  border: 1px solid rgba(184, 137, 56, 0.35);
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   display: block;
+  transition: transform 0.5s ease;
 }
-.category-card:hover .category-image {
-  transform: translateY(-4px);
-  border-color: var(--gold);
-  box-shadow: var(--shadow-lift);
+
+/* Desktop hover: card lifts 4px, image zooms gently inside the circle */
+@media (hover: hover) and (pointer: fine) {
+  .category-card:hover { transform: translateY(-4px); }
+  .category-card:hover .category-media {
+    border-color: var(--gold);
+    box-shadow: var(--shadow-lift);
+  }
+  .category-card:hover .category-image { transform: scale(1.04); }
+}
+/* Mobile: press feedback — never hover-dependent */
+@media (hover: none) {
+  .category-card:active { transform: scale(0.985); }
+  .category-card:active .category-image { transform: scale(1.03); }
 }
 
 .category-name {

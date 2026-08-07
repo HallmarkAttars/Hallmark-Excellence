@@ -36,6 +36,7 @@ function isMissingColumnError(error) {
 async function selectProducts(build) {
   let res = await build(PRODUCT_SELECT)
   if (isMissingColumnError(res.error)) {
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, bulk_price, bulk_min_qty, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
     res = await build(PRODUCT_SELECT_BASE)
   }
   return res
@@ -69,6 +70,7 @@ const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'bulk_price', 'bulk_min_qty', '
 async function withOptionalFieldRetry(operation, payload, select, baseSelect) {
   const res = await operation(payload, select)
   if (isMissingColumnError(res.error)) {
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, bulk_price, bulk_min_qty, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
     const basePayload = { ...payload }
     for (const key of OPTIONAL_FIELD_KEYS) delete basePayload[key]
     return operation(basePayload, baseSelect)

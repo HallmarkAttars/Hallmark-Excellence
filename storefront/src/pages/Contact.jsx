@@ -129,6 +129,16 @@ export default function Contact() {
   const pinCache = useRef(new Map()) // session-only lookup cache
   const pinTimer = useRef(null)
   const currentPin = useRef('') // guards against stale async responses
+  // One idempotency key per checkout session. Duplicate submissions (double
+  // click, network retry, browser retry) are collapsed by the backend into the
+  // same order — no duplicate order, no duplicate confirmation emails.
+  const idempotencyKeyRef = useRef(null)
+  if (isCheckout && !idempotencyKeyRef.current) {
+    idempotencyKeyRef.current =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  }
 
   // Indian mobile numbers only: exactly 10 digits. The +91 prefix is rendered
   // in the UI and prepended on submit — the user never types it.
@@ -230,6 +240,11 @@ export default function Contact() {
       // Per-field validation — each message renders next to its own input.
       const errs = {}
       if (!form.name.trim()) errs.name = 'Name is required.'
+      if (!form.email.trim()) {
+        errs.email = 'Email is required.'
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        errs.email = 'Enter a valid email address.'
+      }
       if (!phoneValid) errs.phone = 'Enter a valid 10-digit mobile number.'
       if (!form.address.trim()) errs.address = 'Address is required.'
       if (!/^\d{6}$/.test(form.pincode)) errs.pincode = 'Enter a valid 6-digit PIN code.'
@@ -280,6 +295,7 @@ export default function Contact() {
 
         const payload = {
           name: form.name,
+          email: form.email.trim(),
           // Full Indian number in E.164 form (e.g. +919876543210) — the same
           // phone format the order system already expects.
           phone: `+91${form.phone}`,
@@ -292,6 +308,7 @@ export default function Contact() {
           message: form.message,
           items,
           total: checkout.total,
+          idempotencyKey: idempotencyKeyRef.current,
         }
         const res = await submitOrder(payload)
         // Clear the cart ONLY after the order was created successfully.
@@ -324,19 +341,19 @@ export default function Contact() {
       <div className="order-success-wrapper">
         <div className="order-success-card">
           <div className="order-success-head">
-            <span className="order-success-check">
+            <span className="order-success-check success-check">
               <CheckIcon />
             </span>
-            <h1>Order Placed Successfully</h1>
-            <p className="order-success-id">
+            <h1 className="success-fade success-fade-1">Order Placed Successfully</h1>
+            <p className="order-success-id success-fade success-fade-2">
               Order ID: <strong>#{orderNumber}</strong>
             </p>
             {placedAt && (
-              <p className="order-success-placed">
+              <p className="order-success-placed success-fade success-fade-3">
                 Placed on {placedAt.date} • {placedAt.time}
               </p>
             )}
-            <p className="order-success-sub">
+            <p className="order-success-sub success-fade">
               Thank you for your order. We have received your order successfully.
             </p>
           </div>
@@ -354,7 +371,7 @@ export default function Contact() {
             </ul>
           </section>
 
-          <section id="order-summary" className="order-success-section order-success-summary" aria-label="Order summary">
+          <section id="order-summary" className="order-success-section order-success-summary success-fade success-fade-2" aria-label="Order summary">
             <h2>Order Summary</h2>
             {items.map((item, i) => (
               <OrderSummaryItem
@@ -444,6 +461,22 @@ export default function Contact() {
 
                 {isCheckout ? (
                   <>
+                    <div className="form-field">
+                      <label htmlFor="email">
+                        Email <span className="required-star">*</span>
+                      </label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        value={form.email}
+                        onChange={handleChange}
+                        required
+                      />
+                      {fieldErrors.email && <p className="field-hint field-hint--error">{fieldErrors.email}</p>}
+                    </div>
                     <div className="form-field">
                       <label htmlFor="phone">
                         Phone Number <span className="required-star">*</span>

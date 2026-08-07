@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Hero from '../components/home/Hero'
+import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
 import CollectionBanner from '../components/home/CollectionBanner'
 import FeaturedProducts from '../components/home/FeaturedProducts'
@@ -35,8 +36,10 @@ export default function Home() {
       <Hero />
       {categories.length > 0 && <CategoryGrid categories={categories} />}
       <div className="collections-section">
-        {orderedBrands.map((brand) => (
-          <CollectionBanner key={brand.id} brand={brand} />
+        {orderedBrands.map((brand, i) => (
+          <Reveal key={brand.id} delay={i * 120}>
+            <CollectionBanner brand={brand} />
+          </Reveal>
         ))}
       </div>
       <FeaturedProducts products={featuredProducts} />

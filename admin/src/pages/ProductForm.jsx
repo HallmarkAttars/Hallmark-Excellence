@@ -205,6 +205,37 @@ export default function ProductForm() {
       setError(variantError)
       return
     }
+    // --- Optional pricing validation (MRP / original price + bulk) ---
+    const defaultVariant = variants.find((v) => v.is_default) || variants[0]
+    const sellingPrice = hasVariants ? Number(defaultVariant?.price ?? form.price) : Number(form.price)
+    const parsedCompareAt = form.compare_at_price === '' || form.compare_at_price == null ? null : Number(form.compare_at_price)
+    const parsedBulkPrice = form.bulk_price === '' || form.bulk_price == null ? null : Number(form.bulk_price)
+    const parsedBulkMinQty = form.bulk_min_qty === '' || form.bulk_min_qty == null ? null : Number(form.bulk_min_qty)
+
+    if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
+      setError('Selling price must be a number >= 0.')
+      return
+    }
+    if (parsedCompareAt !== null && (!Number.isFinite(parsedCompareAt) || parsedCompareAt < 0)) {
+      setError('MRP / Original Price must be a number >= 0.')
+      return
+    }
+    if (parsedCompareAt !== null && parsedCompareAt <= sellingPrice) {
+      setError('MRP / Original Price must be higher than the selling price to show as a struck-through price.')
+      return
+    }
+    if (parsedBulkPrice !== null && (!Number.isFinite(parsedBulkPrice) || parsedBulkPrice < 0)) {
+      setError('Bulk Price must be a number >= 0.')
+      return
+    }
+    if (parsedBulkPrice !== null && parsedBulkMinQty == null) {
+      setError('Bulk Minimum Quantity is required when a Bulk Price is set.')
+      return
+    }
+    if (parsedBulkMinQty !== null && (!Number.isInteger(parsedBulkMinQty) || parsedBulkMinQty < 1)) {
+      setError('Bulk Minimum Quantity must be a whole number >= 1.')
+      return
+    }
 
     setSaving(true)
     try {
@@ -223,19 +254,15 @@ export default function ProductForm() {
         is_default: Boolean(v.is_default),
       }))
 
-      // When variants exist, the base price is driven by the default variant
-      // (for backward compatibility we still send the base price).
-      const defaultVariant = variants.find((v) => v.is_default) || variants[0]
-      const basePrice = hasVariants ? Number(defaultVariant?.price ?? form.price) : Number(form.price)
       const baseStock = hasVariants ? Number(defaultVariant?.stock ?? form.stock) : Number(form.stock)
 
       const payload = {
         name: form.name,
         description: form.description,
-        price: basePrice,
-        compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
-        bulk_price: form.bulk_price ? Number(form.bulk_price) : null,
-        bulk_min_qty: form.bulk_min_qty ? Number(form.bulk_min_qty) : null,
+        price: sellingPrice,
+        compare_at_price: parsedCompareAt,
+        bulk_price: parsedBulkPrice,
+        bulk_min_qty: parsedBulkMinQty,
         rating: form.rating ? Number(form.rating) : null,
         review_count: form.review_count ? Number(form.review_count) : null,
         is_featured: Boolean(form.is_featured),

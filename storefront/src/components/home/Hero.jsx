@@ -12,10 +12,10 @@ export default function Hero() {
 
   return (
     <section className="hero">
-      <div className="hero-bg" style={bgStyle} role="img" aria-label="Amber attar bottle on a dark background" />
+      <div className="hero-bg hero-bg-anim" style={bgStyle} role="img" aria-label="Amber attar bottle on a dark background" />
       <div className="hero-overlay" aria-hidden="true" />
       <div className="hero-content">
-        <h1 className="hero-title">
+        <h1 className="hero-title hero-reveal hero-reveal-1">
           {HERO.title.map((line, i) => (
             <span key={`${line}-${i}`}>
               {line}
@@ -23,8 +23,8 @@ export default function Hero() {
             </span>
           ))}
         </h1>
-        <p className="hero-tagline">{HERO.subtitle}</p>
-        <div className="hero-actions">
+        <p className="hero-tagline hero-reveal hero-reveal-2">{HERO.subtitle}</p>
+        <div className="hero-actions hero-reveal hero-reveal-3">
           <Link to={HERO.primaryCta.to} className="btn btn-gold hero-btn">
             {HERO.primaryCta.label}
           </Link>

@@ -91,6 +91,7 @@ export default function ProductCard({ product, onNavigate }) {
     product.bulk_price != null &&
     product.bulk_min_qty != null &&
     Number(product.bulk_price) > 0
+    && Number(product.bulk_min_qty) > 0
 
   const handleAdd = () => {
     if (soldOut) return

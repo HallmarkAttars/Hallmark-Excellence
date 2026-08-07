@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StatCard from '../components/ui/StatCard'
+import AdminStatusBadge from '../components/ui/AdminStatusBadge'
 import { getDashboardStats } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
+import { formatINR, formatOrderDate, formatOrderTime, formatItemsCount } from '../utils/format'
 import './Dashboard.css'
 
 const ICONS = {
@@ -34,54 +36,61 @@ export default function Dashboard() {
         <h1>Dashboard</h1>
       </div>
 
+      {/* Four consistent KPI cards — same card, same icon size, same value scale */}
       <div className="stat-grid">
         <StatCard label="Total Products" value={stats.totalProducts} icon={ICONS.products} />
         <StatCard label="Orders" value={stats.totalOrders} icon={ICONS.orders} />
         <StatCard label="Customers" value={stats.totalCustomers} icon={ICONS.customers} />
-        <StatCard label="Revenue" value={`₹${Number(stats.revenue).toLocaleString('en-IN')}`} icon={ICONS.revenue} />
+        <StatCard label="Revenue" value={formatINR(stats.revenue)} icon={ICONS.revenue} />
       </div>
 
       <div className="dashboard-grid">
         <div className="card recent-orders">
           <div className="page-header">
             <h3>Recent Orders</h3>
-            <Link to="/admin/orders" className="btn btn-outline btn-sm">View All</Link>
+            <Link to="/admin/orders" className="btn btn-outline btn-sm">
+              View All ({stats.totalOrders})
+            </Link>
           </div>
+
           {/* Desktop table — shown at >= 768px */}
           <div className="table-scroll recent-orders-table">
             <table>
               <thead>
-                <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th></tr>
+                <tr><th>Order #</th><th>Customer</th><th>Date</th><th>Items</th><th>Amount</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {recentOrders.map((o) => (
                   <tr key={o.id}>
-                    <td>{o.order_number}</td>
-                    <td>{o.customer_name}</td>
-                    <td>{new Date(o.created_at).toLocaleDateString('en-IN')}</td>
-                    <td>₹{Number(o.total_amount).toLocaleString('en-IN')}</td>
-                    <td><span className={`status-pill status-${String(o.status).toLowerCase()}`}>{o.status}</span></td>
+                    <td className="recent-order-id-cell" title={o.order_number}>{o.order_number}</td>
+                    <td className="recent-order-customer-cell">{o.customer_name}</td>
+                    <td className="recent-order-date-cell">
+                      <span className="recent-order-date-line">{formatOrderDate(o.created_at)}</span>
+                      <span className="recent-order-time-line">{formatOrderTime(o.created_at)}</span>
+                    </td>
+                    <td className="recent-order-items-cell">{formatItemsCount(o.items_count)}</td>
+                    <td className="recent-order-amount-cell">{formatINR(o.total_amount)}</td>
+                    <td><AdminStatusBadge status={o.status} /></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Mobile order cards — same recentOrders array, shown only below 768px.
-              No additional data fetching; the desktop table above is hidden on mobile. */}
+          {/* Mobile order cards — same recentOrders array, no extra fetching */}
           <div className="recent-orders-cards">
             {recentOrders.map((o) => (
               <div className="recent-order-card" key={o.id}>
                 <div className="recent-order-top">
                   <span className="recent-order-id" title={o.order_number}>{o.order_number}</span>
-                  <span className={`status-pill status-${String(o.status).toLowerCase()}`}>{o.status}</span>
+                  <AdminStatusBadge status={o.status} />
                 </div>
                 <span className="recent-order-customer">{o.customer_name}</span>
                 <div className="recent-order-bottom">
                   <span className="recent-order-date">
-                    {new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {formatOrderDate(o.created_at)} · {formatItemsCount(o.items_count)}
                   </span>
-                  <span className="recent-order-amount">₹{Number(o.total_amount).toLocaleString('en-IN')}</span>
+                  <span className="recent-order-amount">{formatINR(o.total_amount)}</span>
                 </div>
               </div>
             ))}
