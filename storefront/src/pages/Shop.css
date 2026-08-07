@@ -1,59 +1,14 @@
 /* ====================================================
-<<<<<<< HEAD
    Shop Page — luxury filter drawer (shared design system)
    ==================================================== */
 
-=======
-   Shop Page — Premium Luxury
-   ==================================================== */
-
-/* ─── Page Hero ─── */
-.shop-hero {
-  background: var(--ink);
-  padding: 80px 0 64px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.shop-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(200, 169, 106, 0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.shop-hero-inner {
-  position: relative;
-  z-index: 1;
-}
-
-.shop-hero h1 {
-  color: var(--white);
-  font-size: clamp(2.4rem, 5vw, 3.6rem);
-  margin-bottom: 16px;
-}
-
-.shop-hero-desc {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1rem;
-  max-width: 480px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-/* ─── Layout ─── */
->>>>>>> ee0909d (fix the tracker)
 .shop-layout {
   display: grid;
   gap: 32px;
-  padding-top: 48px;
   padding-bottom: 80px;
   grid-template-columns: 1fr;
 }
 
-<<<<<<< HEAD
 /* --- Top bar --- */
 .shop-topbar {
   display: flex;
@@ -115,21 +70,6 @@
   max-width: 85vw;
   z-index: var(--z-overlay);
   display: flex;
-=======
-/* ─── Mobile Filter Toggle (always visible) ─── */
-.shop-filter-toggle-mobile {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  padding: 10px 20px;
-  font-size: 0.78rem;
-}
-
-/* ─── Filters ─── */
-.shop-filters {
-  display: none;
->>>>>>> ee0909d (fix the tracker)
   flex-direction: column;
   background: var(--cream);
   box-shadow: 8px 0 40px rgba(29, 25, 20, 0.22);
@@ -187,7 +127,6 @@
 /* --- Filter card (section) --- */
 .filter-card {
   background: var(--white);
-<<<<<<< HEAD
   border: 1px solid var(--line);
   padding: 20px;
   border-radius: var(--radius);
@@ -234,101 +173,11 @@
 .filter-row.is-active:hover { background: var(--ink); }
 
 /* --- Results --- */
-=======
-  padding: 28px 24px;
-  border-radius: var(--radius-xl);
-  border: var(--border-lt);
-  height: fit-content;
-  box-shadow: var(--shadow-subtle);
-}
-
-.shop-filters.is-open {
-  display: flex;
-}
-
-.shop-filters-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 16px;
-  border-bottom: var(--border-lt);
-}
-
-.shop-filters-header h3 {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.shop-filter-toggle {
-  display: inline-flex;
-  padding: 6px 14px;
-  font-size: 0.65rem;
-}
-
-.shop-filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.shop-filter-group label {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--gray-500);
-  font-weight: 500;
-}
-
-.shop-filter-group select {
-  padding: 11px 14px;
-  border: var(--border-md);
-  border-radius: var(--radius);
-  background: var(--off-white);
-  font-family: var(--font-body);
-  font-size: 0.88rem;
-  color: var(--ink);
-  transition: border-color 0.3s ease;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-}
-
-.shop-filter-group select:focus {
-  border-color: var(--luxury-gold);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(200, 169, 106, 0.1);
-}
-
-.shop-filter-count {
-  padding-top: 16px;
-  border-top: var(--border-lt);
-  font-size: 0.78rem;
-  color: var(--gray-400);
-  font-weight: 500;
-}
-
-.shop-filter-count-mobile {
-  font-size: 0.78rem;
-  color: var(--gray-400);
-  font-weight: 500;
-}
-
-/* ─── Results ─── */
->>>>>>> ee0909d (fix the tracker)
 .shop-results {
   width: 100%;
   min-width: 0;
 }
 
-<<<<<<< HEAD
 .shop-layout .grid-products {
   width: 100%;
   max-width: 100%;
@@ -417,61 +266,3 @@
     padding: 14px 12px;
   }
 }
-=======
-/* ─── Desktop ─── */
-@media (min-width: 900px) {
-  .shop-layout {
-    grid-template-columns: 240px minmax(0, 1fr);
-  }
-
-  .shop-filter-toggle-mobile {
-    display: none;
-  }
-
-  .shop-filters {
-    display: flex;
-  }
-
-  .shop-layout .grid-products {
-    display: grid;
-    gap: 24px;
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
-  }
-
-  @media (max-width: 1199px) {
-    .shop-layout .grid-products {
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
-    }
-  }
-}
-
-@media (max-width: 899px) {
-  .shop-layout .grid-products {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-  }
-
-  .shop-hero {
-    padding: 60px 0 48px;
-  }
-}
-
-@media (max-width: 480px) {
-  .shop-layout .grid-products {
-    gap: 10px;
-  }
-
-  .shop-layout {
-    padding-top: 32px;
-    padding-bottom: 56px;
-  }
-
-  .shop-hero {
-    padding: 48px 0 36px;
-  }
-
-  .shop-hero h1 {
-    font-size: 2rem;
-  }
-}
->>>>>>> ee0909d (fix the tracker)

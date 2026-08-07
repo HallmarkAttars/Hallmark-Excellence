@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /* ============================================================
    Product Card — premium, compact, consistent
    Image · Tag · Name · Variant · Rating · Price · Qty / Add
@@ -19,30 +18,6 @@
 }
 
 /* ---------- Image area: consistent 1:1 stage, never cropped ---------- */
-=======
-/* ====================================================
-   Product Card — Premium Luxury Floating Card
-   ==================================================== */
-
-.product-card {
-  background: var(--white);
-  border-radius: var(--radius-xl);
-  border: var(--border-lt);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.4s var(--ease-out),
-              box-shadow 0.4s var(--ease-out);
-  box-shadow: var(--shadow-subtle);
-}
-
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-lift);
-}
-
-/* ─── Image ─── */
->>>>>>> ee0909d (fix the tracker)
 .product-card-image-link {
   position: relative;
   display: flex;
@@ -52,7 +27,6 @@
   aspect-ratio: 1 / 1;
   padding: 12px;               /* 12–16px — bottle stays large, no dead margins */
   overflow: hidden;
-<<<<<<< HEAD
   background: var(--stage);
 }
 .product-card-image-link img {
@@ -68,33 +42,9 @@
   transform-origin: center;
   transition: transform 0.4s ease; /* slow, contained zoom */
 }
-=======
-  background: var(--off-white);
-  display: block;
-}
->>>>>>> ee0909d (fix the tracker)
 
-.product-card-image-link img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s var(--ease-out),
-              opacity 0.5s ease;
-  opacity: 0;
-}
-
-.product-card-image-link img.is-loaded {
-  opacity: 1;
-}
-
-.product-card:hover .product-card-image-link img {
-  transform: scale(1.08);
-}
-
-/* ─── Badge ─── */
 .product-card-badge {
   position: absolute;
-<<<<<<< HEAD
   top: 10px;
   left: 10px;
   background: var(--charcoal);
@@ -109,65 +59,6 @@
 
 /* ---------- Content (sits directly below the image) ---------- */
 .product-card-body {
-=======
-  top: 12px;
-  left: 12px;
-  background: var(--ink);
-  color: var(--white);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-weight: 500;
-  z-index: 2;
-}
-
-/* ─── Wishlist ─── */
-.product-card-wishlist {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(8px);
-  border: none;
-  border-radius: 50%;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s var(--ease-out);
-  color: var(--gray-400);
-  box-shadow: var(--shadow-subtle);
-  opacity: 0;
-  transform: translateY(4px);
-}
-
-.product-card:hover .product-card-wishlist {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.product-card-wishlist:hover {
-  background: var(--white);
-  color: #E74C3C;
-  transform: scale(1.1);
-}
-
-.product-card-wishlist.is-wishlisted {
-  color: #E74C3C;
-  background: var(--white);
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ─── Body ─── */
-.product-card-body {
-  padding: 18px 18px 20px;
->>>>>>> ee0909d (fix the tracker)
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -346,90 +237,3 @@
 @media (hover: none) {
   .product-card:active { transform: scale(0.985); }
 }
-<<<<<<< HEAD
-=======
-
-.product-card-name {
-  font-family: var(--font-body);
-  font-size: 0.92rem;
-  font-weight: 500;
-  color: var(--ink);
-  margin: 0;
-  letter-spacing: 0.01em;
-  line-height: 1.3;
-  transition: color 0.25s ease;
-}
-
-.product-card-body a:hover .product-card-name {
-  color: var(--luxury-gold);
-}
-
-.product-card-price {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0 0 4px;
-}
-
-.product-card-btn {
-  margin-top: auto;
-  width: 100%;
-  padding: 10px;
-  font-size: 0.72rem;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--gray-200);
-  transition: all 0.3s var(--ease-out);
-}
-
-.product-card-btn:hover {
-  background: var(--ink);
-  color: var(--white);
-  border-color: var(--ink);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card);
-}
-
-.product-card-btn.btn-gold {
-  background: var(--luxury-gold);
-  color: var(--white);
-  border-color: var(--luxury-gold);
-}
-
-.product-card-btn:active {
-  transform: scale(0.96);
-}
-
-/* ─── Responsive ─── */
-@media (max-width: 480px) {
-  .product-card {
-    border-radius: var(--radius-lg);
-  }
-
-  .product-card-body {
-    padding: 14px 14px 16px;
-  }
-
-  .product-card-name {
-    font-size: 0.85rem;
-  }
-
-  .product-card-price {
-    font-size: 1rem;
-  }
-
-  .product-card-wishlist {
-    opacity: 1;
-    transform: translateY(0);
-    width: 30px;
-    height: 30px;
-  }
-
-  .product-card-wishlist svg {
-    width: 14px;
-    height: 14px;
-  }
-}
->>>>>>> ee0909d (fix the tracker)

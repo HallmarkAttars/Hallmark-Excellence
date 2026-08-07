@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /* ============================================================
    Hero — wide editorial composition
    NOTE: .hero-content does NOT use the global .container class.
@@ -25,71 +24,22 @@
   background-size: cover;
   background-position: center;
   transform: scale(1.02);
-=======
-/* ====================================================
-   Hero — Premium Editorial Luxury Full-Width
-   ==================================================== */
-
-.hero {
-  position: relative;
-  min-height: calc(100vh - 80px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ink);
-  overflow: hidden;
-  margin-top: -80px;
-}
-
-.hero-bg {
-  position: absolute;
-  inset: -30px;
-  background-size: cover;
-  background-position: center 30%;
-  opacity: 0.50;
-  will-change: transform;
-  transition: opacity 1.5s ease;
->>>>>>> ee0909d (fix the tracker)
 }
 
 .hero-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-<<<<<<< HEAD
     100deg,
     rgba(20, 17, 13, 0.86) 0%,
     rgba(20, 17, 13, 0.62) 42%,
     rgba(20, 17, 13, 0.28) 72%,
     rgba(20, 17, 13, 0.55) 100%
-=======
-    135deg,
-    rgba(17, 17, 17, 0.25) 0%,
-    rgba(17, 17, 17, 0.55) 40%,
-    rgba(17, 17, 17, 0.85) 100%
->>>>>>> ee0909d (fix the tracker)
   );
 }
 
-.hero-gradient {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40%;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(17, 17, 17, 0.3) 60%,
-    rgba(17, 17, 17, 0.8) 100%
-  );
-  z-index: 1;
-}
-
-/* ─── Content ─── */
 .hero-content {
   position: relative;
-<<<<<<< HEAD
   z-index: 1;
   width: 100%;
   max-width: var(--container);
@@ -107,66 +57,9 @@
   letter-spacing: -0.01em;
   margin: 0 0 22px;
   max-width: 12ch;
-=======
-  z-index: 2;
-  text-align: center;
-  color: var(--white);
-  max-width: 780px;
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-/* ─── Eyebrow ─── */
-.hero-eyebrow {
-  display: inline-block;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--luxury-gold-light);
-  font-weight: 500;
-  margin-bottom: 28px;
-  border: 1px solid rgba(200, 169, 106, 0.3);
-  padding: 8px 22px;
-  border-radius: var(--radius-full);
-  backdrop-filter: blur(4px);
-  background: rgba(200, 169, 106, 0.08);
-  animation: heroFadeUp 1s var(--ease-out) forwards;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-/* ─── Headline ─── */
-.hero-content h1 {
-  color: var(--white);
-  font-size: clamp(2.8rem, 7vw, 5rem);
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  margin-bottom: 24px;
-  text-wrap: balance;
-  animation: heroFadeUp 1s var(--ease-out) 0.15s forwards;
-  opacity: 0;
-  transform: translateY(20px);
->>>>>>> ee0909d (fix the tracker)
-}
-
-.hero-content h1 br {
-  display: none;
-}
-
-@media (min-width: 480px) {
-  .hero-content h1 br {
-    display: inline;
-  }
-}
-
-/* ─── Tagline ─── */
 .hero-tagline {
-<<<<<<< HEAD
   color: rgba(248, 243, 234, 0.86);
   font-size: 1.02rem;
   line-height: 1.65;
@@ -272,160 +165,4 @@
   .hero-tagline { margin-bottom: 16px; }
   .hero-actions { flex-direction: row; }
   .hero-btn { width: auto; height: 44px; min-height: 44px; padding: 0 28px; }
-=======
-  color: rgba(255, 255, 255, 0.6);
-  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
-  max-width: 520px;
-  margin: 0 auto 40px;
-  line-height: 1.8;
-  font-weight: 300;
-  animation: heroFadeUp 1s var(--ease-out) 0.3s forwards;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-/* ─── Actions ─── */
-.hero-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  animation: heroFadeUp 1s var(--ease-out) 0.45s forwards;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.hero-btn-outline {
-  border-color: rgba(255, 255, 255, 0.25) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-.hero-btn-outline:hover {
-  border-color: var(--white) !important;
-  color: var(--white) !important;
-}
-
-/* ─── Trust Badges ─── */
-.hero-badges {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  margin-top: 56px;
-  flex-wrap: wrap;
-  animation: heroFadeUp 1s var(--ease-out) 0.6s forwards;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.hero-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.hero-badge-icon {
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-/* ─── Animations ─── */
-@keyframes heroFadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ─── Scroll Indicator ─── */
-.hero-scroll {
-  position: absolute;
-  bottom: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.25);
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  animation: heroFadeUp 1s ease 0.8s forwards;
-  opacity: 0;
-}
-
-.hero-scroll-line {
-  width: 1px;
-  height: 36px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
-  animation: scrollPulse 2.5s ease-in-out infinite;
-}
-
-@keyframes scrollPulse {
-  0%, 100% { opacity: 0.3; transform: scaleY(1); }
-  50% { opacity: 0.8; transform: scaleY(1.4); transform-origin: top; }
-}
-
-/* ─── Responsive ─── */
-@media (max-width: 768px) {
-  .hero {
-    min-height: 92vh;
-  }
-
-  .hero-content h1 {
-    font-size: clamp(2.4rem, 10vw, 3.4rem);
-  }
-
-  .hero-tagline {
-    font-size: 0.95rem;
-    margin-bottom: 32px;
-  }
-
-  .hero-badges {
-    margin-top: 40px;
-    gap: 12px;
-  }
-
-  .hero-badge {
-    font-size: 0.72rem;
-    padding: 6px 14px;
-  }
-
-  .hero-scroll {
-    bottom: 24px;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero {
-    min-height: 88vh;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .hero-actions .btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .hero-badges {
-    flex-direction: column;
-    align-items: center;
-  }
->>>>>>> ee0909d (fix the tracker)
 }

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-=======
-import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
->>>>>>> ee0909d (fix the tracker)
 import { useCart } from '../../context/CartContext'
 import { NAV_LINKS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
@@ -42,13 +37,8 @@ function MenuIcon({ open }) {
 }
 
 export default function Navbar() {
-<<<<<<< HEAD
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-=======
-  const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
->>>>>>> ee0909d (fix the tracker)
   const { itemCount } = useCart()
   const location = useLocation()
 
@@ -87,30 +77,13 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 40)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
   return (
-<<<<<<< HEAD
     <>
       <header className="navbar">
         <div className="container navbar-inner">
           <Link to="/" className="navbar-logo" aria-label="Arees and Dahab — home">
             <img src={IMAGES.logo} alt="Arees & Dahab" className="navbar-logo-img" />
           </Link>
-=======
-    <header className={`navbar ${scrolled ? 'is-scrolled' : ''}`}>
-      <div className="container navbar-inner">
-        <Link to="/" viewTransition className="navbar-logo" onClick={() => setOpen(false)}>
-          <img src="/HE color Logo.png" alt="HE Logo" className="navbar-logo-img" />
-        </Link>
->>>>>>> ee0909d (fix the tracker)
 
           <nav className="navbar-nav" aria-label="Main navigation">
             {NAV_LINKS.map((link) => (
@@ -186,42 +159,13 @@ export default function Navbar() {
             <NavLink
               key={link.to}
               to={link.to}
-<<<<<<< HEAD
               end={link.end}
               className={({ isActive }) => `navbar-drawer-link ${isActive ? 'is-active' : ''}`}
               onClick={() => setMenuOpen(false)}
-=======
-              viewTransition
-              end={link.to === '/'}
-              className={({ isActive }) => `navbar-link ${isActive ? 'is-active' : ''}`}
-              onClick={() => setOpen(false)}
->>>>>>> ee0909d (fix the tracker)
             >
               {link.label}
             </NavLink>
           ))}
-<<<<<<< HEAD
-=======
-        </nav>
-
-        <div className="navbar-actions">
-          <Link to="/cart" viewTransition className="navbar-cart" aria-label={`Cart, ${itemCount} items`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1" /><circle cx="19" cy="21" r="1" />
-              <path d="M2 2h2l2.4 12.2a2 2 0 0 0 2 1.8h9.2a2 2 0 0 0 2-1.6L22 7H5.2" />
-            </svg>
-            {itemCount > 0 && <span key={itemCount} className="navbar-cart-badge">{itemCount}</span>}
-          </Link>
-
-          <button
-            className={`navbar-toggle ${open ? 'is-open' : ''}`}
-            aria-label={open ? 'Close menu' : 'Open menu'}
-            aria-expanded={open}
-            onClick={() => setOpen((o) => !o)}
-          >
-            <span></span><span></span><span></span>
-          </button>
->>>>>>> ee0909d (fix the tracker)
         </div>
       </nav>
 

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import Reveal from '../../animations/Reveal'
 import { WHY_CHOOSE_US } from '../../data/content'
 import './WhyChooseUs.css'
@@ -11,63 +10,9 @@ const ICONS = {
   delivery: <TruckIcon />,
   craft: <CraftIcon />,
 }
-=======
-import Reveal from '../ui/Reveal'
-import './WhyChooseUs.css'
-
-const FEATURES = [
-  {
-    number: '25+',
-    title: 'Years Experience',
-    subtitle: 'Master blenders crafting signature attars since 1999.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-        <path d="M2 17l10 5 10-5" />
-        <path d="M2 12l10 5 10-5" />
-      </svg>
-    ),
-  },
-  {
-    number: '100%',
-    title: 'Authentic Products',
-    subtitle: 'Every attar is directly sourced, hand-blended and guaranteed genuine.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <polyline points="22 4 12 14.01 9 11.01" />
-      </svg>
-    ),
-  },
-  {
-    number: 'Secure',
-    title: 'Payment & Delivery',
-    subtitle: 'Safe checkout with insured shipments across India and worldwide.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="1" y="3" width="22" height="13" rx="2" />
-        <path d="M7 20h10" />
-        <path d="M9 16v4" />
-        <path d="M15 16v4" />
-      </svg>
-    ),
-  },
-  {
-    number: 'Premium',
-    title: 'Customer Support',
-    subtitle: 'Dedicated concierge team ready to guide your fragrance journey.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-]
->>>>>>> ee0909d (fix the tracker)
 
 function LeafIcon() {
   return (
-<<<<<<< HEAD
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16Z" />
       <path d="M4 20c4-6 8-10 12-12" />
@@ -123,42 +68,3 @@ export default function WhyChooseUs() {
     </Reveal>
   )
 }
-=======
-    <section className="trust-section">
-      <div className="container">
-        <Reveal animation="fade-up" duration={800}>
-          <div className="section-header">
-            <span className="section-eyebrow">Why Choose Us</span>
-            <h2>A Trusted Experience</h2>
-            <p>
-              For over two decades, we have dedicated ourselves to the art of fine fragrance —
-              every bottle tells a story of authenticity, craftsmanship, and care.
-            </p>
-          </div>
-        </Reveal>
-
-        <div className="trust-grid">
-          {FEATURES.map((feature, i) => (
-            <Reveal
-              key={feature.title}
-              animation="fade-up"
-              duration={600}
-              delay={i * 100}
-              options={{ threshold: 0.15 }}
-            >
-              <div className="trust-card">
-                <div className="trust-card-icon">
-                  {feature.icon}
-                </div>
-                <div className="trust-card-number">{feature.number}</div>
-                <h3 className="trust-card-title">{feature.title}</h3>
-                <p className="trust-card-subtitle">{feature.subtitle}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
->>>>>>> ee0909d (fix the tracker)

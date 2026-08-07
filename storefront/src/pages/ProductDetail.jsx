@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import ProductGrid from '../components/product/ProductGrid'
-import Reveal from '../components/ui/Reveal'
 import './ProductDetail.css'
 
 export default function ProductDetail() {
@@ -37,22 +36,11 @@ export default function ProductDetail() {
     })
   }, [id])
 
-  if (loading) return (
-    <div className="container" style={{ paddingTop: 80, paddingBottom: 80 }}>
-      <div className="loading-state" style={{ fontSize: '1rem', color: 'var(--gray-400)' }}>
-        <span style={{ display: 'inline-block', width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--gray-200)', borderTopColor: 'var(--luxury-gold)', animation: 'spin 0.8s linear infinite', marginRight: 12 }} />
-        Loading product…
-      </div>
-    </div>
-  )
-
+  if (loading) return <div className="loading-state">Loading product…</div>
   if (!product) {
     return (
-      <div className="container" style={{ paddingTop: 80, paddingBottom: 80 }}>
-        <div className="empty-state" style={{ textAlign: 'center', color: 'var(--gray-400)' }}>
-          <p style={{ fontSize: '1.1rem', marginBottom: 16 }}>Product not found</p>
-          <Link to="/shop" viewTransition className="btn btn-dark">Back to Shop</Link>
-        </div>
+      <div className="empty-state">
+        Product not found. <Link to="/shop">Back to Shop</Link>
       </div>
     )
   }
@@ -104,109 +92,27 @@ export default function ProductDetail() {
     setTimeout(() => setAdded(false), 2000)
   }
 
-<<<<<<< HEAD
   const stockState = stockStatus()
-=======
-  const images = product.images?.length > 0 ? product.images : [product.image]
-  const currentImage = images[activeImage] || images[0]
->>>>>>> ee0909d (fix the tracker)
 
   return (
     <div className="container product-detail">
-      {/* ─── Breadcrumb ─── */}
-      <nav className="product-breadcrumb" aria-label="Breadcrumb">
-        <Link to="/shop" viewTransition>Shop</Link>
-        <span aria-hidden="true">/</span>
-        <span>{product.name}</span>
-      </nav>
-
-      {/* ─── Gallery ─── */}
-      <Reveal animation="fade-up" duration={700}>
-        <div className="product-detail-gallery">
-          <div className="product-detail-main-image">
-            <img src={currentImage} alt={product.name} />
-          </div>
-          {images.length > 1 && (
-            <div className="product-detail-thumbs">
-              {images.map((img, i) => (
-                <button
-                  key={i}
-                  className={`product-detail-thumb ${i === activeImage ? 'is-active' : ''}`}
-                  onClick={() => setActiveImage(i)}
-                  aria-label={`Show image ${i + 1}`}
-                >
-                  <img src={img} alt="" />
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="product-detail-gallery">
+        <div className="product-detail-main-image">
+          <img src={product.image} alt={product.name} />
         </div>
-      </Reveal>
-
-      {/* ─── Product Info ─── */}
-      <Reveal animation="fade-up" duration={700} delay={150}>
-        <div className="product-detail-info">
-          <div className="product-detail-badges">
-            {product.stock <= 5 && product.stock > 0 && (
-              <span className="product-badge-low">Only {product.stock} left</span>
-            )}
-            {product.stock > 0 && (
-              <span className="product-badge-instock">In Stock</span>
-            )}
-          </div>
-
-          <h1 className="product-detail-title">{product.name}</h1>
-
-          {product.brand_id && (
-            <p className="product-detail-brand">
-              <span className="product-detail-brand-label">Brand</span>
-              {product.brand_id === 'b1' ? 'Arees' : 'Dahab'}
-            </p>
-          )}
-
-          <p className="product-detail-price">
-            ₹{Number(product.price).toLocaleString('en-IN')}
-          </p>
-
-          <div className="product-detail-divider" />
-
-          <p className="product-detail-description">{product.description}</p>
-
-          {/* ─── Specs ─── */}
-          <div className="product-detail-specs">
-            <div className="product-detail-spec-item">
-              <span className="product-detail-spec-label">Stock Status</span>
-              <span className="product-detail-spec-value">
-                {product.stock > 0 ? `${product.stock} units available` : 'Sold Out'}
-              </span>
-            </div>
-            {product.category_id && (
-              <div className="product-detail-spec-item">
-                <span className="product-detail-spec-label">Category</span>
-                <span className="product-detail-spec-value">
-                  <Link to={`/categories/${product.category_id}`} viewTransition>View Category</Link>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* ─── Actions ─── */}
-          <div className="product-detail-actions">
-            <div className="qty-selector">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease quantity">−</button>
-              <span aria-live="polite">{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} aria-label="Increase quantity">+</button>
-            </div>
+        {product.image && (
+          <div className="product-detail-thumbs">
             <button
-              className={`btn ${added ? 'btn-gold' : 'btn-dark'} product-detail-add-btn`}
-              onClick={handleAdd}
-              disabled={product.stock <= 0}
+              className="product-detail-thumb is-active"
+              onClick={() => setActiveImage(0)}
+              aria-label="Show image"
             >
-              {added ? 'Added to Cart ✓' : 'Add to Cart'}
+              <img src={product.image} alt="" />
             </button>
           </div>
+        )}
+      </div>
 
-<<<<<<< HEAD
       <div className="product-detail-info">
         <h1>{product.name}</h1>
         <p className="product-detail-price">₹{Number(price).toLocaleString('en-IN')}</p>
@@ -258,37 +164,14 @@ export default function ProductDetail() {
           >
             {added ? 'Added ✓' : 'Add to Cart'}
           </button>
-=======
-          {/* ─── Trust ─── */}
-          <div className="product-detail-trust">
-            <div className="product-detail-trust-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--luxury-gold)" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-              <span>100% Authentic</span>
-            </div>
-            <div className="product-detail-trust-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--luxury-gold)" strokeWidth="1.5"><rect x="1" y="3" width="22" height="13" rx="2" /><path d="M7 20h10" /><path d="M9 16v4" /><path d="M15 16v4" /></svg>
-              <span>Free Delivery</span>
-            </div>
-            <div className="product-detail-trust-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--luxury-gold)" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              <span>Secure Checkout</span>
-            </div>
-          </div>
->>>>>>> ee0909d (fix the tracker)
         </div>
-      </Reveal>
+      </div>
 
-      {/* ─── Related Products ─── */}
       {related.length > 0 && (
-        <Reveal animation="fade-up" duration={700}>
-          <div className="product-detail-related">
-            <div className="section-header" style={{ marginBottom: 36 }}>
-              <span className="section-eyebrow">Complete Your Collection</span>
-              <h2>You May Also Like</h2>
-            </div>
-            <ProductGrid products={related} />
-          </div>
-        </Reveal>
+        <div className="product-detail-related">
+          <h2>You May Also Like</h2>
+          <ProductGrid products={related} />
+        </div>
       )}
     </div>
   )

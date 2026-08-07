@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import QuantityControl from './QuantityControl'
 import './ProductCard.css'
 
-<<<<<<< HEAD
 function BagIcon() {
   return (
     <svg
@@ -107,51 +105,16 @@ export default function ProductCard({ product, onNavigate }) {
   // navigation. Not used by the regular product grids.
   const handleNavigate = () => {
     if (onNavigate) onNavigate()
-=======
-export default function ProductCard({ product }) {
-  const { addItem } = useCart()
-  const [imgLoaded, setImgLoaded] = useState(false)
-  const [wishlisted, setWishlisted] = useState(false)
-  const [added, setAdded] = useState(false)
-
-  const handleAdd = (e) => {
-    e.preventDefault()
-    addItem(product, 1)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
->>>>>>> ee0909d (fix the tracker)
   }
 
   return (
     <div className="product-card">
-<<<<<<< HEAD
       <Link to={`/product/${product.id}`} className="product-card-image-link" onClick={handleNavigate}>
         <img src={product.image} alt={product.name} loading="lazy" />
         {soldOut && <span className="product-card-badge">Sold Out</span>}
-=======
-      <Link to={`/product/${product.id}`} viewTransition className="product-card-image-link">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          onLoad={() => setImgLoaded(true)}
-          className={imgLoaded ? 'is-loaded' : ''}
-        />
-        {product.stock <= 0 && <span className="product-card-badge">Sold Out</span>}
-        <button
-          className={`product-card-wishlist ${wishlisted ? 'is-wishlisted' : ''}`}
-          onClick={(e) => { e.preventDefault(); setWishlisted(!wishlisted) }}
-          aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill={wishlisted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-          </svg>
-        </button>
->>>>>>> ee0909d (fix the tracker)
       </Link>
 
       <div className="product-card-body">
-<<<<<<< HEAD
         {tag && <p className="product-card-tag">{tag}</p>}
 
         <Link to={`/product/${product.id}`} className="product-card-name-link" onClick={handleNavigate}>
@@ -214,20 +177,6 @@ export default function ProductCard({ product }) {
             )}
           </button>
         )}
-=======
-        <Link to={`/product/${product.id}`} viewTransition>
-          <h3 className="product-card-name">{product.name}</h3>
-        </Link>
-        <p className="product-card-price">₹{Number(product.price).toLocaleString('en-IN')}</p>
-        <button
-          className={`btn product-card-btn ${added ? 'btn-gold' : ''}`}
-          type="button"
-          onClick={handleAdd}
-          disabled={product.stock <= 0}
-        >
-          {added ? 'Added ✓' : 'Add to Cart'}
-        </button>
->>>>>>> ee0909d (fix the tracker)
       </div>
     </div>
   )

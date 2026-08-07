@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../services/api'
-=======
-import { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
-import Reveal from '../components/ui/Reveal'
->>>>>>> ee0909d (fix the tracker)
 import { submitContactMessage, submitOrder } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { BUSINESS, CONTACT } from '../data/content'
@@ -424,7 +418,6 @@ export default function Contact() {
   // --- Contact / Checkout view -------------------------------------------
   return (
     <div>
-<<<<<<< HEAD
       <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : ''}`}>
         <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
         <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>
@@ -432,49 +425,9 @@ export default function Contact() {
 
       <div className={`container contact-layout ${isCheckout ? 'contact-layout--checkout' : ''}`}>
         <div className="contact-form-col">
-=======
-      {/* ─── Page Hero ─── */}
-      <section className="contact-hero">
-        <div className="container">
-          <Reveal animation="fade-up" duration={800}>
-            <span className="section-eyebrow" style={{ color: 'var(--luxury-gold-light)' }}>
-              {isCheckout ? 'Checkout' : 'Get in Touch'}
-            </span>
-            <h1>{isCheckout ? 'Complete Your Order' : 'Contact Us'}</h1>
-            <p className="contact-hero-desc">
-              {isCheckout
-                ? 'Fill in your details and we\'ll confirm your order within 24 hours.'
-                : 'We\'d love to hear from you — reach out for enquiries, orders, or just to say hello.'}
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      <div className="container contact-layout">
-        <Reveal animation="fade-up" duration={700}>
-        <div className="contact-form-col">
-          {result?.orderNumber && (
-            <div className="contact-toast">
-              <div className="contact-toast-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--luxury-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <strong>Order Placed — #{result.orderNumber}</strong>
-              <p>We'll reach out on your phone number to confirm delivery details.</p>
-              <Link to="/shop" viewTransition className="btn btn-gold">Continue Shopping</Link>
-            </div>
-          )}
-
->>>>>>> ee0909d (fix the tracker)
           {result?.sent && (
             <div className="contact-toast">
-              <div className="contact-toast-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--luxury-gold)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <strong>Message Sent</strong>
+              <strong>Message sent</strong>
               <p>Thanks for reaching out — we'll get back to you shortly.</p>
             </div>
           )}
@@ -484,24 +437,12 @@ export default function Contact() {
               {isCheckout && (
                 <div className="order-summary">
                   <h3>Order Summary</h3>
-<<<<<<< HEAD
                   {checkout.checkoutItems.map((item, i) => (
                     <OrderSummaryItem
                       key={`${item.product_id ?? item.id}-${item.variant_id ?? ''}-${i}`}
                       item={item}
                     />
                   ))}
-=======
-                  <div className="order-summary-items">
-                    {checkout.checkoutItems.map((item) => (
-                      <div key={item.id} className="order-summary-row">
-                        <span className="order-summary-label">{item.name} <span className="order-summary-qty">×{item.qty}</span></span>
-                        <span className="order-summary-value">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="order-summary-divider" />
->>>>>>> ee0909d (fix the tracker)
                   <div className="order-summary-row order-summary-total">
                     <span>Total</span>
                     <span>₹{checkout.total.toLocaleString('en-IN')}</span>
@@ -511,22 +452,16 @@ export default function Contact() {
 
               <form className="contact-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-field">
-<<<<<<< HEAD
                   <label htmlFor="name">
                     Name <span className="required-star">*</span>
                   </label>
                   <input id="name" name="name" value={form.name} onChange={handleChange} required />
                   {fieldErrors.name && <p className="field-hint field-hint--error">{fieldErrors.name}</p>}
-=======
-                  <label htmlFor="name">Name <span className="form-required">*</span></label>
-                  <input id="name" name="name" value={form.name} onChange={handleChange} required autoComplete="name" placeholder="Your full name" />
->>>>>>> ee0909d (fix the tracker)
                 </div>
 
                 {isCheckout ? (
                   <>
                     <div className="form-field">
-<<<<<<< HEAD
                       <label htmlFor="email">
                         Email <span className="required-star">*</span>
                       </label>
@@ -631,64 +566,33 @@ export default function Contact() {
                       {pinInfo.status === 'error' && (
                         <p className="field-hint field-hint--error">{pinInfo.error}</p>
                       )}
-=======
-                      <label htmlFor="phone">Phone Number <span className="form-required">*</span></label>
-                      <input id="phone" name="phone" type="tel" value={form.phone} onChange={handleChange} required autoComplete="tel" placeholder="+91 98765 43210" />
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="address">Address <span className="form-required">*</span></label>
-                      <textarea id="address" name="address" rows={3} value={form.address} onChange={handleChange} required autoComplete="street-address" placeholder="Street, city, state" />
-                    </div>
-                    <div className="form-row">
-                      <div className="form-field">
-                        <label htmlFor="pincode">Pincode <span className="form-required">*</span></label>
-                        <input id="pincode" name="pincode" value={form.pincode} onChange={handleChange} required autoComplete="postal-code" placeholder="600001" />
-                      </div>
->>>>>>> ee0909d (fix the tracker)
                     </div>
                   </>
                 ) : (
                   <div className="form-field">
-                    <label htmlFor="email">Email <span className="form-required">*</span></label>
-                    <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required autoComplete="email" placeholder="hello@example.com" />
+                    <label htmlFor="email">Email</label>
+                    <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
                   </div>
                 )}
 
                 <div className="form-field">
-                  <label htmlFor="message">Message {isCheckout ? <span className="form-optional">(optional)</span> : <span className="form-required">*</span>}</label>
-                  <textarea id="message" name="message" rows={4} value={form.message} onChange={handleChange} required={!isCheckout} placeholder={isCheckout ? 'Any delivery notes?' : 'How can we help?'} />
+                  <label htmlFor="message">Message {isCheckout && '(optional)'}</label>
+                  <textarea id="message" name="message" rows={4} value={form.message} onChange={handleChange} required={!isCheckout} />
                 </div>
 
                 {error && <p className="contact-error">{error}</p>}
 
-                <button className="btn btn-gold" type="submit" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <span className="btn-spinner" />
-                      Sending…
-                    </>
-                  ) : isCheckout ? (
-                    <>
-                      Confirm & Place Order
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-                      </svg>
-                    </>
-                  ) : (
-                    'Send Message'
-                  )}
+                <button className="btn btn-primary" type="submit" disabled={submitting}>
+                  {submitting ? 'Sending…' : isCheckout ? 'Send Order' : 'Send Message'}
                 </button>
               </form>
             </>
           )}
         </div>
-        </Reveal>
 
         {!isCheckout && (
-          <Reveal animation="fade-up" duration={700} delay={150}>
           <div className="contact-info-col">
             <div className="contact-info-block">
-<<<<<<< HEAD
               <h3>{CONTACT.info.title}</h3>
               <p>{BUSINESS.phoneDisplay}</p>
               <p>{BUSINESS.email}</p>
@@ -713,39 +617,8 @@ export default function Contact() {
               >
                 Get Directions
               </a>
-=======
-              <span className="contact-info-eyebrow">Reach Us</span>
-              <h3>Visit or Connect</h3>
-              <div className="contact-info-details">
-                <div className="contact-info-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  <span>+91 98765 43210</span>
-                </div>
-                <div className="contact-info-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
-                  </svg>
-                  <span>hello@areesdahab.com</span>
-                </div>
-                <div className="contact-info-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                  </svg>
-                  <span>12 Attar Lane, Chennai, Tamil Nadu 600001</span>
-                </div>
-              </div>
-            </div>
-            <div className="contact-map-placeholder" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-              </svg>
-              <span>Find us on the map</span>
->>>>>>> ee0909d (fix the tracker)
             </div>
           </div>
-          </Reveal>
         )}
       </div>
     </div>
