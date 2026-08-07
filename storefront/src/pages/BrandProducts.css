@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* ============================================================
    Brand collection page (Arees / Dahab) — compact premium
    Header → toolbar → product grid · no giant hero, no dead space
@@ -164,4 +165,65 @@
 @media (max-width: 767px) {
   .brand-menu-btn { height: 40px; padding: 0 12px; font-size: 0.7rem; }
   .brand-menu-list { right: auto; left: 0; min-width: 200px; }
+=======
+/* ====================================================
+   Brand Products Hero — Premium Luxury
+   ==================================================== */
+
+.brand-hero {
+  background: var(--ink);
+  padding: 80px 0 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(200, 169, 106, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.brand-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.brand-hero-name {
+  color: var(--white);
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.brand-hero-tagline {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.brand-hero-count {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .brand-hero {
+    padding: 60px 0 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-hero {
+    padding: 48px 0 36px;
+  }
+>>>>>>> ee0909d (fix the tracker)
 }

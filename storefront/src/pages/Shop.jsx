@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductGrid from '../components/product/ProductGrid'
+import Reveal from '../components/ui/Reveal'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { SHOP_PAGE } from '../data/content'
 import './Shop.css'
@@ -90,13 +91,32 @@ export default function Shop() {
 
   return (
     <div>
+<<<<<<< HEAD
       <div className="page-heading">
         <p className="eyebrow">{SHOP_PAGE.eyebrow}</p>
         <h1>{SHOP_PAGE.title}</h1>
         <p>{SHOP_PAGE.subtitle}</p>
       </div>
+=======
+      {/* ─── Page Hero ─── */}
+      <section className="shop-hero">
+        <div className="container shop-hero-inner">
+          <Reveal animation="fade-up" duration={800}>
+            <span className="section-eyebrow" style={{ color: 'var(--luxury-gold-light)' }}>
+              Full Collection
+            </span>
+            <h1>Shop All Attars</h1>
+            <p className="shop-hero-desc">
+              Browse every fragrance from Arees and Dahab — filtered your way.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+>>>>>>> ee0909d (fix the tracker)
 
+      {/* ─── Content ─── */}
       <div className="container shop-layout">
+<<<<<<< HEAD
         {/* Top bar */}
         <div className="shop-topbar">
           <button
@@ -124,10 +144,67 @@ export default function Shop() {
             Sort
           </button>
         </div>
+=======
+        {/* Mobile filter toggle — always visible outside the aside */}
+        <button
+          className="btn btn-sm btn-outline shop-filter-toggle-mobile"
+          onClick={() => setFiltersOpen((o) => !o)}
+          aria-expanded={filtersOpen}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
+          {filtersOpen ? 'Hide Filters' : 'Show Filters'}
+        </button>
 
-        <div className="shop-results">
-          <ProductGrid products={visibleProducts} loading={loading} />
-        </div>
+        <Reveal animation="slide-left" duration={600}>
+          <aside className={`shop-filters ${filtersOpen ? 'is-open' : ''}`}>
+            <div className="shop-filters-header">
+              <h3>Filters</h3>
+              <span className="shop-filter-count-mobile">{visibleProducts.length} item{visibleProducts.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            <div className="shop-filter-group">
+              <label htmlFor="category-filter">Category</label>
+              <select id="category-filter" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <option value="all">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="shop-filter-group">
+              <label htmlFor="brand-filter">Brand</label>
+              <select id="brand-filter" value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>
+                <option value="all">All Brands</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+>>>>>>> ee0909d (fix the tracker)
+
+            <div className="shop-filter-group">
+              <label htmlFor="sort-filter">Sort by</label>
+              <select id="sort-filter" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <option value="default">Featured</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+              </select>
+            </div>
+
+            <div className="shop-filter-count">
+              <span>{visibleProducts.length} product{visibleProducts.length !== 1 ? 's' : ''}</span>
+            </div>
+          </aside>
+        </Reveal>
+
+        <Reveal animation="fade-up" duration={700}>
+          <div className="shop-results">
+            <ProductGrid products={visibleProducts} loading={loading} />
+          </div>
+        </Reveal>
       </div>
 
       {/* Backdrop */}

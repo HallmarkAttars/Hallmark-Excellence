@@ -1,0 +1,202 @@
+/* ====================================================
+   Brand Showcase — Editorial Luxury Alternating Layout
+   ==================================================== */
+
+.brand-showcase {
+  padding: var(--section-py) 0;
+  background: var(--white);
+}
+
+.brand-showcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ─── Card ─── */
+.brand-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  background: var(--white);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  border: var(--border-lt);
+  transition: transform 0.5s var(--ease-out),
+              box-shadow 0.5s var(--ease-out);
+}
+
+.brand-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+
+@media (min-width: 768px) {
+  .brand-card {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .brand-card-reverse {
+    direction: rtl;
+  }
+
+  .brand-card-reverse > * {
+    direction: ltr;
+  }
+}
+
+/* ─── Image Side ─── */
+.brand-card-image-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--off-white);
+}
+
+@media (min-width: 768px) {
+  .brand-card-image-wrap {
+    aspect-ratio: auto;
+    min-height: 480px;
+  }
+}
+
+.brand-card-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s var(--ease-out);
+}
+
+.brand-card:hover .brand-card-image-wrap img {
+  transform: scale(1.06);
+}
+
+.brand-card-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.05) 40%,
+    rgba(17, 17, 17, 0.5) 100%
+  );
+  transition: opacity 0.5s ease;
+}
+
+.brand-card:hover .brand-card-image-overlay {
+  opacity: 0.7;
+}
+
+/* ─── Body Side ─── */
+.brand-card-body {
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .brand-card-body {
+    padding: 48px 44px;
+  }
+}
+
+@media (max-width: 767px) {
+  .brand-card-body {
+    padding: 32px 28px;
+  }
+}
+
+/* ─── Logo ─── */
+.brand-card-logo {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.15;
+  margin-bottom: -8px;
+}
+
+/* ─── Tagline ─── */
+.brand-card-tagline {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--luxury-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ─── Name ─── */
+.brand-card-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* ─── Description ─── */
+.brand-card-description {
+  font-size: 0.92rem;
+  color: var(--gray-500);
+  line-height: 1.7;
+  margin: 4px 0;
+  max-width: 100%;
+}
+
+/* ─── Price ─── */
+.brand-card-price {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--gray-400);
+  font-style: italic;
+  margin: 4px 0 8px;
+}
+
+/* ─── Button ─── */
+.brand-card-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  border-color: var(--gray-200) !important;
+  color: var(--gray-700) !important;
+}
+.brand-card-btn:hover {
+  border-color: var(--gray-700) !important;
+  color: var(--ink) !important;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 767px) {
+  .brand-showcase-list {
+    gap: 28px;
+  }
+
+  .brand-card {
+    border-radius: var(--radius-xl);
+  }
+
+  .brand-card-image-wrap {
+    aspect-ratio: 16 / 10;
+  }
+
+  .brand-card-logo {
+    font-size: 2.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-card-body {
+    padding: 24px 20px;
+  }
+
+  .brand-card-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

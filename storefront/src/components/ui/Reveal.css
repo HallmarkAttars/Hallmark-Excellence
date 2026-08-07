@@ -1,0 +1,58 @@
+/* ====================================================
+   Reveal Animations — Scroll-Triggered
+   ==================================================== */
+
+.reveal {
+  will-change: transform, opacity;
+  transition-property: opacity, transform;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1); /* ease-out-quart approx */
+}
+
+/* ─── Hidden States ─── */
+
+.reveal-fade-up {
+  opacity: 0;
+  transform: translateY(32px);
+}
+
+.reveal-fade-in {
+  opacity: 0;
+}
+
+.reveal-scale-in {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.reveal-slide-left {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.reveal-slide-right {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.reveal-slide-up {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* ─── Visible States ─── */
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateX(0) translateY(0) scale(1);
+}
+
+/* ─── Stagger support via inline style delay ─── */
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

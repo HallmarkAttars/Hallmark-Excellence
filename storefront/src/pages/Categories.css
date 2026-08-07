@@ -1,14 +1,76 @@
+/* ====================================================
+   Categories Page — Premium Luxury
+   ==================================================== */
+
+/* ─── Hero ─── */
+.categories-hero {
+  background: var(--ink);
+  padding: 80px 0 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.categories-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(200, 169, 106, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.categories-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.categories-hero h1 {
+  color: var(--white);
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  margin-bottom: 16px;
+}
+
+.categories-hero-desc {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ─── Content ─── */
+.categories-content {
+  padding-top: 48px;
+  padding-bottom: 80px;
+}
+
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  padding-bottom: 80px;
+  gap: 20px;
 }
-@media (min-width: 640px) { .categories-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1024px) { .categories-grid { grid-template-columns: repeat(4, 1fr); } }
 
+@media (min-width: 600px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (min-width: 900px) {
+  .categories-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ─── Card ─── */
 .categories-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
   background: var(--white);
+<<<<<<< HEAD
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
@@ -22,3 +84,136 @@
 }
 .categories-image { aspect-ratio: 4/3; background-size: cover; background-position: center; }
 .categories-card h3 { padding: 16px; font-size: 1.1rem; }
+=======
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: transform 0.4s var(--ease-out),
+              box-shadow 0.4s var(--ease-out);
+  cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  border: var(--border-lt);
+}
+
+.categories-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* ─── Image ─── */
+.categories-image-wrapper {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--off-white);
+}
+
+.categories-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s var(--ease-out);
+}
+
+.categories-card:hover .categories-image {
+  transform: scale(1.1);
+}
+
+.categories-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.05) 40%,
+    rgba(17, 17, 17, 0.4) 100%
+  );
+  transition: background 0.4s ease;
+}
+
+.categories-card:hover .categories-image-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.05) 40%,
+    rgba(17, 17, 17, 0.5) 100%
+  );
+}
+
+.categories-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.4rem;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  z-index: 2;
+  line-height: 1;
+}
+
+.categories-card:hover .categories-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* ─── Info ─── */
+.categories-info {
+  padding: 18px 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.categories-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.categories-arrow {
+  color: var(--gray-300);
+  transition: color 0.3s ease, transform 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.categories-card:hover .categories-arrow {
+  color: var(--luxury-gold);
+  transform: translateX(4px);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .categories-hero {
+    padding: 48px 0 36px;
+  }
+
+  .categories-content {
+    padding-top: 32px;
+    padding-bottom: 56px;
+  }
+
+  .categories-grid {
+    gap: 14px;
+  }
+
+  .categories-card {
+    border-radius: var(--radius-lg);
+  }
+
+  .categories-info {
+    padding: 14px 12px 16px;
+  }
+
+  .categories-name {
+    font-size: 0.95rem;
+  }
+
+  .categories-icon {
+    font-size: 1.8rem;
+  }
+}
+>>>>>>> ee0909d (fix the tracker)

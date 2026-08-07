@@ -1,32 +1,241 @@
-.about-content { padding-bottom: 80px; }
+/* ====================================================
+   About Page — Premium Luxury Editorial
+   ==================================================== */
 
+/* ─── Hero ─── */
+.about-hero {
+  background: var(--ink);
+  padding: 80px 0 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(200, 169, 106, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.about-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.about-hero h1 {
+  color: var(--white);
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  margin-bottom: 16px;
+}
+
+.about-hero-desc {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1rem;
+  max-width: 460px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ─── Content ─── */
+.about-content {
+  padding: 72px 24px 80px;
+}
+
+/* ─── Editorial Block ─── */
 .about-block {
   display: grid;
-  gap: 32px;
+  gap: 40px;
   align-items: center;
-  margin-bottom: 64px;
+  margin-bottom: 80px;
   grid-template-columns: 1fr;
 }
+
 @media (min-width: 800px) {
-  .about-block { grid-template-columns: 1fr 1fr; gap: 56px; }
+  .about-block {
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+  }
+}
+
+.about-image-wrap {
+  position: relative;
 }
 
 .about-image {
-  aspect-ratio: 4/3;
+  aspect-ratio: 4 / 3;
   background-size: cover;
   background-position: center;
+<<<<<<< HEAD
   border: 1px solid var(--line);
   border-radius: var(--radius);
+=======
+  border-radius: var(--radius-2xl);
+  border: var(--border-lt);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  z-index: 1;
+>>>>>>> ee0909d (fix the tracker)
 }
 
+.about-image-accent {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: -16px;
+  bottom: -16px;
+  border: 1.5px solid var(--luxury-gold-light);
+  border-radius: var(--radius-2xl);
+  opacity: 0.3;
+  z-index: 0;
+}
+
+@media (max-width: 799px) {
+  .about-image-accent {
+    display: none;
+  }
+}
+
+.about-text {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about-text h2 {
+  margin-bottom: 0;
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+}
+
+.about-text p {
+  color: var(--gray-500);
+  margin: 0;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+/* ─── Values Section ─── */
 .about-values {
+  padding: 56px 0 0;
+  border-top: var(--border-lt);
+}
+
+.about-values-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.about-values-header h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.about-values-grid {
   display: grid;
-  gap: 32px;
+  gap: 24px;
   grid-template-columns: 1fr;
+<<<<<<< HEAD
   padding: 48px 0;
   border-top: 1px solid var(--line);
+=======
+>>>>>>> ee0909d (fix the tracker)
 }
+
 @media (min-width: 768px) {
-  .about-values { grid-template-columns: repeat(3, 1fr); }
+  .about-values-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
 }
-.about-values h3 { color: var(--gold-deep); font-size: 1.2rem; }
+
+.about-value-card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  border: var(--border-lt);
+  padding: 36px 32px 32px;
+  transition: transform 0.4s var(--ease-out),
+              box-shadow 0.4s var(--ease-out);
+  box-shadow: var(--shadow-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.about-value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+
+.about-value-number {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--luxury-gold);
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.about-value-card h3 {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  font-weight: 600;
+  margin: 0;
+}
+
+.about-value-card p {
+  color: var(--gray-500);
+  font-size: 0.92rem;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 799px) {
+  .about-content {
+    padding: 48px 16px 60px;
+  }
+
+  .about-block {
+    margin-bottom: 56px;
+    gap: 32px;
+  }
+
+  .about-image {
+    border-radius: var(--radius-xl);
+  }
+
+  .about-values {
+    padding-top: 40px;
+  }
+
+  .about-values-header {
+    margin-bottom: 32px;
+  }
+
+  .about-value-card {
+    padding: 28px 24px 24px;
+    border-radius: var(--radius-lg);
+  }
+
+  .about-value-number {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-hero {
+    padding: 48px 0 36px;
+  }
+
+  .about-content {
+    padding: 36px 16px 48px;
+  }
+
+  .about-block {
+    margin-bottom: 40px;
+    gap: 24px;
+  }
+}

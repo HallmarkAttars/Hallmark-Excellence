@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Hero from '../components/home/Hero'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
+<<<<<<< HEAD
 import CollectionBanner from '../components/home/CollectionBanner'
 import FeaturedProducts from '../components/home/FeaturedProducts'
 import WhyChooseUs from '../components/home/WhyChooseUs'
@@ -19,6 +20,18 @@ export default function Home() {
     getCategories().then(setCategories)
     getBrands().then(setBrands)
     getProducts().then(setProducts)
+=======
+import BrandShowcase from '../components/home/BrandShowcase'
+import FeaturedProductsSection from '../components/home/FeaturedProductsSection'
+import WhyChooseUs from '../components/home/WhyChooseUs'
+import { getCategories } from '../services/mockApi'
+
+export default function Home() {
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    getCategories().then(setCategories)
+>>>>>>> ee0909d (fix the tracker)
   }, [])
 
   // Arees first, then Dahab — regardless of API ordering.
@@ -35,6 +48,7 @@ export default function Home() {
     <div>
       <Hero />
       {categories.length > 0 && <CategoryGrid categories={categories} />}
+<<<<<<< HEAD
       <div className="collections-section">
         {orderedBrands.map((brand, i) => (
           <Reveal key={brand.id} delay={i * 120}>
@@ -45,6 +59,10 @@ export default function Home() {
       <FeaturedProducts products={featuredProducts} />
       <SocialStrip products={products} />
       {/* Why Choose Us closes the page — immediately before the footer */}
+=======
+      <BrandShowcase />
+      <FeaturedProductsSection />
+>>>>>>> ee0909d (fix the tracker)
       <WhyChooseUs />
     </div>
   )

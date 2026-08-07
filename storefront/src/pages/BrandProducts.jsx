@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import Reveal from '../components/ui/Reveal'
 import ProductGrid from '../components/product/ProductGrid'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import './BrandProducts.css'
@@ -53,6 +54,7 @@ export default function BrandProducts() {
     )
   }, [slug])
 
+<<<<<<< HEAD
   // Close open menu on Escape
   useEffect(() => {
     const onKey = (e) => {
@@ -200,6 +202,39 @@ export default function BrandProducts() {
 
       {/* Click-outside to close the open menu */}
       {openMenu && <div className="brand-menu-backdrop" onClick={() => setOpenMenu(null)} />}
+=======
+  const brandAccent = slug === 'dahab' ? 'var(--luxury-gold)' : 'var(--luxury-gold-light)'
+
+  return (
+    <div>
+      <section className="brand-hero">
+        <div className="container">
+          <Reveal animation="fade-up" duration={600}>
+            <p className="brand-hero-tagline">{brand?.tagline}</p>
+          </Reveal>
+          <Reveal animation="fade-up" duration={700} delay={100}>
+            <h1 className="brand-hero-name" style={{ color: slug === 'dahab' ? 'var(--luxury-gold)' : 'var(--white)' }}>
+              {brand ? brand.name : 'Brand'}
+            </h1>
+          </Reveal>
+          <Reveal animation="fade-up" duration={700} delay={200}>
+            <p className="brand-hero-count">
+              {products.length} {products.length === 1 ? 'fragrance' : 'fragrances'}
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      <Reveal animation="fade-up" duration={700}>
+        <div className="container" style={{ paddingTop: 48, paddingBottom: 80 }}>
+          <ProductGrid
+            products={products}
+            loading={loading}
+            emptyMessage="No products from this brand yet."
+          />
+        </div>
+      </Reveal>
+>>>>>>> ee0909d (fix the tracker)
     </div>
   )
 }

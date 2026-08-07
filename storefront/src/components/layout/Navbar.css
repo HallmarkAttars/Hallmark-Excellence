@@ -1,19 +1,42 @@
+<<<<<<< HEAD
 /* ============================================================
    Navbar — compact luxury header (64–72px, sticky)
    ============================================================ */
+=======
+/* ====================================================
+   Navbar — Monochrome Luxury
+   ==================================================== */
+>>>>>>> ee0909d (fix the tracker)
 
 .navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+<<<<<<< HEAD
   z-index: var(--z-navbar);
   background: var(--cream);
   border-bottom: 1px solid var(--line);
+=======
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
+  background: rgba(248, 248, 246, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.navbar.is-scrolled {
+  background: rgba(248, 248, 246, 0.97);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+>>>>>>> ee0909d (fix the tracker)
 }
 
 .navbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
+<<<<<<< HEAD
   gap: 12px;
   height: var(--header-h);
 }
@@ -21,11 +44,26 @@
 .navbar-logo { display: flex; align-items: center; flex-shrink: 0; }
 .navbar-logo-img {
   height: 54px;
+=======
+  height: 80px;
+}
+
+/* ─── Logo ─── */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.navbar-logo-img {
+  height: 60px;
+>>>>>>> ee0909d (fix the tracker)
   width: auto;
   object-fit: contain;
   display: block;
+  transition: height 0.3s ease;
 }
 
+<<<<<<< HEAD
 @media (max-width: 767px) {
   .navbar-logo { flex: 1 1 auto; min-width: 0; }
   .navbar-logo-img { height: 44px; max-width: 100%; }
@@ -99,6 +137,76 @@
   border-radius: 50%;
   color: var(--charcoal);
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+=======
+@media (max-width: 768px) {
+  .navbar-logo-img { height: 42px; }
+}
+
+/* ─── Links ─── */
+.navbar-links {
+  display: none;
+  align-items: center;
+  gap: 32px;
+}
+
+.navbar-link {
+  position: relative;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  padding: 4px 0;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.navbar-link:hover,
+.navbar-link.is-active {
+  color: var(--ink);
+}
+
+.navbar-link:hover::after,
+.navbar-link.is-active::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* ─── Actions ─── */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.navbar-cart {
+  position: relative;
+  color: var(--gray-700);
+  display: flex;
+  padding: 6px;
+  transition: color 0.25s ease;
+}
+
+.navbar-cart:hover {
+  color: var(--ink);
+}
+
+.navbar-cart svg {
+  width: 20px;
+  height: 20px;
+>>>>>>> ee0909d (fix the tracker)
 }
 .navbar-icon-btn:hover { background: var(--cream-deep); color: var(--gold-deep); }
 .navbar-icon-btn:active { transform: scale(0.94); }
@@ -107,11 +215,19 @@
 
 .navbar-cart-badge {
   position: absolute;
+<<<<<<< HEAD
   top: 2px;
   right: 2px;
   background: var(--gold-deep);
   color: var(--white);
   font-size: 0.62rem;
+=======
+  top: 0;
+  right: 0;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 0.6rem;
+>>>>>>> ee0909d (fix the tracker)
   font-weight: 600;
   min-width: 16px;
   height: 16px;
@@ -119,6 +235,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+<<<<<<< HEAD
   padding: 0 4px;
   letter-spacing: 0;
 }
@@ -208,4 +325,100 @@
 }
 .navbar-drawer-link:hover, .navbar-drawer-link.is-active {
   color: var(--gold-deep);
+=======
+  padding: 0 3px;
+  line-height: 1;
+  animation: badgePopIn 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+@keyframes badgePopIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Hamburger ─── */
+.navbar-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.navbar-toggle span {
+  display: block;
+  width: 20px;
+  height: 1.5px;
+  background: var(--ink);
+  transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+              opacity 0.3s ease;
+  border-radius: 1px;
+}
+
+.navbar-toggle.is-open span:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.navbar-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.navbar-toggle.is-open span:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+/* ─── Desktop ─── */
+@media (min-width: 769px) {
+  .navbar-links {
+    display: flex;
+  }
+  .navbar-toggle {
+    display: none;
+  }
+}
+
+/* ─── Mobile Menu ─── */
+@media (max-width: 768px) {
+  .navbar-links {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--off-white);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 24px 40px;
+    gap: 4px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+
+  .navbar-links.is-open {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .navbar-link {
+    font-size: 0.95rem;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .navbar-link::after {
+    display: none;
+  }
+
+  .navbar-link:hover,
+  .navbar-link.is-active {
+    color: var(--ink);
+  }
+>>>>>>> ee0909d (fix the tracker)
 }

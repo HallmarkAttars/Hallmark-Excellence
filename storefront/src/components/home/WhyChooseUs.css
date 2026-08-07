@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* ============================================================
    Why Choose Us — compact benefit strip (directly after hero)
    ============================================================ */
@@ -11,23 +12,49 @@
 .choose-title-heading {
   text-align: center;
   margin-bottom: 36px;
+=======
+/* ====================================================
+   Trust Section — Premium Luxe Trust Cards
+   ==================================================== */
+
+.trust-section {
+  padding: var(--section-py) 0;
+  background: var(--white);
+  overflow: hidden;
+>>>>>>> ee0909d (fix the tracker)
 }
 
-.choose-grid {
+.trust-grid {
   display: grid;
+<<<<<<< HEAD
   grid-template-columns: repeat(2, 1fr); /* mobile + tablet: 2 × 2 */
   gap: 32px 24px;
 }
 
 @media (min-width: 1024px) {
   .choose-grid { grid-template-columns: repeat(4, 1fr); gap: 28px; } /* desktop: 4 */
+=======
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+>>>>>>> ee0909d (fix the tracker)
 }
 
-.choose-item {
+@media (min-width: 640px) {
+  .trust-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+}
+
+/* ─── Card ─── */
+.trust-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+<<<<<<< HEAD
   gap: 0;
 }
 
@@ -47,20 +74,69 @@
   background: var(--gold);
   color: var(--cream);
   transform: translateY(-2px);
+=======
+  padding: 36px 24px 32px;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  border: var(--border-lt);
+  transition: transform 0.4s var(--ease-out),
+              box-shadow 0.4s var(--ease-out),
+              border-color 0.4s var(--ease-out);
+  box-shadow: var(--shadow-subtle);
+  gap: 12px;
 }
 
-.choose-title {
+.trust-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--luxury-gold-light);
+>>>>>>> ee0909d (fix the tracker)
+}
+
+/* ─── Icon ─── */
+.trust-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  background: var(--off-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--luxury-gold);
+  transition: background 0.4s var(--ease-out),
+              color 0.4s var(--ease-out),
+              transform 0.4s var(--ease-out);
+}
+
+.trust-card:hover .trust-card-icon {
+  background: var(--luxury-gold);
+  color: var(--white);
+  transform: scale(1.05);
+}
+
+/* ─── Number ─── */
+.trust-card-number {
   font-family: var(--font-display);
+<<<<<<< HEAD
   font-size: 1.18rem; /* 19px desktop / 16.8px mobile */
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--charcoal);
   margin: 0 0 3px;
   line-height: 1.3;
+=======
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  margin-top: 4px;
+>>>>>>> ee0909d (fix the tracker)
 }
 
-.choose-subtitle {
+/* ─── Title ─── */
+.trust-card-title {
   font-family: var(--font-body);
+<<<<<<< HEAD
   font-size: 0.82rem;
   color: var(--charcoal-soft);
   margin: 0;
@@ -75,3 +151,62 @@
   .choose-title { font-size: 1.05rem; }
   .choose-subtitle { font-size: 0.78rem; }
 }
+=======
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Subtitle ─── */
+.trust-card-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 100%;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .trust-card {
+    padding: 28px 18px 24px;
+    gap: 10px;
+  }
+
+  .trust-card-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .trust-card-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .trust-card-number {
+    font-size: 1.5rem;
+  }
+
+  .trust-card-title {
+    font-size: 0.8rem;
+  }
+
+  .trust-card-subtitle {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .trust-grid {
+    gap: 12px;
+  }
+
+  .trust-card {
+    padding: 20px 14px 18px;
+    border-radius: var(--radius-lg);
+  }
+}
+>>>>>>> ee0909d (fix the tracker)

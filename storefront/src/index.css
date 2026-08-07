@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* ============================================================
    Arees & Dahab — Global Design System
    Luxury attar house · warm cream / muted gold / deep brown
@@ -46,10 +47,107 @@
 * { box-sizing: border-box; }
 
 html { scroll-behavior: smooth; }
+=======
+/* ====================================================
+   HALLMARK OF EXCELLENCE — Premium Luxury Design System
+   ==================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  /* ─── Luxury Color Palette ─── */
+  --luxury-gold:    #C8A96A;
+  --luxury-gold-light: #E8D5A8;
+  --luxury-gold-dark:  #A88B4A;
+
+  --ink:           #111111;
+  --ink-soft:      #1A1A1A;
+  --ink-muted:     #2A2A2A;
+
+  --gray-700:      #4A4A4A;
+  --gray-600:      #666666;
+  --gray-500:      #737373;
+  --gray-400:      #999999;
+  --gray-300:      #B3B3B0;
+  --gray-200:      #CCCCC8;
+  --gray-100:      #E5E5E0;
+  --gray-50:       #F2F2EF;
+
+  --white:         #FFFFFF;
+  --off-white:     #FAF8F5;
+  --off-white-2:   #F5F3F0;
+
+  /* ─── Typography ─── */
+  --font-display:  'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body:     'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+
+  /* ─── Spacing (8-point system) ─── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  --section-py:  clamp(60px, 8vw, 100px);
+  --container:   1240px;
+  --gutter:      24px;
+
+  /* ─── Border Radius ─── */
+  --radius-sm:    6px;
+  --radius:       12px;
+  --radius-lg:    18px;
+  --radius-xl:    24px;
+  --radius-2xl:   32px;
+  --radius-full:  9999px;
+
+  /* ─── Shadows ─── */
+  --shadow-none:   0 0 0 0 transparent;
+  --shadow-subtle: 0 2px 8px rgba(17, 17, 17, 0.04);
+  --shadow-card:   0 4px 20px rgba(17, 17, 17, 0.06);
+  --shadow-lift:   0 8px 32px rgba(17, 17, 17, 0.10);
+  --shadow-deep:   0 16px 48px rgba(17, 17, 17, 0.12);
+  --shadow-glow:   0 4px 24px rgba(200, 169, 106, 0.20);
+
+  /* ─── Borders ─── */
+  --border-lt:   1px solid #ECECEC;
+  --border-md:   1px solid var(--gray-200);
+  --border-dark: 1px solid var(--gray-300);
+  --border-gold: 1px solid var(--luxury-gold);
+
+  /* ─── Z-index Scale ─── */
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-overlay:   300;
+  --z-modal:     400;
+  --z-toast:     500;
+
+  /* ─── Transitions ─── */
+  --ease-out: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+>>>>>>> ee0909d (fix the tracker)
 
 body {
   margin: 0;
+  padding-top: 80px;
   font-family: var(--font-body);
+<<<<<<< HEAD
   font-size: 16px;
   line-height: 1.7;
   color: var(--ink);
@@ -98,20 +196,70 @@ a, button { -webkit-tap-highlight-color: transparent; }
   transform: translateY(0);
 }
 
+=======
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--gray-600);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Typography ─── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 0.35em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(2.6rem, 5vw, 4.2rem); letter-spacing: -0.02em; }
+h2 { font-size: clamp(2rem, 3.8vw, 3rem); letter-spacing: -0.015em; }
+h3 { font-size: clamp(1.4rem, 2.4vw, 1.8rem); letter-spacing: -0.01em; }
+h4 { font-size: clamp(1.15rem, 1.6vw, 1.35rem); letter-spacing: -0.005em; }
+
+h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+p { margin: 0 0 1em; line-height: 1.7; max-width: 65ch; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; height: auto; }
+button { font-family: var(--font-body); cursor: pointer; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+input, select, textarea { font-family: var(--font-body); }
+
+/* ─── Container ─── */
+>>>>>>> ee0909d (fix the tracker)
 .container {
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
+<<<<<<< HEAD
   padding: 0 16px;
+=======
+  padding: 0 var(--gutter);
+>>>>>>> ee0909d (fix the tracker)
 }
 @media (min-width: 768px) { .container { padding: 0 24px; } }
 @media (min-width: 1024px) { .container { padding: 0 32px; } }
 
+<<<<<<< HEAD
 /* ---------- Buttons ---------- */
+=======
+/* ─── Buttons ─── */
+>>>>>>> ee0909d (fix the tracker)
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+<<<<<<< HEAD
   gap: 10px;
   padding: 14px 32px;
   border-radius: var(--radius);
@@ -141,14 +289,57 @@ a, button { -webkit-tap-highlight-color: transparent; }
   border-color: var(--gold);
 }
 .btn-gold:hover { background: var(--gold-deep); border-color: var(--gold-deep); color: var(--white); }
+=======
+  gap: 8px;
+  padding: 16px 36px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.35s var(--ease-out);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn-dark {
+  background: var(--ink);
+  color: var(--white);
+  border-color: var(--ink);
+}
+.btn-dark:hover {
+  background: var(--ink-soft);
+  border-color: var(--ink-soft);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+.btn-gold {
+  background: var(--luxury-gold);
+  color: var(--white);
+  border-color: var(--luxury-gold);
+}
+.btn-gold:hover {
+  background: var(--luxury-gold-dark);
+  border-color: var(--luxury-gold-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+>>>>>>> ee0909d (fix the tracker)
 
 .btn-outline {
   background: transparent;
-  border-color: var(--charcoal);
-  color: var(--charcoal);
+  border-color: var(--gray-200);
+  color: var(--gray-700);
 }
-.btn-outline:hover { background: var(--charcoal); color: var(--cream); }
+.btn-outline:hover {
+  border-color: var(--gray-700);
+  color: var(--ink);
+  transform: translateY(-2px);
+}
 
+<<<<<<< HEAD
 /* Outlined button for use on dark imagery */
 .btn-outline-light {
   background: transparent;
@@ -213,14 +404,97 @@ a, button { -webkit-tap-highlight-color: transparent; }
 .view-all:hover .view-all-arrow { transform: translateX(4px); }
 
 /* ---------- Page headings (interior pages) ---------- */
+=======
+.btn-white {
+  background: var(--white);
+  color: var(--ink);
+  border-color: var(--white);
+}
+.btn-white:hover {
+  background: transparent;
+  color: var(--white);
+  border-color: var(--white);
+  transform: translateY(-2px);
+}
+
+.btn-sm {
+  padding: 10px 24px;
+  font-size: 0.72rem;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ─── Section Headings ─── */
+.section-header {
+  text-align: center;
+  margin-bottom: 52px;
+}
+.section-header h2 {
+  margin-bottom: 16px;
+}
+.section-header p {
+  color: var(--gray-400);
+  margin: 0 auto;
+  max-width: 540px;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.section {
+  padding: var(--section-py) 0;
+}
+
+/* ─── Section Eyebrow ─── */
+.section-eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--luxury-gold);
+  font-weight: 500;
+  margin-bottom: 16px;
+  position: relative;
+}
+.section-eyebrow::after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1.5px;
+  background: var(--luxury-gold);
+  margin: 12px auto 0;
+}
+
+/* ─── Page Heading ─── */
+>>>>>>> ee0909d (fix the tracker)
 .page-heading {
   text-align: center;
-  padding: 56px 24px 32px;
+  padding: 80px 24px 48px;
 }
+.page-heading h1 {
+  font-size: clamp(2.4rem, 4.5vw, 3.8rem);
+  margin-bottom: 12px;
+}
+.page-heading p {
+  color: var(--gray-400);
+  max-width: 540px;
+  margin: 0 auto;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+}
+<<<<<<< HEAD
 .page-heading h1 { font-size: clamp(2.2rem, 4vw, 3rem); letter-spacing: 0.02em; }
 .page-heading p { color: var(--charcoal-soft); max-width: 560px; margin: 0 auto; }
 
 /* ---------- Product grids (shared by Shop / Brand / Category) ---------- */
+=======
+
+/* ─── Product Grid ─── */
+>>>>>>> ee0909d (fix the tracker)
 .grid-products {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -243,29 +517,143 @@ a, button { -webkit-tap-highlight-color: transparent; }
   margin: 0 0 14px;
 }
 
+<<<<<<< HEAD
 /* ---------- States ---------- */
 .loading-state, .empty-state {
   text-align: center;
   padding: 64px 24px;
   color: var(--charcoal-soft);
+=======
+/* ─── States ─── */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--gray-500);
+  font-size: 1rem;
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+>>>>>>> ee0909d (fix the tracker)
 }
 
+/* ─── Skeleton Shimmer ─── */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (min-width: 640px) {
+  .skeleton-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+}
+@media (min-width: 1024px) {
+  .skeleton-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.skeleton-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: var(--border-lt);
+  overflow: hidden;
+}
+
+.skeleton-image {
+  aspect-ratio: 1;
+  background: linear-gradient(110deg, var(--off-white) 30%, var(--gray-50) 50%, var(--off-white) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(110deg, var(--off-white) 30%, var(--gray-50) 50%, var(--off-white) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-line-sm {
+  width: 50%;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(110deg, var(--off-white) 30%, var(--gray-50) 50%, var(--off-white) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-btn {
+  height: 36px;
+  border-radius: var(--radius-sm);
+  margin-top: 6px;
+  background: linear-gradient(110deg, var(--off-white) 30%, var(--gray-50) 50%, var(--off-white) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Utility ─── */
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap;
 }
 
+<<<<<<< HEAD
 /* ---------- Focus & motion ---------- */
+=======
+/* ─── Focus ─── */
+>>>>>>> ee0909d (fix the tracker)
 *:focus-visible {
-  outline: 2px solid var(--gold-deep);
+  outline: 2px solid var(--luxury-gold);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 
+<<<<<<< HEAD
+=======
+/* ─── Selection ─── */
+::selection {
+  background: var(--luxury-gold);
+  color: var(--white);
+}
+
+/* ─── View Transitions (Page Navigation) ─── */
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes vt-fade-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+::view-transition-old(root) {
+  animation: 0.25s var(--ease-out) both vt-fade-out;
+}
+::view-transition-new(root) {
+  animation: 0.35s var(--ease-out) 0.05s both vt-fade-in;
+}
+
+/* ─── Animations ─── */
+>>>>>>> ee0909d (fix the tracker)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+<<<<<<< HEAD
     scroll-behavior: auto !important;
   }
 }
@@ -273,4 +661,12 @@ a, button { -webkit-tap-highlight-color: transparent; }
 /* ---------- Responsive container ---------- */
 @media (max-width: 767px) {
   .page-heading { padding: 40px 16px 24px; }
+=======
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+  html { scroll-behavior: auto; }
+>>>>>>> ee0909d (fix the tracker)
 }
