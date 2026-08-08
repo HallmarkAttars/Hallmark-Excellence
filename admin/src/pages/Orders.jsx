@@ -2,6 +2,9 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { getOrders, updateOrderStatus, deleteOrder } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminStatusBadge from '../components/ui/AdminStatusBadge'
+import Modal from '../components/ui/Modal'
+import OrderInvoice from '../components/invoice/OrderInvoice'
+import { InvoiceDownloadButton, InvoicePrintButton } from '../components/invoice/InvoiceActions'
 import {
   formatINR,
   formatOrderDate,
@@ -150,6 +153,7 @@ export default function Orders() {
   const [updatingId, setUpdatingId] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [invoiceOrder, setInvoiceOrder] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const feedbackTimer = useRef(null)
 
@@ -299,6 +303,13 @@ export default function Orders() {
                                   <span>Order placed</span>
                                   <strong>{formatOrderDateTime(o.created_at)}</strong>
                                 </footer>
+                                <div className="orders-invoice-actions">
+                                  <button type="button" className="btn btn-outline btn-sm" onClick={() => setInvoiceOrder(o)}>
+                                    View Invoice
+                                  </button>
+                                  <InvoicePrintButton order={o} className="btn btn-outline btn-sm" />
+                                  <InvoiceDownloadButton order={o} className="btn btn-dark btn-sm" />
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -365,6 +376,14 @@ export default function Orders() {
                           <StatusSelect o={o} updatingId={updatingId} onUpdate={handleStatusChange} className="order-card-status-select" />
                         </section>
 
+                        <div className="orders-invoice-actions">
+                          <button type="button" className="btn btn-outline btn-sm" onClick={() => setInvoiceOrder(o)}>
+                            View Invoice
+                          </button>
+                          <InvoicePrintButton order={o} className="btn btn-outline btn-sm" />
+                          <InvoiceDownloadButton order={o} className="btn btn-dark btn-sm" />
+                        </div>
+
                         {can('orders.delete') && (
                           <button
                             type="button"
@@ -400,6 +419,22 @@ export default function Orders() {
           </>
         )}
       </div>
+
+      {invoiceOrder && (
+        <Modal
+          wide
+          title={`Invoice — ${invoiceOrder.order_number}`}
+          onClose={() => setInvoiceOrder(null)}
+          footer={
+            <div className="orders-invoice-modal-actions">
+              <InvoicePrintButton order={invoiceOrder} className="btn btn-outline btn-sm" />
+              <InvoiceDownloadButton order={invoiceOrder} className="btn btn-dark btn-sm" />
+            </div>
+          }
+        >
+          <OrderInvoice order={invoiceOrder} />
+        </Modal>
+      )}
 
       {confirmDelete && (
         <div className="modal-scrim" onClick={() => { if (!deleting) setConfirmDelete(null) }}>

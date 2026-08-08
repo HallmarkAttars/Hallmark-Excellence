@@ -17,6 +17,7 @@ export default function CategoryGrid({ categories }) {
         <div className="category-scroll stagger-fade">
           {categories.map((cat) => (
             <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
+              {/* Upper portion — category image */}
               <span className="category-media">
                 <span
                   className="category-image"
@@ -25,7 +26,11 @@ export default function CategoryGrid({ categories }) {
                   aria-label={cat.name}
                 />
               </span>
-              <span className="category-name">{cat.name}</span>
+              {/* Footer — name + arrow */}
+              <span className="category-footer">
+                <span className="category-name">{cat.name}</span>
+                <span className="category-arrow" aria-hidden="true">→</span>
+              </span>
             </Link>
           ))}
         </div>

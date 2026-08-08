@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../services/api'
 import { submitContactMessage, submitOrder } from '../services/mockApi'
+import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import { useCart } from '../context/CartContext'
 import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
@@ -405,10 +406,19 @@ export default function Contact() {
             {/* Track the just-created order — prefill carries the real Order ID
                 via router state; the phone is never prefilled. */}
             <Link to="/track-order" state={{ orderNumber }} className="btn btn-gold">
-              Track Your Order
+              Track Order
             </Link>
-            <Link to="/shop" className="btn btn-primary">Continue Shopping</Link>
-            <a href="#order-summary" className="btn btn-outline">View Order</a>
+            {/* View Order opens the saved order + invoice (state carries the
+                full persisted row — never the cart). */}
+            <Link to="/view-order" state={{ order: result.order, orderNumber }} className="btn btn-outline">
+              View Order
+            </Link>
+            {/* Invoice is generated from the SAVED order record (result.order),
+                never from the cart or live product prices. */}
+            <InvoiceDownloadButton order={result.order} className="btn btn-primary" />
+            <Link to="/shop" className="btn btn-outline order-success-continue">
+              Continue Shopping
+            </Link>
           </div>
         </div>
       </div>

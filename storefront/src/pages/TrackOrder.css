@@ -418,3 +418,71 @@
   .track-item-price { font-size: 15px; }
   .track-phone-prefix { padding: 0 12px; }
 }
+
+/* ============================================================
+   Track Order v2 — lookup tabs + multi-order results
+   ============================================================ */
+
+/* ---------- Lookup method tabs ---------- */
+.track-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.track-tab {
+  flex: 1;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.track-tab:hover { border-color: var(--gold); color: var(--charcoal); }
+.track-tab.is-active {
+  background: var(--white);
+  border-color: var(--gold);
+  color: var(--charcoal);
+  font-weight: 700;
+}
+.track-tab:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 2px;
+}
+
+/* ---------- Per-order card header ---------- */
+.track-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.track-card-head .track-order-number { margin: 0; }
+.track-card-head .track-placed-on { margin: 0; }
+.track-card-head .track-status-pill { margin-left: auto; }
+@media (max-width: 480px) {
+  .track-card-head .track-status-pill { margin-left: 0; }
+}
+
+/* ---------- Per-card invoice actions (resolved order only) ---------- */
+.track-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 767px) {
+  .track-card-actions { flex-direction: column; }
+  .track-card-actions .btn { width: 100%; }
+}

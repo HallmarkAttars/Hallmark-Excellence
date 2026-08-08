@@ -16,9 +16,11 @@ export default function Home() {
   const [products, setProducts] = useState([])
 
   useEffect(() => {
-    getCategories().then(setCategories)
-    getBrands().then(setBrands)
-    getProducts().then(setProducts)
+    // Individual loads — a failure just leaves that section hidden (no hang).
+    // Catches keep failures quiet instead of unhandled rejections.
+    getCategories().then(setCategories).catch(() => {})
+    getBrands().then(setBrands).catch(() => {})
+    getProducts().then(setProducts).catch(() => {})
   }, [])
 
   // Arees first, then Dahab — regardless of API ordering.

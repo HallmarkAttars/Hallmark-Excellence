@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import Reveal from '../animations/Reveal'
 import { getCategories } from '../services/mockApi'
 import { CATEGORIES_PAGE } from '../data/content'
+// Single source of truth for the premium category-card look — the homepage
+// CategoryGrid imports the same file, so both surfaces stay consistent.
+import '../components/home/CategoryGrid.css'
 import './Categories.css'
 
 export default function Categories() {
@@ -24,14 +28,26 @@ export default function Categories() {
         {loading ? (
           <div className="loading-state">Loading categories…</div>
         ) : (
-          <div className="categories-grid">
+          <Reveal className="category-scroll stagger-fade categories-page">
             {categories.map((cat) => (
-              <Link key={cat.id} to={`/categories/${cat.slug}`} className="categories-card">
-                <div className="categories-image" style={{ backgroundImage: `url(${cat.image})` }} />
-                <h3>{cat.name}</h3>
+              <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
+                {/* Upper portion — category image */}
+                <span className="category-media">
+                  <span
+                    className="category-image"
+                    style={{ backgroundImage: `url(${cat.image})` }}
+                    role="img"
+                    aria-label={cat.name}
+                  />
+                </span>
+                {/* Footer — name + arrow */}
+                <span className="category-footer">
+                  <span className="category-name">{cat.name}</span>
+                  <span className="category-arrow" aria-hidden="true">→</span>
+                </span>
               </Link>
             ))}
-          </div>
+          </Reveal>
         )}
       </div>
     </div>

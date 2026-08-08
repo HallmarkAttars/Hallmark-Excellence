@@ -32,6 +32,17 @@ export const BUSINESS = {
 }
 
 // --------------------------------------------------------------------------
+// INVOICE — branding for the customer invoice / order receipt.
+// companyName is the legal-style name printed on the invoice. Phone, email
+// and address are intentionally REUSED from BUSINESS above (never invented).
+// --------------------------------------------------------------------------
+export const INVOICE = {
+  companyName: 'Hallmark of Excellence',
+  gstNote: 'Prices are inclusive of applicable GST.',
+  thanks: 'Thank you for your order.',
+}
+
+// --------------------------------------------------------------------------
 // NAVIGATION — header nav (desktop + mobile drawer) and footer "Company".
 // `end: true` keeps the Home link highlighted only on the exact "/" route.
 // --------------------------------------------------------------------------

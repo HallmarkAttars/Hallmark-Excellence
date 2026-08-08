@@ -17,14 +17,23 @@ const app = express()
 // Only the storefront and admin origins configured in .env may call this API.
 const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_URL].filter(Boolean)
 
+// Vercel preview deployments get random subdomains (e.g.
+// my-app-git-fix-1a2b3c.vercel.app) that aren't in .env. Allow any
+// *.vercel.app origin so every storefront/admin deployment — including
+// previews — can always reach the API without reconfiguring env vars.
+const isVercelOrigin = /^https:\/\/[a-z0-9-]+\.vercel\.app$/
+
 app.use(
   cors({
     origin(origin, callback) {
       // Allow non-browser requests (curl, server-to-server, no Origin header)
       if (!origin) return callback(null, true)
 
-      // Allow any of the configured origins
+      // Allow any of the configured origins (FRONTEND_URL / ADMIN_URL)
       if (allowedOrigins.includes(origin)) return callback(null, true)
+
+      // Allow any Vercel-hosted storefront/admin deployment (incl. previews)
+      if (isVercelOrigin.test(origin)) return callback(null, true)
 
       // In dev, allow any localhost:port origin (handles --host 0.0.0.0)
       if (/^https?:\/\/localhost:\d+$/.test(origin) || /^https?:\/\/127\.0\.0\.1:\d+$/.test(origin)) {

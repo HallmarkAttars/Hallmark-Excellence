@@ -21,6 +21,11 @@ export default function SearchOverlay({ open, onClose }) {
           allProducts.current = Array.isArray(p) ? p : []
           setReady(true)
         })
+        .catch(() => {
+          // Load failed — search simply has nothing to offer yet.
+          allProducts.current = []
+          setReady(true)
+        })
         .finally(() => setLoading(false))
     }
   }, [open])

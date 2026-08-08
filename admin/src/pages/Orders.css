@@ -420,3 +420,22 @@
   }
   .order-card-delete:hover { background: var(--danger); color: var(--white); border-color: var(--danger); }
 }
+
+/* ---------- Invoice actions (View / Print / Download) ---------- */
+.orders-invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.orders-invoice-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+@media (max-width: 560px) {
+  .orders-invoice-actions .btn,
+  .orders-invoice-modal-actions .btn { flex: 1 1 100%; }
+}

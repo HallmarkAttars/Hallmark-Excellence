@@ -1,7 +1,19 @@
 import Reveal from '../../animations/Reveal'
 import ProductCard from './ProductCard'
 
-export default function ProductGrid({ products, loading, emptyMessage = 'No products found.' }) {
+export default function ProductGrid({ products, loading, error, onRetry, emptyMessage = 'No products found.' }) {
+  if (error) {
+    return (
+      <div className="error-state" role="alert">
+        <p>{error}</p>
+        {onRetry && (
+          <button type="button" className="btn btn-outline" onClick={onRetry}>
+            Try Again
+          </button>
+        )}
+      </div>
+    )
+  }
   if (loading) {
     return <div className="loading-state">Loading products…</div>
   }

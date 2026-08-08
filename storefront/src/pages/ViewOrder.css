@@ -1,0 +1,30 @@
+.view-order-wrap {
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 0 16px 88px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .view-order-wrap { padding: 0 24px 104px; }
+}
+
+.view-order-head {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.view-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.view-order-actions .view-order-continue { width: 100%; }
+
+@media (max-width: 767px) {
+  .view-order-actions { flex-direction: column; }
+  .view-order-actions .btn { width: 100%; }
+}

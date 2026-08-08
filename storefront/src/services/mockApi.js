@@ -59,13 +59,33 @@ export async function submitContactMessage(payload) {
   return { success: true }
 }
 
-// GET /api/orders/track — secure customer order lookup. The backend requires
-// BOTH the order number and the customer's phone to match; it never returns
-// other customers' orders or full internal records.
-export async function trackOrder(orderId, phone) {
-  const params = new URLSearchParams({ order_id: orderId, phone })
-  const data = await api.get(`/api/orders/track?${params.toString()}`)
-  return data.order ?? null
+// --- Order tracking ---------------------------------------------------------
+// Normalize any Indian mobile input (+91 / 91 / spaces / hyphens / brackets)
+// to the bare 10-digit national number. Returns '' when the result is not
+// EXACTLY 10 digits.
+//   9876543210 | +919876543210 | +91 98765 43210 | 91-9876543210  -> 9876543210
+//   123 | 98765432101                                             -> ''
+export function normalizeIndianPhone(raw) {
+  if (raw == null) return ''
+  let s = String(raw).replace(/[\s\-()]/g, '')
+  if (s.startsWith('+91')) s = s.slice(3)
+  else if (s.startsWith('91') && s.length > 10) s = s.slice(2)
+  s = s.replace(/\D/g, '')
+  return /^[0-9]{10}$/.test(s) ? s : ''
+}
+
+// Normalize a public Order ID: drop a leading '#' (used on the success
+// screen) and any surrounding whitespace.
+export function normalizeOrderId(raw) {
+  return String(raw || '').replace(/^#/, '').trim().toUpperCase()
+}
+
+// ONE tracking function — every Track Order UI (desktop AND mobile) calls
+// this same function. POST /api/track-order returns { orders: [...] } with an
+// empty array when nothing matches.
+export async function trackOrder({ type, value }) {
+  const data = await api.post('/api/track-order', { type, value })
+  return Array.isArray(data.orders) ? data.orders : []
 }
 
 export async function submitOrder(payload) {

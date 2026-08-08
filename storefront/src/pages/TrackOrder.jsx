@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { trackOrder } from '../services/mockApi'
+import {
+  trackOrder,
+  normalizeIndianPhone,
+  normalizeOrderId,
+} from '../services/mockApi'
+import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import { TRACK_ORDER_PAGE } from '../data/content'
 import './TrackOrder.css'
 
@@ -63,7 +68,7 @@ function CheckIcon() {
   )
 }
 
-// One product line inside the tracking result — unit price × qty + line total,
+// One product line inside a tracking result — unit price × qty + line total,
 // reusing the same values the checkout stores (never a new pricing system).
 function TrackItem({ item }) {
   const unitPrice = Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : 0
@@ -100,27 +105,126 @@ function TrackItem({ item }) {
   )
 }
 
+// Map a backend failure to the right customer-facing message. Never claims
+// "unable to reach the server" for something that is actually a validation,
+// routing or server error — each case is called out distinctly.
+function toCustomerMessage(err) {
+  const status = err?.status
+  const code = err?.message
+  if (code === 'INVALID_PHONE') return 'Enter a valid 10-digit mobile number.'
+  if (code === 'INVALID_ORDER_ID') return 'Enter a valid Order ID.'
+  if (code === 'INVALID_TYPE' || code === 'INVALID_REQUEST') {
+    return 'Something went wrong with that request. Please try again.'
+  }
+  if (code === 'TRACKING_FAILED') return 'Unable to check your order right now. Please try again.'
+  if (status === 401 || status === 403) {
+    return 'Tracking is temporarily unavailable. Please try again later.'
+  }
+  if (status === 404) {
+    return 'The tracking service could not be reached. Please try again later.'
+  }
+  if (status === 500) return 'Unable to check your order right now. Please try again.'
+  return 'Unable to check your order right now. Please try again.'
+}
+
+// One order card — reused for BOTH the single Order-ID result and every card
+// in a multi-order phone lookup, so mobile and desktop render identically.
+function OrderResultCard({ order }) {
+  const stepIndex = stepIndexFor(order.status)
+  const isCancelled = (order.status || '').toLowerCase() === 'cancelled'
+  const placedAt = formatPlacedAt(order.createdAt)
+
+  return (
+    <section className="track-card track-order-card" aria-label={`Order ${order.orderId}`}>
+      <header className="track-card-head">
+        <p className="track-order-number">Order #{order.orderId}</p>
+        {placedAt && <p className="track-placed-on">Placed on {placedAt.date} • {placedAt.time}</p>}
+        <span className={`track-status-pill track-status-${(order.status || '').toLowerCase()}`}>
+          {order.status}
+        </span>
+      </header>
+
+      {/* Cancelled — never shown as delivery progress */}
+      {isCancelled ? (
+        <div className="track-cancelled" role="alert">
+          <h2>Order Cancelled</h2>
+          <p>This order has been cancelled.</p>
+        </div>
+      ) : (
+        <section aria-label="Order progress">
+          <h3 className="track-card-title">Order Progress</h3>
+          <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
+            {STATUS_STEPS.map((label, i) => {
+              const state =
+                stepIndex < 0 ? 'upcoming' : i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'upcoming'
+              return (
+                <div className={`track-step is-${state}`} key={label}>
+                  <span className="track-step-icon" aria-hidden="true">
+                    {state === 'done' ? <CheckIcon /> : null}
+                  </span>
+                  <span className="track-step-label">{label}</span>
+                </div>
+              )
+            })}
+          </div>
+          {stepIndex < 0 && (
+            <p className="track-note">We will keep you updated on this order.</p>
+          )}
+        </section>
+      )}
+
+      {/* Order summary */}
+      <section aria-label="Order summary">
+        <h3 className="track-card-title">Order Summary</h3>
+        {order.items && order.items.length > 0 ? (
+          order.items.map((item, i) => (
+            <TrackItem key={`${item.product_name}-${i}`} item={item} />
+          ))
+        ) : (
+          <p className="track-note">No items available for this order.</p>
+        )}
+        <div className="track-row">
+          <span>Payment Method</span>
+          <span>{order.payment_method || 'Cash On Delivery'}</span>
+        </div>
+        <div className="track-row track-total">
+          <span>Total</span>
+          <span>₹{Number(order.total || 0).toLocaleString('en-IN')}</span>
+        </div>
+      </section>
+
+      {/* Invoice — only after this exact order has been resolved. Generated
+          from the SAVED order snapshot returned by the tracking API. */}
+      <div className="track-card-actions">
+        <Link to="/view-order" state={{ order }} className="btn btn-outline">
+          View Order
+        </Link>
+        <InvoiceDownloadButton order={order} className="btn btn-primary" />
+      </div>
+    </section>
+  )
+}
+
 export default function TrackOrder() {
   const location = useLocation()
 
   // Optional prefill from the order-success screen (router state carries the
   // just-created order number). The phone is never prefilled — the customer
-  // must always verify it.
+  // must always enter it.
   const prefillOrderId = location.state?.orderNumber || ''
 
+  const [mode, setMode] = useState('orderId') // 'orderId' | 'phone'
   const [form, setForm] = useState({ orderId: prefillOrderId, phone: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  // Transient note for quiet refresh/poll failures while a result is showing.
+  // Transient note for quiet refresh/poll failures while results are showing.
   const [refreshNote, setRefreshNote] = useState('')
-  const [result, setResult] = useState(null) // { order }
-  // The verified credentials that produced the current result — used by the
+  const [orders, setOrders] = useState([]) // array of safe tracking orders
+  // The verified credentials that produced the current results — used by the
   // Refresh button and the light visibility-aware recheck, never leaked.
-  const [lookup, setLookup] = useState(null) // { orderId, phone }
+  const [lookup, setLookup] = useState(null) // { type, value }
   const [refreshing, setRefreshing] = useState(false)
-
-  const phoneValid = /^\d{10}$/.test(form.phone)
 
   const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
 
@@ -134,38 +238,49 @@ export default function TrackOrder() {
     clearFieldError('phone')
   }
 
-  // Runs a verification. Returns 'ok' | 'not-found' | 'error'.
+  const switchMode = (next) => {
+    if (next === mode) return
+    setMode(next)
+    setFieldErrors({})
+    setError('')
+    setRefreshNote('')
+    setOrders([])
+    setLookup(null)
+  }
+
+  // Runs a verification. Returns 'ok' | 'empty' | 'error'.
   //   mode 'submit'  → user-initiated: shows errors in the form
-  //   mode 'refresh' → manual Refresh button / quiet poll: keeps the last known
-  //                    result on transient errors, drops back to the form only
-  //                    when the backend definitively says the order is gone
-  const runLookup = async (orderId, phone, { mode = 'submit' } = {}) => {
-    if (mode === 'submit') setSubmitting(true)
+  //   mode 'refresh' → manual Refresh button / quiet poll: keeps the last
+  //                    known results on transient errors, drops back to the
+  //                    form only when the backend definitively says the
+  //                    order(s) no longer exist
+  const runLookup = async ({ type, value }, { mode: submitMode = 'submit' } = {}) => {
+    if (submitMode === 'submit') setSubmitting(true)
     setRefreshNote('')
     try {
-      const order = await trackOrder(orderId, phone)
-      setResult({ order })
+      const results = await trackOrder({ type, value })
+      if (submitMode !== 'submit' && results.length === 0) {
+        // The tracked order(s) no longer exist — stop showing stale data.
+        setOrders([])
+        setLookup(null)
+        setError('This order is no longer available.')
+        return 'empty'
+      }
+      setOrders(results)
       setError('')
-      return 'ok'
+      return results.length > 0 ? 'ok' : 'empty'
     } catch (err) {
-      const msg = err?.message || ''
-      const notFound = msg.startsWith('Order not found')
-      if (mode === 'submit' || notFound) {
-        setError(notFound ? msg : 'Unable to check your order. Please try again.')
+      // Log the REAL error in development so the exact failure can be
+      // diagnosed; customers only ever see the mapped message.
+      console.error('[trackOrder] error:', err)
+      setError(toCustomerMessage(err))
+      if (submitMode !== 'submit') {
+        // Transient failure — keep the last known status, just say so.
+        setRefreshNote('Could not refresh status. Showing the last known status.')
       }
-      if (mode !== 'submit') {
-        if (notFound) {
-          // The order no longer exists — stop showing stale progress.
-          setResult(null)
-          setLookup(null)
-        } else {
-          // Transient failure — keep the last known status, just say so.
-          setRefreshNote('Could not refresh status. Showing the last known status.')
-        }
-      }
-      return notFound ? 'not-found' : 'error'
+      return 'error'
     } finally {
-      if (mode === 'submit') setSubmitting(false)
+      if (submitMode === 'submit') setSubmitting(false)
     }
   }
 
@@ -174,30 +289,48 @@ export default function TrackOrder() {
     setError('')
     setRefreshNote('')
     const errs = {}
-    if (!form.orderId) errs.orderId = 'Enter your Order ID.'
-    if (!phoneValid) errs.phone = 'Enter a valid 10-digit mobile number.'
+    if (mode === 'orderId') {
+      if (!normalizeOrderId(form.orderId)) errs.orderId = 'Enter your Order ID.'
+    } else {
+      if (!normalizeIndianPhone(form.phone)) errs.phone = 'Enter a valid 10-digit mobile number.'
+    }
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs)
-      setResult(null)
+      setOrders([])
       setLookup(null)
       return
     }
-    const outcome = await runLookup(form.orderId, form.phone, { mode: 'submit' })
-    // Remember the verified credentials only when the lookup succeeded, so the
-    // recheck/refresh always targets the exact order on screen.
-    if (outcome === 'ok') setLookup({ orderId: form.orderId, phone: form.phone })
-    else setLookup(null)
+
+    const type = mode
+    const value =
+      type === 'phone' ? normalizeIndianPhone(form.phone) : normalizeOrderId(form.orderId)
+
+    const outcome = await runLookup({ type, value }, { mode: 'submit' })
+    // Remember the verified credentials only when orders were found, so the
+    // recheck/refresh always targets the exact lookup on screen.
+    if (outcome === 'ok') {
+      setLookup({ type, value })
+    } else {
+      setLookup(null)
+      if (outcome === 'empty') {
+        setError(
+          type === 'phone'
+            ? 'No orders were found for this mobile number.'
+            : "We couldn't find an order with this Order ID."
+        )
+      }
+    }
   }
 
-  // Controlled recheck while a tracking result is displayed: re-verify ONLY
-  // the single verified order, only while the tab is visible, on a slow
-  // interval + on tab-return. Never touches the orders table broadly and
-  // stops the moment the user navigates away or starts a new lookup.
+  // Controlled recheck while results are displayed: re-verify ONLY the last
+  // successful lookup, only while the tab is visible, on a slow interval + on
+  // tab-return. Never touches the orders table broadly and stops the moment
+  // the user navigates away or starts a new lookup.
   useEffect(() => {
     if (!lookup) return undefined
     const check = () => {
       if (document.visibilityState === 'hidden') return
-      runLookup(lookup.orderId, lookup.phone, { mode: 'poll' })
+      runLookup(lookup, { mode: 'poll' })
     }
     const timer = window.setInterval(check, 20000)
     const onVisible = () => {
@@ -216,25 +349,22 @@ export default function TrackOrder() {
     setRefreshing(true)
     setError('')
     setRefreshNote('')
-    await runLookup(lookup.orderId, lookup.phone, { mode: 'refresh' })
+    await runLookup(lookup, { mode: 'refresh' })
     setRefreshing(false)
   }
 
   // Back to the search form — needed because same-route navigation (footer
   // "Track Order" link while already on /track-order) does not remount this
-  // page, so without this button the result would be stuck on screen.
+  // page, so without this button the results would be stuck on screen.
   const handleNewSearch = () => {
-    setResult(null)
+    setOrders([])
     setLookup(null)
     setError('')
     setRefreshNote('')
     setFieldErrors({})
   }
 
-  const order = result?.order
-  const stepIndex = order ? stepIndexFor(order.status) : -1
-  const isCancelled = (order?.status || '').toLowerCase() === 'cancelled'
-  const placedAt = order ? formatPlacedAt(order.created_at) : null
+  const showForm = orders.length === 0
 
   return (
     <div>
@@ -245,61 +375,88 @@ export default function TrackOrder() {
       </div>
 
       <div className="track-layout">
-        {!order ? (
+        {showForm ? (
           <div className="track-card">
-            <form className="track-form" onSubmit={handleSubmit} noValidate>
-              <div className="form-field">
-                <label htmlFor="track-order-id">
-                  Order ID <span className="required-star">*</span>
-                </label>
-                <input
-                  id="track-order-id"
-                  name="orderId"
-                  type="text"
-                  placeholder="ORD-571848"
-                  autoComplete="off"
-                  value={form.orderId}
-                  onChange={handleOrderIdChange}
-                  required
-                />
-                {fieldErrors.orderId && (
-                  <p className="field-hint field-hint--error">{fieldErrors.orderId}</p>
-                )}
-              </div>
+            {/* ONE form, two lookup methods — both call the same trackOrder() */}
+            <div className="track-tabs" role="tablist" aria-label="How would you like to track your order?">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'orderId'}
+                className={`track-tab${mode === 'orderId' ? ' is-active' : ''}`}
+                onClick={() => switchMode('orderId')}
+              >
+                Order ID
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'phone'}
+                className={`track-tab${mode === 'phone' ? ' is-active' : ''}`}
+                onClick={() => switchMode('phone')}
+              >
+                Mobile Number
+              </button>
+            </div>
 
-              <div className="form-field">
-                <label htmlFor="track-phone">
-                  Phone Number <span className="required-star">*</span>
-                </label>
-                <div className="track-phone-row">
-                  <span className="track-phone-prefix" aria-hidden="true">+91</span>
+            <form className="track-form" onSubmit={handleSubmit} noValidate>
+              {mode === 'orderId' ? (
+                <div className="form-field">
+                  <label htmlFor="track-order-id">
+                    Order ID <span className="required-star">*</span>
+                  </label>
                   <input
-                    id="track-phone"
-                    name="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    autoComplete="tel-national"
-                    pattern="[0-9]{10}"
-                    placeholder="9876543210"
-                    className="track-phone-input"
-                    value={form.phone}
-                    onChange={handlePhoneChange}
+                    id="track-order-id"
+                    name="orderId"
+                    type="text"
+                    placeholder="ORD-571848"
+                    autoComplete="off"
+                    value={form.orderId}
+                    onChange={handleOrderIdChange}
                     required
                   />
+                  {fieldErrors.orderId && (
+                    <p className="field-hint field-hint--error">{fieldErrors.orderId}</p>
+                  )}
+                  <p className="field-hint">
+                    Enter the Order ID from your confirmation email or receipt.
+                  </p>
                 </div>
-                {fieldErrors.phone && (
-                  <p className="field-hint field-hint--error">{fieldErrors.phone}</p>
-                )}
-                <p className="field-hint">
-                  We use both your Order ID and phone number to keep your details private.
-                </p>
-              </div>
+              ) : (
+                <div className="form-field">
+                  <label htmlFor="track-phone">
+                    Mobile Number <span className="required-star">*</span>
+                  </label>
+                  <div className="track-phone-row">
+                    <span className="track-phone-prefix" aria-hidden="true">+91</span>
+                    <input
+                      id="track-phone"
+                      name="phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      autoComplete="tel-national"
+                      pattern="[0-9]{10}"
+                      placeholder="9876543210"
+                      className="track-phone-input"
+                      value={form.phone}
+                      onChange={handlePhoneChange}
+                      required
+                    />
+                  </div>
+                  {fieldErrors.phone && (
+                    <p className="field-hint field-hint--error">{fieldErrors.phone}</p>
+                  )}
+                  <p className="field-hint">
+                    We'll show every order placed with this number.
+                  </p>
+                </div>
+              )}
 
               {error && <p className="track-error" role="alert">{error}</p>}
 
               <button className="btn btn-primary track-submit" type="submit" disabled={submitting}>
-                {submitting ? 'Checking your order…' : 'Track Order'}
+                {submitting ? 'Finding orders…' : 'Find Orders'}
               </button>
             </form>
           </div>
@@ -310,65 +467,15 @@ export default function TrackOrder() {
               <span className="track-found-check">
                 <CheckIcon />
               </span>
-              <h2>Order Found</h2>
-              <p className="track-order-number">Order #{order.order_number}</p>
-              {placedAt && (
-                <p className="track-placed-on">Placed on {placedAt.date} • {placedAt.time}</p>
+              <h2>{orders.length === 1 ? 'Order Found' : `${orders.length} Orders Found`}</h2>
+              {lookup && lookup.type === 'phone' && (
+                <p className="track-placed-on">Orders for +91 {lookup.value}</p>
               )}
-              <p className="track-current-label">Current Status</p>
-              <span className={`track-status-pill track-status-${(order.status || '').toLowerCase()}`}>
-                {order.status}
-              </span>
             </div>
 
-            {/* Cancelled — never shown as delivery progress */}
-            {isCancelled ? (
-              <div className="track-cancelled" role="alert">
-                <h2>Order Cancelled</h2>
-                <p>This order has been cancelled.</p>
-              </div>
-            ) : (
-              <section className="track-card" aria-label="Order progress">
-                <h3 className="track-card-title">Order Progress</h3>
-                <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
-                  {STATUS_STEPS.map((label, i) => {
-                    const state =
-                      stepIndex < 0 ? 'upcoming' : i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'upcoming'
-                    return (
-                      <div className={`track-step is-${state}`} key={label}>
-                        <span className="track-step-icon" aria-hidden="true">
-                          {state === 'done' ? <CheckIcon /> : null}
-                        </span>
-                        <span className="track-step-label">{label}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-                {stepIndex < 0 && (
-                  <p className="track-note">We will keep you updated on this order.</p>
-                )}
-              </section>
-            )}
-
-            {/* Order summary */}
-            <section className="track-card" aria-label="Order summary">
-              <h3 className="track-card-title">Order Summary</h3>
-              {order.items && order.items.length > 0 ? (
-                order.items.map((item, i) => (
-                  <TrackItem key={`${item.product_name}-${i}`} item={item} />
-                ))
-              ) : (
-                <p className="track-note">No items available for this order.</p>
-              )}
-              <div className="track-row">
-                <span>Payment Method</span>
-                <span>{order.payment_method || 'Cash On Delivery'}</span>
-              </div>
-              <div className="track-row track-total">
-                <span>Total</span>
-                <span>₹{Number(order.total || 0).toLocaleString('en-IN')}</span>
-              </div>
-            </section>
+            {orders.map((order) => (
+              <OrderResultCard key={order.orderId} order={order} />
+            ))}
 
             <div className="track-actions">
               {refreshNote && <p className="track-note" role="status">{refreshNote}</p>}

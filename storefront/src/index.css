@@ -244,10 +244,16 @@ a, button { -webkit-tap-highlight-color: transparent; }
 }
 
 /* ---------- States ---------- */
-.loading-state, .empty-state {
+.loading-state, .empty-state, .error-state {
   text-align: center;
   padding: 64px 24px;
   color: var(--charcoal-soft);
+}
+
+.error-state {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
 }
 
 .visually-hidden {

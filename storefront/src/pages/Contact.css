@@ -459,6 +459,10 @@
   margin-top: 4px;
 }
 
+/* Invoice actions: Continue Shopping wraps onto its own line on desktop;
+   mobile already stacks every button full-width. */
+.order-success-actions .order-success-continue { width: 100%; }
+
 /* Mobile: full-width tappable buttons, tighter cards */
 @media (max-width: 767px) {
   .order-success-section { padding: 20px; }

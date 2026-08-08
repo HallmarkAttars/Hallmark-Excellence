@@ -10,12 +10,18 @@ const {
   deleteOrder,
   getDashboardStats,
 } = require('../controllers/orders.controller')
+const { trackOrders } = require('../controllers/tracking.controller')
 
 const router = express.Router()
 
 // --- Public ---
 router.post('/orders', createOrder)
 router.get('/orders/track', trackOrder)
+// /api/track-order — the single tracking endpoint used by the storefront
+// (phone OR order-id lookup). Routed for ALL methods so the handler can
+// answer non-POST requests with 405 METHOD_NOT_ALLOWED. Kept alongside the
+// legacy GET /api/orders/track so older clients keep working.
+router.all('/track-order', trackOrders)
 router.get('/pincode/:pincode', lookupPincode)
 
 // --- Admin (protected + permission-checked) ---

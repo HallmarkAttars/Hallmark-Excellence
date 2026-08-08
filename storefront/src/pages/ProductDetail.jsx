@@ -15,27 +15,49 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
   const [selectedVariant, setSelectedVariant] = useState(null)
+  const [error, setError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     setLoading(true)
+    setError(null)
     setActiveImage(0)
     setQty(1)
     setAdded(false)
     setSelectedVariant(null)
-    getProductById(id).then((p) => {
-      setProduct(p)
-      setLoading(false)
-      if (p) {
-        // Auto-select the default variant, or the first if none is flagged.
-        const variants = Array.isArray(p.variants) ? p.variants : []
-        if (variants.length > 0) {
-          setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
+    getProductById(id)
+      .then((p) => {
+        setProduct(p)
+        setLoading(false)
+        if (p) {
+          // Auto-select the default variant, or the first if none is flagged.
+          const variants = Array.isArray(p.variants) ? p.variants : []
+          if (variants.length > 0) {
+            setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
+          }
+          getRelatedProducts(p).then(setRelated).catch(() => {})
         }
-        getRelatedProducts(p).then(setRelated)
-      }
-    })
-  }, [id])
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load product.')
+        setLoading(false)
+      })
+  }, [id, reloadKey])
 
+  if (error) {
+    return (
+      <div className="error-state" role="alert">
+        <p>{error}</p>
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => setReloadKey((k) => k + 1)}
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
   if (loading) return <div className="loading-state">Loading product…</div>
   if (!product) {
     return (

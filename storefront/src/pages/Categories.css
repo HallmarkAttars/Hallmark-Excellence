@@ -1,24 +1,61 @@
-.categories-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  padding-bottom: 80px;
-}
-@media (min-width: 640px) { .categories-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1024px) { .categories-grid { grid-template-columns: repeat(4, 1fr); } }
+/* ============================================================
+   Categories page — All Categories grid
+   The card + grid visuals live in components/home/CategoryGrid.css
+   (shared single source of truth with the homepage section).
+   This file only holds page-specific layout + entrance timing.
+   ============================================================ */
 
-.categories-card {
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  text-align: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+.categories-page {
+  padding-bottom: 90px;
 }
-.categories-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--gold);
-  box-shadow: var(--shadow-lift);
+
+/* Match the homepage section's wider 1400px canvas so the cards render at
+   the same width on both surfaces (homepage uses .category-section .container). */
+.container:has(> .categories-page) { max-width: 1400px; }
+
+/* ---------- Entrance: same rise + stagger as the homepage ----------
+   The wrapper is a <Reveal>, so the shared pause-until-visible gate
+   (animations.css) applies. Scoped overrides refine the rise and card
+   stagger; longhand animation props keep animation-play-state intact.
+   `backwards` fill releases the finished animation so the card `:hover`
+   lift still works (same fix as the homepage section). */
+.js .categories-page.reveal {
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
-.categories-image { aspect-ratio: 4/3; background-size: cover; background-position: center; }
-.categories-card h3 { padding: 16px; font-size: 1.1rem; }
+.js .categories-page.reveal.is-visible { transform: none; }
+
+/* category-rise keyframes are defined in components/home/CategoryGrid.css,
+   which Categories.jsx imports — keep that import if this file is reused.
+   NOTE: the grid IS the Reveal element here, so .categories-page and
+   .stagger-fade live on the SAME node — the selectors must be compound
+   (.categories-page.stagger-fade), not descendant (.categories-page .stagger-fade).
+   A descendant selector silently matches nothing and the base `both` fill
+   from animations.css would pin transform:none and kill the :hover lift. */
+.js .categories-page.stagger-fade > * {
+  animation-name: category-rise;
+  animation-duration: 0.5s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: backwards;
+}
+.js .categories-page.stagger-fade > *:nth-child(1) { animation-delay: 0ms; }
+.js .categories-page.stagger-fade > *:nth-child(2) { animation-delay: 70ms; }
+.js .categories-page.stagger-fade > *:nth-child(3) { animation-delay: 140ms; }
+.js .categories-page.stagger-fade > *:nth-child(4) { animation-delay: 210ms; }
+.js .categories-page.stagger-fade > *:nth-child(5) { animation-delay: 280ms; }
+.js .categories-page.stagger-fade > *:nth-child(6) { animation-delay: 350ms; }
+.js .categories-page.stagger-fade > *:nth-child(n + 7) { animation-delay: 420ms; } /* cap */
+
+/* ---------- Reduced motion: static, immediately visible ----------
+   The shared system already forces `.reveal` and `.stagger-fade > *`
+   visible; the card hover/tap reset lives in CategoryGrid.css. These
+   cover this page's scoped entrance. */
+@media (prefers-reduced-motion: reduce) {
+  .js .categories-page.reveal,
+  .js .categories-page.stagger-fade > * {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}

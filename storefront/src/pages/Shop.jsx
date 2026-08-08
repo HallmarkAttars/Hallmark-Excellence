@@ -18,6 +18,8 @@ export default function Shop() {
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -26,15 +28,19 @@ export default function Shop() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([getProducts(), getCategories(), getBrands()]).then(
-      ([p, c, b]) => {
+    setError(null)
+    Promise.all([getProducts(), getCategories(), getBrands()])
+      .then(([p, c, b]) => {
         setProducts(p)
         setCategories(c)
         setBrands(b)
         setLoading(false)
-      }
-    )
-  }, [])
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load products.')
+        setLoading(false)
+      })
+  }, [reloadKey])
 
   // Lock body scroll while drawer is open
   useEffect(() => {
@@ -126,7 +132,12 @@ export default function Shop() {
         </div>
 
         <div className="shop-results">
-          <ProductGrid products={visibleProducts} loading={loading} />
+          <ProductGrid
+            products={visibleProducts}
+            loading={loading}
+            error={error}
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
         </div>
       </div>
 
