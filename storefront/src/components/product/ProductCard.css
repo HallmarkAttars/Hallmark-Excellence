@@ -83,32 +83,46 @@
 /* ---------- Quick View (bottom-right over the image) ---------- */
 .product-card-quickview {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
+  right: 10px;
+  bottom: 10px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 15px;
-  border: 1px solid rgba(29, 25, 20, 0.14);  /* reference-style thin border */
+  gap: 5px;
+  /* Compact pill — small enough to never dominate the product image */
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.96);
+  /* Glassmorphism: frosted translucent surface that lets the product
+     image show through instead of covering it with a solid panel */
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 14px rgba(29, 25, 20, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
   color: #3A342C;
   font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.12);
+  white-space: nowrap;
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease,
-    background-color 0.25s ease;
+    background-color 0.25s ease, border-color 0.25s ease;
+}
+/* Smaller eye icon to match the compact pill */
+.product-card-quickview svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
 }
 .product-card-quickview:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 20px rgba(29, 25, 20, 0.18);
   color: var(--gold-deep);
-  background: #ffffff;
+  border-color: rgba(184, 137, 56, 0.45);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 /* Desktop hover-capable devices (≥768px): the button fades/slides in over

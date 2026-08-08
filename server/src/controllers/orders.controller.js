@@ -729,7 +729,15 @@ async function updateOrderStatus(req, res) {
       .maybeSingle()
 
     if (error) {
-      console.error('updateOrderStatus error:', error)
+      // Log the REAL database error (code/detail/hint) so the failure is
+      // never hidden behind the generic message — the UI keeps the clean
+      // copy, the developer console has the ground truth.
+      // NOTE: PostgREST `details` embeds the failing row (including the
+      // order notes JSONB with customer PII), so it is deliberately NOT
+      // logged. message + code + hint identify the failure safely.
+      console.error('updateOrderStatus error:', error.message || error)
+      console.error('updateOrderStatus code:', error.code)
+      console.error('updateOrderStatus hint:', error.hint)
       return res.status(500).json({ error: 'Failed to update order status.' })
     }
     if (!data) {
