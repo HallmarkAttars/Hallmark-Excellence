@@ -191,11 +191,17 @@ export default function ProductCard({ product, onNavigate }) {
         </Link>
 
         {/* Reference layout: the top-left badge area carries status badges only
-            (e.g. Sold Out). The discount lives in the price row as "25% OFF"
-            — matching the reference card. No badges are ever invented. */}
-        {soldOut && (
+            (Sold Out / Featured). The discount lives in the price row as
+            "25% OFF" — matching the reference card. Every badge is driven by
+            real product data (is_featured / stock); nothing is ever invented. */}
+        {(soldOut || product.is_featured === true) && (
           <div className="product-card-badges">
-            <span className="product-card-badge is-soldout">Sold Out</span>
+            {product.is_featured === true && (
+              <span className="product-card-badge is-featured">Featured</span>
+            )}
+            {soldOut && (
+              <span className="product-card-badge is-soldout">Sold Out</span>
+            )}
           </div>
         )}
 

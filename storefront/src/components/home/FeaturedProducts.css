@@ -61,4 +61,11 @@
 }
 @media (min-width: 1200px) {
   .featured-track { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; } /* desktop: 6 columns / 1 row, tighter gap */
+  /* 6-up showcase: the SAME shared card, tuned for ~190px tracks so the
+     full-width ADD TO CART button, name and price stay comfortable and the
+     4/3 image stage never feels cramped. Structure/design unchanged. */
+  .featured-track .product-card-body { padding: 12px 14px 14px; }
+  .featured-track .product-card-name { font-size: 18px; }
+  .featured-track .product-card-price { font-size: 20px; }
+  .featured-track .product-card-btn { font-size: 12.5px; letter-spacing: 0.05em; }
 }

@@ -82,10 +82,10 @@
    2-up on mobile, 3-up once there is room, cards never overflow. */
 .search-overlay-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding-bottom: 40px;
 }
 @media (min-width: 560px) {
-  .search-overlay-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .search-overlay-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 }

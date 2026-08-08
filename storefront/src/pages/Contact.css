@@ -159,16 +159,438 @@
 
 /* Checkout container — everything stays inside the viewport at any width. */
 .contact-layout--checkout {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
   padding-inline: clamp(16px, 4vw, 40px);
   box-sizing: border-box;
   min-width: 0;
+  gap: 26px;
+  padding-bottom: 88px;
+}
+/* Tablet 900–1023px: keep the single column (summary stacks below the form) */
+@media (min-width: 900px) and (max-width: 1023px) {
+  .contact-layout--checkout { grid-template-columns: minmax(0, 1fr); }
+}
+/* Desktop ≥1024px: Delivery Information (left) + sticky Order Summary (right) */
+@media (min-width: 1024px) {
+  .contact-layout--checkout {
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+    gap: 32px;
+    align-items: start;
+  }
 }
 @media (max-width: 767px) {
   .page-heading--checkout { padding-bottom: 12px; }
+}
+
+.checkout-head-sub {
+  margin: 8px 0 0;
+  color: var(--charcoal-soft);
+  font-size: 0.98rem;
+}
+
+/* ---------- Delivery Information card ---------- */
+.checkout-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  padding: 26px 24px;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .checkout-card { padding: 32px 34px; }
+}
+.checkout-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.checkout-card-head-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  border: 1px solid var(--line);
+  color: var(--gold-deep);
+}
+.checkout-card-head h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+/* Checkout form — premium inputs on white */
+.checkout-form { background: transparent; border: none; padding: 0; border-radius: 0; }
+.checkout-form .form-field { gap: 7px; }
+.checkout-form .form-field label {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-soft);
+}
+.checkout-form .form-field input,
+.checkout-form .form-field textarea {
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.95rem;
+  color: var(--ink);
+  width: 100%;
+  box-sizing: border-box;
+}
+.checkout-form .form-field textarea {
+  height: auto;
+  padding: 12px 15px;
+  resize: vertical;
+}
+.checkout-form .form-field input::placeholder,
+.checkout-form .form-field textarea::placeholder {
+  color: rgba(36, 31, 25, 0.55);
+}
+.checkout-form .form-field input:focus,
+.checkout-form .form-field textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(184, 137, 56, 0.14);
+  background: #fff;
+}
+
+/* Optional labels — muted, never confused with required */
+.optional-tag {
+  color: var(--charcoal-soft);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* Two-column field rows (name/email, pincode/city) */
+.form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .form-row--2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+
+/* ---------- Pincode → city auto-fetch ---------- */
+.pincode-input-row {
+  position: relative;
+}
+.pincode-input-row input {
+  padding-right: 42px;
+}
+.pincode-ok {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(30, 74, 46, 0.1);
+  color: #1E4A2E;
+  pointer-events: none;
+}
+.pincode-input-row input.is-fetched {
+  border-color: rgba(30, 74, 46, 0.45);
+  background: #fff;
+}
+/* Small inline spinner while the lookup is in flight */
+.pincode-spinner {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(184, 137, 56, 0.25);
+  border-top-color: var(--gold-deep);
+  border-radius: 50%;
+  animation: checkout-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+@keyframes checkout-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* City: read-only after a successful fetch (never overwritten by accident) */
+.checkout-city-input.is-fetched {
+  background: var(--cream-soft) !important;
+  border-color: rgba(30, 74, 46, 0.3) !important;
+  color: var(--charcoal) !important;
+  font-weight: 600;
+  cursor: default;
+}
+.city-fetched {
+  color: #1E4A2E;
+  font-weight: 600;
+}
+
+/* Retry link after a failed lookup */
+.pincode-retry {
+  margin-left: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pincode-retry:hover { color: var(--charcoal); }
+
+/* ---------- Address label chips (Home / Work / Other) ---------- */
+.address-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.address-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.address-label-chip:hover { border-color: var(--gold); color: var(--charcoal); }
+.address-label-chip.is-active {
+  border-color: var(--gold);
+  background: var(--cream-deep);
+  color: var(--gold-deep);
+}
+.address-label-chip svg { flex-shrink: 0; }
+
+.checkout-submit {
+  width: 100%;
+  height: 52px;
+  margin-top: 4px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  background: var(--charcoal);
+  color: var(--cream);
+  border-color: var(--charcoal);
+}
+.checkout-submit:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  box-shadow: 0 6px 18px rgba(29, 25, 20, 0.25);
+}
+
+/* ---------- Right column: sticky Order Summary card ---------- */
+.checkout-summary-col {
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .checkout-summary-col { position: sticky; top: 100px; }
+}
+
+/* The order-summary card is now the compact right-column panel */
+.checkout-summary-col .order-summary {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  padding: 24px 22px;
+  margin-bottom: 16px;
+}
+.checkout-summary-col .order-summary h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0 0 4px;
+}
+.order-summary-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 12px 0 4px;
+}
+.order-summary-items { min-width: 0; }
+
+/* Compact product rows inside the summary card (shared OrderSummaryItem) */
+.checkout-summary-col .order-summary-item {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px 0;
+}
+.checkout-summary-col .order-summary-item-img {
+  width: 56px;
+  height: 56px;
+  padding: 3px;
+  border-radius: 8px;
+}
+.checkout-summary-col .order-summary-name { font-size: 15px; }
+.checkout-summary-col .order-summary-variant { font-size: 0.7rem; }
+.checkout-summary-col .order-summary-qty { font-size: 12px; }
+.checkout-summary-col .order-summary-price { font-size: 15px; }
+.checkout-summary-col .order-summary-bulk-note { font-size: 0.68rem; }
+.checkout-summary-col .order-summary-bulk-chip {
+  padding: 2px 7px;
+  font-size: 0.58rem;
+}
+
+/* Subtotal / delivery / total rows */
+.checkout-summary-col .order-summary-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 7px 0;
+  font-size: 0.9rem;
+}
+.order-summary-delivery { font-style: italic; }
+.checkout-summary-col .order-summary-total {
+  border-top: 1px solid rgba(36, 31, 25, 0.12);
+  margin-top: 4px;
+  padding-top: 12px;
+  color: var(--charcoal);
+}
+.checkout-summary-col .order-summary-total span:first-child {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 600;
+}
+.checkout-summary-col .order-summary-total span:last-child {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Green security box inside the summary */
+.checkout-security {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: rgba(30, 74, 46, 0.06);
+  border: 1px solid rgba(30, 74, 46, 0.2);
+}
+.checkout-security svg {
+  flex-shrink: 0;
+  color: #1E4A2E;
+}
+.checkout-security div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.checkout-security strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1E4A2E;
+}
+.checkout-security span {
+  font-size: 0.74rem;
+  color: var(--charcoal-soft);
+}
+
+/* Return to Cart — lives INSIDE the Order Summary card, below the security box */
+.checkout-return-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--gold-deep);
+  transition: color 0.2s ease;
+}
+.checkout-return-link:hover { color: var(--charcoal); }
+.checkout-return-arrow { transition: transform 0.25s ease; }
+.checkout-return-link:hover .checkout-return-arrow { transform: translateX(-3px); }
+.checkout-summary-col .checkout-return-link { margin-top: 16px; }
+
+/* ---------- Full-width trust strip AFTER the checkout grid ---------- */
+.checkout-trust-strip {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  padding: 18px 22px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.checkout-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.checkout-trust-item svg {
+  flex-shrink: 0;
+  color: var(--gold);
+}
+.checkout-trust-item div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.checkout-trust-item strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+.checkout-trust-item span {
+  font-size: 0.72rem;
+  color: var(--charcoal-soft);
+}
+@media (max-width: 767px) {
+  .checkout-trust-strip {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px 18px;
+  }
+}
+
+/* ---------- Mobile checkout ---------- */
+@media (max-width: 767px) {
+  .checkout-card { padding: 20px 16px; }
+  .checkout-card-head { margin-bottom: 18px; }
+  .checkout-form .form-field input,
+  .checkout-form .form-field textarea { height: 48px; padding: 0 13px; }
+  .checkout-form .form-field textarea { height: auto; padding: 11px 13px; }
+  .form-row--2 { grid-template-columns: minmax(0, 1fr); }
+  .checkout-summary-col .order-summary { padding: 20px 16px; }
+  /* The single SEND ORDER button stays inside the Delivery Information form */
+  .checkout-submit { height: 50px; }
+}
+
+/* Very small screens: keep the chips tappable and nothing overflowing */
+@media (max-width: 359px) {
+  .address-label-chip { height: 40px; padding: 0 14px; font-size: 0.8rem; }
+  .checkout-card { padding: 18px 13px; }
 }
 
 .order-summary {

@@ -67,7 +67,7 @@
 
 /* Grid columns per spec: 4 at 1200–1439px, 5 at ≥1440px (container caps at 1440) */
 @media (min-width: 1400px) and (max-width: 1439px) {
-  .brand-body .grid-products { grid-template-columns: repeat(4, 1fr); }
+  .brand-body .grid-products { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 /* ---------- Optional Bulk Purchasing banner (dynamic — only when this

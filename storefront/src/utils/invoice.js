@@ -23,6 +23,7 @@ import { BUSINESS, INVOICE } from '../data/content'
 // configured it is simply left out (no fake GSTIN / registration numbers).
 export const INVOICE_COMPANY = {
   name: INVOICE.companyName || BUSINESS.name,
+  tagline: BUSINESS.tagline || '',
   phone: BUSINESS.phoneDisplay || '',
   email: BUSINESS.email || '',
   address: BUSINESS.address || '',
@@ -125,14 +126,35 @@ export function formatOrderForInvoice(order) {
   const items = (Array.isArray(rawItems) ? rawItems : []).map((it) => {
     const rate = Number(it.unit_price ?? it.price ?? it.selected_price ?? 0)
     const qty = Number(it.quantity ?? it.qty ?? 1)
-    const detail =
+    const size =
       it.variant_label ||
       (it.quantity_value != null && it.quantity_unit
         ? `${it.quantity_value} ${it.quantity_unit}`
         : '')
+    // Detail line: BRAND · SIZE — only when the saved snapshot actually
+    // carries those values. Nothing is invented.
+    const brand = it.brand_name || ''
+    const detail = [brand, size].filter(Boolean).join(' · ')
+    // Bulk pricing was genuinely applied to this line when the saved snapshot
+    // says so (per-product bulk or combined brand bulk).
+    const bulkApplied = it.bulk_applied === true || it.brand_bulk_applied === true
+    // The bulk unit price this line was charged at (per-product or brand
+    // combined) — carried for display only; the amount never changes.
+    let bulkPrice = null
+    if (bulkApplied) {
+      const bp = Number(it.bulk_price ?? it.brand_bulk_price)
+      if (Number.isFinite(bp) && bp > 0) bulkPrice = bp
+    }
     return {
       name: it.product_name || it.name || 'Product',
-      detail: detail || '',
+      // Thumbnail from the saved snapshot — best-effort; empty string simply
+      // hides the small thumbnail on the invoice (no broken image).
+      image: it.image || '',
+      detail,
+      brand,
+      size,
+      bulkApplied,
+      bulkPrice,
       qty: Number.isFinite(qty) ? qty : 1,
       rate: Number.isFinite(rate) ? rate : 0,
       amount: Number.isFinite(rate) && Number.isFinite(qty) ? rate * qty : 0,
@@ -140,6 +162,10 @@ export function formatOrderForInvoice(order) {
   })
 
   const subtotal = items.reduce((sum, it) => sum + it.amount, 0)
+
+  // Any line priced under bulk (per-product or brand-combined) — drives the
+  // optional "BULK PRICING APPLIED" band on the invoice. Only real flags.
+  const hasBulkPricing = items.some((it) => it.bulkApplied)
 
   // Delivery / Transport: only a REAL stored charge is printed as a figure.
   // The business states "To be confirmed" otherwise — never silently ₹0.
@@ -169,6 +195,7 @@ export function formatOrderForInvoice(order) {
     total: Number.isFinite(total) ? total : 0,
     subtotal,
     delivery, // number | null  (null => "To be confirmed")
+    hasBulkPricing,
     customer,
     addressLines,
     items,

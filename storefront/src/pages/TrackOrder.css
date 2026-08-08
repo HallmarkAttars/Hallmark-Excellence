@@ -313,19 +313,23 @@
 .track-item-img {
   width: 72px;
   height: 72px;
-  object-fit: contain;
+  /* Same thumbnail treatment as the invoice: the product FILLS the square
+     box (never letterboxed), preserving its proportions via object-fit and
+     cropping only the overflow to the rounded corners. */
+  object-fit: cover;
   object-position: center;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--stage);
-  padding: 5px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
+/* The no-image placeholder icon keeps a little breathing room inside the box */
 .track-item-img--placeholder {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 5px;
   color: rgba(95, 88, 78, 0.4);
 }
 .track-item-info {

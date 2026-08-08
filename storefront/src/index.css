@@ -220,17 +220,21 @@ a, button { -webkit-tap-highlight-color: transparent; }
 .page-heading h1 { font-size: clamp(2.2rem, 4vw, 3rem); letter-spacing: 0.02em; }
 .page-heading p { color: var(--charcoal-soft); max-width: 560px; margin: 0 auto; }
 
-/* ---------- Product grids (shared by Shop / Brand / Category) ---------- */
+/* ---------- Product grids (shared by Shop / Brand / Category) ----------
+   Reference responsive rhythm: 2-up on mobile (320–767), 3-up on tablet
+   (768–1023), 4-up on desktop (1024–1399), 5-up on large desktop (1400+).
+   minmax(0, 1fr) stops any card from overflowing its track — cards fit
+   without horizontal scroll at every width. */
 .grid-products {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px; /* mobile 10–12px */
 }
-@media (max-width: 359px) { .grid-products { grid-template-columns: repeat(2, 1fr); gap: 8px; } } /* 320px stays 2-up, compact */
+@media (max-width: 359px) { .grid-products { gap: 8px; } } /* 320px stays 2-up, compact */
 @media (min-width: 480px) { .grid-products { gap: 16px; } }
-@media (min-width: 640px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
-@media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr); gap: 24px; } }
-@media (min-width: 1400px) { .grid-products { grid-template-columns: repeat(5, 1fr); } }
+@media (min-width: 768px) { .grid-products { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+@media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; } }
+@media (min-width: 1400px) { .grid-products { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 /* ---------- Eyebrow / kicker ---------- */
 .eyebrow {

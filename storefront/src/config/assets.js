@@ -27,6 +27,6 @@ export const IMAGES = {
     dahab: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=70',
   },
 
-  // About page story image
-  aboutImage: 'https://images.unsplash.com/photo-1594736797933-d0f06ba09946?w=900&q=70',
+  // About page story image — local file in /public
+  aboutImage: '/about-image.jpeg',
 }

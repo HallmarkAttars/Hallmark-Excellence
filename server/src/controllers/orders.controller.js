@@ -168,7 +168,9 @@ async function trackOrder(req, res) {
       })
     }
 
-    // Minimal customer-safe projection — never the full row.
+    // Minimal customer-safe projection — never the full row. The additive
+    // fields below (brand_name / bulk flags) are invoice PRESENTATION data
+    // only — they never change a price, quantity or total.
     const items = (data.items || notesInfo.items || []).map((it) => ({
       product_name: it.product_name || it.name || 'Product',
       image: it.image || null,
@@ -179,6 +181,9 @@ async function trackOrder(req, res) {
       ...(it.quantity_value != null && it.quantity_unit
         ? { quantity_value: it.quantity_value, quantity_unit: it.quantity_unit }
         : {}),
+      ...(it.brand_name ? { brand_name: it.brand_name } : {}),
+      ...(it.bulk_applied ? { bulk_applied: true, bulk_price: it.bulk_price ?? null } : {}),
+      ...(it.brand_bulk_applied ? { brand_bulk_applied: true } : {}),
     }))
 
     return res.json({

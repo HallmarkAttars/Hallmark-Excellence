@@ -1,7 +1,7 @@
 /* ============================================================
    Product Card — premium luxury redesign (reference-matched)
    One shared card for every storefront product grid.
-   White card · 5:4 image stage · gold/dark-green accents ·
+   White card · 4:3 image stage · gold/dark-green accents ·
    strong name & price hierarchy · full-width Add to Cart.
    All content driven by real product data only.
    ============================================================ */
@@ -23,13 +23,13 @@
 }
 
 /* ============================================================
-   Image area — 5:4 stage (reference proportions), image fills
+   Image area — 4:3 stage (reference proportions), image fills
    the frame (no distortion)
    ============================================================ */
 .product-card-media {
   position: relative;
   width: 100%;
-  aspect-ratio: 5 / 4;
+  aspect-ratio: 4 / 3;
   background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
   overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(184, 137, 56, 0.06); /* hairline stage edge */
@@ -45,14 +45,15 @@
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  object-fit: contain;          /* entire image visible inside the 5:4 area —
-                                   never stretched, never cropped (letterboxes
-                                   on the warm stage for non-5:4 shots) */
+  /* The image FILLS the full 4:3 frame at every breakpoint — no side gaps,
+     no letterbox strips. object-fit: cover preserves the product's aspect
+     ratio (never stretched/distorted) and crops only the overflow; the
+     original image dimensions never control the container height. */
+  object-fit: cover;
   object-position: center;
   display: block;
   background: transparent;
-  filter: drop-shadow(0 10px 18px rgba(60, 42, 18, 0.14)); /* soft grounded shadow */
-  transition: transform 0.35s ease, filter 0.35s ease; /* slow, contained zoom */
+  transition: transform 0.35s ease; /* slow, contained zoom */
 }
 
 /* ---------- Badges (top-left over the image, real data only) ---------- */
@@ -78,7 +79,11 @@
   line-height: 1.2;
   white-space: nowrap;
 }
-.product-card-badge.is-soldout { background: #1D1914; }   /* charcoal */
+.product-card-badge.is-soldout { background: #1D1914; }      /* charcoal */
+.product-card-badge.is-featured {
+  background: linear-gradient(135deg, #C69A4B 0%, #9A7026 100%); /* gold */
+  box-shadow: 0 3px 10px rgba(154, 112, 38, 0.35);
+}
 
 /* ---------- Quick View (bottom-right over the image) ---------- */
 .product-card-quickview {
@@ -168,7 +173,7 @@
 
 .product-card-brand {
   margin: 0;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -184,7 +189,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--charcoal-soft);
 }
@@ -203,7 +208,7 @@
 .product-card-name {
   margin: 0;
   font-family: var(--font-display);
-  font-size: 18px;              /* mobile 16–18px */
+  font-size: 16px;              /* mobile 14–16px per reference */
   font-weight: 700;
   line-height: 1.18;
   color: var(--charcoal);
@@ -216,7 +221,7 @@
 /* ---------- Meta row: CATEGORY | SIZE (real values only, reference style) ---------- */
 .product-card-meta {
   margin: 0;
-  font-size: 11px;
+  font-size: 10.5px;
   color: #8B8378;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -232,19 +237,19 @@
   margin-top: 4px;
 }
 .product-card-price {
-  font-size: 20px;              /* mobile 18–20px */
+  font-size: 18px;              /* mobile 16–18px per reference */
   font-weight: 700;
   color: var(--charcoal);
   line-height: 1.2;
 }
 .product-card-compare {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: #9A9286;
   text-decoration: line-through;
 }
 .product-card-discount {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #1E4A2E;               /* dark green, reference style */
 }
@@ -294,7 +299,7 @@
   background: var(--gold-deep);
   color: #ffffff;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;    /* reference-style ADD TO CART */
@@ -357,11 +362,13 @@
 /* Very small mobile (320px) — compact but readable */
 @media (max-width: 360px) {
   .product-card-body { padding: 10px; gap: 5px; }
-  .product-card-name { font-size: 15px; }
-  .product-card-price { font-size: 17px; }
-  .product-card-compare { font-size: 12.5px; }
-  .product-card-meta { font-size: 11px; }
-  .product-card-brand { font-size: 11px; }
+  .product-card-name { font-size: 14.5px; }
+  .product-card-price { font-size: 16.5px; }
+  .product-card-compare { font-size: 12px; }
+  .product-card-discount { font-size: 11.5px; }
+  .product-card-meta { font-size: 10px; }
+  .product-card-brand { font-size: 10.5px; }
+  .product-card-rating { font-size: 10.5px; }
   .product-card-btn { font-size: 12px; letter-spacing: 0; }
   .product-card-btn svg { display: none; }
   .product-card-badge { padding: 5px 8px; font-size: 10px; }

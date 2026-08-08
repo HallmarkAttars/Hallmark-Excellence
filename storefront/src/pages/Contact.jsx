@@ -10,6 +10,16 @@ import {
   bulkSavings,
   resolvedUnitPrice,
 } from '../utils/bulk'
+import {
+  UserIcon,
+  HomeIcon,
+  BuildingIcon,
+  MapPinIcon,
+  LockIcon,
+  SecureIcon,
+  BoxIcon,
+  QualityIcon,
+} from '../components/icons'
 import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
 
@@ -151,7 +161,18 @@ export default function Contact() {
   const checkout = location.state?.checkoutItems ? location.state : null
   const isCheckout = location.pathname === '/checkout'
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', pincode: '', message: '' })
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    house: '',
+    building: '',
+    landmark: '',
+    pincode: '',
+    city: '',
+    addressLabel: 'Home',
+    message: '',
+  })
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null) // { orderNumber, order } | { sent: true }
   const [error, setError] = useState('')
@@ -201,7 +222,7 @@ export default function Contact() {
 
   const applyPinResult = (result) => {
     if (result.status !== 'found' || !result.localities.length) {
-      setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Enter a valid 6-digit PIN code.', pinNotFound: true })
+      setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Pincode not found. Please check the pincode.', pinNotFound: true })
       return
     }
     setPinInfo({
@@ -213,6 +234,9 @@ export default function Contact() {
       error: '',
       pinNotFound: false,
     })
+    // AUTO-FILL the City field from the fetched pincode — the customer never
+    // types the city when a valid pincode determines it.
+    if (result.city) setForm((f) => ({ ...f, city: result.city }))
   }
 
   const lookupPincode = (pin) => {
@@ -237,7 +261,7 @@ export default function Contact() {
       })
       .catch(() => {
         if (currentPin.current !== pin) return
-        setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Unable to verify this PIN code. Please try again.', pinNotFound: false })
+        setPinInfo({ status: 'error', localities: [], city: '', state: '', locality: '', error: 'Unable to fetch city. Please try again.', pinNotFound: false })
       })
   }
 
@@ -245,13 +269,36 @@ export default function Contact() {
   const handlePincodeChange = (e) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 6)
     currentPin.current = digits
-    setForm((f) => ({ ...f, pincode: digits }))
+    // A changed pincode invalidates the previous auto-fetched city — clear it
+    // so a stale city can never ride along with a new pincode.
+    setForm((f) => ({ ...f, pincode: digits, city: '' }))
     clearFieldError('pincode')
     setPinInfo({ status: 'idle', localities: [], city: '', state: '', locality: '', error: '', pinNotFound: false })
     window.clearTimeout(pinTimer.current)
     if (digits.length === 6) {
       pinTimer.current = window.setTimeout(() => lookupPincode(digits), 350)
     }
+  }
+
+  // Blur with a complete 6-digit pincode triggers the lookup immediately
+  // (covers paste-and-tab flows where the debounce timer may not have fired).
+  // Skipped while a lookup for this pincode is already in flight so the same
+  // pin is never fetched twice.
+  const handlePincodeBlur = () => {
+    if (
+      /^\d{6}$/.test(form.pincode) &&
+      pinInfo.status !== 'found' &&
+      pinInfo.status !== 'loading'
+    ) {
+      window.clearTimeout(pinTimer.current)
+      currentPin.current = form.pincode
+      lookupPincode(form.pincode)
+    }
+  }
+
+  // Manual retry after a failed lookup — never clears other entered fields.
+  const retryPincode = () => {
+    if (/^\d{6}$/.test(form.pincode)) lookupPincode(form.pincode)
   }
 
   const handleLocalityChange = (e) => setPinInfo((p) => ({ ...p, locality: e.target.value }))
@@ -279,8 +326,9 @@ export default function Contact() {
         errs.email = 'Enter a valid email address.'
       }
       if (!phoneValid) errs.phone = 'Enter a valid 10-digit mobile number.'
-      if (!form.address.trim()) errs.address = 'Address is required.'
+      if (!form.house.trim()) errs.house = 'House No. & Floor is required.'
       if (!/^\d{6}$/.test(form.pincode)) errs.pincode = 'Enter a valid 6-digit PIN code.'
+      if (!form.city.trim()) errs.city = 'City is required — enter a valid pincode or type it manually.'
       if (Object.keys(errs).length > 0) {
         setFieldErrors(errs)
         setError('')
@@ -330,17 +378,27 @@ export default function Contact() {
           }
         })
 
+        // Structured address fields composed into the single `address` string
+        // the order system already stores — no API contract change.
+        const address = [form.house, form.building, form.landmark]
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(', ')
+
         const payload = {
           name: form.name,
           email: form.email.trim(),
           // Full Indian number in E.164 form (e.g. +919876543210) — the same
           // phone format the order system already expects.
           phone: `+91${form.phone}`,
-          address: form.address,
+          address,
           pincode: form.pincode,
-          // Location details discovered from the PIN lookup (optional extras).
+          // City is always the customer's value — auto-fetched from the
+          // pincode when the lookup succeeded, typed manually otherwise.
+          city: form.city.trim(),
+          // Optional locality/state extras from the PIN lookup.
           ...(pinInfo.status === 'found'
-            ? { locality: pinInfo.locality, city: pinInfo.city, state: pinInfo.state }
+            ? { locality: pinInfo.locality, state: pinInfo.state }
             : {}),
           message: form.message,
           items,
@@ -461,41 +519,364 @@ export default function Contact() {
     )
   }
 
+  // Real line-level subtotal for the checkout summary — the sum of the same
+  // resolved unit prices × quantities the item rows display (brand bulk and
+  // per-product bulk already included). Delivery is confirmed later, so the
+  // Total row uses the cart's authoritative total from the checkout state.
+  const checkoutSubtotal = isCheckout && checkout
+    ? checkout.checkoutItems.reduce((acc, it) => {
+        const unitPrice = resolvedUnitPrice(it)
+        const rawQty = it.quantity ?? it.qty
+        const qty = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
+        return acc + unitPrice * qty
+      }, 0)
+    : 0
+
   // --- Contact / Checkout view -------------------------------------------
   return (
     <div>
       <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : ''}`}>
         <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
         <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>
+        {isCheckout && <p className="checkout-head-sub">Complete your order securely</p>}
       </div>
 
-      <div className={`container contact-layout ${isCheckout ? 'contact-layout--checkout' : ''}`}>
-        <div className="contact-form-col">
-          {result?.sent && (
-            <div className="contact-toast">
-              <strong>Message sent</strong>
-              <p>Thanks for reaching out — we'll get back to you shortly.</p>
-            </div>
-          )}
+      {isCheckout ? (
+        <div className="container contact-layout contact-layout--checkout">
+          {/* LEFT — Delivery Information card */}
+          <div className="contact-form-col">
+            <div className="checkout-card">
+              <div className="checkout-card-head">
+                <span className="checkout-card-head-icon" aria-hidden="true">
+                  <UserIcon size={18} />
+                </span>
+                <h2>Delivery Information</h2>
+              </div>
 
-          {!result && (
-            <>
-              {isCheckout && (
-                <div className="order-summary">
-                  <h3>Order Summary</h3>
-                  {checkout.checkoutItems.map((item, i) => (
-                    <OrderSummaryItem
-                      key={`${item.product_id ?? item.id}-${item.variant_id ?? ''}-${i}`}
-                      item={item}
+              <form id="checkout-form" className="contact-form checkout-form" onSubmit={handleSubmit} noValidate>
+                <div className="form-row form-row--2">
+                  <div className="form-field">
+                    <label htmlFor="name">
+                      Full Name <span className="required-star">*</span>
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      placeholder="Enter your full name"
+                      autoComplete="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
                     />
-                  ))}
-                  <div className="order-summary-row order-summary-total">
-                    <span>Total</span>
-                    <span>₹{checkout.total.toLocaleString('en-IN')}</span>
+                    {fieldErrors.name && <p className="field-hint field-hint--error">{fieldErrors.name}</p>}
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="email">
+                      Email Address <span className="required-star">*</span>
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      value={form.email}
+                      onChange={handleChange}
+                      required
+                    />
+                    {fieldErrors.email && <p className="field-hint field-hint--error">{fieldErrors.email}</p>}
                   </div>
                 </div>
-              )}
 
+                <div className="form-field">
+                  <label htmlFor="phone">
+                    Phone Number <span className="required-star">*</span>
+                    <span className="visually-hidden"> (Indian country code +91 is included)</span>
+                  </label>
+                  <div className="phone-field-row">
+                    <span className="phone-prefix" aria-hidden="true">+91</span>
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      autoComplete="tel-national"
+                      pattern="[0-9]{10}"
+                      className="phone-national-input"
+                      placeholder="9876543210"
+                      value={form.phone}
+                      onChange={handlePhoneChange}
+                      onBlur={() => setPhoneTouched(true)}
+                      aria-invalid={showPhoneError || undefined}
+                      aria-describedby={showPhoneError ? 'phone-error' : undefined}
+                      required
+                    />
+                  </div>
+                  {showPhoneError && (
+                    <p className="field-hint field-hint--error" id="phone-error">
+                      {fieldErrors.phone || 'Enter a valid 10-digit mobile number.'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="house">
+                    House No. &amp; Floor <span className="required-star">*</span>
+                  </label>
+                  <input
+                    id="house"
+                    name="house"
+                    placeholder="House No. & Floor"
+                    value={form.house}
+                    onChange={handleChange}
+                    required
+                  />
+                  {fieldErrors.house && <p className="field-hint field-hint--error">{fieldErrors.house}</p>}
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="building">
+                    Building &amp; Block No. <span className="optional-tag">(Optional)</span>
+                  </label>
+                  <input
+                    id="building"
+                    name="building"
+                    placeholder="Building & Block No. (Optional)"
+                    value={form.building}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="landmark">
+                    Landmark &amp; Area Name <span className="optional-tag">(Optional)</span>
+                  </label>
+                  <input
+                    id="landmark"
+                    name="landmark"
+                    placeholder="Landmark & Area Name (Optional)"
+                    value={form.landmark}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-row form-row--2">
+                  <div className="form-field">
+                    <label htmlFor="pincode">
+                      Pincode <span className="required-star">*</span>
+                    </label>
+                    <div className="pincode-input-row">
+                      <input
+                        id="pincode"
+                        name="pincode"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="postal-code"
+                        placeholder="600001"
+                        value={form.pincode}
+                        onChange={handlePincodeChange}
+                        onBlur={handlePincodeBlur}
+                        className={pinInfo.status === 'found' ? 'is-fetched' : ''}
+                        required
+                      />
+                      {pinInfo.status === 'found' && (
+                        <span className="pincode-ok" aria-hidden="true">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m5 12.5 4.5 4.5L19 7.5" />
+                          </svg>
+                        </span>
+                      )}
+                      {pinInfo.status === 'loading' && <span className="pincode-spinner" aria-hidden="true" />}
+                    </div>
+                    {fieldErrors.pincode && (
+                      <p className="field-hint field-hint--error">{fieldErrors.pincode}</p>
+                    )}
+                    {pinInfo.status === 'loading' && (
+                      <p className="field-hint" role="status">Finding location…</p>
+                    )}
+                    {pinInfo.status === 'found' && (
+                      <div className="pincode-result">
+                        <p className="pincode-location">
+                          <span className="pincode-check" aria-hidden="true">✓</span>{' '}
+                          {pinInfo.city}, {pinInfo.state}
+                        </p>
+                        {pinInfo.localities.length > 1 && (
+                          <label className="pincode-locality-label" htmlFor="pincode-locality">
+                            Locality / Post Office
+                          </label>
+                        )}
+                        {pinInfo.localities.length > 1 && (
+                          <select
+                            id="pincode-locality"
+                            className="pincode-locality-select"
+                            value={pinInfo.locality}
+                            onChange={handleLocalityChange}
+                          >
+                            <option value="">Select locality</option>
+                            {pinInfo.localities.map((l, i) => (
+                              <option key={`${l.name}-${i}`} value={l.name}>{l.name}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    )}
+                    {pinInfo.status === 'error' && (
+                      <p className="field-hint field-hint--error">
+                        {pinInfo.error}
+                        {!pinInfo.pinNotFound && (
+                          <button type="button" className="pincode-retry" onClick={retryPincode}>
+                            Retry
+                          </button>
+                        )}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="form-field">
+                    <label htmlFor="city">
+                      City <span className="required-star">*</span>
+                    </label>
+                    <input
+                      id="city"
+                      name="city"
+                      placeholder={pinInfo.status === 'loading' ? 'Fetching city…' : 'Enter city'}
+                      autoComplete="address-level2"
+                      value={form.city}
+                      onChange={handleChange}
+                      readOnly={pinInfo.status === 'found'}
+                      className={`checkout-city-input${pinInfo.status === 'found' ? ' is-fetched' : ''}`}
+                      aria-describedby={pinInfo.status === 'loading' || pinInfo.status === 'found' ? 'city-status' : undefined}
+                      required
+                    />
+                    {fieldErrors.city && <p className="field-hint field-hint--error">{fieldErrors.city}</p>}
+                    {pinInfo.status === 'loading' && (
+                      <p className="field-hint" id="city-status" role="status">Fetching city…</p>
+                    )}
+                    {pinInfo.status === 'found' && (
+                      <p className="field-hint city-fetched" id="city-status">✓ Auto-filled from pincode</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-field">
+                  <label id="address-label-title">Add address label</label>
+                  <div className="address-label-row" role="radiogroup" aria-labelledby="address-label-title">
+                    {[
+                      { key: 'Home', icon: <HomeIcon size={15} /> },
+                      { key: 'Work', icon: <BuildingIcon size={15} /> },
+                      { key: 'Other', icon: <MapPinIcon size={15} /> },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        className={`address-label-chip${form.addressLabel === opt.key ? ' is-active' : ''}`}
+                        onClick={() => setForm((f) => ({ ...f, addressLabel: opt.key }))}
+                        aria-pressed={form.addressLabel === opt.key}
+                      >
+                        {opt.icon} {opt.key}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="message">Message <span className="optional-tag">(Optional)</span></label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    rows={3}
+                    placeholder="Add any special instructions for delivery..."
+                    value={form.message}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {error && <p className="contact-error">{error}</p>}
+
+                <button className="btn btn-primary checkout-submit" type="submit" disabled={submitting}>
+                  <LockIcon size={15} /> {submitting ? 'Sending…' : 'Send Order'}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* RIGHT — sticky Order Summary card */}
+          <div className="checkout-summary-col">
+            <div className="order-summary">
+              <h3>Order Summary</h3>
+              <div className="order-summary-divider" aria-hidden="true" />
+              <div className="order-summary-items">
+                {checkout.checkoutItems.map((item, i) => (
+                  <OrderSummaryItem
+                    key={`${item.product_id ?? item.id}-${item.variant_id ?? ''}-${i}`}
+                    item={item}
+                  />
+                ))}
+              </div>
+              <div className="order-summary-row">
+                <span>Subtotal</span>
+                <span>₹{checkoutSubtotal.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="order-summary-row">
+                <span>Delivery / Transport</span>
+                <span className="order-summary-delivery">To be confirmed</span>
+              </div>
+              <div className="order-summary-row order-summary-total">
+                <span>Total</span>
+                <span>₹{checkout.total.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="checkout-security">
+                <SecureIcon size={18} />
+                <div>
+                  <strong>Safe &amp; Secure Checkout</strong>
+                  <span>Your information is safe with us</span>
+                </div>
+              </div>
+
+              <Link to="/cart" className="checkout-return-link">
+                <span className="checkout-return-arrow" aria-hidden="true">←</span> Return to Cart
+              </Link>
+            </div>
+          </div>
+
+          {/* Full-width trust strip below the checkout grid */}
+          <div className="checkout-trust-strip" aria-label="Store promises">
+            <div className="checkout-trust-item">
+              <SecureIcon size={19} />
+              <div>
+                <strong>Secure Checkout</strong>
+                <span>Your data is protected</span>
+              </div>
+            </div>
+            <div className="checkout-trust-item">
+              <BoxIcon size={19} />
+              <div>
+                <strong>Fast Delivery</strong>
+                <span>Quick &amp; reliable shipping</span>
+              </div>
+            </div>
+            <div className="checkout-trust-item">
+              <QualityIcon size={19} />
+              <div>
+                <strong>100% Original</strong>
+                <span>Authentic products only</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="container contact-layout">
+          <div className="contact-form-col">
+            {result?.sent && (
+              <div className="contact-toast">
+                <strong>Message sent</strong>
+                <p>Thanks for reaching out — we'll get back to you shortly.</p>
+              </div>
+            )}
+
+            {!result && (
               <form className="contact-form" onSubmit={handleSubmit} noValidate>
                 <div className="form-field">
                   <label htmlFor="name">
@@ -505,138 +886,25 @@ export default function Contact() {
                   {fieldErrors.name && <p className="field-hint field-hint--error">{fieldErrors.name}</p>}
                 </div>
 
-                {isCheckout ? (
-                  <>
-                    <div className="form-field">
-                      <label htmlFor="email">
-                        Email <span className="required-star">*</span>
-                      </label>
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={form.email}
-                        onChange={handleChange}
-                        required
-                      />
-                      {fieldErrors.email && <p className="field-hint field-hint--error">{fieldErrors.email}</p>}
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="phone">
-                        Phone Number <span className="required-star">*</span>
-                        <span className="visually-hidden"> (Indian country code +91 is included)</span>
-                      </label>
-                      <div className="phone-field-row">
-                        <span className="phone-prefix" aria-hidden="true">+91</span>
-                        <input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          inputMode="numeric"
-                          maxLength={10}
-                          autoComplete="tel-national"
-                          pattern="[0-9]{10}"
-                          className="phone-national-input"
-                          placeholder="9876543210"
-                          value={form.phone}
-                          onChange={handlePhoneChange}
-                          onBlur={() => setPhoneTouched(true)}
-                          aria-invalid={showPhoneError || undefined}
-                          aria-describedby={showPhoneError ? 'phone-error' : undefined}
-                          required
-                        />
-                      </div>
-                      {showPhoneError && (
-                        <p className="field-hint field-hint--error" id="phone-error">
-                          {fieldErrors.phone || 'Enter a valid 10-digit mobile number.'}
-                        </p>
-                      )}
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="address">
-                        Address <span className="required-star">*</span>
-                      </label>
-                      <textarea id="address" name="address" rows={3} value={form.address} onChange={handleChange} required />
-                      {fieldErrors.address && <p className="field-hint field-hint--error">{fieldErrors.address}</p>}
-                    </div>
-                    <div className="form-field">
-                      <label htmlFor="pincode">
-                        Pincode <span className="required-star">*</span>
-                      </label>
-                      <input
-                        id="pincode"
-                        name="pincode"
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        autoComplete="postal-code"
-                        value={form.pincode}
-                        onChange={handlePincodeChange}
-                        placeholder="600001"
-                        required
-                      />
-                      {fieldErrors.pincode && (
-                        <p className="field-hint field-hint--error">{fieldErrors.pincode}</p>
-                      )}
-                      {pinInfo.status === 'loading' && (
-                        <p className="field-hint" role="status">Finding location…</p>
-                      )}
-                      {pinInfo.status === 'found' && (
-                        <div className="pincode-result">
-                          <p className="pincode-location">
-                            <span className="pincode-check" aria-hidden="true">✓</span>{' '}
-                            {pinInfo.city}, {pinInfo.state}
-                          </p>
-                          {pinInfo.localities.length > 1 && (
-                            <label className="pincode-locality-label" htmlFor="pincode-locality">
-                              Locality / Post Office
-                            </label>
-                          )}
-                          {pinInfo.localities.length > 1 && (
-                            <select
-                              id="pincode-locality"
-                              className="pincode-locality-select"
-                              value={pinInfo.locality}
-                              onChange={handleLocalityChange}
-                            >
-                              <option value="">Select locality</option>
-                              {pinInfo.localities.map((l, i) => (
-                                <option key={`${l.name}-${i}`} value={l.name}>{l.name}</option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-                      )}
-                      {pinInfo.status === 'error' && (
-                        <p className="field-hint field-hint--error">{pinInfo.error}</p>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="form-field">
-                    <label htmlFor="email">Email</label>
-                    <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
-                  </div>
-                )}
+                <div className="form-field">
+                  <label htmlFor="email">Email</label>
+                  <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
+                </div>
 
                 <div className="form-field">
-                  <label htmlFor="message">Message {isCheckout && '(optional)'}</label>
-                  <textarea id="message" name="message" rows={4} value={form.message} onChange={handleChange} required={!isCheckout} />
+                  <label htmlFor="message">Message</label>
+                  <textarea id="message" name="message" rows={4} value={form.message} onChange={handleChange} required />
                 </div>
 
                 {error && <p className="contact-error">{error}</p>}
 
                 <button className="btn btn-primary" type="submit" disabled={submitting}>
-                  {submitting ? 'Sending…' : isCheckout ? 'Send Order' : 'Send Message'}
+                  {submitting ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
-            </>
-          )}
-        </div>
+            )}
+          </div>
 
-        {!isCheckout && (
           <div className="contact-info-col">
             <div className="contact-info-block">
               <h3>{CONTACT.info.title}</h3>
@@ -665,8 +933,8 @@ export default function Contact() {
               </a>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

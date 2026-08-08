@@ -95,6 +95,11 @@ export async function submitOrder(payload) {
     phone: payload.phone,
     address: payload.address,
     pincode: payload.pincode,
+    // Location details discovered from the PIN lookup — the server stores
+    // them in the order notes (same optional fields createOrder accepts).
+    ...(payload.locality ? { locality: payload.locality } : {}),
+    ...(payload.city ? { city: payload.city } : {}),
+    ...(payload.state ? { state: payload.state } : {}),
     message: payload.message,
     items: payload.items,
     total_amount: payload.total,
