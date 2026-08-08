@@ -456,6 +456,12 @@
   outline-offset: 2px;
 }
 
+/* Mobile: the two lookup tabs stack vertically so each stays a large,
+   easy-to-tap full-width target — no cramped half-width tabs. */
+@media (max-width: 767px) {
+  .track-tabs { flex-direction: column; }
+}
+
 /* ---------- Per-order card header ---------- */
 .track-card-head {
   display: flex;

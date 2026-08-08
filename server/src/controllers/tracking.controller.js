@@ -53,8 +53,16 @@ function normalizeStoredPhone(raw) {
 }
 
 function parseNotes(row) {
+  if (!row || row.notes == null) return {}
+  // Properly-encoded jsonb row — the client already returned the object.
+  if (typeof row.notes === 'object') return row.notes
   try {
-    if (row && row.notes) return JSON.parse(row.notes)
+    const parsed = JSON.parse(row.notes)
+    // Legacy rows store the notes JSON as a string INSIDE the jsonb column
+    // (double-encoded: JSON.stringify applied twice). Parse again to reach
+    // the real object. Handles both historical formats without touching the
+    // stored records.
+    return typeof parsed === 'string' ? JSON.parse(parsed) : parsed
   } catch {
     // malformed notes never block tracking — treat as empty
   }
@@ -120,13 +128,24 @@ async function trackOrders(req, res) {
       }
 
       // Phone lives inside the orders.notes JSONB (no phone column on the
-      // live table). Match any stored value that ENDS with the 10 digits
-      // (covers +919876543210 and the historical bare-10-digit format), then
-      // verify exactly in JS so a stored 11-digit number can never match.
+      // live table). Historical rows store the notes JSON as a JSON *string*
+      // inside the jsonb column (double-encoded), so a JSON-path extraction
+      // like `notes->>phone` returns NULL and silently matches nothing — the
+      // deployed failure this fix addresses. PostgREST also rejects casts
+      // inside filters. So the query matches on the digits' TEXT presence
+      // instead:
+      //   - notes->>0      → the jsonb string's text content (legacy rows)
+      //   - notes->>phone  → the phone value (properly-encoded rows)
+      // with a CONTAINS pattern (%digits%) — the digits sit mid-string. The
+      // exact 10-digit match is then verified in JS below, so a number that
+      // merely appears inside an address/message can never produce a hit,
+      // and a stored 11+ digit number can never match either. Trade-off: a
+      // leading % makes this a sequential scan (no index) — fine at the
+      // current order volume; a GIN index on notes would help if it grows.
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .or(`notes->>phone.ilike.%${digits}`)
+        .or(`notes->>0.ilike.%${digits}%,notes->>phone.ilike.%${digits}%`)
         .order('created_at', { ascending: false })
 
       if (error) {
