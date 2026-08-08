@@ -1,5 +1,6 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
+const { applyBulkPricing } = require('../utils/orderPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -262,10 +263,23 @@ async function createOrder(req, res) {
       return res.status(400).json({ error: 'Every order item must include a product_id.' })
     }
 
-    const { data: dbProducts, error: prodError } = await supabase
+    let productSelect =
+      'id, name, price, image, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled'
+    let dbProducts
+    let prodError
+    ;({ data: dbProducts, error: prodError } = await supabase
       .from('products')
-      .select('id, name, price, image')
-      .in('id', productIds)
+      .select(productSelect)
+      .in('id', productIds))
+    // The bulk/pricing migration may not be applied yet — retry with the
+    // minimal select so checkout keeps working exactly as before.
+    if (prodError && /does not exist|could not find/i.test(prodError.message)) {
+      console.warn('[createOrder] Pricing/bulk columns missing — checkout running without bulk pricing.')
+      ;({ data: dbProducts, error: prodError } = await supabase
+        .from('products')
+        .select('id, name, price, image')
+        .in('id', productIds))
+    }
 
     if (prodError) {
       console.error('[createOrder] products fetch error:', prodError.message)
@@ -278,15 +292,36 @@ async function createOrder(req, res) {
 
     let dbVariants = []
     if (variantIds.length > 0) {
+      // Fetch the FULL variant set for every ordered product (not just the
+      // selected ones) so bulk pricing resolves against each variant's OWN
+      // admin-configured values — per-variant bulk, not a default-variant gate.
       const { data: vs, error: vErr } = await supabase
         .from('product_variants')
-        .select('id, product_id, price, display_label, quantity_value, quantity_unit')
-        .in('id', variantIds)
+        .select('id, product_id, price, display_label, quantity_value, quantity_unit, is_default, bulk_enabled, bulk_price, bulk_min_qty')
+        .in('product_id', productIds)
+        .order('quantity_value', { ascending: true })
       if (vErr) {
-        console.error('[createOrder] variants fetch error:', vErr.message)
-        return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
+        if (/does not exist|could not find/i.test(vErr.message)) {
+          // Per-variant bulk migration not applied yet — variants carry no
+          // bulk config, so every variant line prices at its normal price.
+          console.warn('[createOrder] Variant bulk columns missing — per-variant bulk pricing unavailable.')
+          const { data: vs2, error: vErr2 } = await supabase
+            .from('product_variants')
+            .select('id, product_id, price, display_label, quantity_value, quantity_unit, is_default')
+            .in('product_id', productIds)
+            .order('quantity_value', { ascending: true })
+          if (vErr2) {
+            console.error('[createOrder] variants fetch error:', vErr2.message)
+            return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
+          }
+          dbVariants = vs2 || []
+        } else {
+          console.error('[createOrder] variants fetch error:', vErr.message)
+          return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
+        }
+      } else {
+        dbVariants = vs || []
       }
-      dbVariants = vs || []
     }
 
     const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
@@ -308,6 +343,12 @@ async function createOrder(req, res) {
 
         let unitPrice
         let variantFields = {}
+        // Bulk config source: the SELECTED variant's own per-variant bulk
+        // values, or the product-level values for variant-less products.
+        let bulkEnabled = product.bulk_enabled
+        let bulkPrice = product.bulk_price
+        let bulkMinQty = product.bulk_min_qty
+
         if (item.variant_id != null) {
           const variant = variantMap.get(String(item.variant_id))
           if (!variant || String(variant.product_id) !== String(product.id)) {
@@ -320,6 +361,20 @@ async function createOrder(req, res) {
             quantity_value: variant.quantity_value,
             quantity_unit: variant.quantity_unit,
           }
+          // Per-variant bulk: the selected variant's own config decides. If
+          // the variant bulk columns don't exist yet (pre-migration DB), the
+          // selected variant carries no bulk config → that line prices at its
+          // normal price (matching what the storefront displays). Only
+          // variant-less lines fall back to product-level bulk.
+          if (variant.bulk_enabled !== undefined) {
+            bulkEnabled = variant.bulk_enabled
+            bulkPrice = variant.bulk_price
+            bulkMinQty = variant.bulk_min_qty
+          } else {
+            bulkEnabled = false
+            bulkPrice = null
+            bulkMinQty = null
+          }
         } else {
           unitPrice = Number(product.price)
         }
@@ -328,6 +383,21 @@ async function createOrder(req, res) {
           throw new Error(`Invalid price for ${product.name}.`)
         }
 
+        // --- Optional bulk pricing (authoritative, server-side) -------------
+        // The pure math lives in utils/orderPricing.js (unit-tested). Bulk
+        // applies when the SELECTED variant's own config is enabled and the
+        // quantity reaches ITS minimum — every value below comes from the
+        // database, never from the client.
+        const normalUnitPrice = unitPrice
+        const pricing = applyBulkPricing({
+          normalUnitPrice,
+          quantity,
+          bulkEnabled,
+          bulkPrice,
+          bulkMinQty,
+        })
+        unitPrice = pricing.unitPrice
+
         return {
           product_id: product.id,
           product_name: product.name,
@@ -335,6 +405,13 @@ async function createOrder(req, res) {
           quantity,
           unit_price: round2(unitPrice),
           subtotal: round2(unitPrice * quantity),
+          // Optional reference values: the normal price this line would have
+          // used, and the bulk config that unlocked the discount. Kept for
+          // display/debugging — the charged amount is always unit_price.
+          normal_unit_price: round2(normalUnitPrice),
+          ...(pricing.bulkApplied
+            ? { bulk_price: round2(pricing.bulkPrice), bulk_min_qty: pricing.bulkMinQty, bulk_applied: true }
+            : {}),
           ...variantFields,
         }
       })

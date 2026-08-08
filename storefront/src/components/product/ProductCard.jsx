@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
+import { hasAnyBulk } from '../../utils/bulk'
 import QuantityControl from './QuantityControl'
 import QuickView from './QuickView'
 import './ProductCard.css'
@@ -88,6 +89,12 @@ export default function ProductCard({ product, onNavigate }) {
         quantity_unit: defaultVariant.quantity_unit,
         price: Number(defaultVariant.price),
         stock: defaultVariant.stock,
+        is_default: true,
+        // The card adds the DEFAULT variant, so it carries that size's own
+        // bulk config (per-variant bulk).
+        bulk_enabled: defaultVariant.bulk_enabled === true,
+        bulk_price: defaultVariant.bulk_price != null ? Number(defaultVariant.bulk_price) : null,
+        bulk_min_qty: defaultVariant.bulk_min_qty != null ? Number(defaultVariant.bulk_min_qty) : null,
       }
     : null
 
@@ -127,11 +134,11 @@ export default function ProductCard({ product, onNavigate }) {
     ? Math.round((1 - price / Number(compareAt)) * 100)
     : null
   const showDiscount = discountPct != null && discountPct > 0
-  const showBulk =
-    product.bulk_price != null &&
-    product.bulk_min_qty != null &&
-    Number(product.bulk_price) > 0 &&
-    Number(product.bulk_min_qty) > 0
+  // Subtle listing indicator — shown when bulk pricing is available on this
+  // product at all (any variant, or the product itself for variant-less
+  // products). Cards deliberately do NOT show a specific bulk price before a
+  // size is selected; the detail page shows the exact numbers per variant.
+  const showBulk = hasAnyBulk(product)
 
   const handleAdd = () => {
     if (soldOut || adding) return
@@ -251,9 +258,11 @@ export default function ProductCard({ product, onNavigate }) {
         )}
 
         {showBulk && (
-          <p className="product-card-bulk">
-            Bulk: {formatPrice(Number(product.bulk_price))} ({product.bulk_min_qty}+)
-          </p>
+          <div className="product-card-bulk">
+            <span className="product-card-bulk-chip">
+              <span aria-hidden="true">🔥</span> Bulk Price Available
+            </span>
+          </div>
         )}
 
         {cartLine ? (

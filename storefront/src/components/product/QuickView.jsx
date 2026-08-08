@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
+import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining } from '../../utils/bulk'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -35,6 +36,18 @@ export default function QuickView({ product, onClose, onNavigate }) {
     : Number(product.price)
   const stock = hasVariants ? selectedVariant?.stock : product.stock
   const soldOut = Number(stock) <= 0
+
+  // Optional bulk purchasing — configured PER VARIANT. The selected variant's
+  // own bulk config is the single source of truth; variant-less products fall
+  // back to the product-level bulk fields (legacy).
+  const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
+  const bulkSource = hasVariants ? selectedVariant : product
+  const bulkEnabled = isBulkEnabled(bulkSource)
+  const bulkPrice = bulkPriceOf(bulkSource)
+  const bulkMinQty = bulkMinQtyOf(bulkSource)
+  const bulkUnlocked = bulkEnabled && qty >= bulkMinQty
+  const stockCanReachBulk =
+    stock == null || !Number.isFinite(Number(stock)) || Number(stock) >= bulkMinQty
 
   const compareAt = product.compare_at_price ?? product.original_price
   const showCompareAt =
@@ -83,7 +96,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
     if (hasVariants && !selectedVariant) return
     if (soldOut || adding) return
 
-    // Build the complete selected variant info — identical to ProductDetail.
+    // Build the complete selected variant info — identical to ProductDetail,
+    // including THIS variant's own bulk config.
     const variantInfo = hasVariants
       ? {
           variant_id: selectedVariant.id,
@@ -92,6 +106,10 @@ export default function QuickView({ product, onClose, onNavigate }) {
           quantity_unit: selectedVariant.quantity_unit,
           price: Number(selectedVariant.price),
           stock: selectedVariant.stock,
+          is_default: String(selectedVariant.id) === String(defaultVariant?.id),
+          bulk_enabled: selectedVariant.bulk_enabled === true,
+          bulk_price: selectedVariant.bulk_price != null ? Number(selectedVariant.bulk_price) : null,
+          bulk_min_qty: selectedVariant.bulk_min_qty != null ? Number(selectedVariant.bulk_min_qty) : null,
         }
       : null
 
@@ -100,7 +118,17 @@ export default function QuickView({ product, onClose, onNavigate }) {
       // Existing cart operation — unchanged. Brief ADDING state doubles as a
       // duplicate-click guard, then the success toast fires after success.
       addItem(
-        { id: product.id, name: product.name, price: Number(price), image: product.image },
+        {
+          id: product.id,
+          name: product.name,
+          price: Number(price),
+          image: product.image,
+          // Product-level bulk — only used for variant-less products (the
+          // per-variant config rides on variantInfo and wins in the cart).
+          bulk_enabled: product.bulk_enabled,
+          bulk_price: product.bulk_price,
+          bulk_min_qty: product.bulk_min_qty,
+        },
         qty,
         variantInfo
       )
@@ -172,6 +200,15 @@ export default function QuickView({ product, onClose, onNavigate }) {
             )}
           </div>
 
+          {bulkEnabled && (
+            <div className="quickview-bulk">
+              <span className="quickview-bulk-chip" aria-hidden="true">🔥 Bulk Price</span>
+              <span className="quickview-bulk-detail">
+                {formatPrice(bulkPrice)} / piece · Buy {bulkMinQty}+ pieces
+              </span>
+            </div>
+          )}
+
           {product.description && (
             <p className="quickview-desc">{product.description}</p>
           )}
@@ -225,6 +262,33 @@ export default function QuickView({ product, onClose, onNavigate }) {
               {soldOut ? 'Sold Out' : adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
             </button>
           </div>
+
+          {bulkEnabled && (
+            <div className="quickview-bulk-progress" aria-live="polite">
+              {stockCanReachBulk ? (
+                bulkUnlocked ? (
+                  <p className="quickview-bulk-unlocked">✓ Bulk Price Unlocked — {formatPrice(bulkPrice)} / piece</p>
+                ) : (
+                  <>
+                    <p className="quickview-bulk-to-unlock">
+                      Add {bulkRemaining(bulkSource, qty)} more to unlock Bulk Price
+                    </p>
+                    <div className="quickview-bulk-track" aria-hidden="true">
+                      <div
+                        className="quickview-bulk-fill"
+                        style={{ width: `${Math.min(100, (qty / bulkMinQty) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="quickview-bulk-meta">
+                      {Math.min(qty, bulkMinQty)} / {bulkMinQty}
+                    </p>
+                  </>
+                )
+              ) : (
+                <p className="quickview-bulk-muted">Bulk price available from {bulkMinQty} pieces</p>
+              )}
+            </div>
+          )}
 
           <Link
             to={`/product/${product.id}`}

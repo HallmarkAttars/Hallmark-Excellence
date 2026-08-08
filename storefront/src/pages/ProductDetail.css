@@ -29,6 +29,106 @@
 
 .product-detail-actions { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
 
+/* --- Optional Bulk Purchasing block (admin-enabled products only) --- */
+.bulk-pricing-block {
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: linear-gradient(160deg, #FBF5E9 0%, #F4E9D3 100%);
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  border-radius: var(--radius);
+}
+.bulk-pricing-label {
+  margin: 0 0 12px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a5a14;
+}
+.bulk-pricing-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.bulk-pricing-row > span {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(184, 137, 56, 0.25);
+  border-radius: 8px;
+}
+.bulk-pricing-row small {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+}
+.bulk-pricing-row strong {
+  font-size: 1.05rem;
+  color: var(--charcoal);
+}
+.bulk-pricing-row strong em {
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+}
+.bulk-pricing-row .bulk-pricing-bulk strong { color: #8a5a14; }
+.bulk-pricing-hint {
+  margin: 12px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--charcoal-soft);
+}
+
+/* --- Live bulk progress indicator (updates with the quantity) --- */
+.bulk-progress {
+  margin-top: 14px;
+  max-width: 320px;
+}
+.bulk-progress-status {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8a5a14;
+}
+.bulk-progress-status.is-unlocked {
+  color: #1E4A2E;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bulk-progress-status.is-muted {
+  color: var(--charcoal-soft);
+  font-weight: 500;
+}
+.bulk-progress-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(27, 24, 20, 0.1);
+  overflow: hidden;
+}
+.bulk-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #C6A15B, #8a5a14);
+  transition: width 0.3s ease;
+}
+.bulk-progress-fill.is-full {
+  background: linear-gradient(90deg, #2E7D32, #1E4A2E);
+}
+.bulk-progress-meta {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Variant selector ---------------------------------------------------- */
 .variant-selector { margin-top: 20px; }
 .variant-selector-title {

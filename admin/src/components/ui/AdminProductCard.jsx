@@ -34,6 +34,9 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
         <div className="product-card-info">
           <div className="product-card-name-wrap">
             <span className="product-card-name">{product.name}</span>
+            {(product.bulk_enabled === true || (Array.isArray(product.variants) && product.variants.some((v) => v.bulk_enabled === true))) && (
+              <span className="bulk-badge">Bulk</span>
+            )}
             {product.is_featured && <span className="featured-badge">Featured</span>}
           </div>
           <span className="product-card-category">{category}</span>

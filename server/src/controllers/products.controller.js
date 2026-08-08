@@ -5,7 +5,7 @@ const supabase = require('../config/supabase')
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, compare_at_price, bulk_price, bulk_min_qty, rating, review_count, is_featured, stock,
+  id, name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled, rating, review_count, is_featured, stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -43,8 +43,28 @@ async function selectProducts(build) {
 }
 
 const VARIANT_SELECT = `
+  id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default,
+  bulk_enabled, bulk_price, bulk_min_qty
+`
+
+// Fallback variant select for databases where the per-variant bulk migration
+// (migration_add_variant_bulk_fields.sql) has not been applied yet. Without
+// these columns, variants simply carry no bulk config (bulk OFF for all).
+const VARIANT_SELECT_BASE = `
   id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default
 `
+
+// Runs a variant query, retrying against the base select when the per-variant
+// bulk columns are missing. Lets the API work both before and after the
+// variant-bulk migration is applied.
+async function selectVariants(build) {
+  let res = await build(VARIANT_SELECT)
+  if (isMissingColumnError(res.error)) {
+    console.warn('[products] Variant bulk columns missing in product_variants (bulk_enabled, bulk_price, bulk_min_qty). Run server/db/migration_add_variant_bulk_fields.sql in the Supabase SQL editor to enable per-variant bulk pricing.')
+    res = await build(VARIANT_SELECT_BASE)
+  }
+  return res
+}
 
 // Return the variant that should drive the product-level price/stock.
 // Defaults to the variant flagged is_default, otherwise the first one.
@@ -63,7 +83,7 @@ function sortVariants(variants) {
 // is applied. These are stripped from writes on pre-migration databases so
 // admin saves keep working; the values simply stay dormant until the
 // columns exist.
-const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'bulk_price', 'bulk_min_qty', 'rating', 'review_count']
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'bulk_price', 'bulk_min_qty', 'bulk_enabled', 'rating', 'review_count']
 
 // Runs an insert/update against the full payload, retrying without the
 // optional (migration-dependent) fields when their columns are missing.
@@ -88,6 +108,10 @@ function toVariant(v) {
     price: v.price,
     stock: v.stock,
     is_default: v.is_default ?? false,
+    // Per-variant optional bulk purchasing (admin-configured per size).
+    bulk_enabled: v.bulk_enabled === true,
+    bulk_price: v.bulk_price ?? null,
+    bulk_min_qty: v.bulk_min_qty ?? null,
   }
 }
 
@@ -95,10 +119,12 @@ function toVariant(v) {
 async function fetchVariantsByProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length === 0) return {}
 
-  const { data, error } = await supabase
-    .from('product_variants')
-    .select(VARIANT_SELECT)
-    .in('product_id', productIds)
+  const { data, error } = await selectVariants((select) =>
+    supabase
+      .from('product_variants')
+      .select(select)
+      .in('product_id', productIds)
+  )
 
   if (error) throw error
 
@@ -215,10 +241,12 @@ async function getProductById(req, res) {
     // Fetch variants separately, sorted by quantity_value ASC.
     let variants = []
     try {
-      const { data: vs, error: vErr } = await supabase
-        .from('product_variants')
-        .select(VARIANT_SELECT)
-        .eq('product_id', id)
+      const { data: vs, error: vErr } = await selectVariants((select) =>
+        supabase
+          .from('product_variants')
+          .select(select)
+          .eq('product_id', id)
+      )
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -339,10 +367,12 @@ async function getAdminProductById(req, res) {
 
     let variants = []
     try {
-      const { data: vs, error: vErr } = await supabase
-        .from('product_variants')
-        .select(VARIANT_SELECT)
-        .eq('product_id', id)
+      const { data: vs, error: vErr } = await selectVariants((select) =>
+        supabase
+          .from('product_variants')
+          .select(select)
+          .eq('product_id', id)
+      )
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -406,19 +436,89 @@ function slugify(text) {
 }
 
 // Normalize an incoming variants array into rows for product_variants.
+// Per-variant bulk fields ride along: when a variant has bulk disabled, its
+// bulk values are forced to null (never fake 0 / empty).
 function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
-  return variants.map((v) => ({
-    quantity_value: v.quantity_value ?? 0,
-    quantity_unit: v.quantity_unit ?? 'ML',
-    display_label: v.display_label ?? '',
-    price: v.price,
-    stock: v.stock ?? 0,
-    is_default: v.is_default ?? false,
-  }))
+  return variants.map((v) => {
+    const bulkEnabled = v.bulk_enabled === true
+    return {
+      quantity_value: v.quantity_value ?? 0,
+      quantity_unit: v.quantity_unit ?? 'ML',
+      display_label: v.display_label ?? '',
+      price: v.price,
+      stock: v.stock ?? 0,
+      is_default: v.is_default ?? false,
+      bulk_enabled: bulkEnabled,
+      bulk_price: bulkEnabled ? (v.bulk_price ?? null) : null,
+      bulk_min_qty: bulkEnabled ? (v.bulk_min_qty ?? null) : null,
+    }
+  })
 }
 
-// Insert variants for a product. Returns the sorted, inserted variant rows.
+// Validate ONE variant's optional bulk configuration against ITS OWN normal
+// price (the variant that pays for the discount must be the one receiving it).
+// Returns an error message, or '' when valid (or bulk is OFF).
+function validateVariantBulkConfig(v) {
+  const bulkEnabled = v?.bulk_enabled === true
+  if (!bulkEnabled) return ''
+
+  const price = Number(v.bulk_price)
+  if (v.bulk_price == null || v.bulk_price === '' || !Number.isFinite(price) || price <= 0) {
+    return `Bulk Price is required and must be greater than 0 for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
+  }
+
+  const qty = Number(v.bulk_min_qty)
+  if (v.bulk_min_qty == null || v.bulk_min_qty === '' || !Number.isInteger(qty) || qty < 2) {
+    return `Bulk Purchase Quantity is required and must be a whole number greater than 1 for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
+  }
+
+  if (v.price != null && v.price !== '' && Number.isFinite(Number(v.price)) && price >= Number(v.price)) {
+    return `Bulk price must be lower than the normal price for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
+  }
+
+  return ''
+}
+
+// Validate an optional bulk-purchasing configuration.
+//
+// bulk_enabled = true requires a valid bulk price (strictly below the normal
+// selling price) and a whole-number bulk quantity greater than 1. Returns an
+// error message, or '' when the configuration is valid.
+function validateBulkConfig(bulkEnabled, bulkPrice, bulkMinQty, sellingPrice) {
+  if (!bulkEnabled) return ''
+
+  const price = Number(bulkPrice)
+  if (bulkPrice == null || bulkPrice === '' || !Number.isFinite(price) || price <= 0) {
+    return 'Bulk Price is required and must be greater than 0 when Bulk Purchasing is enabled.'
+  }
+
+  const qty = Number(bulkMinQty)
+  if (bulkMinQty == null || bulkMinQty === '' || !Number.isInteger(qty) || qty < 2) {
+    return 'Bulk Purchase Quantity is required and must be a whole number greater than 1 when Bulk Purchasing is enabled.'
+  }
+
+  if (sellingPrice != null && sellingPrice !== '' && Number.isFinite(Number(sellingPrice)) && price >= Number(sellingPrice)) {
+    return 'Bulk price must be lower than the normal price and every variant price.'
+  }
+
+  return ''
+}
+
+// Cheapest price across the product price and EVERY variant price. Because
+// the bulk price must be lower than all of them, it must be lower than the
+// minimum — otherwise a cheaper variant would make the "discount" a markup.
+function bulkReferencePrice(productPrice, variantPrices) {
+  const prices = []
+  if (productPrice != null && productPrice !== '' && Number.isFinite(Number(productPrice))) {
+    prices.push(Number(productPrice))
+  }
+  for (const p of variantPrices || []) {
+    if (p != null && p !== '' && Number.isFinite(Number(p))) prices.push(Number(p))
+  }
+  return prices.length ? Math.min(...prices) : null
+}
+
 async function insertVariants(productId, variants) {
   const rows = normalizeVariants(variants)
   if (rows.length === 0) return []
@@ -440,12 +540,39 @@ async function insertVariants(productId, variants) {
 async function createProduct(req, res) {
   try {
     const {
-      name, description, price, compare_at_price, bulk_price, bulk_min_qty,
+      name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled,
       rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants
     } = req.body
 
     if (!name || price === undefined || price === null) {
       return res.status(400).json({ error: 'name and price are required.' })
+    }
+
+    // Optional bulk purchasing: when enabled, bulk price + quantity must be
+    // valid and the bulk price must be below EVERY price (the product price
+    // and each variant price). When disabled, the bulk fields are forced to
+    // NULL (never fake 0 / empty values).
+    const isBulkEnabled = bulk_enabled === true
+    const bulkError = validateBulkConfig(
+      isBulkEnabled,
+      bulk_price,
+      bulk_min_qty,
+      bulkReferencePrice(
+        price,
+        (Array.isArray(variants) ? variants : []).map((v) => v.price)
+      )
+    )
+    if (bulkError) {
+      return res.status(400).json({ error: bulkError })
+    }
+
+    // Per-variant bulk purchasing — each variant validated against its own
+    // normal price. Skipped when bulk is disabled on that variant.
+    for (const v of Array.isArray(variants) ? variants : []) {
+      const variantBulkError = validateVariantBulkConfig(v)
+      if (variantBulkError) {
+        return res.status(400).json({ error: variantBulkError })
+      }
     }
 
     // If the selected category is "Attar", brand is required
@@ -466,8 +593,9 @@ async function createProduct(req, res) {
       description: description ?? null,
       price,
       compare_at_price: compare_at_price ?? null,
-      bulk_price: bulk_price ?? null,
-      bulk_min_qty: bulk_min_qty ?? null,
+      bulk_enabled: isBulkEnabled,
+      bulk_price: isBulkEnabled ? (bulk_price ?? null) : null,
+      bulk_min_qty: isBulkEnabled ? (bulk_min_qty ?? null) : null,
       rating: rating ?? null,
       review_count: review_count ?? null,
       stock: stock ?? 0,
@@ -519,11 +647,51 @@ async function updateProduct(req, res) {
   try {
     const { id } = req.params
     const {
-      name, description, price, compare_at_price, bulk_price, bulk_min_qty,
+      name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled,
       rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants
     } = req.body
 
-    // If the category is being updated to "Attar", brand is required
+    // Optional bulk purchasing validation. The reference price is the CHEAPEST
+    // of { payload price, payload variant prices }, or the stored product +
+    // variant prices when the payload omits them — the bulk price must be
+    // lower than every one of them. Any bulk field present triggers
+    // validation, so a partial PATCH can never slip through an unvalidated
+    // value.
+    if (bulk_enabled !== undefined || bulk_price !== undefined || bulk_min_qty !== undefined) {
+      const isBulkEnabled =
+        bulk_enabled === true ||
+        (bulk_enabled === undefined && (bulk_price !== undefined || bulk_min_qty !== undefined))
+      let referencePrice = price
+      let variantPrices = Array.isArray(variants) ? variants.map((v) => v.price) : null
+      if (referencePrice === undefined || variantPrices === null) {
+        const [{ data: prod }, { data: vs }] = await Promise.all([
+          supabase.from('products').select('price').eq('id', id).maybeSingle(),
+          supabase.from('product_variants').select('price').eq('product_id', id),
+        ])
+        if (referencePrice === undefined) referencePrice = prod?.price
+        if (variantPrices === null) variantPrices = (vs || []).map((v) => v.price)
+      }
+      const bulkError = validateBulkConfig(
+        isBulkEnabled,
+        bulk_price,
+        bulk_min_qty,
+        bulkReferencePrice(referencePrice, variantPrices)
+      )
+    if (bulkError) {
+      return res.status(400).json({ error: bulkError })
+    }
+
+    // Per-variant bulk purchasing — each incoming variant validated against
+    // its own normal price (this replaces the variant set on save).
+    for (const v of Array.isArray(variants) ? variants : []) {
+      const variantBulkError = validateVariantBulkConfig(v)
+      if (variantBulkError) {
+        return res.status(400).json({ error: variantBulkError })
+      }
+    }
+  }
+
+  // If the category is being updated to "Attar", brand is required
     if (category_id !== undefined) {
       const { data: category } = await supabase
         .from('categories')
@@ -543,8 +711,21 @@ async function updateProduct(req, res) {
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
     if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
-    if (bulk_price !== undefined) updates.bulk_price = bulk_price
-    if (bulk_min_qty !== undefined) updates.bulk_min_qty = bulk_min_qty
+    if (bulk_enabled !== undefined) {
+      updates.bulk_enabled = bulk_enabled === true
+      // Disabling bulk purchasing clears any stored bulk values so the
+      // storefront never shows stale bulk data for a bulk-off product.
+      if (!updates.bulk_enabled) {
+        updates.bulk_price = null
+        updates.bulk_min_qty = null
+      }
+    }
+    if (bulk_price !== undefined && (bulk_enabled === undefined || bulk_enabled === true)) {
+      updates.bulk_price = bulk_price ?? null
+    }
+    if (bulk_min_qty !== undefined && (bulk_enabled === undefined || bulk_enabled === true)) {
+      updates.bulk_min_qty = bulk_min_qty ?? null
+    }
     if (rating !== undefined) updates.rating = rating
     if (review_count !== undefined) updates.review_count = review_count
     if (stock !== undefined) updates.stock = stock

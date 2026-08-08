@@ -96,6 +96,70 @@
   color: rgba(20, 17, 13, 0.5);
 }
 
+/* -------- Optional Bulk Purchasing section -------- */
+.bulk-section {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px dashed rgba(184, 137, 56, 0.55);
+  border-radius: var(--radius);
+  background: rgba(184, 137, 56, 0.05);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.bulk-section.is-on {
+  border-style: solid;
+  border-color: rgba(184, 137, 56, 0.6);
+  background: rgba(184, 137, 56, 0.08);
+}
+.bulk-section .featured-toggle-text { font-size: 0.95rem; }
+.bulk-section-fields {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(184, 137, 56, 0.3);
+  animation: bulk-fields-in 0.25s ease-out;
+}
+@keyframes bulk-fields-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+.bulk-section-example {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #8a6a2f;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(184, 137, 56, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* -------- Per-variant Optional Bulk Purchasing -------- */
+.variant-bulk {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(184, 137, 56, 0.5);
+  border-radius: var(--radius);
+  background: rgba(184, 137, 56, 0.05);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.variant-bulk.is-on {
+  border-style: solid;
+  border-color: rgba(184, 137, 56, 0.6);
+  background: rgba(184, 137, 56, 0.08);
+}
+.variant-bulk .featured-toggle-text { font-size: 0.9rem; }
+.variant-bulk-fields {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(184, 137, 56, 0.3);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  animation: bulk-fields-in 0.25s ease-out;
+}
+@media (min-width: 560px) {
+  .variant-bulk-fields { grid-template-columns: 1fr 1fr; }
+}
+
 /* -------- Price hint -------- */
 .price-hint {
   color: #b8860b;

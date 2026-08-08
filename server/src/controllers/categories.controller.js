@@ -68,7 +68,8 @@ async function getCategoryProducts(req, res) {
     const { data: products, error: prodError } = await supabase
       .from('products')
       .select(`
-        id, name, description, price, stock, image,
+        id, name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled,
+        rating, review_count, is_featured, stock, image,
         category_id, brand_id, is_active, created_at,
         brands ( id, name, slug )
       `)

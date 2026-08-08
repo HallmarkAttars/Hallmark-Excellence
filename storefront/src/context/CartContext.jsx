@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { applicableUnitPrice } from '../utils/bulk'
 
 const CartContext = createContext(null)
 const STORAGE_KEY = 'ad_cart_v1'
@@ -30,12 +31,21 @@ function normalizeItem(raw) {
     // Selected price is the variant price when a variant exists, otherwise
     // the legacy product price.
     selected_price: Number(raw.selected_price ?? raw.price ?? 0),
+    // Optional bulk purchasing config (admin-enabled per product). Carried
+    // on the line so the cart, checkout and order all use the SAME config
+    // the customer saw when adding the item.
+    bulk_enabled: Boolean(raw.bulk_enabled),
+    bulk_price: raw.bulk_price != null ? Number(raw.bulk_price) : null,
+    bulk_min_qty: raw.bulk_min_qty != null ? Number(raw.bulk_min_qty) : null,
     ...(variant
       ? {
           variant_id: raw.variant_id,
           variant_label: raw.variant_label,
           quantity_value: raw.quantity_value,
           quantity_unit: raw.quantity_unit,
+          // Whether this line is the product's DEFAULT variant — bulk pricing
+          // only ever applies to the default variant.
+          variant_is_default: raw.variant_is_default === true,
           stock: raw.stock != null ? Number(raw.stock) : null,
         }
       : {}),
@@ -62,12 +72,27 @@ export function CartProvider({ children }) {
         image: product.image,
         quantity: Math.max(1, Number(qty) || 1),
         selected_price,
+        // Bulk config is copied from the SELECTED VARIANT at add time (each
+        // size has its own bulk price / threshold). Variant-less products
+        // fall back to the product-level bulk fields (legacy). The cart line
+        // therefore carries the EXACT config the customer saw on the detail
+        // page for the size they picked.
+        bulk_enabled: hasVariant
+          ? Boolean(variant.bulk_enabled)
+          : Boolean(product.bulk_enabled),
+        bulk_price: hasVariant
+          ? (variant.bulk_price != null ? Number(variant.bulk_price) : null)
+          : (product.bulk_price != null ? Number(product.bulk_price) : null),
+        bulk_min_qty: hasVariant
+          ? (variant.bulk_min_qty != null ? Number(variant.bulk_min_qty) : null)
+          : (product.bulk_min_qty != null ? Number(product.bulk_min_qty) : null),
         ...(hasVariant
           ? {
               variant_id: variant.variant_id,
               variant_label: variant.variant_label,
               quantity_value: variant.quantity_value,
               quantity_unit: variant.quantity_unit,
+              variant_is_default: variant.is_default === true,
               stock: variant.stock != null ? Number(variant.stock) : null,
             }
           : {}),
@@ -82,8 +107,17 @@ export function CartProvider({ children }) {
         // Respect the selected variant's stock limit when applicable.
         const capped =
           newItem.stock != null ? Math.min(combined, newItem.stock) : combined
+        // Refresh the line's bulk config too, so a config change the admin
+        // made since the item was first added is picked up on re-add.
         const updated = [...prev]
-        updated[existingIndex] = { ...existing, quantity: capped }
+        updated[existingIndex] = {
+          ...existing,
+          quantity: capped,
+          bulk_enabled: newItem.bulk_enabled,
+          bulk_price: newItem.bulk_price,
+          bulk_min_qty: newItem.bulk_min_qty,
+          variant_is_default: newItem.variant_is_default,
+        }
         return updated
       }
 
@@ -108,9 +142,9 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(() => setItems([]), [])
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items])
-  // Subtotal = selected_price × quantity; total = sum of all lines.
+  // Line total = applicable unit price (bulk once unlocked) × quantity.
   const total = useMemo(
-    () => items.reduce((sum, i) => sum + i.selected_price * i.quantity, 0),
+    () => items.reduce((sum, i) => sum + applicableUnitPrice(i) * i.quantity, 0),
     [items]
   )
 

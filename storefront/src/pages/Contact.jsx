@@ -4,6 +4,12 @@ import { api } from '../services/api'
 import { submitContactMessage, submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import { useCart } from '../context/CartContext'
+import {
+  applicableUnitPrice,
+  isBulkApplicable,
+  isBulkUnlocked,
+  bulkSavings,
+} from '../utils/bulk'
 import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
 
@@ -52,14 +58,22 @@ function itemImage(item) {
 // a neutral placeholder is shown only when no image exists.
 function OrderSummaryItem({ item }) {
   // Reuse the exact values the cart/checkout already compute — never a new
-  // pricing system. selected_price (unit) × quantity = line total.
-  const rawPrice = item.selected_price ?? item.price
+  // pricing system. The applicable unit price (bulk once unlocked) × quantity
+  // = line total — identical to the cart and to the server-side order math.
   const rawQty = item.quantity ?? item.qty
-  // Finite guards only: corrupt/missing data falls back gracefully instead of
-  // ever rendering ₹NaN / undefined.
-  const unitPrice = Number.isFinite(Number(rawPrice)) ? Number(rawPrice) : 0
+  const unitPrice = applicableUnitPrice(item)
   const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
   const lineTotal = unitPrice * quantity
+  const bulkApplicable = isBulkApplicable(item)
+  const bulkUnlocked = isBulkUnlocked(item)
+  const savedAmount = bulkSavings(item)
+  // Don't advertise an unlock path when the available stock can't physically
+  // reach the bulk threshold (e.g. stock 50 vs bulk quantity 100).
+  const itemStock = item.stock != null ? Number(item.stock) : null
+  const stockCanReachBulk =
+    !bulkApplicable ||
+    itemStock == null ||
+    itemStock >= Number(item.bulk_min_qty)
   const label =
     item.variant_label ||
     (item.quantity_value != null && item.quantity_unit
@@ -90,6 +104,12 @@ function OrderSummaryItem({ item }) {
         <span className="order-summary-qty">
           ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
         </span>
+        {bulkUnlocked && savedAmount > 0 && (
+          <span className="order-summary-bulk-note">✓ Bulk Price Applied · You Saved ₹{savedAmount.toLocaleString('en-IN')}</span>
+        )}
+        {bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
+          <span className="order-summary-bulk-chip">🔥 Bulk Price at {item.bulk_min_qty}+ pcs</span>
+        )}
       </div>
       {/* Right side = LINE TOTAL (unit price × quantity), never the unit price */}
       <span
@@ -273,7 +293,10 @@ export default function Contact() {
         // Build a complete snapshot of every item so orders remain
         // historically accurate even if the product/variant is edited later.
         const items = checkout.checkoutItems.map((item) => {
-          const unit_price = Number(item.selected_price ?? item.price ?? 0)
+          // Send the APPLIED unit price (bulk once unlocked) so the snapshot
+          // mirrors what the customer is charged — the server still recomputes
+          // everything authoritatively from the database.
+          const unit_price = applicableUnitPrice(item)
           const quantity = Number(item.quantity ?? item.qty ?? 1)
           const hasVariant = item.variant_id != null
           return {

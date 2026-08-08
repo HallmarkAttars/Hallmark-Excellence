@@ -208,12 +208,39 @@
   color: #1E4A2E;               /* dark green */
 }
 
-/* ---------- Bulk price (real bulk data only) ---------- */
+/* ---------- Bulk price (admin-enabled bulk products only) ---------- */
 .product-card-bulk {
-  margin: 0;
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.product-card-bulk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1B1814 0%, #2a241c 100%);
+  color: #F5E9CF;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(27, 24, 20, 0.18);
+}
+.product-card-bulk-chip span { font-size: 10px; line-height: 1; }
+.product-card-bulk-detail {
   font-size: 12px;
   font-weight: 600;
   color: var(--gold-deep);
+  white-space: normal;
+}
+@media (max-width: 360px) {
+  .product-card-bulk-chip { padding: 3px 7px; font-size: 9px; }
+  .product-card-bulk-detail { font-size: 11px; }
 }
 
 /* ---------- Add to Cart / quantity control (pinned to bottom) ---------- */

@@ -1,5 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import {
+  applicableUnitPrice,
+  isBulkApplicable,
+  isBulkUnlocked,
+  bulkRemaining,
+  bulkSavings,
+} from '../utils/bulk'
 import QuantityControl from '../components/product/QuantityControl'
 import './Cart.css'
 
@@ -53,8 +60,19 @@ export default function Cart() {
               || (item.quantity_value != null && item.quantity_unit
                   ? `${item.quantity_value} ${item.quantity_unit}`
                   : '')
-            const unitPrice = Number(item.selected_price)
+            // Bulk-aware pricing — the unit price and line total automatically
+            // switch to the bulk price once the quantity reaches the
+            // admin-configured threshold.
+            const unitPrice = applicableUnitPrice(item)
             const subtotal = unitPrice * item.quantity
+            // Bulk UI (progress/chip) shows only for bulk-applicable lines:
+            // the default variant, or a variant-less product.
+            const bulkApplicable = isBulkApplicable(item)
+            const bulkUnlocked = isBulkUnlocked(item)
+            const bulkSavingsAmount = bulkSavings(item)
+            const itemStock = item.stock != null ? Number(item.stock) : null
+            const stockCanReachBulk =
+              itemStock == null || itemStock >= Number(item.bulk_min_qty)
             return (
               <article key={key} className="cart-item">
                 {/* First column — image + product identity */}
@@ -65,7 +83,16 @@ export default function Cart() {
                   <div className="cart-item-meta">
                     <h3>{item.name}</h3>
                     {label && <p className="cart-item-variant">{label}</p>}
-                    <p className="cart-item-unit">₹{unitPrice.toLocaleString('en-IN')}</p>
+                    <p className="cart-item-unit">
+                      ₹{unitPrice.toLocaleString('en-IN')}
+                      {item.bulk_enabled === true && (
+                        <span className="cart-item-unit-suffix">
+                          {bulkUnlocked
+                            ? ` / piece (Bulk Applied)`
+                            : ` / piece`}
+                        </span>
+                      )}
+                    </p>
                     <button className="cart-item-remove" onClick={() => removeItem(key)}>
                       Remove
                     </button>
@@ -86,10 +113,43 @@ export default function Cart() {
                       input: `Quantity of ${item.name}`,
                     }}
                   />
+
+                  {/* Live bulk progress under the quantity selector */}
+                  {bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
+                    <div className="cart-item-bulk">
+                      <p className="cart-item-bulk-msg">
+                        Add {bulkRemaining(item)} more to unlock Bulk Price
+                      </p>
+                      <div className="cart-item-bulk-track" aria-hidden="true">
+                        <div
+                          className="cart-item-bulk-fill"
+                          style={{
+                            width: `${Math.min(100, (item.quantity / Number(item.bulk_min_qty)) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="cart-item-bulk-meta">
+                        {Math.min(item.quantity, Number(item.bulk_min_qty))} / {item.bulk_min_qty}
+                      </p>
+                    </div>
+                  )}
+                  {bulkApplicable && !stockCanReachBulk && !bulkUnlocked && (
+                    <p className="cart-item-bulk-msg is-muted">
+                      Bulk price available from {item.bulk_min_qty} pieces
+                    </p>
+                  )}
                 </div>
 
                 {/* Third column — line total (unit price × quantity) */}
-                <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
+                <div className="cart-item-total-col">
+                  <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
+                  {bulkUnlocked && bulkSavingsAmount > 0 && (
+                    <p className="cart-item-saved">✓ Bulk Price Applied · You Saved ₹{bulkSavingsAmount.toLocaleString('en-IN')}</p>
+                  )}
+                  {bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
+                    <p className="cart-item-bulk-chip">🔥 Bulk Price at {item.bulk_min_qty}+ pcs</p>
+                  )}
+                </div>
               </article>
             )
           })}

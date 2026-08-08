@@ -168,6 +168,12 @@
   color: var(--gold-deep);
   margin: 6px 0 0;
 }
+.cart-item-unit-suffix {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  margin-left: 2px;
+}
 .cart-item-remove {
   background: none;
   border: none;
@@ -184,11 +190,52 @@
 }
 .cart-item-remove:hover { color: #a3372f; text-decoration-color: #a3372f; }
 
-/* Second column — quantity selector (compact, still typeable) */
+/* Second column — quantity selector (compact, still typeable) +
+   live bulk progress below it */
 .cart-item-qty-col {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
   min-width: 0;
+}
+
+/* Bulk progress inside the cart row (bulk-enabled items only) */
+.cart-item-bulk {
+  width: 150px;
+}
+.cart-item-bulk-msg {
+  margin: 0 0 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #8a5a14;
+  text-align: center;
+  line-height: 1.4;
+}
+.cart-item-bulk-msg.is-muted {
+  color: var(--charcoal-soft);
+  font-weight: 500;
+}
+.cart-item-bulk-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(27, 24, 20, 0.1);
+  overflow: hidden;
+}
+.cart-item-bulk-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #C6A15B, #8a5a14);
+  transition: width 0.3s ease;
+}
+.cart-item-bulk-meta {
+  margin: 5px 0 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .cart-item-qty {
   width: 140px;
@@ -210,7 +257,14 @@
 }
 .cart-item-qty:focus-within { box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.55) inset; }
 
-/* Third column — line total */
+/* Third column — line total + bulk status */
+.cart-item-total-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
 .cart-item-subtotal {
   font-size: 17px;
   font-weight: 600;
@@ -218,6 +272,25 @@
   white-space: nowrap;
   margin: 0;
   color: var(--ink);
+}
+.cart-item-saved {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1E4A2E;
+  text-align: right;
+  line-height: 1.4;
+}
+.cart-item-bulk-chip {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1B1814 0%, #2a241c 100%);
+  color: #F5E9CF;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ---------- Order summary ---------- */
@@ -324,8 +397,10 @@
 
   .cart-item-info { grid-column: 1 / -1; gap: 14px; }
   .cart-item-image-wrap { width: 64px; height: 80px; }
-  .cart-item-qty-col { justify-content: flex-start; }
-  .cart-item-subtotal { align-self: center; }
+  .cart-item-qty-col { justify-content: flex-start; align-items: flex-start; }
+  .cart-item-bulk { width: 150px; }
+  .cart-item-total-col { align-self: center; align-items: flex-end; }
+  .cart-item-saved { text-align: right; }
 }
 
 

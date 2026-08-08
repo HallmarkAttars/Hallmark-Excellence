@@ -66,6 +66,11 @@ function OrderItemsList({ items }) {
               <span className="orders-panel-item-name">{name}</span>
               {label && <span className="orders-panel-item-variant">{label}</span>}
               <span className="orders-panel-item-meta">{formatINR(unitPrice)} × {qty}</span>
+              {item.bulk_applied === true && (
+                <span className="orders-panel-item-bulk">
+                  Bulk price applied{item.normal_unit_price != null ? ` — normal was ${formatINR(item.normal_unit_price)}` : ''}
+                </span>
+              )}
             </div>
             <span className="orders-panel-item-total">{formatINR(subtotal)}</span>
           </div>

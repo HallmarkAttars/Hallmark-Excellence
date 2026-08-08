@@ -235,6 +235,23 @@
   color: var(--gold-deep);
   font-weight: 500;
 }
+.order-summary-bulk-note {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1E4A2E;
+}
+.order-summary-bulk-chip {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1B1814 0%, #2a241c 100%);
+  color: #F5E9CF;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 /* "₹400 × 4" — explains how the line total is built */
 .order-summary-qty {
   font-family: var(--font-body);

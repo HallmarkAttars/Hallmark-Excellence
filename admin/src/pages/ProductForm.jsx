@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
+import { resolveBulkFields, resolveVariantBulkFields } from '../utils/bulkValidation'
 import './ProductForm.css'
 
 const EMPTY = {
   name: '', description: '', price: '', stock: '',
   compare_at_price: '', bulk_price: '', bulk_min_qty: '',
+  bulk_enabled: false,
   rating: '', review_count: '',
   is_featured: false,
   category_id: '', brand_id: '',
@@ -46,6 +48,10 @@ export default function ProductForm() {
             compare_at_price: p.compare_at_price ?? '',
             bulk_price: p.bulk_price ?? '',
             bulk_min_qty: p.bulk_min_qty ?? '',
+            // Legacy products configured through the old bulk fields (price +
+            // quantity set, before bulk_enabled existed) keep their config
+            // visible — the admin can review or switch it off on save.
+            bulk_enabled: Boolean(p.bulk_enabled) || (p.bulk_price != null && p.bulk_min_qty != null),
             rating: p.rating ?? '',
             review_count: p.review_count ?? '',
             is_featured: Boolean(p.is_featured),
@@ -61,6 +67,12 @@ export default function ProductForm() {
                 price: v.price ?? '',
                 stock: v.stock ?? '',
                 is_default: Boolean(v.is_default),
+                // Per-variant bulk config — legacy variants (configured via
+                // product-level bulk before this migration) surface their
+                // inherited values here for review.
+                bulk_enabled: Boolean(v.bulk_enabled),
+                bulk_price: v.bulk_price ?? '',
+                bulk_min_qty: v.bulk_min_qty ?? '',
               }))
             )
           }
@@ -107,6 +119,9 @@ export default function ProductForm() {
       price: '',
       stock: '',
       is_default: variants.length === 0, // first variant is default by default
+      bulk_enabled: false,
+      bulk_price: '',
+      bulk_min_qty: '',
     }]
     setVariants(next)
   }
@@ -209,9 +224,6 @@ export default function ProductForm() {
     const defaultVariant = variants.find((v) => v.is_default) || variants[0]
     const sellingPrice = hasVariants ? Number(defaultVariant?.price ?? form.price) : Number(form.price)
     const parsedCompareAt = form.compare_at_price === '' || form.compare_at_price == null ? null : Number(form.compare_at_price)
-    const parsedBulkPrice = form.bulk_price === '' || form.bulk_price == null ? null : Number(form.bulk_price)
-    const parsedBulkMinQty = form.bulk_min_qty === '' || form.bulk_min_qty == null ? null : Number(form.bulk_min_qty)
-
     if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
       setError('Selling price must be a number >= 0.')
       return
@@ -224,16 +236,35 @@ export default function ProductForm() {
       setError('MRP / Original Price must be higher than the selling price to show as a struck-through price.')
       return
     }
-    if (parsedBulkPrice !== null && (!Number.isFinite(parsedBulkPrice) || parsedBulkPrice < 0)) {
-      setError('Bulk Price must be a number >= 0.')
-      return
+
+    // Optional bulk purchasing — per VARIANT. Each size is validated against
+    // ITS OWN normal price (utils/bulkValidation.js, unit-tested). The
+    // product-level section is used ONLY when the product has no variants.
+    const resolvedVariants = []
+    for (const v of variants) {
+      const r = resolveVariantBulkFields({
+        bulk_enabled: v.bulk_enabled,
+        bulk_price: v.bulk_price,
+        bulk_min_qty: v.bulk_min_qty,
+        normalPrice: v.price,
+      })
+      if (r.error) {
+        setError(`Variant ${v.quantity_value} ${v.quantity_unit}: ${r.error}`)
+        return
+      }
+      resolvedVariants.push({ ...v, ...r })
     }
-    if (parsedBulkPrice !== null && parsedBulkMinQty == null) {
-      setError('Bulk Minimum Quantity is required when a Bulk Price is set.')
-      return
-    }
-    if (parsedBulkMinQty !== null && (!Number.isInteger(parsedBulkMinQty) || parsedBulkMinQty < 1)) {
-      setError('Bulk Minimum Quantity must be a whole number >= 1.')
+
+    // Product-level bulk — only relevant when the product has NO variants.
+    const bulk = resolveBulkFields({
+      bulk_enabled: form.bulk_enabled,
+      bulk_price: form.bulk_price,
+      bulk_min_qty: form.bulk_min_qty,
+      sellingPrice,
+      variants,
+    })
+    if (bulk.error) {
+      setError(bulk.error)
       return
     }
 
@@ -244,14 +275,18 @@ export default function ProductForm() {
         image = await uploadImage(imageFile)
       }
 
-      // Build the variants payload for the backend.
-      const variantsPayload = variants.map((v) => ({
+      // Build the variants payload for the backend — including each size's
+      // own bulk config (null when bulk is off for that variant).
+      const variantsPayload = resolvedVariants.map((v) => ({
         quantity_value: Number(v.quantity_value),
         quantity_unit: v.quantity_unit.trim(),
         display_label: `${v.quantity_value} ${v.quantity_unit}`.trim(),
         price: Number(v.price),
         stock: Number(v.stock || 0),
         is_default: Boolean(v.is_default),
+        bulk_enabled: v.bulkEnabled,
+        bulk_price: v.bulkPrice,
+        bulk_min_qty: v.bulkMinQty,
       }))
 
       const baseStock = hasVariants ? Number(defaultVariant?.stock ?? form.stock) : Number(form.stock)
@@ -261,8 +296,9 @@ export default function ProductForm() {
         description: form.description,
         price: sellingPrice,
         compare_at_price: parsedCompareAt,
-        bulk_price: parsedBulkPrice,
-        bulk_min_qty: parsedBulkMinQty,
+        bulk_enabled: bulk.bulkEnabled,
+        bulk_price: bulk.bulkPrice,
+        bulk_min_qty: bulk.bulkMinQty,
         rating: form.rating ? Number(form.rating) : null,
         review_count: form.review_count ? Number(form.review_count) : null,
         is_featured: Boolean(form.is_featured),
@@ -345,49 +381,80 @@ export default function ProductForm() {
           </label>
         </div>
 
-        {/* -------- Optional pricing: MRP + bulk (shown on the storefront only when set) -------- */}
-        <div className="form-row form-row-2">
-          <div className="form-field">
-            <label htmlFor="compare_at_price">MRP / Original Price (₹)</label>
-            <input
-              id="compare_at_price"
-              name="compare_at_price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Optional"
-              value={form.compare_at_price}
-              onChange={handleChange}
-            />
-            <small className="field-example">Shown struck-through when higher than the selling price.</small>
-          </div>
-          <div className="form-field">
-            <label htmlFor="bulk_price">Bulk Price (₹)</label>
-            <input
-              id="bulk_price"
-              name="bulk_price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Optional"
-              value={form.bulk_price}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
+        {/* -------- Optional pricing: MRP (struck-through display only) -------- */}
         <div className="form-field">
-          <label htmlFor="bulk_min_qty">Bulk Minimum Quantity</label>
+          <label htmlFor="compare_at_price">MRP / Original Price (₹)</label>
           <input
-            id="bulk_min_qty"
-            name="bulk_min_qty"
+            id="compare_at_price"
+            name="compare_at_price"
             type="number"
-            min="1"
-            placeholder="e.g. 91"
-            value={form.bulk_min_qty}
+            min="0"
+            step="0.01"
+            placeholder="Optional"
+            value={form.compare_at_price}
             onChange={handleChange}
           />
-          <small className="field-example">Displayed as “Bulk: ₹42 (91+)” on the storefront.</small>
+          <small className="field-example">Shown struck-through when higher than the selling price.</small>
         </div>
+
+        {/* -------- Optional Bulk Purchasing (variant-less products only) --------
+            Products WITH variants configure bulk per size inside each variant
+            card below — this product-level section is shown ONLY when the
+            product has no variants (legacy). */}
+        {variants.length === 0 && (
+          <div className={`bulk-section ${form.bulk_enabled ? 'is-on' : ''}`}>
+            <label className="featured-toggle">
+              <input
+                type="checkbox"
+                name="bulk_enabled"
+                checked={form.bulk_enabled}
+                onChange={(e) => setForm((f) => ({ ...f, bulk_enabled: e.target.checked }))}
+              />
+              <span className="featured-switch" aria-hidden="true" />
+              <span className="featured-toggle-text">
+                Enable Bulk Purchasing
+                <small>Lets customers unlock a lower unit price when they buy a minimum quantity.</small>
+              </span>
+            </label>
+
+            {form.bulk_enabled && (
+              <div className="bulk-section-fields">
+                <div className="form-row form-row-2">
+                  <div className="form-field">
+                    <label htmlFor="bulk_price">Bulk Price (₹)</label>
+                    <input
+                      id="bulk_price"
+                      name="bulk_price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 80"
+                      value={form.bulk_price}
+                      onChange={handleChange}
+                      required
+                    />
+                    <small className="field-example">Unit price once the bulk quantity is reached.</small>
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="bulk_min_qty">Bulk Purchase Quantity</label>
+                    <input
+                      id="bulk_min_qty"
+                      name="bulk_min_qty"
+                      type="number"
+                      min="2"
+                      step="1"
+                      placeholder="e.g. 100"
+                      value={form.bulk_min_qty}
+                      onChange={handleChange}
+                      required
+                    />
+                    <small className="field-example">Buy this many or more to unlock the bulk price.</small>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* -------- Ratings (shown on the storefront cards only when set) -------- */}
         <div className="form-row form-row-2">
@@ -527,6 +594,58 @@ export default function ProductForm() {
                   />
                   <span>Default Variant</span>
                 </label>
+              </div>
+
+              {/* Per-variant optional bulk purchasing — each size has its own
+                  toggle, price and threshold. OFF hides the fields. */}
+              <div className={`variant-bulk ${v.bulk_enabled ? 'is-on' : ''}`}>
+                <label className="featured-toggle variant-bulk-toggle">
+                  <input
+                    type="checkbox"
+                    checked={v.bulk_enabled}
+                    onChange={(e) =>
+                      updateVariant(index, 'bulk_enabled', e.target.checked)
+                    }
+                  />
+                  <span className="featured-switch" aria-hidden="true" />
+                  <span className="featured-toggle-text">
+                    Bulk Purchasing
+                    <small>Unlock a lower unit price for this size at a minimum quantity.</small>
+                  </span>
+                </label>
+
+                {v.bulk_enabled && (
+                  <div className="variant-bulk-fields">
+                    <div className="form-field">
+                      <label htmlFor={`bulk-price-${index}`}>Bulk Price (₹)</label>
+                      <input
+                        id={`bulk-price-${index}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 80"
+                        value={v.bulk_price}
+                        onChange={(e) => updateVariant(index, 'bulk_price', e.target.value)}
+                        required
+                      />
+                      <small className="field-example">Must be lower than ₹{v.price || 'this variant\'s price'}.</small>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor={`bulk-min-qty-${index}`}>Bulk Minimum Quantity</label>
+                      <input
+                        id={`bulk-min-qty-${index}`}
+                        type="number"
+                        min="2"
+                        step="1"
+                        placeholder="e.g. 100"
+                        value={v.bulk_min_qty}
+                        onChange={(e) => updateVariant(index, 'bulk_min_qty', e.target.value)}
+                        required
+                      />
+                      <small className="field-example">Buy this many or more of this size to unlock.</small>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

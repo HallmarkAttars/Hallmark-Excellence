@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
+import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining } from '../utils/bulk'
 import ProductGrid from '../components/product/ProductGrid'
 import './ProductDetail.css'
 
@@ -89,6 +90,23 @@ export default function ProductDetail() {
   const variantLabel = (v) =>
     v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
 
+  // The default variant is still needed to mark cart lines (is_default flag),
+  // though bulk pricing itself is now per SELECTED variant.
+  const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
+
+  // Optional bulk purchasing — configured PER VARIANT. The selected variant's
+  // own bulk config is the single source of truth; variant-less products fall
+  // back to the product-level bulk fields (legacy).
+  const bulkSource = hasVariants ? selectedVariant : product
+  const bulkEnabled = isBulkEnabled(bulkSource)
+  const bulkPrice = bulkPriceOf(bulkSource)
+  const bulkMinQty = bulkMinQtyOf(bulkSource)
+  const bulkUnlocked = bulkEnabled && qty >= bulkMinQty
+  // Never claim the customer can unlock bulk pricing if the available stock
+  // cannot physically reach the required quantity.
+  const stockCanReachBulk =
+    stock == null || !Number.isFinite(Number(stock)) || Number(stock) >= bulkMinQty
+
   const stockStatus = () => {
     if (stock > 5) return { text: 'In Stock', className: 'in-stock' }
     if (stock > 0) return { text: `Only ${stock} left`, className: 'low-stock' }
@@ -99,7 +117,9 @@ export default function ProductDetail() {
     if (hasVariants && !selectedVariant) return
     if (stock <= 0 || adding) return
 
-    // Build the complete selected variant info for the cart item.
+    // Build the complete selected variant info for the cart item — including
+    // THIS variant's own bulk config so the cart/checkout use the exact price
+    // and threshold the customer saw for the size they picked.
     const variantInfo = hasVariants
       ? {
           variant_id: selectedVariant.id,
@@ -108,6 +128,10 @@ export default function ProductDetail() {
           quantity_unit: selectedVariant.quantity_unit,
           price: Number(selectedVariant.price),
           stock: selectedVariant.stock,
+          is_default: String(selectedVariant.id) === String(defaultVariant?.id),
+          bulk_enabled: selectedVariant.bulk_enabled === true,
+          bulk_price: selectedVariant.bulk_price != null ? Number(selectedVariant.bulk_price) : null,
+          bulk_min_qty: selectedVariant.bulk_min_qty != null ? Number(selectedVariant.bulk_min_qty) : null,
         }
       : null
 
@@ -115,12 +139,19 @@ export default function ProductDetail() {
     try {
       // Existing cart operation — unchanged. Brief ADDING state doubles as a
       // duplicate-click guard, then the success toast fires after success.
+      // The bulk config rides on the product object so the cart line carries
+      // the exact bulk price / quantity the customer saw here.
       addItem(
         {
           id: product.id,
           name: product.name,
           price: Number(price),
           image: product.image,
+          // Product-level bulk — only used for variant-less products (the
+          // per-variant config rides on variantInfo and wins in the cart).
+          bulk_enabled: product.bulk_enabled,
+          bulk_price: product.bulk_price,
+          bulk_min_qty: product.bulk_min_qty,
         },
         qty,
         variantInfo
@@ -161,6 +192,30 @@ export default function ProductDetail() {
       <div className="product-detail-info">
         <h1>{product.name}</h1>
         <p className="product-detail-price">₹{Number(price).toLocaleString('en-IN')}</p>
+
+        {bulkEnabled && (
+          <div className="bulk-pricing-block">
+            <p className="bulk-pricing-label">
+              <span aria-hidden="true">🔥</span> Bulk Purchasing
+            </p>
+            <div className="bulk-pricing-row">
+              <span className="bulk-pricing-normal">
+                <small>Normal Price</small>
+                <strong>₹{Number(price).toLocaleString('en-IN')} <em>/ piece</em></strong>
+              </span>
+              <span className="bulk-pricing-bulk">
+                <small>Bulk Price</small>
+                <strong>₹{Number(bulkPrice).toLocaleString('en-IN')} <em>/ piece</em></strong>
+              </span>
+            </div>
+            <p className="bulk-pricing-hint">
+              {hasVariants
+                ? `Buy ${bulkMinQty}+ pieces of the ${variantLabel(selectedVariant)} size to unlock the bulk price.`
+                : `Buy ${bulkMinQty}+ pieces to unlock the bulk price — smaller quantities are always available at the normal price.`}
+            </p>
+          </div>
+        )}
+
         <p className="product-detail-description">{product.description}</p>
         <p className={`product-detail-stock ${stockState.className}`}>{stockState.text}</p>
 
@@ -210,6 +265,48 @@ export default function ProductDetail() {
             {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
           </button>
         </div>
+
+        {/* Live bulk progress — updates instantly with the quantity. Reads
+            the SELECTED variant's own bulk config; hides entirely when that
+            variant has bulk off (or no valid config). */}
+        {bulkEnabled && (
+          <div className="bulk-progress" aria-live="polite">
+            {stockCanReachBulk ? (
+              <>
+                {bulkUnlocked ? (
+                  <p className="bulk-progress-status is-unlocked">
+                    <span aria-hidden="true">✓</span> Bulk Price Unlocked —
+                    ₹{Number(bulkPrice).toLocaleString('en-IN')} / piece
+                  </p>
+                ) : (
+                  <p className="bulk-progress-status">
+                    Add {bulkRemaining(bulkSource, qty)} more to unlock Bulk Price
+                  </p>
+                )}
+                <div
+                  className="bulk-progress-track"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={bulkMinQty}
+                  aria-valuenow={Math.min(qty, bulkMinQty)}
+                  aria-label="Bulk price progress"
+                >
+                  <div
+                    className={`bulk-progress-fill ${bulkUnlocked ? 'is-full' : ''}`}
+                    style={{ width: `${Math.min(100, (qty / bulkMinQty) * 100)}%` }}
+                  />
+                </div>
+                <p className="bulk-progress-meta">
+                  {Math.min(qty, bulkMinQty)} / {bulkMinQty}
+                </p>
+              </>
+            ) : (
+              <p className="bulk-progress-status is-muted">
+                Bulk price available from {bulkMinQty} pieces
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {related.length > 0 && (

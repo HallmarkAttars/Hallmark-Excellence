@@ -66,6 +66,9 @@ export default function Products() {
                     <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
                     <td className="products-name">
                       {p.name}
+                      {(p.bulk_enabled === true || (Array.isArray(p.variants) && p.variants.some((v) => v.bulk_enabled === true))) && (
+                        <span className="bulk-badge">Bulk</span>
+                      )}
                       {p.is_featured && <span className="featured-badge">Featured</span>}
                     </td>
                     <td>{categoryName(p.category_id)}</td>
