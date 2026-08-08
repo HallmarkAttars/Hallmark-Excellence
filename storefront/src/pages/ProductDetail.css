@@ -84,6 +84,49 @@
   color: var(--charcoal-soft);
 }
 
+/* --- Combined BRAND bulk pricing row (brand-wide, mix & match) --- */
+.brand-bulk-row {
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(160deg, #F3EEE2 0%, #E9DFC9 100%);
+  border: 1px solid rgba(184, 137, 56, 0.4);
+  border-left: 3px solid var(--gold-deep);
+  border-radius: var(--radius);
+}
+.brand-bulk-row-label {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a5a14;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-bulk-row-text {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--charcoal);
+}
+.brand-bulk-row-text strong { color: var(--gold-deep); }
+.brand-bulk-row-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.brand-bulk-row-link:hover { color: var(--gold-deep); border-color: var(--gold); }
+.brand-bulk-row-link span { transition: transform 0.25s ease; }
+.brand-bulk-row-link:hover span { transform: translateX(4px); }
+
 /* --- Live bulk progress indicator (updates with the quantity) --- */
 .bulk-progress {
   margin-top: 14px;

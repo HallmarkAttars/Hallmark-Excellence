@@ -74,6 +74,64 @@
   .cart-layout { grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; }
 }
 
+/* ---------- Combined brand bulk pricing banners (one per brand in cart) ---------- */
+.cart-brand-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--cream-soft);
+}
+
+.cart-brand-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 137, 56, 0.3);
+  background: rgba(255, 255, 255, 0.7);
+}
+.cart-brand-banner.is-active {
+  border-color: rgba(30, 74, 46, 0.4);
+  background: linear-gradient(135deg, rgba(30, 74, 46, 0.06), rgba(255, 255, 255, 0.7));
+}
+.cart-brand-banner-mark {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #F5E9CF;
+  background: #1B1814;
+}
+.cart-brand-banner.is-active .cart-brand-banner-mark {
+  background: #1E4A2E;
+}
+.cart-brand-banner-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--charcoal);
+}
+.cart-brand-banner-text strong {
+  font-weight: 700;
+  color: var(--gold-deep);
+}
+.cart-brand-banner.is-active .cart-brand-banner-text strong {
+  color: #1E4A2E;
+}
+
+@media (max-width: 767px) {
+  .cart-brand-banners { padding: 14px 14px; }
+  .cart-brand-banner { padding: 10px 12px; }
+}
+
 /* ---------- Items container (one table, not per-product cards) ---------- */
 .cart-items {
   display: flex;

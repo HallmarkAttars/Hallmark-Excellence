@@ -43,7 +43,9 @@
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  object-fit: cover;            /* fills the 4:3 area, never stretched */
+  object-fit: contain;          /* entire image visible inside the 4:3 area —
+                                   never stretched, never cropped (letterboxes
+                                   on the ivory stage for non-4:3 shots) */
   object-position: center;
   display: block;
   background: #f6f0e5;

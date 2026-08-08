@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: '/admin/categories', label: 'Categories', permission: 'categories.view' },
   { to: '/admin/brands/arees', label: 'Arees Brand', permission: 'brands.view' },
   { to: '/admin/brands/dahab', label: 'Dahab Brand', permission: 'brands.view' },
+  { to: '/admin/brands/bulk-pricing', label: 'Brand Bulk Pricing', permission: 'brands.view' },
   { to: '/admin/employees', label: 'Employees', permission: 'employees.view' },
 ]
 

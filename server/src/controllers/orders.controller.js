@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
-const { applyBulkPricing } = require('../utils/orderPricing')
+const { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor } = require('../utils/orderPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -264,7 +264,7 @@ async function createOrder(req, res) {
     }
 
     let productSelect =
-      'id, name, price, image, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled'
+      'id, name, price, image, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled, brand_id'
     let dbProducts
     let prodError
     ;({ data: dbProducts, error: prodError } = await supabase
@@ -326,6 +326,57 @@ async function createOrder(req, res) {
 
     const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
     const variantMap = new Map(dbVariants.map((v) => [String(v.id), v]))
+
+    // --- Combined brand bulk pricing (brand-wide, mix & match) --------------
+    // Brand-level combined bulk: quantities SUM across ALL of a brand's lines
+    // in this order (any products of that brand). When the combined total
+    // reaches the brand's threshold, EVERY line of that brand is priced at the
+    // brand bulk unit price — brand bulk takes precedence over a line's own
+    // per-product bulk. Config comes from the brands table (never the client).
+    const brandIds = [...new Set((dbProducts || []).map((p) => p.brand_id).filter((v) => v != null).map(String))]
+    let brandConfigs = {}
+    let brandNames = {}
+    if (brandIds.length > 0) {
+      let dbBrands
+      let brandError
+      ;({ data: dbBrands, error: brandError } = await supabase
+        .from('brands')
+        .select('id, name, bulk_enabled, bulk_unit_price, bulk_min_qty')
+        .in('id', brandIds))
+      if (brandError && /does not exist|could not find/i.test(brandError.message)) {
+        // Brand bulk migration not applied yet — brands carry no bulk config,
+        // so every line prices normally (brand bulk disabled).
+        console.warn('[createOrder] Brand bulk columns missing — combined brand bulk pricing unavailable.')
+        ;({ data: dbBrands, error: brandError } = await supabase
+          .from('brands')
+          .select('id, name')
+          .in('id', brandIds))
+      }
+      if (brandError) {
+        console.error('[createOrder] brands fetch error:', brandError.message)
+        return res.status(500).json({ error: 'Failed to validate brands. Please try again.' })
+      }
+      for (const b of dbBrands || []) {
+        brandNames[String(b.id)] = b.name
+        brandConfigs[String(b.id)] = {
+          bulk_enabled: b.bulk_enabled === true,
+          bulk_unit_price: b.bulk_unit_price ?? null,
+          bulk_min_qty: b.bulk_min_qty ?? null,
+        }
+      }
+    }
+
+    // Combined quantity per brand across ALL lines (mix & match any items).
+    const brandTotals = {}
+    for (const item of items) {
+      const product = productMap.get(String(item.product_id ?? item.id))
+      if (!product || product.brand_id == null) continue
+      const qty = Math.floor(Number(item.quantity ?? item.qty ?? 1))
+      if (!Number.isFinite(qty) || qty < 1) continue
+      const bid = String(product.brand_id)
+      brandTotals[bid] = (brandTotals[bid] || 0) + qty
+    }
+    const activeBrandBulk = resolveBrandBulkPricing({ brandTotals, brandConfigs })
 
     // Recompute every line from database prices. Any frontend-supplied
     // unit_price / subtotal / total_amount is ignored.
@@ -398,6 +449,22 @@ async function createOrder(req, res) {
         })
         unitPrice = pricing.unitPrice
 
+        // --- Combined brand bulk pricing (precedence over per-product) ------
+        // When this brand's combined-quantity discount is active, the brand
+        // bulk unit price wins over the line's own per-product bulk. It is
+        // only ever applied when it is a genuine discount below THIS line's
+        // normal price (brandBulkUnitPriceFor enforces that).
+        let brandBulkApplied = false
+        let brandBulkPrice = null
+        let brandBulkMinQty = null
+        const brandPrice = brandBulkUnitPriceFor(normalUnitPrice, product.brand_id, activeBrandBulk)
+        if (brandPrice != null) {
+          unitPrice = brandPrice
+          brandBulkApplied = true
+          brandBulkPrice = brandPrice
+          brandBulkMinQty = activeBrandBulk[String(product.brand_id)].bulkMinQty
+        }
+
         return {
           product_id: product.id,
           product_name: product.name,
@@ -411,6 +478,13 @@ async function createOrder(req, res) {
           normal_unit_price: round2(normalUnitPrice),
           ...(pricing.bulkApplied
             ? { bulk_price: round2(pricing.bulkPrice), bulk_min_qty: pricing.bulkMinQty, bulk_applied: true }
+            : {}),
+          // Brand context + brand-level bulk snapshot (order history stays
+          // accurate even if the brand config changes later).
+          brand_id: product.brand_id ?? null,
+          brand_name: product.brand_id != null ? (brandNames[String(product.brand_id)] ?? null) : null,
+          ...(brandBulkApplied
+            ? { brand_bulk_applied: true, brand_bulk_price: round2(brandBulkPrice), brand_bulk_min_qty: brandBulkMinQty }
             : {}),
           ...variantFields,
         }

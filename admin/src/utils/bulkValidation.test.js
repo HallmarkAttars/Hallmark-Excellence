@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { resolveBulkFields, resolveVariantBulkFields } from './bulkValidation'
+import { resolveBulkFields, resolveVariantBulkFields, resolveBrandBulkFields } from './bulkValidation'
 
 // Valid baseline: Normal ₹100 · Bulk ₹80 · Qty 100 · no variants.
 const ok = (over = {}) =>
@@ -156,6 +156,87 @@ describe('resolveVariantBulkFields — per-variant bulk (each size its own confi
       bulkEnabled: true,
       bulkPrice: 120,
       bulkMinQty: 100,
+    })
+  })
+})
+
+describe('resolveBrandBulkFields — combined BRAND bulk pricing', () => {
+  // Valid baseline: standard ₹2500 · bulk ₹2000 · combined min 91 pieces.
+  const bok = (over = {}) =>
+    resolveBrandBulkFields({
+      bulk_enabled: true,
+      standard_price: 2500,
+      bulk_unit_price: 2000,
+      bulk_min_qty: 91,
+      ...over,
+    })
+
+  it('accepts the spec scenario (standard 2500 / bulk 2000 / min 91)', () => {
+    expect(bok()).toEqual({
+      error: '',
+      bulkEnabled: true,
+      standardPrice: 2500,
+      bulkUnitPrice: 2000,
+      bulkMinQty: 91,
+    })
+  })
+
+  it('saves nulls with no error when bulk is OFF, even with values set', () => {
+    expect(resolveBrandBulkFields({ bulk_enabled: false, standard_price: 2500, bulk_unit_price: 2000, bulk_min_qty: 91 })).toEqual({
+      error: '',
+      bulkEnabled: false,
+      standardPrice: null,
+      bulkUnitPrice: null,
+      bulkMinQty: null,
+    })
+  })
+
+  it('treats a missing toggle as OFF', () => {
+    expect(resolveBrandBulkFields({})).toEqual({
+      error: '',
+      bulkEnabled: false,
+      standardPrice: null,
+      bulkUnitPrice: null,
+      bulkMinQty: null,
+    })
+  })
+
+  it('requires a positive standard price', () => {
+    expect(bok({ standard_price: '' }).error).toMatch(/Standard price is required/)
+    expect(bok({ standard_price: 0 }).error).toMatch(/greater than 0/)
+    expect(bok({ standard_price: -5 }).error).toMatch(/greater than 0/)
+  })
+
+  it('requires a positive bulk unit price', () => {
+    expect(bok({ bulk_unit_price: '' }).error).toMatch(/Bulk unit price is required/)
+    expect(bok({ bulk_unit_price: 0 }).error).toMatch(/greater than 0/)
+  })
+
+  it('rejects a bulk unit price equal to or above the standard price', () => {
+    expect(bok({ bulk_unit_price: 2500 }).error).toMatch(/lower than the standard price/)
+    expect(bok({ bulk_unit_price: 2600 }).error).toMatch(/lower than the standard price/)
+  })
+
+  it('accepts a bulk unit price strictly below the standard price', () => {
+    expect(bok({ bulk_unit_price: 2499.99 }).error).toBe('')
+    expect(bok({ bulk_unit_price: 2000 }).error).toBe('')
+  })
+
+  it('requires a whole-number combined threshold greater than 1', () => {
+    expect(bok({ bulk_min_qty: '' }).error).toMatch(/Combined quantity threshold is required/)
+    expect(bok({ bulk_min_qty: 0 }).error).toMatch(/whole number greater than 1/)
+    expect(bok({ bulk_min_qty: 1 }).error).toMatch(/whole number greater than 1/)
+    expect(bok({ bulk_min_qty: 91.5 }).error).toMatch(/whole number greater than 1/)
+    expect(bok({ bulk_min_qty: 2 }).error).toBe('')
+  })
+
+  it('coerces string inputs from the form fields', () => {
+    expect(bok({ standard_price: '2500', bulk_unit_price: '2000', bulk_min_qty: '91' })).toEqual({
+      error: '',
+      bulkEnabled: true,
+      standardPrice: 2500,
+      bulkUnitPrice: 2000,
+      bulkMinQty: 91,
     })
   })
 })

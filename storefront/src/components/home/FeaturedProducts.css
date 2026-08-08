@@ -37,24 +37,28 @@
   }
 }
 
-/* ---------- Product grid ---------- */
+/* ---------- Product grid ----------
+   The homepage slices featured products to 6 in JSX; these rules cap the
+   layout at 6 columns / ONE row on desktop, 3-up on tablet, 2×3 on mobile —
+   no wrapping, no overflow, no horizontal scroll. minmax(0, 1fr) keeps cards
+   from overflowing their track on very narrow screens. */
 .featured-track {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 320px stays 2-up, compact */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 320px stays 2-up, compact */
   gap: 10px;
 }
 @media (min-width: 360px) {
-  .featured-track { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* mobile 2-up */
+  .featured-track { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } /* mobile 2-up */
 }
 @media (min-width: 480px) {
   .featured-track { gap: 16px; } /* large mobile keeps 2-up, roomier gaps */
 }
 @media (min-width: 768px) {
-  .featured-track { grid-template-columns: repeat(3, 1fr); gap: 20px; } /* tablet 3-up */
+  .featured-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } /* tablet 3-up */
 }
 @media (min-width: 1024px) {
-  .featured-track { grid-template-columns: repeat(4, 1fr); gap: 24px; } /* laptop 4-up */
+  .featured-track { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; } /* laptop 4-up */
 }
 @media (min-width: 1200px) {
-  .featured-track { grid-template-columns: repeat(5, 1fr); } /* desktop / large desktop 5-up */
+  .featured-track { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; } /* desktop: 6 columns / 1 row, tighter gap */
 }

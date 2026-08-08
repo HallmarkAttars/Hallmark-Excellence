@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import {
-  applicableUnitPrice,
   isBulkApplicable,
   isBulkUnlocked,
   bulkRemaining,
@@ -11,14 +10,17 @@ import QuantityControl from '../components/product/QuantityControl'
 import './Cart.css'
 
 export default function Cart() {
-  const { items, removeItem, updateQty, total, itemCount } = useCart()
+  const { pricedItems, brandStatus, removeItem, updateQty, total, itemCount } = useCart()
   const navigate = useNavigate()
 
   const handleCheckout = () => {
-    navigate('/checkout', { state: { checkoutItems: items, total } })
+    // The resolved snapshot (unit_price already includes any active brand
+    // bulk) travels to the checkout page — the server still recomputes
+    // everything authoritatively from the database.
+    navigate('/checkout', { state: { checkoutItems: pricedItems, total } })
   }
 
-  if (items.length === 0) {
+  if (pricedItems.length === 0) {
     return (
       <div className="cart-empty">
         <span className="cart-empty-icon" aria-hidden="true">
@@ -34,6 +36,13 @@ export default function Cart() {
       </div>
     )
   }
+
+  // Brands with combined bulk pricing currently in the cart (derived live —
+  // only brands that actually have lines here appear, so banners never show
+  // for brands the customer isn't buying).
+  const brandBanners = Object.entries(brandStatus)
+    .map(([brandId, b]) => ({ brandId, ...b }))
+    .filter((b) => b.bulk_enabled && Number.isInteger(b.bulkMinQty) && b.bulkMinQty > 1)
 
   return (
     <div className="container cart-page">
@@ -52,7 +61,41 @@ export default function Cart() {
             <span>Total</span>
           </div>
 
-          {items.map((item) => {
+          {/* Combined brand bulk banners — one per bulk-enabled brand in the
+              cart. Active shows the applied rate; near-threshold shows how
+              many more pieces unlock it. */}
+          {brandBanners.length > 0 && (
+            <div className="cart-brand-banners" aria-label="Brand bulk pricing">
+              {brandBanners.map((b) => {
+                const remaining = Math.max(0, b.bulkMinQty - b.totalQty)
+                return (
+                  <div
+                    key={b.brandId}
+                    className={`cart-brand-banner ${b.active ? 'is-active' : 'is-hint'}`}
+                  >
+                    <span className="cart-brand-banner-mark" aria-hidden="true">
+                      {b.active ? '✓' : '🔥'}
+                    </span>
+                    <p className="cart-brand-banner-text">
+                      {b.active ? (
+                        <>
+                          <strong>{b.name}</strong> bulk pricing active —{' '}
+                          {b.totalQty} pieces at ₹{Number(b.bulkUnitPrice).toLocaleString('en-IN')} each
+                        </>
+                      ) : (
+                        <>
+                          Add <strong>{remaining} more {b.name}</strong> piece{remaining === 1 ? '' : 's'} to unlock ₹
+                          {Number(b.bulkUnitPrice).toLocaleString('en-IN')}/piece
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {pricedItems.map((item) => {
             const key = item.variant_id != null
               ? `${item.product_id}-v${item.variant_id}`
               : `${item.product_id}-`
@@ -60,16 +103,19 @@ export default function Cart() {
               || (item.quantity_value != null && item.quantity_unit
                   ? `${item.quantity_value} ${item.quantity_unit}`
                   : '')
-            // Bulk-aware pricing — the unit price and line total automatically
-            // switch to the bulk price once the quantity reaches the
-            // admin-configured threshold.
-            const unitPrice = applicableUnitPrice(item)
-            const subtotal = unitPrice * item.quantity
-            // Bulk UI (progress/chip) shows only for bulk-applicable lines:
-            // the default variant, or a variant-less product.
+            // Resolved pricing — unit_price already includes any active
+            // brand-level combined bulk discount (brand bulk wins over
+            // per-product bulk). Per-product bulk UI below still reads the
+            // line's own config for the progress/status chips.
+            const effectivePrice = item.unit_price
+            const subtotal = effectivePrice * item.quantity
             const bulkApplicable = isBulkApplicable(item)
             const bulkUnlocked = isBulkUnlocked(item)
             const bulkSavingsAmount = bulkSavings(item)
+            const brandBulkSavings =
+              item.brand_bulk_applied && item.normal_unit_price > effectivePrice
+                ? (item.normal_unit_price - effectivePrice) * item.quantity
+                : 0
             const itemStock = item.stock != null ? Number(item.stock) : null
             const stockCanReachBulk =
               itemStock == null || itemStock >= Number(item.bulk_min_qty)
@@ -84,12 +130,14 @@ export default function Cart() {
                     <h3>{item.name}</h3>
                     {label && <p className="cart-item-variant">{label}</p>}
                     <p className="cart-item-unit">
-                      ₹{unitPrice.toLocaleString('en-IN')}
-                      {item.bulk_enabled === true && (
+                      ₹{effectivePrice.toLocaleString('en-IN')}
+                      {(item.bulk_enabled === true || item.brand_bulk_applied) && (
                         <span className="cart-item-unit-suffix">
-                          {bulkUnlocked
-                            ? ` / piece (Bulk Applied)`
-                            : ` / piece`}
+                          {item.brand_bulk_applied
+                            ? ` / piece (Brand Bulk Applied)`
+                            : bulkUnlocked
+                              ? ` / piece (Bulk Applied)`
+                              : ` / piece`}
                         </span>
                       )}
                     </p>
@@ -114,8 +162,8 @@ export default function Cart() {
                     }}
                   />
 
-                  {/* Live bulk progress under the quantity selector */}
-                  {bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
+                  {/* Live per-product bulk progress under the quantity selector */}
+                  {!item.brand_bulk_applied && bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
                     <div className="cart-item-bulk">
                       <p className="cart-item-bulk-msg">
                         Add {bulkRemaining(item)} more to unlock Bulk Price
@@ -133,20 +181,25 @@ export default function Cart() {
                       </p>
                     </div>
                   )}
-                  {bulkApplicable && !stockCanReachBulk && !bulkUnlocked && (
+                  {!item.brand_bulk_applied && bulkApplicable && !stockCanReachBulk && !bulkUnlocked && (
                     <p className="cart-item-bulk-msg is-muted">
                       Bulk price available from {item.bulk_min_qty} pieces
                     </p>
                   )}
                 </div>
 
-                {/* Third column — line total (unit price × quantity) */}
+                {/* Third column — line total (effective unit price × quantity) */}
                 <div className="cart-item-total-col">
                   <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
-                  {bulkUnlocked && bulkSavingsAmount > 0 && (
+                  {item.brand_bulk_applied && brandBulkSavings > 0 && (
+                    <p className="cart-item-saved">
+                      ✓ {item.brand_name || 'Brand'} Bulk Discount Applied · You Saved ₹{brandBulkSavings.toLocaleString('en-IN')}
+                    </p>
+                  )}
+                  {!item.brand_bulk_applied && bulkUnlocked && bulkSavingsAmount > 0 && (
                     <p className="cart-item-saved">✓ Bulk Price Applied · You Saved ₹{bulkSavingsAmount.toLocaleString('en-IN')}</p>
                   )}
-                  {bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
+                  {!item.brand_bulk_applied && bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
                     <p className="cart-item-bulk-chip">🔥 Bulk Price at {item.bulk_min_qty}+ pcs</p>
                   )}
                 </div>

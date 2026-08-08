@@ -90,6 +90,13 @@ export async function getBrands() {
   return data.brands ?? []
 }
 
+// Updates ONLY the combined brand bulk pricing fields (bulk_enabled /
+// standard_price / bulk_unit_price / bulk_min_qty) on a brand.
+export async function updateBrandBulkPricing(id, data) {
+  const res = await adminApi.patch(`/api/admin/brands/${id}`, data, readToken())
+  return res.brand ?? res ?? null
+}
+
 // --- Orders ------------------------------------------------------------------
 export async function getOrders() {
   const data = await adminApi.get('/api/admin/orders', readToken())

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
+import BrandBulkCard from '../components/brand/BrandBulkCard'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { hasAnyBulk } from '../utils/bulk'
 import './BrandProducts.css'
@@ -140,6 +141,11 @@ export default function BrandProducts() {
       </header>
 
       <div className="container brand-body">
+        {/* Combined BRAND bulk pricing card — ONE responsive component used on
+            every brand page, fed THIS brand's own DB config. Shows only when
+            the brand's bulk pricing is actually configured (optional). */}
+        <BrandBulkCard brand={brand} />
+
         {/* Optional Bulk Purchasing promotion — shown ONLY when this brand
             actually has bulk-enabled products (dynamic, never hardcoded). */}
         {hasBulkProducts && (

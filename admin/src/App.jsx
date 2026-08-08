@@ -11,6 +11,7 @@ import Orders from './pages/Orders'
 import Categories from './pages/Categories'
 import BrandArees from './pages/BrandArees'
 import BrandDahab from './pages/BrandDahab'
+import BrandBulkPricing from './pages/BrandBulkPricing'
 import Employees from './pages/Employees'
 
 export default function App() {
@@ -30,6 +31,14 @@ export default function App() {
               <Route path="/admin/categories" element={<Categories />} />
               <Route path="/admin/brands/arees" element={<BrandArees />} />
               <Route path="/admin/brands/dahab" element={<BrandDahab />} />
+              <Route
+                path="/admin/brands/bulk-pricing"
+                element={
+                  <RequirePermission permission="brands.view">
+                    <BrandBulkPricing />
+                  </RequirePermission>
+                }
+              />
               <Route
                 path="/admin/employees"
                 element={

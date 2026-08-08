@@ -25,6 +25,11 @@ import {
   applicableUnitPrice,
   bulkRemaining,
   bulkSavings,
+  isBrandBulkEnabled,
+  brandBulkConfig,
+  computeBrandBulkStatus,
+  effectiveUnitPrice,
+  resolvedUnitPrice,
 } from './bulk'
 
 // Spec test line: Normal ₹100 · Bulk ₹80 · Qty 100 · Bulk ON
@@ -270,5 +275,152 @@ describe('multiple products price independently', () => {
     expect(
       applicableUnitPrice({ quantity: 100, selected_price: 200, bulk_enabled: false })
     ).toBe(200)
+  })
+})
+
+// ============================================================================
+// COMBINED BRAND BULK PRICING — brand-wide quantity discount (mix & match).
+// ============================================================================
+// Spec: discount unlocks when the TOTAL quantity across ALL products of the
+// brand reaches the brand threshold (e.g. 91 pieces) — never per-product.
+
+const areesBrand = { id: 'b1', name: 'Arees', bulk_enabled: true, bulk_unit_price: 2000, bulk_min_qty: 91 }
+const dahabBrand = { id: 'b2', name: 'Dahab', bulk_enabled: true, bulk_unit_price: 1800, bulk_min_qty: 50 }
+const offBrand = { id: 'b3', name: 'Off Brand', bulk_enabled: false, bulk_unit_price: 100, bulk_min_qty: 10 }
+const brandsById = {
+  b1: areesBrand,
+  b2: dahabBrand,
+  b3: offBrand,
+}
+
+const line = (brandId, quantity, over = {}) => ({
+  product_id: `p-${brandId}-${Math.random()}`,
+  brand_id: brandId,
+  name: 'Attar',
+  quantity,
+  selected_price: 2500,
+  ...over,
+})
+
+describe('isBrandBulkEnabled / brandBulkConfig', () => {
+  it('accepts a valid admin-enabled brand config', () => {
+    expect(isBrandBulkEnabled(areesBrand)).toBe(true)
+    expect(brandBulkConfig(areesBrand)).toEqual({ bulkUnitPrice: 2000, bulkMinQty: 91 })
+  })
+
+  it('rejects a bulk-off brand, even with values set', () => {
+    expect(isBrandBulkEnabled(offBrand)).toBe(false)
+    expect(brandBulkConfig(offBrand)).toBeNull()
+  })
+
+  it('rejects missing/invalid configs', () => {
+    expect(isBrandBulkEnabled(null)).toBe(false)
+    expect(isBrandBulkEnabled({ bulk_enabled: true })).toBe(false)
+    expect(isBrandBulkEnabled({ bulk_enabled: true, bulk_unit_price: 0, bulk_min_qty: 91 })).toBe(false)
+    expect(isBrandBulkEnabled({ bulk_enabled: true, bulk_unit_price: 2000, bulk_min_qty: 1 })).toBe(false)
+    expect(isBrandBulkEnabled({ bulk_enabled: true, bulk_unit_price: 2000, bulk_min_qty: 91.5 })).toBe(false)
+  })
+})
+
+describe('computeBrandBulkStatus (combined quantity across all brand lines)', () => {
+  it('sums quantities across DIFFERENT products of the same brand', () => {
+    // 3 of product A + 88 of product B (different products) = 91 combined.
+    const status = computeBrandBulkStatus(
+      [line('b1', 3), line('b1', 88)],
+      brandsById
+    )
+    expect(status.b1.totalQty).toBe(91)
+    expect(status.b1.active).toBe(true)
+  })
+
+  it('stays inactive below the combined threshold', () => {
+    const status = computeBrandBulkStatus([line('b1', 90)], brandsById)
+    expect(status.b1.totalQty).toBe(90)
+    expect(status.b1.active).toBe(false)
+  })
+
+  it('activates exactly at the threshold and above', () => {
+    expect(computeBrandBulkStatus([line('b2', 50)], brandsById).b2.active).toBe(true)
+    expect(computeBrandBulkStatus([line('b2', 60)], brandsById).b2.active).toBe(true)
+  })
+
+  it('never activates a brand whose own toggle is OFF', () => {
+    const status = computeBrandBulkStatus([line('b3', 500)], brandsById)
+    expect(status.b3.active).toBe(false)
+  })
+
+  it('only reports brands that are actually in the cart', () => {
+    const status = computeBrandBulkStatus([line('b2', 10)], brandsById)
+    expect(Object.keys(status)).toEqual(['b2'])
+  })
+
+  it('ignores lines without a brand or with an unknown brand', () => {
+    const status = computeBrandBulkStatus([line('b1', 100), line(null, 100), line('nope', 100)], brandsById)
+    expect(status.b1.active).toBe(true)
+    expect(status.nope).toBeUndefined()
+  })
+})
+
+describe('effectiveUnitPrice (brand bulk takes precedence when active)', () => {
+  it('prices every line of an active brand at the brand bulk price', () => {
+    const status = computeBrandBulkStatus([line('b1', 91)], brandsById)
+    expect(effectiveUnitPrice(line('b1', 91), status)).toBe(2000)
+  })
+
+  it('keeps normal pricing when the combined total is below the threshold', () => {
+    const status = computeBrandBulkStatus([line('b1', 90)], brandsById)
+    expect(effectiveUnitPrice(line('b1', 90), status)).toBe(2500)
+  })
+
+  it('lets per-product bulk apply when brand bulk is NOT active (unchanged behaviour)', () => {
+    const status = computeBrandBulkStatus([line('b3', 100)], brandsById)
+    // b3 brand bulk off → per-product bulk on the line still applies.
+    const item = line('b3', 100, { bulk_enabled: true, bulk_price: 2000, bulk_min_qty: 50 })
+    expect(effectiveUnitPrice(item, status)).toBe(2000)
+  })
+
+  it('brand bulk OVERRIDES per-product bulk when both are active', () => {
+    const status = computeBrandBulkStatus([line('b1', 91)], brandsById)
+    // Line has its own (cheaper?) bulk config but brand bulk wins.
+    const item = line('b1', 91, { bulk_enabled: true, bulk_price: 2100, bulk_min_qty: 50 })
+    expect(effectiveUnitPrice(item, status)).toBe(2000)
+  })
+
+  it('never discounts a line to a brand price at/above its own normal price', () => {
+    const status = computeBrandBulkStatus([line('b1', 91)], brandsById)
+    expect(effectiveUnitPrice(line('b1', 91, { selected_price: 2000 }), status)).toBe(2000)
+    expect(effectiveUnitPrice(line('b1', 91, { selected_price: 1900 }), status)).toBe(1900)
+  })
+
+  it('drops the discount immediately when quantity falls below the threshold', () => {
+    const status = computeBrandBulkStatus([line('b1', 90)], brandsById)
+    expect(effectiveUnitPrice(line('b1', 90), status)).toBe(2500)
+  })
+
+  it('mixed cart: only the active brand gets the discount', () => {
+    const status = computeBrandBulkStatus([line('b1', 91), line('b2', 10)], brandsById)
+    expect(effectiveUnitPrice(line('b1', 91), status)).toBe(2000)
+    expect(effectiveUnitPrice(line('b2', 10), status)).toBe(2500)
+  })
+
+  it('returns 0 for a missing line', () => {
+    expect(effectiveUnitPrice(null, {})).toBe(0)
+  })
+})
+
+describe('resolvedUnitPrice (order-summary lines)', () => {
+  it('prefers a pre-resolved unit_price (checkout snapshot)', () => {
+    expect(resolvedUnitPrice({ unit_price: 2000, quantity: 5 })).toBe(2000)
+    expect(resolvedUnitPrice({ unit_price: 0, quantity: 5 })).toBe(0)
+  })
+
+  it('falls back to the pure per-line math when no unit_price is set', () => {
+    expect(resolvedUnitPrice(makeLine(99))).toBe(100)
+    expect(resolvedUnitPrice(makeLine(100))).toBe(80)
+  })
+
+  it('handles missing/empty lines safely', () => {
+    expect(resolvedUnitPrice(null)).toBe(0)
+    expect(resolvedUnitPrice({})).toBe(0)
   })
 })

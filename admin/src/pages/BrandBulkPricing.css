@@ -1,0 +1,91 @@
+/* Admin Brand Bulk Pricing page — per-brand cards using the site's existing
+   card + featured-toggle patterns (see ProductForm.css for the switch). */
+
+.brand-bulk-intro {
+  max-width: 720px;
+  color: rgba(20, 17, 13, 0.6);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.brand-bulk-note {
+  max-width: 720px;
+  margin: -12px 0 20px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.brand-bulk-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  max-width: 1100px;
+}
+
+@media (min-width: 900px) {
+  .brand-bulk-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.brand-bulk-card-admin { padding: 22px 24px; }
+
+.brand-bulk-card-admin-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.brand-bulk-card-admin-head h2 { margin: 0; font-size: clamp(22px, 1.6vw, 26px); }
+
+.brand-bulk-product-count {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(20, 17, 13, 0.5);
+}
+
+.brand-bulk-toggle {
+  padding: 14px 16px;
+  border: 1px dashed rgba(184, 137, 56, 0.55);
+  border-radius: var(--radius);
+  background: rgba(184, 137, 56, 0.05);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.brand-bulk-toggle.is-on {
+  border-style: solid;
+  border-color: rgba(184, 137, 56, 0.6);
+  background: rgba(184, 137, 56, 0.08);
+}
+
+.brand-bulk-fields {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(184, 137, 56, 0.3);
+  animation: bulk-fields-in 0.25s ease-out;
+}
+@keyframes bulk-fields-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.brand-bulk-error { margin-top: 12px; }
+.brand-bulk-success {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--success-bg);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.brand-bulk-save { width: 100%; margin-top: 16px; }

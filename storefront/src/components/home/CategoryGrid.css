@@ -33,6 +33,26 @@
   .category-scroll { grid-template-columns: repeat(4, 1fr); gap: 24px; }
 }
 
+/* ---------- HOMEPAGE ONLY: max 6 categories, never a 7th on another row ----------
+   Scoped under .category-section so the shared .category-scroll keeps its own
+   2/3/4 layout on the /categories page (where ALL categories are listed).
+   The homepage slices to 6 in JSX; these rules guarantee 6 columns / 1 row on
+   desktop, 3 columns on tablet, 2 columns on mobile — no wrapping, no overflow. */
+.category-section .category-scroll {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile: 2 columns */
+}
+@media (min-width: 768px) and (max-width: 1199px) {
+  .category-section .category-scroll {
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* tablet: 3 columns */
+  }
+}
+@media (min-width: 1200px) {
+  .category-section .category-scroll {
+    grid-template-columns: repeat(6, minmax(0, 1fr)); /* desktop: 6 columns / 1 row */
+    gap: 16px; /* tighter gap so 6 cards fill the row without shrinking too small */
+  }
+}
+
 /* ---------- Card ---------- */
 .category-card {
   display: flex;
@@ -63,7 +83,8 @@
   transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Footer — name + arrow */
+/* Footer — name + arrow. Pinned to the card bottom so every card in a row
+   keeps an equal height with aligned footers, whatever the name length. */
 .category-footer {
   display: flex;
   align-items: center;
@@ -71,6 +92,7 @@
   gap: 8px;
   padding: 14px 16px;            /* desktop */
   min-width: 0;
+  margin-top: auto;
 }
 .category-name {
   font-size: 15px;

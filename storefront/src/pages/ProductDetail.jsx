@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getProductById, getRelatedProducts } from '../services/mockApi'
+import { getProductById, getRelatedProducts, getBrandBySlug } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining } from '../utils/bulk'
+import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining, brandBulkConfig } from '../utils/bulk'
 import ProductGrid from '../components/product/ProductGrid'
 import './ProductDetail.css'
 
@@ -21,6 +21,8 @@ export default function ProductDetail() {
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [adding, setAdding] = useState(false)
+  // Brand row for this product — carries the combined brand bulk config.
+  const [brand, setBrand] = useState(null)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
 
@@ -37,6 +39,7 @@ export default function ProductDetail() {
     setQty(1)
     setAdded(false)
     setSelectedVariant(null)
+    setBrand(null)
     getProductById(id)
       .then((p) => {
         setProduct(p)
@@ -48,6 +51,10 @@ export default function ProductDetail() {
             setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
+          // Load the brand row for the combined brand bulk pricing block.
+          if (p.brand_slug) {
+            getBrandBySlug(p.brand_slug).then(setBrand).catch(() => {})
+          }
         }
       })
       .catch((err) => {
@@ -106,6 +113,9 @@ export default function ProductDetail() {
   // cannot physically reach the required quantity.
   const stockCanReachBulk =
     stock == null || !Number.isFinite(Number(stock)) || Number(stock) >= bulkMinQty
+
+  // Combined BRAND bulk config — valid only when the brand has it enabled.
+  const brandBulk = brand ? brandBulkConfig(brand) : null
 
   const stockStatus = () => {
     if (stock > 5) return { text: 'In Stock', className: 'in-stock' }
@@ -213,6 +223,27 @@ export default function ProductDetail() {
                 ? `Buy ${bulkMinQty}+ pieces of the ${variantLabel(selectedVariant)} size to unlock the bulk price.`
                 : `Buy ${bulkMinQty}+ pieces to unlock the bulk price — smaller quantities are always available at the normal price.`}
             </p>
+          </div>
+        )}
+
+        {/* Combined BRAND bulk pricing — separate from the per-product block
+            above. Applies to the TOTAL quantity across ALL of this brand's
+            items in the cart (mix & match). Shown alongside the per-product
+            block when both apply, each clearly labelled. */}
+        {brandBulk && (
+          <div className="brand-bulk-row">
+            <p className="brand-bulk-row-label">
+              <span aria-hidden="true">🤝</span> {brand.name} · Bulk Pricing
+            </p>
+            <p className="brand-bulk-row-text">
+              Buy <strong>{brandBulk.bulkMinQty}+ pieces</strong> of any {brand.name} item for{' '}
+              <strong>₹{brandBulk.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>
+            </p>
+            {product.brand_slug && (
+              <Link to={`/brand/${product.brand_slug}`} className="brand-bulk-row-link">
+                View {brand.name} bulk pricing <span aria-hidden="true">→</span>
+              </Link>
+            )}
           </div>
         )}
 

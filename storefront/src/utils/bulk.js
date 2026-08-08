@@ -106,3 +106,116 @@ export function bulkSavings(item) {
   const quantity = Number(item.quantity ?? item.qty ?? 1)
   return Math.max(0, (normal - bulk) * quantity)
 }
+
+// ============================================================================
+// COMBINED BRAND BULK PRICING
+// ----------------------------------------------------------------------------
+// A SEPARATE feature from the per-product / per-variant bulk above. Discount
+// is based on the TOTAL quantity across ALL products of one brand in the cart
+// (mix & match), not any single product's quantity. It is a DERIVED
+// calculation — nothing is stored — so it recomputes automatically whenever
+// the cart items or the brand data change.
+//
+// Brand data comes from the brands table (bulk_enabled / bulk_unit_price /
+// bulk_min_qty / standard_price). When a brand's combined bulk is ACTIVE, its
+// bulk unit price takes precedence over a line's own per-product bulk.
+// ============================================================================
+
+// Is this brand configured for combined bulk pricing at all?
+// (Toggle ON + valid bulk price + integer threshold > 1.)
+export function isBrandBulkEnabled(brand) {
+  if (!brand || brand.bulk_enabled !== true) return false
+  const price = Number(brand.bulk_unit_price)
+  const qty = Number(brand.bulk_min_qty)
+  return Number.isFinite(price) && price > 0 && Number.isInteger(qty) && qty > 1
+}
+
+// Valid brand bulk config, or null. Mirrors isBrandBulkEnabled but returns
+// the parsed numbers so callers don't re-parse them.
+export function brandBulkConfig(brand) {
+  if (!isBrandBulkEnabled(brand)) return null
+  return {
+    bulkUnitPrice: Number(brand.bulk_unit_price),
+    bulkMinQty: Number(brand.bulk_min_qty),
+  }
+}
+
+// Compute the live combined-bulk status for every brand present in the cart.
+//
+//   items      — cart lines (must carry brand_id; quantity is read live)
+//   brandsById — { [brand_id]: brand row } (fresh from the brands API)
+//
+// Returns { [brand_id]: { name, bulk_enabled, bulkUnitPrice, bulkMinQty,
+// totalQty, active } } for every brand that has at least one cart line.
+// `active` is true ONLY when the brand is configured AND its combined
+// quantity across ALL lines reaches its threshold.
+export function computeBrandBulkStatus(items, brandsById) {
+  const byId = brandsById || {}
+  const totals = {}
+  const meta = {}
+
+  for (const item of items || []) {
+    if (item.brand_id == null) continue
+    const bid = String(item.brand_id)
+    const brand = byId[bid]
+    if (!brand) continue
+    const qty = Number(item.quantity ?? item.qty ?? 1)
+    totals[bid] = (totals[bid] || 0) + qty
+    if (!meta[bid]) {
+      meta[bid] = {
+        name: brand.name ?? null,
+        bulk_enabled: brand.bulk_enabled === true,
+        bulkUnitPrice: brand.bulk_unit_price != null ? Number(brand.bulk_unit_price) : null,
+        bulkMinQty: brand.bulk_min_qty != null ? Number(brand.bulk_min_qty) : null,
+      }
+    }
+  }
+
+  const status = {}
+  for (const [bid, totalQty] of Object.entries(totals)) {
+    const m = meta[bid]
+    const active =
+      m.bulk_enabled &&
+      Number.isInteger(m.bulkMinQty) &&
+      m.bulkMinQty > 1 &&
+      Number.isFinite(m.bulkUnitPrice) &&
+      m.bulkUnitPrice > 0 &&
+      totalQty >= m.bulkMinQty
+    status[bid] = { ...m, totalQty, active }
+  }
+  return status
+}
+
+// Effective unit price for a cart line when brand bulk is taken into account.
+//
+//   item               — cart line (selected_price/price = normal price)
+//   brandBulkStatus    — result of computeBrandBulkStatus
+//
+// Brand bulk wins over the line's own per-product bulk when active, but only
+// when it is a genuine discount below THIS line's normal price. Otherwise the
+// existing per-product bulk logic applies exactly as before.
+export function effectiveUnitPrice(item, brandBulkStatus) {
+  if (!item) return 0
+  const normal = Number(item.selected_price ?? item.price ?? 0)
+  const status = item.brand_id != null && brandBulkStatus ? brandBulkStatus[String(item.brand_id)] : null
+  if (status && status.active) {
+    const brandPrice = Number(status.bulkUnitPrice)
+    if (Number.isFinite(brandPrice) && brandPrice > 0 && brandPrice < normal) {
+      return brandPrice
+    }
+  }
+  return applicableUnitPrice(item)
+}
+
+// Unit price to display for an order-summary line. Prefers a unit_price that
+// was already resolved on the line (e.g. the checkout snapshot computed by the
+// cart context, which includes brand bulk) and falls back to the pure
+// per-line bulk math otherwise.
+export function resolvedUnitPrice(item) {
+  if (!item) return 0
+  const resolved = Number(item.unit_price)
+  if (item.unit_price != null && Number.isFinite(resolved) && resolved >= 0) {
+    return resolved
+  }
+  return applicableUnitPrice(item)
+}

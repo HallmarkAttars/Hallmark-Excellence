@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "create-admin": "node scripts/createAdmin.js",
+    "seed-brand-bulk": "node scripts/seedBrandBulkPricing.js",
     "test": "vitest run"
   },
   "dependencies": {
