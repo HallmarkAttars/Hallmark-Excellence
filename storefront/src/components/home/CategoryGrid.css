@@ -7,6 +7,20 @@
 .category-section .section-head {
   align-items: center;          /* heading + VIEW ALL on one baseline */
 }
+
+/* Homepage-only: tighten the section's bottom padding so the "Our Brands"
+   section that follows sits ~40–64px below the category cards instead of a
+   large empty band (the shared `.section` padding is overridden here; this
+   class is only used on the homepage). */
+.category-section {
+  padding-bottom: 32px;
+}
+@media (min-width: 768px) {
+  .category-section { padding-bottom: 40px; }
+}
+@media (min-width: 1024px) {
+  .category-section { padding-bottom: 48px; }
+}
 .category-section .section-title-upper {
   font-size: clamp(1.625rem, 7vw, 2.125rem);   /* mobile: 26–34px */
 }

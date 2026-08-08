@@ -143,10 +143,10 @@
   min-width: 0;
 }
 
-/* Column header */
+/* Column header — PRODUCT | QUANTITY | TOTAL (independent widths) */
 .cart-items-head {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 180px 120px;
+  grid-template-columns: minmax(280px, 1fr) 160px 180px;
   gap: 24px;
   align-items: center;
   padding: 14px 24px;
@@ -163,10 +163,10 @@
 .cart-items-head span:nth-child(2) { text-align: center; }
 .cart-items-head span:nth-child(3) { text-align: right; }
 
-/* ---------- Product row ---------- */
+/* ---------- Product row — PRODUCT (flex) | QUANTITY (~160px) | TOTAL (~180px) ---------- */
 .cart-item {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 180px 120px;
+  grid-template-columns: minmax(280px, 1fr) 160px 180px;
   gap: 24px;
   align-items: center;
   padding: 22px 24px;
@@ -333,11 +333,13 @@
 }
 .cart-item-saved {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.76rem;           /* 12px — bulk status text (spec 12–13px) */
   font-weight: 700;
   color: #1E4A2E;
   text-align: right;
   line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;      /* long status lines wrap, never overflow */
 }
 .cart-item-bulk-chip {
   padding: 3px 8px;
@@ -429,12 +431,42 @@
 .cart-continue-link:hover .cart-continue-arrow { transform: translateX(4px); }
 
 /* ============================================================
-   Mobile (<768px) — clean stacked cards, NOT the desktop table
+   Tablet (768–1023px) — compact three-column table
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .cart-items-head {
+    grid-template-columns: minmax(220px, 1fr) 140px 150px;
+    gap: 16px;
+    padding: 12px 18px;
+  }
+  .cart-item {
+    grid-template-columns: minmax(220px, 1fr) 140px 150px;
+    gap: 16px;
+    padding: 18px;
+  }
+  .cart-item-info { gap: 14px; }
+  .cart-item-image-wrap { width: 76px; height: 76px; }
+  .cart-item-bulk { width: 130px; }
+}
+
+/* ============================================================
+   Mobile (<768px) — each item is its OWN vertical card.
+   Grid areas (normal document flow, no absolute positioning):
+
+     ┌────────────────────────────┐
+     │ info (image + name + price │
+     │      + remove)             │
+     ├────────────────────────────┤
+     │ qty ( − 1 + )    total      │
+     │      │ bulk progress        │
+     │      │ (per-product)        │
+     │      │ bulk status wraps    │
+     └────────────────────────────┘
    ============================================================ */
 @media (max-width: 767px) {
-  .cart-page { padding-inline: 16px; padding-top: 28px; }
-  .cart-head { margin-bottom: 20px; }
-  .cart-layout { gap: 24px; }
+  .cart-page { padding-inline: 14px; padding-top: 24px; }
+  .cart-head { flex-wrap: wrap; row-gap: 4px; margin-bottom: 20px; }
+  .cart-layout { gap: 20px; }
 
   .cart-items {
     background: transparent;
@@ -443,22 +475,82 @@
   }
   .cart-items-head { display: none; }
 
+  /* Brand banners become their own rounded card (not a table strip) */
+  .cart-brand-banners {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .cart-brand-banner { padding: 10px 12px; }
+  .cart-brand-banner-text { overflow-wrap: anywhere; }
+
   .cart-item {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "info info"
+      "qty  total";
     gap: 14px 16px;
-    padding: 16px;
+    padding: 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--white);
   }
   .cart-item:hover { background: var(--white); }
 
-  .cart-item-info { grid-column: 1 / -1; gap: 14px; }
-  .cart-item-image-wrap { width: 64px; height: 80px; }
-  .cart-item-qty-col { justify-content: flex-start; align-items: flex-start; }
-  .cart-item-bulk { width: 150px; }
-  .cart-item-total-col { align-self: center; align-items: flex-end; }
+  /* Top: image + product information (full width) */
+  .cart-item-info { grid-area: info; gap: 14px; align-items: center; min-width: 0; }
+  .cart-item-image-wrap { width: 64px; height: 64px; padding: 4px; }
+  .cart-item-meta { min-width: 0; }
+  .cart-item-meta h3 {
+    font-size: 16px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;   /* long names wrap — never break the card */
+  }
+  .cart-item-unit { font-size: 14px; }
+
+  /* Bottom-left: compact touch-friendly quantity + its per-product progress */
+  .cart-item-qty-col {
+    grid-area: qty;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+  }
+  .cart-item-qty {
+    width: 100%;
+    max-width: 130px;
+    height: 44px;
+  }
+  .cart-item-qty .qty-control-btn { flex: 0 0 42px; }
+  .cart-item-bulk { width: 100%; max-width: 150px; }
+
+  /* Bottom-right: product total + bulk status — capped so it can NEVER
+     collide with the quantity selector (text wraps inside its own block) */
+  .cart-item-total-col {
+    grid-area: total;
+    align-items: flex-end;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .cart-item-subtotal { font-size: 16px; white-space: nowrap; }
   .cart-item-saved { text-align: right; }
+  .cart-item-bulk-chip { white-space: normal; text-align: right; }
+
+  /* Order Summary: full-width card below the products */
+  .cart-summary { padding: 20px; width: 100%; max-width: 100%; }
+}
+
+/* ============================================================
+   Very small mobile (320–359px) — compact but never hiding content
+   ============================================================ */
+@media (max-width: 359px) {
+  .cart-page { padding-inline: 12px; }
+  .cart-item { gap: 12px; padding: 12px; }
+  .cart-item-image-wrap { width: 56px; height: 56px; }
+  .cart-item-meta h3 { font-size: 15px; }
+  .cart-item-unit { font-size: 13px; }
+  .cart-item-qty .qty-control-btn { flex: 0 0 40px; }
+  .cart-item-saved { font-size: 0.72rem; }
 }
 
 

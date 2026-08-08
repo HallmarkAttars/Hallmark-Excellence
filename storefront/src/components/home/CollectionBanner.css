@@ -5,14 +5,44 @@
    Same dimensions, ratios, type hierarchy and CTA on both.
    ============================================================ */
 
-/* ---------- Section wrapper (one premium collection block) ---------- */
+/* ---------- "Our Brands" section wrapper (heading + grid) ----------
+   Sits directly below Shop by Category. The wrapper carries the section
+   spacing so the old doubled padding (category section bottom + this
+   section top) no longer creates the large empty gap. */
+.our-brands-section {
+  padding: 24px 0 48px;
+}
+@media (min-width: 768px) {
+  .our-brands-section { padding: 40px 0 56px; }
+}
+@media (min-width: 1024px) {
+  .our-brands-section { padding: 48px 0 64px; }
+}
+
+/* The brand cards grid — stacked on mobile, two-up on desktop.
+   No outer padding here (lives in the .container above); the gap is the
+   only thing between cards. */
 .collections-section {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 14px;                 /* 12–16px between the two cards */
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 48px 12px;        /* mobile: 12px gutters, card = 100% − 24px */
+}
+@media (min-width: 768px) {
+  .collections-section { gap: 16px; }
+}
+@media (min-width: 1024px) {
+  .collections-section { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+
+/* Each Reveal wrapper stretches to its grid cell; the banner fills it so
+   both cards keep equal height in the two-up row. */
+.collections-section > * {
+  min-width: 0;
+  display: flex;
+}
+.collections-section .collection-banner {
+  width: 100%;
+  flex: 1;
 }
 
 /* ---------- Card ---------- */
@@ -119,7 +149,6 @@
 
 /* ---------- Tablet (768–1023px): 45/55, roomier ---------- */
 @media (min-width: 768px) {
-  .collections-section { padding: 56px 24px; gap: 16px; }
   .collection-banner,
   .collection-banner-image { min-height: 240px; }
   .collection-banner-inner { grid-template-columns: 45% 55%; }
@@ -128,25 +157,14 @@
   .collection-banner-tagline { font-size: 0.82rem; }
 }
 
-/* ---------- Desktop (1024–1199px): stacked cards, 1200–1280px container ---------- */
+/* ---------- Desktop (1024px+): two brand cards side by side ---------- */
 @media (min-width: 1024px) {
-  .collections-section { padding: 64px 40px; gap: 20px; }
   .collection-banner,
   .collection-banner-image { min-height: 300px; }
   .collection-banner-content { padding: 28px 32px; }
   .collection-banner-title { font-size: clamp(1.75rem, 2.4vw, 2rem); }
   .collection-banner-tagline { font-size: 0.85rem; }
   .collection-banner .collection-banner-btn { height: 40px; padding: 0 20px; }
-}
-
-/* ---------- Large desktop (1200px+): two cards side by side ---------- */
-@media (min-width: 1200px) {
-  .collections-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    padding: 72px 40px;
-  }
 }
 
 /* ---------- Subtle hover (pointer devices only) ---------- */

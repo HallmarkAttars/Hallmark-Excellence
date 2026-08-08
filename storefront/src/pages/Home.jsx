@@ -7,6 +7,7 @@ import FeaturedProducts from '../components/home/FeaturedProducts'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import SocialStrip from '../components/home/SocialStrip'
 import { getCategories, getBrands, getProducts } from '../services/mockApi'
+import { HOME_BRANDS } from '../data/content'
 
 const BRAND_ORDER = ['arees', 'dahab']
 
@@ -37,13 +38,25 @@ export default function Home() {
     <div>
       <Hero />
       {categories.length > 0 && <CategoryGrid categories={categories} />}
-      <div className="collections-section">
-        {orderedBrands.map((brand, i) => (
-          <Reveal key={brand.id} delay={i * 120}>
-            <CollectionBanner brand={brand} />
-          </Reveal>
-        ))}
-      </div>
+      {/* Our Brands — the existing Arees / Dahab collection cards moved
+          directly below Shop by Category under one heading. The banners are
+          the SAME components as before (no duplicates, no new content). */}
+      {orderedBrands.length > 0 && (
+        <section className="our-brands-section">
+          <div className="container">
+            <div className="section-head">
+              <h2 className="section-title-upper">{HOME_BRANDS.title}</h2>
+            </div>
+            <div className="collections-section">
+              {orderedBrands.map((brand, i) => (
+                <Reveal key={brand.id} delay={i * 120}>
+                  <CollectionBanner brand={brand} />
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       <FeaturedProducts products={featuredProducts} />
       <SocialStrip products={products} />
       {/* Why Choose Us closes the page — immediately before the footer */}

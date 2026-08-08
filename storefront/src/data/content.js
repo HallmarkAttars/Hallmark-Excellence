@@ -82,6 +82,15 @@ export const HOME_FEATURED = {
 }
 
 // --------------------------------------------------------------------------
+// OUR BRANDS — homepage heading above the Arees / Dahab collection cards.
+// The cards themselves are the existing COLLECTIONS banners (see below),
+// rendered in Home.jsx — this is only the section heading.
+// --------------------------------------------------------------------------
+export const HOME_BRANDS = {
+  title: 'Our Brands',
+}
+
+// --------------------------------------------------------------------------
 // COLLECTIONS — homepage Arees / Dahab banners (image lives in assets.js)
 // --------------------------------------------------------------------------
 export const COLLECTIONS = {
