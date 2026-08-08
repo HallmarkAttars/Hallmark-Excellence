@@ -1,7 +1,15 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import QuantityControl from './QuantityControl'
+import QuickView from './QuickView'
 import './ProductCard.css'
+
+// Graceful image fallback — an inline cream placeholder with the house
+// monogram. Only used when the real product image fails to load; no data
+// is created or changed.
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'%3E%3Crect width='800' height='600' fill='%23F0E7D8'/%3E%3Ctext x='400' y='340' font-family='Georgia, serif' font-size='110' fill='%23B88938' text-anchor='middle'%3EA%26D%3C/text%3E%3C/svg%3E"
 
 function BagIcon() {
   return (
@@ -22,8 +30,28 @@ function BagIcon() {
   )
 }
 
+function EyeIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
 export default function ProductCard({ product, onNavigate }) {
   const { items, addItem, updateQty, removeItem } = useCart()
+  const [quickViewOpen, setQuickViewOpen] = useState(false)
 
   // Surface the default variant's size/label when the product has variants.
   const variants = Array.isArray(product.variants) ? product.variants : []
@@ -76,7 +104,6 @@ export default function ProductCard({ product, onNavigate }) {
         : null
 
   // Conditional rows — only render when real data exists. No invented values.
-  const tag = product.category_name || product.brand_name || ''
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
   // 4.80 → 4.8, 4.00 → 4 (matches the “★ 4.8” card format)
   const ratingDisplay = hasRating
@@ -87,11 +114,17 @@ export default function ProductCard({ product, onNavigate }) {
     compareAt != null &&
     Number.isFinite(Number(compareAt)) &&
     Number(compareAt) > price
+  // Discount chip is derived from the same existing compare-at logic.
+  // Guarded to > 0 so a sub-1% rounding (e.g. 999 vs 1000) never shows “0% OFF”.
+  const discountPct = showCompareAt
+    ? Math.round((1 - price / Number(compareAt)) * 100)
+    : null
+  const showDiscount = discountPct != null && discountPct > 0
   const showBulk =
     product.bulk_price != null &&
     product.bulk_min_qty != null &&
-    Number(product.bulk_price) > 0
-    && Number(product.bulk_min_qty) > 0
+    Number(product.bulk_price) > 0 &&
+    Number(product.bulk_min_qty) > 0
 
   const handleAdd = () => {
     if (soldOut) return
@@ -107,27 +140,78 @@ export default function ProductCard({ product, onNavigate }) {
     if (onNavigate) onNavigate()
   }
 
+  const handleImgError = (e) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = PLACEHOLDER_IMG
+  }
+
   return (
     <div className="product-card">
-      <Link to={`/product/${product.id}`} className="product-card-image-link" onClick={handleNavigate}>
-        <img src={product.image} alt={product.name} loading="lazy" />
-        {soldOut && <span className="product-card-badge">Sold Out</span>}
-      </Link>
+      <div className="product-card-media">
+        <Link
+          to={`/product/${product.id}`}
+          className="product-card-image-link"
+          onClick={handleNavigate}
+          aria-label={`View ${product.name}`}
+        >
+          <img
+            src={product.image}
+            alt={product.name}
+            loading="lazy"
+            onError={handleImgError}
+          />
+        </Link>
+
+        {(soldOut || showDiscount) && (
+          <div className="product-card-badges">
+            {soldOut && <span className="product-card-badge is-soldout">Sold Out</span>}
+            {showDiscount && (
+              <span className="product-card-badge is-sale">-{discountPct}%</span>
+            )}
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="product-card-quickview"
+          onClick={() => setQuickViewOpen(true)}
+          aria-label={`Quick view ${product.name}`}
+        >
+          <EyeIcon />
+          Quick View
+        </button>
+      </div>
 
       <div className="product-card-body">
-        {tag && <p className="product-card-tag">{tag}</p>}
+        {(product.brand_name || hasRating) && (
+          <div className="product-card-topline">
+            {product.brand_name && (
+              <p className="product-card-brand">{product.brand_name}</p>
+            )}
 
-        <Link to={`/product/${product.id}`} className="product-card-name-link" onClick={handleNavigate}>
+            {hasRating && (
+              <p className="product-card-rating">
+                <span className="pc-star" aria-hidden="true">★</span>
+                <span>{ratingDisplay}</span>
+                {product.review_count != null && (
+                  <span className="pc-count">({product.review_count})</span>
+                )}
+              </p>
+            )}
+          </div>
+        )}
+
+        <Link
+          to={`/product/${product.id}`}
+          className="product-card-name-link"
+          onClick={handleNavigate}
+        >
           <h3 className="product-card-name">{product.name}</h3>
         </Link>
 
-        {variantLabel && <p className="product-card-variant">{variantLabel}</p>}
-
-        {hasRating && (
-          <p className="product-card-rating">
-            <span aria-hidden="true">★</span>
-            {ratingDisplay}
-            {product.review_count != null && ` | (${product.review_count})`}
+        {(product.category_name || variantLabel) && (
+          <p className="product-card-meta">
+            {[product.category_name, variantLabel].filter(Boolean).join('  |  ')}
           </p>
         )}
 
@@ -135,7 +219,12 @@ export default function ProductCard({ product, onNavigate }) {
           <div className="product-card-price-row">
             <span className="product-card-price">{formatPrice(price)}</span>
             {showCompareAt && (
-              <span className="product-card-compare">{formatPrice(Number(compareAt))}</span>
+              <span className="product-card-compare">
+                {formatPrice(Number(compareAt))}
+              </span>
+            )}
+            {showDiscount && (
+              <span className="product-card-discount">-{discountPct}% OFF</span>
             )}
           </div>
         )}
@@ -166,6 +255,7 @@ export default function ProductCard({ product, onNavigate }) {
             className="btn product-card-btn"
             onClick={handleAdd}
             disabled={soldOut}
+            aria-label={`Add ${product.name} to cart`}
           >
             {soldOut ? (
               'Sold Out'
@@ -178,6 +268,14 @@ export default function ProductCard({ product, onNavigate }) {
           </button>
         )}
       </div>
+
+      {quickViewOpen && (
+        <QuickView
+          product={product}
+          onClose={() => setQuickViewOpen(false)}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   )
 }

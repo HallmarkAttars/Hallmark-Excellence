@@ -1,126 +1,188 @@
 /* ============================================================
-   Product Card — premium, compact, consistent
-   Image · Tag · Name · Variant · Rating · Price · Qty / Add
+   Product Card — premium luxury redesign
    One shared card for every storefront product grid.
+   White card · 4:3 cover image stage · gold/dark-green accents ·
+   strong name & price hierarchy · full-width Add to Cart.
+   All content driven by real product data only.
    ============================================================ */
 
 .product-card {
+  --card-green: #1E4A2E;        /* dark green accent (sale chip) */
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0;                 /* grid-item insurance: no overflow */
   height: 100%;
-  min-width: 0; /* grid-item insurance: no overflow from long names / nowrap buttons */
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid rgba(80, 60, 30, 0.10);
-  border-radius: 4px;
+  border-radius: 16px;
   overflow: hidden;
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 6px 24px rgba(40, 30, 20, 0.07);
+  box-sizing: border-box;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-/* ---------- Image area: consistent 1:1 stage, never cropped ---------- */
-.product-card-image-link {
+/* ============================================================
+   Image area — 4:3 stage, image fills the frame (no distortion)
+   ============================================================ */
+.product-card-media {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  padding: 12px;               /* 12–16px — bottle stays large, no dead margins */
+  aspect-ratio: 4 / 3;
+  background: #f6f0e5;          /* warm ivory stage */
   overflow: hidden;
-  background: var(--stage);
 }
+
+.product-card-image-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  object-fit: contain;         /* no cropping, no distortion */
+  object-fit: cover;            /* fills the 4:3 area, never stretched */
   object-position: center;
   display: block;
-  /* Source photos carry white margins around the bottle — this visually
-     enlarges the product inside the clipped stage so the bottle is the
-     hero, not the white space. Original files are never touched. */
-  transform: scale(1.05);
-  transform-origin: center;
-  transition: transform 0.4s ease; /* slow, contained zoom */
+  background: #f6f0e5;
+  transition: transform 0.35s ease; /* slow, contained zoom */
+}
+
+/* ---------- Badges (top-left over the image, real data only) ---------- */
+.product-card-badges {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 24px);
 }
 
 .product-card-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: var(--charcoal);
-  color: var(--cream);
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 3px;
-  z-index: 1;
+  color: #ffffff;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.product-card-badge.is-soldout { background: #1D1914; }   /* charcoal */
+.product-card-badge.is-sale    { background: #1E4A2E; }   /* dark green */
+
+/* ---------- Quick View (bottom-right over the image) ---------- */
+.product-card-quickview {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #222;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+}
+.product-card-quickview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  color: var(--gold-deep);
 }
 
-/* ---------- Content (sits directly below the image) ---------- */
+/* ============================================================
+   Content
+   ============================================================ */
 .product-card-body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 5px;
-  padding: 12px;
+  min-width: 0;
+  gap: 6px;
+  padding: 12px;                /* mobile */
+}
+
+/* ---------- Brand (left) + Rating (right) ---------- */
+.product-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
 }
 
-/* Category / brand label — only when real data exists */
-.product-card-tag {
-  font-family: var(--font-body);
-  font-size: 0.66rem;          /* ~10.5px */
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold-deep);
+.product-card-brand {
   margin: 0;
-  line-height: 1.4;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.product-card-name-link { min-width: 0; }
-.product-card-name {
-  font-family: var(--font-display);
-  font-size: 18px;             /* mobile 18–20px */
-  font-weight: 600;
+.product-card-rating {
   margin: 0;
-  line-height: 1.15;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+}
+.product-card-rating .pc-star {
+  color: var(--gold);
+  font-size: 13px;
+  line-height: 1;
+}
+.product-card-rating .pc-count {
+  font-weight: 500;
+  color: #9A9286;
+}
+
+/* ---------- Product name (primary hierarchy, max 2 lines) ---------- */
+.product-card-name-link { min-width: 0; display: block; }
+.product-card-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;              /* mobile 16–18px */
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--charcoal);
   display: -webkit-box;
-  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.product-card-variant {
-  color: var(--gold-deep);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+/* ---------- Meta row: CATEGORY | SIZE (real values only) ---------- */
+.product-card-meta {
   margin: 0;
-  line-height: 1.4;
+  font-size: 12px;
+  color: #6E675C;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
 }
 
-/* Rating — only when real rating data exists */
-.product-card-rating {
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--charcoal-soft);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.product-card-rating span {
-  color: var(--gold);
-  font-size: 0.92rem;
-  line-height: 1;
-}
-
-/* Price row */
+/* ---------- Price row ---------- */
 .product-card-price-row {
   display: flex;
   align-items: baseline;
@@ -129,111 +191,147 @@
   margin-top: 4px;
 }
 .product-card-price {
-  color: var(--gold-deep);
-  font-family: var(--font-body);
+  font-size: 20px;              /* mobile 18–20px */
   font-weight: 700;
-  font-size: 1.125rem;         /* 18px mobile */
-  line-height: 1.3;
+  color: var(--charcoal);
+  line-height: 1.2;
 }
 .product-card-compare {
-  color: var(--charcoal-soft);
-  font-size: 0.85rem;
+  font-size: 14px;
   font-weight: 500;
+  color: #9A9286;
   text-decoration: line-through;
-  line-height: 1.3;
+}
+.product-card-discount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E4A2E;               /* dark green */
 }
 
-/* Bulk price — only when actual bulk data exists */
+/* ---------- Bulk price (real bulk data only) ---------- */
 .product-card-bulk {
-  font-family: var(--font-body);
-  font-size: 0.72rem;          /* 11.5px */
-  font-weight: 500;
-  color: var(--gold-deep);
   margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-deep);
 }
 
-/* ---------- Add to cart / quantity controls (pinned to bottom) ----------
-   Muted luxury gold CTA with off-white text (deep gold shade keeps the
-   label legible at 4.5:1+ contrast). */
+/* ---------- Add to Cart / quantity control (pinned to bottom) ---------- */
 .product-card-btn {
   margin-top: auto;
   width: 100%;
-  height: 44px;
-  font-size: 0.78rem;          /* 12.5px */
-  letter-spacing: 0.06em;
+  height: 46px;                 /* mobile 44–46px */
+  border: none;
+  border-radius: 10px;
+  background: var(--gold-deep);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
   padding: 0 10px;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--gold-deep);
-  color: var(--cream);
-  border-color: var(--gold-deep);
-  transition: background-color 0.25s ease, border-color 0.25s ease,
-    color 0.25s ease, filter 0.25s ease, transform 0.15s ease;
+  transition: background-color 0.25s ease, transform 0.15s ease,
+    box-shadow 0.25s ease, filter 0.25s ease;
 }
-.product-card-btn:hover {
-  background: var(--gold-deep);
-  border-color: var(--gold-deep);
-  filter: brightness(0.94);
+.product-card-btn:hover:not(:disabled) {
+  background: #7A5A1F;
+  box-shadow: 0 8px 20px rgba(138, 102, 38, 0.25);
+}
+.product-card-btn:active:not(:disabled) { transform: scale(0.985); }
+.product-card-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
+/* Quantity control (replaces the button once the item is in cart) */
 .product-card-qty {
   margin-top: auto;
   width: 100%;
-  height: 44px;
+  height: 46px;
   background: var(--gold-deep);
-  color: var(--cream);
-  border-radius: 2px;
+  color: #ffffff;
+  border-radius: 10px;
 }
-.product-card-qty .qty-control-btn {
-  color: var(--cream);
-}
+.product-card-qty .qty-control-btn { color: #ffffff; }
 .product-card-qty .qty-control-btn:hover {
-  background: rgba(248, 243, 234, 0.12);
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
 }
-.product-card-qty .qty-control-input {
-  color: var(--cream);
-}
+.product-card-qty .qty-control-input { color: #ffffff; }
 .product-card-qty:focus-within {
-  box-shadow: 0 0 0 2px rgba(248, 243, 234, 0.28) inset;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3) inset;
 }
 
-/* ---------- Tablet (768–1023px) ---------- */
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (min-width: 768px) {
-  .product-card-image-link { padding: 14px; }
-  .product-card-body { padding: 14px; }
+  .product-card-body { padding: 14px 16px 16px; }   /* tablet */
   .product-card-name { font-size: 19px; }
-  .product-card-price { font-size: 1.125rem; }
+  .product-card-price { font-size: 21px; }
+  .product-card-btn { height: 48px; }
+  .product-card-qty { height: 48px; }
 }
 
-/* ---------- Desktop (1024px+) ---------- */
 @media (min-width: 1024px) {
-  .product-card-image-link { padding: 16px; }
-  .product-card-body { padding: 16px; }
-  .product-card-name { font-size: 21px; }  /* desktop 20–22px */
-  .product-card-price { font-size: 1.25rem; } /* 20px */
+  .product-card-body { padding: 16px 18px 18px; }   /* desktop */
+  .product-card-name { font-size: 21px; }
+  .product-card-price { font-size: 23px; }
+  .product-card-btn { font-size: 15px; }
+  .product-card-quickview { padding: 9px 15px; }
 }
 
-/* Narrow screens (2-up cards): keep the Add button unclipped */
-@media (max-width: 399px) {
-  .product-card-btn { font-size: 0.66rem; letter-spacing: 0.05em; padding: 0 6px; }
+/* Very small mobile (320px) — compact but readable */
+@media (max-width: 360px) {
+  .product-card-body { padding: 10px; gap: 5px; }
+  .product-card-name { font-size: 15px; }
+  .product-card-price { font-size: 17px; }
+  .product-card-compare { font-size: 12.5px; }
+  .product-card-meta { font-size: 11px; }
+  .product-card-brand { font-size: 11px; }
+  .product-card-btn { font-size: 12px; letter-spacing: 0; }
   .product-card-btn svg { display: none; }
+  .product-card-badge { padding: 5px 8px; font-size: 10px; }
+  .product-card-quickview { padding: 6px 10px; font-size: 0.64rem; }
 }
 
-/* ---------- Hover only on devices that actually hover ---------- */
+/* ============================================================
+   Interactions
+   ============================================================ */
+
+/* Desktop hover — gentle lift + image zoom (hover-capable devices only) */
 @media (hover: hover) and (pointer: fine) {
   .product-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 10px 24px rgba(80, 60, 30, 0.12); /* slightly stronger */
-    border-color: rgba(184, 137, 56, 0.35); /* subtle gold edge */
+    box-shadow: 0 14px 34px rgba(40, 30, 20, 0.12);
+    border-color: rgba(184, 137, 56, 0.35);   /* subtle gold edge */
   }
-  .product-card:hover .product-card-image-link img { transform: scale(1.06); }
+  .product-card:hover .product-card-image-link img { transform: scale(1.03); }
 }
 
-/* Mobile: press feedback on the whole card (not hover-dependent) */
+/* Mobile tap feedback (not hover-dependent, no navigation delay) */
 @media (hover: none) {
   .product-card:active { transform: scale(0.985); }
+}
+
+/* Respect reduced motion: no lift, no zoom, no press feedback */
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .product-card-image-link img,
+  .product-card-quickview,
+  .product-card-btn {
+    transition: none !important;
+  }
+  .product-card:hover {
+    transform: none;
+    box-shadow: 0 6px 24px rgba(40, 30, 20, 0.07);
+  }
+  .product-card:hover .product-card-image-link img { transform: none; }
+  .product-card:active { transform: none; }
 }

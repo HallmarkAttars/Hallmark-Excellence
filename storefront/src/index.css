@@ -226,7 +226,7 @@ a, button { -webkit-tap-highlight-color: transparent; }
   grid-template-columns: repeat(2, 1fr);
   gap: 12px; /* mobile 10–12px */
 }
-@media (max-width: 359px) { .grid-products { grid-template-columns: 1fr; } } /* very small mobile */
+@media (max-width: 359px) { .grid-products { grid-template-columns: repeat(2, 1fr); gap: 8px; } } /* 320px stays 2-up, compact */
 @media (min-width: 480px) { .grid-products { gap: 16px; } }
 @media (min-width: 640px) { .grid-products { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
 @media (min-width: 1024px) { .grid-products { grid-template-columns: repeat(4, 1fr); gap: 24px; } }

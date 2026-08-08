@@ -1,0 +1,301 @@
+/* ============================================================
+   Quick View modal — premium white dialog, warm ivory backdrop
+   Same design language as the redesigned product card.
+   Rendered via portal to <body>, so z-index is absolute.
+   ============================================================ */
+
+.quickview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(29, 25, 20, 0.55);
+  animation: quickview-fade 0.25s ease-out;
+}
+
+.quickview-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 880px;
+  max-height: min(92vh, 620px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(20, 15, 10, 0.35);
+  overflow: hidden;
+  animation: quickview-pop 0.3s ease-out;
+}
+
+@keyframes quickview-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes quickview-pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Close button ---------- */
+.quickview-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #222;
+  font-size: 1.05rem;
+  line-height: 1;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.quickview-close:hover {
+  transform: rotate(90deg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------- Media side ---------- */
+.quickview-media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #f6f0e5;
+  overflow: hidden;
+}
+.quickview-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.quickview-soldout {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 7px 11px;
+  border-radius: 6px;
+  background: #1d1914;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---------- Info side ---------- */
+.quickview-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 32px 34px 28px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.quickview-brand {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-deep);
+}
+
+.quickview-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--charcoal);
+}
+
+.quickview-rating {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+}
+.quickview-rating span {
+  color: var(--gold);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.quickview-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 2px;
+}
+.quickview-price {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  line-height: 1.2;
+}
+.quickview-compare {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #9a9286;
+  text-decoration: line-through;
+}
+.quickview-discount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e4a2e;
+}
+
+.quickview-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--charcoal-soft);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- Variants ---------- */
+.quickview-variants {
+  width: 100%;
+  margin-top: 4px;
+}
+.quickview-variants-title {
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--charcoal);
+}
+.quickview-variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quickview-variant {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.quickview-variant:hover { border-color: var(--gold); color: var(--gold-deep); }
+.quickview-variant.is-active {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--cream);
+}
+
+/* ---------- Actions ---------- */
+.quickview-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.quickview-qty {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.quickview-qty button {
+  width: 44px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.quickview-qty button:hover { background: var(--cream-deep); }
+.quickview-qty span {
+  min-width: 36px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.quickview-add {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: none;
+  border-radius: 10px;
+  background: var(--gold-deep);
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+}
+.quickview-add:hover:not(:disabled) { background: #7a5a1f; }
+.quickview-add:active:not(:disabled) { transform: scale(0.985); }
+.quickview-add:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.quickview-details-link {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.quickview-details-link:hover { color: var(--charcoal); border-color: var(--gold); }
+
+/* ---------- Mobile: stack media above info ---------- */
+@media (max-width: 767px) {
+  .quickview-backdrop { padding: 12px; align-items: center; }
+  .quickview-dialog {
+    grid-template-columns: 1fr;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .quickview-media { aspect-ratio: 4 / 3; }
+  .quickview-info { padding: 22px 20px 24px; }
+  .quickview-qty button { width: 40px; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .quickview-backdrop,
+  .quickview-dialog { animation: none !important; }
+  .quickview-close { transition: none; }
+}

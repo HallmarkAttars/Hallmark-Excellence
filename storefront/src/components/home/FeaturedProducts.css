@@ -40,8 +40,8 @@
 /* ---------- Product grid ---------- */
 .featured-track {
   display: grid;
-  grid-template-columns: 1fr; /* very small mobile (<360px) */
-  gap: 14px;
+  grid-template-columns: repeat(2, 1fr); /* 320px stays 2-up, compact */
+  gap: 10px;
 }
 @media (min-width: 360px) {
   .featured-track { grid-template-columns: repeat(2, 1fr); gap: 12px; } /* mobile 2-up */
