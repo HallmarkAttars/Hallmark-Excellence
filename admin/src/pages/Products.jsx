@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getProducts, getCategories, deleteProduct, toggleProductStatus } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminProductCard from '../components/ui/AdminProductCard'
+import { resolveProductImage, handleProductImageError } from '../utils/productImage'
 import './Products.css'
 
 export default function Products() {
@@ -62,7 +63,7 @@ export default function Products() {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id}>
-                    <td><img src={p.image} alt="" className="products-thumb" /></td>
+                    <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
                     <td className="products-name">
                       {p.name}
                       {p.is_featured && <span className="featured-badge">Featured</span>}

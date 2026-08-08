@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProductsByBrand, getCategories, deleteProduct, toggleProductStatus, getBrands } from '../services/mockApi'
 import AdminProductCard from '../components/ui/AdminProductCard'
+import { resolveProductImage, handleProductImageError } from '../utils/productImage'
 import './Products.css'
 
 export default function BrandProductsAdmin({ brandSlug }) {
@@ -60,7 +61,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id}>
-                    <td><img src={p.images?.[0]} alt="" className="products-thumb" /></td>
+                    <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
                     <td className="products-name">{p.name}</td>
                     <td>{categoryName(p.category_id)}</td>
                     <td>₹{Number(p.price).toLocaleString('en-IN')}</td>

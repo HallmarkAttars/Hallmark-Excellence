@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
+import { useToast } from '../../context/ToastContext'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -13,10 +14,13 @@ const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
 
 export default function QuickView({ product, onClose, onNavigate }) {
   const { addItem } = useCart()
+  const { notifyAddSuccess, notifyAddError } = useToast()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
   const closeRef = useRef(null)
   const addedTimer = useRef(null)
+  const addTimer = useRef(null)
 
   const variants = Array.isArray(product.variants) ? product.variants : []
   const hasVariants = variants.length > 0
@@ -69,6 +73,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
       if (addedTimer.current) clearTimeout(addedTimer.current)
+      if (addTimer.current) clearTimeout(addTimer.current)
       // Return keyboard focus to the card that opened the modal.
       if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus()
     }
@@ -76,7 +81,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
   const handleAdd = () => {
     if (hasVariants && !selectedVariant) return
-    if (soldOut) return
+    if (soldOut || adding) return
 
     // Build the complete selected variant info — identical to ProductDetail.
     const variantInfo = hasVariants
@@ -90,13 +95,25 @@ export default function QuickView({ product, onClose, onNavigate }) {
         }
       : null
 
-    addItem(
-      { id: product.id, name: product.name, price: Number(price), image: product.image },
-      qty,
-      variantInfo
-    )
-    setAdded(true)
-    addedTimer.current = setTimeout(() => setAdded(false), 1600)
+    setAdding(true)
+    try {
+      // Existing cart operation — unchanged. Brief ADDING state doubles as a
+      // duplicate-click guard, then the success toast fires after success.
+      addItem(
+        { id: product.id, name: product.name, price: Number(price), image: product.image },
+        qty,
+        variantInfo
+      )
+      addTimer.current = setTimeout(() => {
+        setAdding(false)
+        setAdded(true)
+        notifyAddSuccess(product)
+        addedTimer.current = setTimeout(() => setAdded(false), 1600)
+      }, 350)
+    } catch {
+      setAdding(false)
+      notifyAddError()
+    }
   }
 
   const handleViewDetails = () => {
@@ -203,9 +220,9 @@ export default function QuickView({ product, onClose, onNavigate }) {
               type="button"
               className="quickview-add"
               onClick={handleAdd}
-              disabled={soldOut}
+              disabled={soldOut || adding}
             >
-              {soldOut ? 'Sold Out' : added ? 'Added ✓' : 'Add to Cart'}
+              {soldOut ? 'Sold Out' : adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
             </button>
           </div>
 

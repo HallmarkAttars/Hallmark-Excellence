@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { resolveProductImage, handleProductImageError } from '../../utils/productImage'
 import './AdminProductCard.css'
 
 // Shared mobile product card used by ALL admin product-management pages
@@ -6,8 +7,9 @@ import './AdminProductCard.css'
 // untouched. Consumes the SAME product data and reuses the SAME handlers as
 // the table: no new fetching, no new CRUD.
 export default function AdminProductCard({ product, category, onToggle, onDelete, canEdit = true, canDelete = true }) {
-  // Products pages store the image on `image`; brand pages use `images[0]`.
-  const image = product.image || (Array.isArray(product.images) ? product.images[0] : null)
+  // Single shared resolver — handles the current `image` field plus every
+  // historical format. Desktop table and mobile card use the same source.
+  const image = resolveProductImage(product)
   const isActive = product.is_active !== false
   // NOTE: `.status-toggle` and `.featured-badge` are defined in the pages'
   // shared `Products.css` (both consumers import it). Keep that import when
@@ -18,7 +20,7 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
       <div className="product-card-top">
         <div className="product-card-image">
           {image ? (
-            <img src={image} alt={product.name} loading="lazy" />
+            <img src={image} alt={product.name} loading="lazy" onError={handleProductImageError} />
           ) : (
             <span className="product-card-image-placeholder" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

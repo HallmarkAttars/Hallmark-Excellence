@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
+import { useToast } from '../context/ToastContext'
 import ProductGrid from '../components/product/ProductGrid'
 import './ProductDetail.css'
 
 export default function ProductDetail() {
   const { id } = useParams()
   const { addItem } = useCart()
+  const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [activeImage, setActiveImage] = useState(0)
@@ -17,6 +19,15 @@ export default function ProductDetail() {
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
+  const [adding, setAdding] = useState(false)
+  const addedTimer = useRef(null)
+  const addTimer = useRef(null)
+
+  // Clear feedback timers on unmount.
+  useEffect(() => () => {
+    if (addedTimer.current) clearTimeout(addedTimer.current)
+    if (addTimer.current) clearTimeout(addTimer.current)
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -86,7 +97,7 @@ export default function ProductDetail() {
 
   const handleAdd = () => {
     if (hasVariants && !selectedVariant) return
-    if (stock <= 0) return
+    if (stock <= 0 || adding) return
 
     // Build the complete selected variant info for the cart item.
     const variantInfo = hasVariants
@@ -100,18 +111,30 @@ export default function ProductDetail() {
         }
       : null
 
-    addItem(
-      {
-        id: product.id,
-        name: product.name,
-        price: Number(price),
-        image: product.image,
-      },
-      qty,
-      variantInfo
-    )
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+    setAdding(true)
+    try {
+      // Existing cart operation — unchanged. Brief ADDING state doubles as a
+      // duplicate-click guard, then the success toast fires after success.
+      addItem(
+        {
+          id: product.id,
+          name: product.name,
+          price: Number(price),
+          image: product.image,
+        },
+        qty,
+        variantInfo
+      )
+      addTimer.current = setTimeout(() => {
+        setAdding(false)
+        setAdded(true)
+        notifyAddSuccess(product)
+        addedTimer.current = setTimeout(() => setAdded(false), 2000)
+      }, 350)
+    } catch {
+      setAdding(false)
+      notifyAddError()
+    }
   }
 
   const stockState = stockStatus()
@@ -182,9 +205,9 @@ export default function ProductDetail() {
           <button
             className="btn btn-primary"
             onClick={handleAdd}
-            disabled={stock <= 0}
+            disabled={stock <= 0 || adding}
           >
-            {added ? 'Added ✓' : 'Add to Cart'}
+            {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
           </button>
         </div>
       </div>

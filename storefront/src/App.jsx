@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
+import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import Home from './pages/Home'
@@ -58,13 +59,15 @@ function PageContent() {
 export default function App() {
   return (
     <CartProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <a href="#main-content" className="skip-link">Skip to main content</a>
-        <Navbar />
-        <PageContent />
-        <Footer />
-      </BrowserRouter>
+      <ToastProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <a href="#main-content" className="skip-link">Skip to main content</a>
+            <Navbar />
+          <PageContent />
+          <Footer />
+        </BrowserRouter>
+      </ToastProvider>
     </CartProvider>
   )
 }

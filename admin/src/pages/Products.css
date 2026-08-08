@@ -1,4 +1,18 @@
-.products-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius); }
+/* Product thumbnails — fixed square stage, contain (never crop/stretch),
+   warm ivory background + hairline border so blank/missing images look
+   intentional instead of broken. */
+.products-thumb {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  object-fit: contain;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  background: #faf8f2;
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  display: block;
+}
 .products-name {
   font-size: 14px;
   font-weight: 600;

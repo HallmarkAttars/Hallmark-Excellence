@@ -1,0 +1,163 @@
+/* ============================================================
+   Cart Toast — premium Add to Cart success / error notification
+   White card · gold/brown border · green success accent
+   Top-right on desktop · full-width under the header on mobile
+   One shared notification for every Add to Cart entry point.
+   ============================================================ */
+
+/* Always-mounted live region (a11y); never intercepts clicks */
+.cart-toast-region {
+  position: fixed;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+}
+
+.cart-toast {
+  position: fixed;
+  z-index: 450;                 /* above navbar/search/modals */
+  top: 88px;                    /* clears the 80px desktop header */
+  right: 24px;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid rgba(80, 60, 30, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.10);
+  padding: 14px 38px 14px 16px;   /* right padding clears the close button */
+  pointer-events: auto;
+  animation: cart-toast-enter 0.28s ease-out;
+}
+.cart-toast.is-leaving {
+  animation: cart-toast-exit 0.26s ease-in forwards;
+}
+
+@keyframes cart-toast-enter {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cart-toast-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ---------- Layout ---------- */
+.cart-toast-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cart-toast-icon {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.cart-toast.is-success .cart-toast-icon {
+  background: #1E4A2E;          /* dark green success accent */
+  color: #ffffff;
+}
+.cart-toast.is-error .cart-toast-icon {
+  background: #1D1914;          /* charcoal error accent */
+  color: #ffffff;
+}
+.cart-toast-icon-x { font-size: 15px; line-height: 1; }
+
+.cart-toast-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-toast-title {
+  margin: 0 0 3px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--charcoal);
+}
+
+.cart-toast-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--charcoal-soft);
+}
+.cart-toast-text strong { color: var(--charcoal); font-weight: 600; }
+
+/* ---------- Close ---------- */
+.cart-toast-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--charcoal-soft);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.cart-toast-close:hover {
+  background: var(--cream-deep);
+  color: var(--charcoal);
+}
+
+/* ============================================================
+   Mobile — full-width slide-down under the header
+   ============================================================ */
+@media (max-width: 767px) {
+  .cart-toast {
+    top: 72px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: calc(100vw - 24px);
+    padding: 12px 38px 12px 12px;   /* right padding clears the close button */
+    animation: cart-toast-mobile-enter 0.28s ease-out;
+  }
+  .cart-toast.is-leaving {
+    animation: cart-toast-mobile-exit 0.26s ease-in forwards;
+  }
+
+  @keyframes cart-toast-mobile-enter {
+    from { opacity: 0; transform: translateY(-100%); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes cart-toast-mobile-exit {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-100%); }
+  }
+}
+
+/* ============================================================
+   Reduced motion — simple fade only, no movement
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .cart-toast,
+  .cart-toast.is-leaving {
+    animation: cart-toast-fade 0.2s ease-out;
+  }
+  .cart-toast.is-leaving {
+    animation: cart-toast-fade-out 0.2s ease-in forwards;
+  }
+  @keyframes cart-toast-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes cart-toast-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  .cart-toast-close { transition: none; }
+}

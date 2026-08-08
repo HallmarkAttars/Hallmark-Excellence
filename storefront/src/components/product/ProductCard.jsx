@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
+import { useToast } from '../../context/ToastContext'
 import QuantityControl from './QuantityControl'
 import QuickView from './QuickView'
 import './ProductCard.css'
@@ -51,7 +52,13 @@ function EyeIcon() {
 
 export default function ProductCard({ product, onNavigate }) {
   const { items, addItem, updateQty, removeItem } = useCart()
+  const { notifyAddSuccess, notifyAddError } = useToast()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const addTimer = useRef(null)
+
+  // Clear the cosmetic ADDING timer if the card unmounts mid-flight.
+  useEffect(() => () => clearTimeout(addTimer.current), [])
 
   // Surface the default variant's size/label when the product has variants.
   const variants = Array.isArray(product.variants) ? product.variants : []
@@ -127,8 +134,22 @@ export default function ProductCard({ product, onNavigate }) {
     Number(product.bulk_min_qty) > 0
 
   const handleAdd = () => {
-    if (soldOut) return
-    addItem(product, 1, variantForCart)
+    if (soldOut || adding) return
+    setAdding(true)
+    try {
+      // Existing cart operation — unchanged. Runs synchronously, so the brief
+      // ADDING state is purely perceived feedback + a duplicate-click guard.
+      addItem(product, 1, variantForCart)
+      addTimer.current = setTimeout(() => {
+        setAdding(false)
+        // Success notification ONLY after the cart operation succeeded.
+        notifyAddSuccess(product)
+      }, 400)
+    } catch {
+      // Real cart errors are never hidden — show the error notification.
+      setAdding(false)
+      notifyAddError()
+    }
   }
 
   const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
@@ -254,11 +275,13 @@ export default function ProductCard({ product, onNavigate }) {
             type="button"
             className="btn product-card-btn"
             onClick={handleAdd}
-            disabled={soldOut}
+            disabled={soldOut || adding}
             aria-label={`Add ${product.name} to cart`}
           >
             {soldOut ? (
               'Sold Out'
+            ) : adding ? (
+              'Adding…'
             ) : (
               <>
                 <BagIcon />
