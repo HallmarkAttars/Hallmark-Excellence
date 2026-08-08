@@ -190,12 +190,12 @@ export default function ProductCard({ product, onNavigate }) {
           />
         </Link>
 
-        {(soldOut || showDiscount) && (
+        {/* Reference layout: the top-left badge area carries status badges only
+            (e.g. Sold Out). The discount lives in the price row as "25% OFF"
+            — matching the reference card. No badges are ever invented. */}
+        {soldOut && (
           <div className="product-card-badges">
-            {soldOut && <span className="product-card-badge is-soldout">Sold Out</span>}
-            {showDiscount && (
-              <span className="product-card-badge is-sale">-{discountPct}%</span>
-            )}
+            <span className="product-card-badge is-soldout">Sold Out</span>
           </div>
         )}
 
@@ -252,7 +252,7 @@ export default function ProductCard({ product, onNavigate }) {
               </span>
             )}
             {showDiscount && (
-              <span className="product-card-discount">-{discountPct}% OFF</span>
+              <span className="product-card-discount">{discountPct}% OFF</span>
             )}
           </div>
         )}

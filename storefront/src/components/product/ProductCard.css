@@ -1,7 +1,7 @@
 /* ============================================================
-   Product Card — premium luxury redesign
+   Product Card — premium luxury redesign (reference-matched)
    One shared card for every storefront product grid.
-   White card · 4:3 cover image stage · gold/dark-green accents ·
+   White card · 5:4 image stage · gold/dark-green accents ·
    strong name & price hierarchy · full-width Add to Cart.
    All content driven by real product data only.
    ============================================================ */
@@ -23,14 +23,16 @@
 }
 
 /* ============================================================
-   Image area — 4:3 stage, image fills the frame (no distortion)
+   Image area — 5:4 stage (reference proportions), image fills
+   the frame (no distortion)
    ============================================================ */
 .product-card-media {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  background: #f6f0e5;          /* warm ivory stage */
+  aspect-ratio: 5 / 4;
+  background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(184, 137, 56, 0.06); /* hairline stage edge */
 }
 
 .product-card-image-link {
@@ -43,13 +45,14 @@
 .product-card-image-link img {
   width: 100%;
   height: 100%;
-  object-fit: contain;          /* entire image visible inside the 4:3 area —
+  object-fit: contain;          /* entire image visible inside the 5:4 area —
                                    never stretched, never cropped (letterboxes
-                                   on the ivory stage for non-4:3 shots) */
+                                   on the warm stage for non-5:4 shots) */
   object-position: center;
   display: block;
-  background: #f6f0e5;
-  transition: transform 0.35s ease; /* slow, contained zoom */
+  background: transparent;
+  filter: drop-shadow(0 10px 18px rgba(60, 42, 18, 0.14)); /* soft grounded shadow */
+  transition: transform 0.35s ease, filter 0.35s ease; /* slow, contained zoom */
 }
 
 /* ---------- Badges (top-left over the image, real data only) ---------- */
@@ -76,7 +79,6 @@
   white-space: nowrap;
 }
 .product-card-badge.is-soldout { background: #1D1914; }   /* charcoal */
-.product-card-badge.is-sale    { background: #1E4A2E; }   /* dark green */
 
 /* ---------- Quick View (bottom-right over the image) ---------- */
 .product-card-quickview {
@@ -87,24 +89,46 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 14px;
-  border: none;
+  padding: 9px 15px;
+  border: 1px solid rgba(29, 25, 20, 0.14);  /* reference-style thin border */
   border-radius: 999px;
-  background: #ffffff;
-  color: #222;
+  background: rgba(255, 255, 255, 0.96);
+  color: #3A342C;
   font-family: var(--font-body);
   font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.12);
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease,
+    background-color 0.25s ease;
 }
 .product-card-quickview:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
   color: var(--gold-deep);
+  background: #ffffff;
+}
+
+/* Desktop hover-capable devices (≥768px): the button fades/slides in over
+   the image on hover / keyboard focus. Below 768px — and on any touch-only
+   device — it is ALWAYS visible so mobile users never lose it (hover is not
+   required on mobile). The width guard also makes the behavior correct for
+   emulated-mobile viewports. */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  .product-card-quickview {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  .product-card:hover .product-card-quickview,
+  .product-card:focus-within .product-card-quickview {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .product-card-quickview:hover {
+    transform: translateY(-2px);
+  }
 }
 
 /* ============================================================
@@ -131,9 +155,9 @@
 .product-card-brand {
   margin: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--gold-deep);
   white-space: nowrap;
   overflow: hidden;
@@ -166,8 +190,8 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: 18px;              /* mobile 16–18px */
-  font-weight: 600;
-  line-height: 1.2;
+  font-weight: 700;
+  line-height: 1.18;
   color: var(--charcoal);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -175,12 +199,13 @@
   overflow: hidden;
 }
 
-/* ---------- Meta row: CATEGORY | SIZE (real values only) ---------- */
+/* ---------- Meta row: CATEGORY | SIZE (real values only, reference style) ---------- */
 .product-card-meta {
   margin: 0;
-  font-size: 12px;
-  color: #6E675C;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  color: #8B8378;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   line-height: 1.5;
 }
 
@@ -206,8 +231,8 @@
 }
 .product-card-discount {
   font-size: 13px;
-  font-weight: 600;
-  color: #1E4A2E;               /* dark green */
+  font-weight: 700;
+  color: #1E4A2E;               /* dark green, reference style */
 }
 
 /* ---------- Bulk price (admin-enabled bulk products only) ---------- */
@@ -256,9 +281,9 @@
   color: #ffffff;
   font-family: var(--font-body);
   font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;    /* reference-style ADD TO CART */
   padding: 0 10px;
   white-space: nowrap;
   display: inline-flex;
@@ -302,18 +327,17 @@
    ============================================================ */
 @media (min-width: 768px) {
   .product-card-body { padding: 14px 16px 16px; }   /* tablet */
-  .product-card-name { font-size: 19px; }
-  .product-card-price { font-size: 21px; }
+  .product-card-name { font-size: 20px; }
+  .product-card-price { font-size: 22px; }
   .product-card-btn { height: 48px; }
   .product-card-qty { height: 48px; }
 }
 
 @media (min-width: 1024px) {
   .product-card-body { padding: 16px 18px 18px; }   /* desktop */
-  .product-card-name { font-size: 21px; }
-  .product-card-price { font-size: 23px; }
+  .product-card-name { font-size: 22px; }
+  .product-card-price { font-size: 24px; }
   .product-card-btn { font-size: 15px; }
-  .product-card-quickview { padding: 9px 15px; }
 }
 
 /* Very small mobile (320px) — compact but readable */
