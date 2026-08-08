@@ -1,5 +1,5 @@
 # TODO: Full Product Variant support in Checkout, Orders, Admin Orders, Order History
-
+Test
 ## Goal
 Persist a complete snapshot of every purchased item inside `orders.items` (JSONB) and display it across checkout, admin orders, and order history. Never fetch current product/variant data for completed orders — always use the saved snapshot. Legacy orders (no variants) keep working.
 hi
