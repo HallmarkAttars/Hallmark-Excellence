@@ -525,10 +525,29 @@ async function insertVariants(productId, variants) {
 
   const payload = rows.map((r) => ({ ...r, product_id: productId }))
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('product_variants')
     .insert(payload)
     .select(VARIANT_SELECT)
+
+  // The per-variant bulk columns (migration_add_variant_bulk_fields.sql:
+  // bulk_enabled / bulk_price / bulk_min_qty) may not exist on this database
+  // yet — in that case the INSERT above fails with "Could not find the
+  // 'bulk_enabled' column of 'product_variants'" and every admin save would
+  // break. Retry WITHOUT the bulk fields (mirroring the product-level
+  // withOptionalFieldRetry pattern) so create/update always succeed; the
+  // bulk config simply stays dormant until the migration is applied.
+  if (isMissingColumnError(error)) {
+    console.warn('[products] Variant bulk columns missing in product_variants (bulk_enabled, bulk_price, bulk_min_qty). Run server/db/migration_add_variant_bulk_fields.sql in the Supabase SQL editor to enable per-variant bulk pricing.')
+    const basePayload = payload.map((r) => {
+      const { bulk_enabled, bulk_price, bulk_min_qty, ...rest } = r
+      return rest
+    })
+    ;({ data, error } = await supabase
+      .from('product_variants')
+      .insert(basePayload)
+      .select(VARIANT_SELECT_BASE))
+  }
 
   if (error) throw error
 

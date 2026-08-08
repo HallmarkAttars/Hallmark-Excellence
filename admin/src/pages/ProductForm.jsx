@@ -673,7 +673,13 @@ export default function ProductForm() {
               <option value="">Select Brand</option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-            {isAttarCategory && <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>Brand is required for Attar products</small>}
+            {/* Only a real hint when Attar is selected AND no brand is chosen
+                yet — never shown as a false error once a brand is picked. */}
+            {isAttarCategory && !form.brand_id && (
+              <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>
+                Brand is required for Attar products
+              </small>
+            )}
           </div>
         </div>
 
