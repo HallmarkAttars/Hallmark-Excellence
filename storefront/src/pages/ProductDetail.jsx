@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining, brandBulkConfig } from '../utils/bulk'
 import ProductGrid from '../components/product/ProductGrid'
+import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
 
 export default function ProductDetail() {
@@ -77,7 +78,7 @@ export default function ProductDetail() {
       </div>
     )
   }
-  if (loading) return <div className="loading-state">Loading product…</div>
+  if (loading) return <SkeletonProductDetail />
   if (!product) {
     return (
       <div className="empty-state">

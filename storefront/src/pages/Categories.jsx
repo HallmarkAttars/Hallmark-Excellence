@@ -6,6 +6,7 @@ import { CATEGORIES_PAGE } from '../data/content'
 // Single source of truth for the premium category-card look — the homepage
 // CategoryGrid imports the same file, so both surfaces stay consistent.
 import '../components/home/CategoryGrid.css'
+import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
 import './Categories.css'
 
 export default function Categories() {
@@ -26,7 +27,7 @@ export default function Categories() {
 
       <div className="container">
         {loading ? (
-          <div className="loading-state">Loading categories…</div>
+          <SkeletonCategoryGrid count={8} />
         ) : (
           <Reveal className="category-scroll stagger-fade categories-page">
             {categories.map((cat) => (

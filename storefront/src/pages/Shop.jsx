@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductGrid from '../components/product/ProductGrid'
+import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
+import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { SHOP_PAGE } from '../data/content'
 import { hasAnyBulk } from '../utils/bulk'
@@ -27,6 +29,10 @@ export default function Shop() {
   const [brandFilter, setBrandFilter] = useState('all')
   const [bulkOnly, setBulkOnly] = useState(false)
   const [sort, setSort] = useState('default')
+
+  // Shows the "waking up our servers" notice only after `loading` has stayed
+  // true for 4s (i.e. a real cold start), never on a fast load.
+  const showSlowNotice = useSlowLoadNotice(loading)
 
   useEffect(() => {
     setLoading(true)
@@ -76,7 +82,7 @@ export default function Shop() {
     if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
     // 'default' and 'newest' keep original order
     return list
-}, [products, categoryFilter, brandFilter, bulkOnly, sort])
+  }, [products, categoryFilter, brandFilter, bulkOnly, sort])
 
   // Category and Brand are mutually exclusive.
   // Selecting a category clears the brand; selecting a brand clears the category.
@@ -139,6 +145,7 @@ export default function Shop() {
         </div>
 
         <div className="shop-results">
+          {showSlowNotice && <SlowLoadNotice />}
           <ProductGrid
             products={visibleProducts}
             loading={loading}
@@ -245,3 +252,4 @@ export default function Shop() {
     </div>
   )
 }
+

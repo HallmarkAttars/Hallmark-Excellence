@@ -1,5 +1,6 @@
 import Reveal from '../../animations/Reveal'
 import ProductCard from './ProductCard'
+import SkeletonProductGrid from '../skeleton/SkeletonProductGrid'
 
 export default function ProductGrid({ products, loading, error, onRetry, emptyMessage = 'No products found.' }) {
   if (error) {
@@ -15,7 +16,7 @@ export default function ProductGrid({ products, loading, error, onRetry, emptyMe
     )
   }
   if (loading) {
-    return <div className="loading-state">Loading products…</div>
+    return <SkeletonProductGrid />
   }
   if (!products || products.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>

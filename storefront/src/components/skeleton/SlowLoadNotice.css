@@ -1,0 +1,87 @@
+/* ============================================================
+   Slow-load notice — "waking up our servers"
+   Matches the existing toast/banner visual language (white card,
+   gold-tinted border, charcoal text). `role="status"` so screen
+   readers announce it only when it appears.
+   ============================================================ */
+
+.slow-load-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 20px;
+  padding: 13px 38px 13px 14px;   /* right padding clears the close button */
+  position: relative;
+  background: #ffffff;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 6px 22px rgba(29, 25, 20, 0.06);
+}
+
+/* Pulsing status dot — subtly signals "still working" */
+.slow-load-icon {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.slow-load-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--gold-deep);
+  animation: slow-load-pulse 1.3s ease-in-out infinite;
+}
+@keyframes slow-load-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.78); }
+}
+
+.slow-load-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--charcoal-soft);
+}
+.slow-load-text strong {
+  color: var(--charcoal);
+  font-weight: 600;
+}
+
+.slow-load-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--charcoal-soft);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.slow-load-close:hover {
+  background: var(--cream-deep);
+  color: var(--charcoal);
+}
+
+/* ---------- Reduced motion: static dot, no pulse ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .slow-load-dot {
+    animation: none;
+    opacity: 1;
+  }
+}
