@@ -1,6 +1,191 @@
 /* ============================================================
-   Orders — desktop table, chevron expand, structured detail panel
+   Orders — search + filter toolbar, desktop table, chevron expand,
+   structured detail panel, mobile cards
    ============================================================ */
+
+/* ---------- Page header: title + subtitle + Export ---------- */
+.orders-page-header { align-items: flex-end; }
+.orders-page-head h1 { margin-bottom: 2px; }
+.page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-export-btn { white-space: nowrap; }
+
+/* ---------- Search + filter toolbar card ---------- */
+.orders-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.orders-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.orders-search-icon {
+  position: absolute;
+  left: 14px;
+  display: inline-flex;
+  color: rgba(20, 17, 13, 0.4);
+  pointer-events: none;
+}
+.orders-search-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 44px 0 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: var(--admin-text-base);
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.orders-search-input::placeholder { color: rgba(20, 17, 13, 0.4); }
+.orders-search-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.16);
+  background: var(--white);
+}
+.orders-search-spinner {
+  position: absolute;
+  right: 14px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(198, 161, 91, 0.25);
+  border-top-color: var(--gold-deep);
+  animation: orders-spin 0.7s linear infinite;
+}
+@keyframes orders-spin { to { transform: rotate(360deg); } }
+.orders-search-clear {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(20, 17, 13, 0.45);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.orders-search-clear:hover { background: var(--cream-deep); color: var(--ink); }
+
+.orders-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.orders-filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 46px;
+  min-width: 150px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23504a3f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.orders-filter-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.16);
+}
+.orders-filter-select option { font-family: var(--font-body); font-size: 13px; }
+
+/* ---------- Result count ---------- */
+.orders-count {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(20, 17, 13, 0.5);
+}
+.orders-count::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: 1px;
+}
+
+.orders-list-card { padding-top: 8px; }
+
+/* ---------- Customer cell: name + clearly visible mobile number ---------- */
+.orders-customer {
+  min-width: 160px;
+  overflow-wrap: anywhere;
+}
+.orders-customer-name {
+  display: block;
+  font-weight: 500;
+  font-size: 13px;
+}
+.orders-customer-phone {
+  display: block;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.5);
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Empty states (no orders / no search results) ---------- */
+.orders-empty {
+  text-align: center;
+  padding: 56px 24px;
+}
+.orders-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  color: var(--gold-deep);
+}
+.orders-empty h3 {
+  font-size: 21px;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.orders-empty p {
+  margin: 0 auto 18px;
+  max-width: 420px;
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.55);
+}
 
 .orders-row { transition: background-color 0.15s ease; }
 .orders-row:hover { background: var(--cream); }
@@ -55,7 +240,9 @@
 }
 .orders-actions-cell { white-space: nowrap; }
 
-/* ---------- Status: pill select with muted per-status colors ---------- */
+/* ---------- Status: pill select with premium per-status colors ----------
+   Pending = soft gold/beige · Processing = soft blue · Shipped = soft
+   purple-blue · Delivered = soft green · Cancelled = soft red/pink. */
 .orders-status-cell { display: inline-flex; align-items: center; gap: 8px; }
 .orders-status-select {
   appearance: none;
@@ -80,8 +267,8 @@
 .orders-status-select option { font-family: var(--font-body); font-size: 12px; font-weight: 500; }
 
 .orders-status-pending { background-color: var(--cream-deep); color: #6b6457; }
-.orders-status-processing { background-color: var(--warning-bg); color: var(--warning); }
-.orders-status-shipped { background-color: var(--charcoal); color: var(--cream); }
+.orders-status-processing { background-color: #E3ECF6; color: #2B5E96; }
+.orders-status-shipped { background-color: #EAE6F5; color: #5B4A9E; }
 .orders-status-delivered { background-color: var(--success-bg); color: var(--success); }
 .orders-status-cancelled { background-color: var(--danger-bg); color: var(--danger); }
 .orders-status-returned { background-color: var(--cream-deep); color: #6b6457; }
@@ -94,25 +281,30 @@
 }
 @keyframes orders-pulse { 50% { opacity: 0.35; } }
 
-/* ---------- Delete — subtle destructive pill (38px, matches status select) ---------- */
+/* ---------- Delete — white/light bg, red border + text (premium) ---------- */
 .orders-delete-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 38px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(178, 58, 50, 0.28);
-  background: var(--danger-bg);
+  padding: 0 14px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(178, 58, 50, 0.4);
+  background: var(--white);
   color: var(--danger);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.orders-delete-btn:hover { background: var(--danger); color: var(--white); border-color: var(--danger); }
+.orders-delete-btn:hover {
+  background: var(--danger);
+  color: var(--white);
+  border-color: var(--danger);
+  box-shadow: 0 4px 14px rgba(178, 58, 50, 0.2);
+}
 
 /* ---------- Delete confirmation dialog ---------- */
 .modal-scrim {
@@ -246,19 +438,40 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Panel footer — order placed timestamp */
+/* Panel footer — payment/delivery/total meta + order placed timestamp */
 .orders-panel-footer {
   grid-column: 1 / -1;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
   padding-top: 16px;
   margin-top: 8px;
   border-top: 1px solid var(--line);
   font-size: 12px;
   color: rgba(20, 17, 13, 0.55);
 }
-.orders-panel-footer strong {
+.orders-panel-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+}
+.orders-panel-meta-item { display: inline-flex; flex-direction: column; gap: 2px; }
+.orders-panel-meta-item span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(20, 17, 13, 0.45);
+}
+.orders-panel-meta-item strong {
+  font-weight: 600;
+  color: var(--charcoal);
+  font-variant-numeric: tabular-nums;
+}
+.orders-panel-placed { display: inline-flex; flex-direction: column; gap: 2px; text-align: right; }
+.orders-panel-placed strong {
   font-weight: 600;
   color: var(--charcoal);
   font-variant-numeric: tabular-nums;
@@ -280,6 +493,15 @@
 
   .orders-page .page-header h1 { font-size: 28px; line-height: 1.1; }
   .orders-page .card { padding: 12px; }
+
+  /* Toolbar stacks: search first, status filter full-width below */
+  .orders-toolbar { grid-template-columns: 1fr; gap: 12px; padding: 12px; }
+  .orders-search-input { height: 48px; }
+  .orders-filter { justify-content: space-between; }
+  .orders-filter-select { flex: 1; min-width: 0; }
+  .orders-list-card { padding-top: 6px; }
+  .orders-count { margin-bottom: 10px; }
+  .orders-export-btn { width: 100%; }
 
   .order-card {
     width: 100%;
@@ -320,6 +542,16 @@
     line-height: 1.3;
     font-weight: 500;
     color: rgba(20, 17, 13, 0.75);
+  }
+  /* Mobile number — clearly visible under the customer name */
+  .order-card-phone {
+    display: block;
+    margin-top: 1px;
+    width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    color: rgba(20, 17, 13, 0.5);
+    font-variant-numeric: tabular-nums;
   }
 
   .order-card-bottom {
@@ -408,7 +640,7 @@
   .order-card-detail-section .orders-status-cell { width: 100%; }
   .order-card-status-select { width: 100%; height: 44px; font-size: 13px; }
 
-  /* Delete — full width, 44px min-height, opens the existing confirm modal */
+  /* Delete — full width, 44px min-height, premium white/red, existing confirm modal */
   .order-card-delete {
     display: flex;
     align-items: center;
@@ -418,8 +650,8 @@
     min-height: 44px;
     margin-top: 14px;
     border-radius: var(--radius);
-    border: 1px solid rgba(178, 58, 50, 0.28);
-    background: var(--danger-bg);
+    border: 1px solid rgba(178, 58, 50, 0.4);
+    background: var(--white);
     color: var(--danger);
     font-family: var(--font-body);
     font-size: 13px;

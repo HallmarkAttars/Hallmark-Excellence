@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { getOrders, updateOrderStatus, deleteOrder } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminStatusBadge from '../components/ui/AdminStatusBadge'
@@ -11,6 +11,7 @@ import {
   formatOrderTime,
   formatOrderDateTime,
   formatItemsCount,
+  matchesOrderSearch,
 } from '../utils/format'
 import './Orders.css'
 
@@ -84,13 +85,16 @@ function OrderItemsList({ items }) {
   )
 }
 
-// Shared labelled customer rows (CUSTOMER / PHONE / ADDRESS / AREA / MESSAGE).
+// Shared labelled customer rows (CUSTOMER / PHONE / EMAIL / ADDRESS / AREA / MESSAGE).
 function CustomerDetails({ o }) {
   return (
     <>
       <p className="orders-panel-name">{o.customer_name}</p>
       {o.phone && (
         <p className="orders-panel-labeled"><span>Phone</span><strong>{o.phone}</strong></p>
+      )}
+      {o.email && (
+        <p className="orders-panel-labeled"><span>Email</span><strong>{o.email}</strong></p>
       )}
       {(o.address || o.pincode) && (
         <p className="orders-panel-labeled">
@@ -150,6 +154,22 @@ function StatusSelect({ o, updatingId, onUpdate, className }) {
   )
 }
 
+// Small search icon used in the toolbar input.
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  )
+}
+
+// CSV-safe cell: quote only when the value contains a delimiter.
+function csvCell(value) {
+  const s = String(value ?? '')
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 export default function Orders() {
   const { can } = useAuth()
   const [orders, setOrders] = useState([])
@@ -162,6 +182,15 @@ export default function Orders() {
   const [feedback, setFeedback] = useState(null)
   const feedbackTimer = useRef(null)
 
+  // Search + filter state — filtering is CLIENT-SIDE over the already-loaded
+  // orders (the admin fetches the full list once), so typing is instant and
+  // no extra backend query fires per keystroke. The 180ms debounce only gates
+  // the subtle spinner so the UI feels deliberate, never slower than needed.
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searching, setSearching] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('All')
+
   useEffect(() => {
     getOrders().then((o) => {
       setOrders([...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
@@ -170,10 +199,77 @@ export default function Orders() {
     return () => window.clearTimeout(feedbackTimer.current)
   }, [])
 
+  // Debounce the search query; `searching` is true while a keystroke is
+  // pending (drives the tiny spinner in the input).
+  useEffect(() => {
+    if (search === debouncedSearch) return
+    setSearching(true)
+    const t = window.setTimeout(() => {
+      setDebouncedSearch(search)
+      setSearching(false)
+    }, 180)
+    return () => window.clearTimeout(t)
+  }, [search, debouncedSearch])
+
+  // The visible set = status filter AND search (auto-detected Order ID /
+  // mobile number). Pure function of state — the source of truth is the
+  // `orders` array loaded once from the API.
+  const visibleOrders = useMemo(() => {
+    let list = orders
+    if (statusFilter !== 'All') {
+      list = list.filter((o) => canonicalStatus(o.status) === statusFilter)
+    }
+    if (debouncedSearch.trim()) {
+      list = list.filter((o) => matchesOrderSearch(o, debouncedSearch))
+    }
+    return list
+  }, [orders, statusFilter, debouncedSearch])
+
+  const hasQuery = Boolean(search.trim())
+
   const notify = (type, message) => {
     setFeedback({ type, message })
     window.clearTimeout(feedbackTimer.current)
     feedbackTimer.current = window.setTimeout(() => setFeedback(null), 4000)
+  }
+
+  // Instant clear — the results list must restore immediately, never waiting
+  // on the debounce timer.
+  const clearSearch = () => {
+    setSearch('')
+    setDebouncedSearch('')
+    setSearching(false)
+  }
+
+  // Clear search + reset the status filter (used by the empty-state button).
+  const clearAll = () => {
+    clearSearch()
+    setStatusFilter('All')
+  }
+
+  // CSV export of the CURRENTLY VISIBLE orders — uses only already-loaded
+  // real data; no backend call, no invented fields.
+  const handleExport = () => {
+    if (visibleOrders.length === 0) return
+    const header = ['Order #', 'Customer', 'Phone', 'Date', 'Amount', 'Status']
+    const rows = visibleOrders.map((o) => [
+      o.order_number,
+      o.customer_name,
+      o.phone,
+      formatOrderDate(o.created_at),
+      o.total_amount,
+      o.status,
+    ])
+    const csv = [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n')
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
   }
 
   const handleStatusChange = async (id, status) => {
@@ -222,10 +318,32 @@ export default function Orders() {
     }
   }
 
+  const noOrdersAtAll = !loading && orders.length === 0
+  const noSearchResults = !loading && orders.length > 0 && visibleOrders.length === 0
+  // Search-specific empty state only when the admin actually searched; a
+  // status filter with no matches gets its own message.
+  const emptyBySearch = noSearchResults && hasQuery
+
   return (
     <div className="orders-page">
-      <div className="page-header">
-        <h1>Orders</h1>
+      <div className="page-header orders-page-header">
+        <div className="orders-page-head">
+          <h1>Orders</h1>
+          <p className="page-subtitle">Manage and view all customer orders</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-outline orders-export-btn"
+          onClick={handleExport}
+          disabled={visibleOrders.length === 0}
+          title={visibleOrders.length === 0 ? 'Nothing to export' : 'Export visible orders as CSV'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
+          Export
+        </button>
       </div>
 
       {feedback && (
@@ -234,11 +352,99 @@ export default function Orders() {
         </div>
       )}
 
-      <div className="card">
+      {/* Search + filter toolbar */}
+      <div className="card orders-toolbar">
+        <div className="orders-search">
+          <span className="orders-search-icon" aria-hidden="true"><SearchIcon /></span>
+          <input
+            type="text"
+            inputMode="search"
+            role="searchbox"
+            className="orders-search-input"
+            placeholder="Search by Order ID or mobile number..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search orders by Order ID or mobile number"
+            autoComplete="off"
+            spellCheck="false"
+          />
+          {searching && <span className="orders-search-spinner" aria-hidden="true" />}
+          {hasQuery && (
+            <button
+              type="button"
+              className="orders-search-clear"
+              onClick={clearSearch}
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <div className="orders-filter">
+          <label className="orders-filter-label" htmlFor="orders-status-filter">Status</label>
+          <select
+            id="orders-status-filter"
+            className="orders-filter-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Result count — dynamic, correct singular/plural */}
+      {!loading && (
+        <p className="orders-count" role="status">
+          {visibleOrders.length} {visibleOrders.length === 1 ? 'order' : 'orders'} found
+        </p>
+      )}
+
+      <div className="card orders-list-card">
         {loading ? (
           <div className="loading-state">Loading orders…</div>
-        ) : orders.length === 0 ? (
-          <div className="empty-state">No orders yet.</div>
+        ) : noOrdersAtAll ? (
+          <div className="orders-empty">
+            <span className="orders-empty-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </span>
+            <h3>No orders yet</h3>
+            <p>Customer orders will appear here once an order is placed.</p>
+          </div>
+        ) : noSearchResults ? (
+          <div className="orders-empty">
+            <span className="orders-empty-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3M8.5 8.5l5 5M13.5 8.5l-5 5" />
+              </svg>
+            </span>
+            {emptyBySearch ? (
+              <>
+                <h3>No orders found</h3>
+                <p>Check the Order ID or mobile number and try again.</p>
+                <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
+                  Clear Search
+                </button>
+              </>
+            ) : (
+              <>
+                <h3>No orders match this status</h3>
+                <p>Try a different status or clear the filter to see all orders.</p>
+                <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
+                  Clear Filter
+                </button>
+              </>
+            )}
+          </div>
         ) : (
           <>
             {/* Desktop table — kept as-is, shown at >= 768px */}
@@ -257,7 +463,7 @@ export default function Orders() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((o) => (
+                    {visibleOrders.map((o) => (
                       <Fragment key={o.id}>
                         <tr className={`orders-row ${expanded === o.id ? 'is-expanded' : ''}`}>
                           <td className="orders-expand-cell">
@@ -268,7 +474,10 @@ export default function Orders() {
                             />
                           </td>
                           <td className="orders-order-number" title={o.order_number}>{o.order_number}</td>
-                          <td className="orders-customer">{o.customer_name}</td>
+                          <td className="orders-customer">
+                            <span className="orders-customer-name">{o.customer_name}</span>
+                            {o.phone && <span className="orders-customer-phone">{o.phone}</span>}
+                          </td>
                           <td className="orders-date">
                             <span className="orders-date-line">{formatOrderDate(o.created_at)}</span>
                             <span className="orders-time-line">{formatOrderTime(o.created_at)}</span>
@@ -305,8 +514,24 @@ export default function Orders() {
                                   <OrderItemsList items={o.items} />
                                 </section>
                                 <footer className="orders-panel-footer">
-                                  <span>Order placed</span>
-                                  <strong>{formatOrderDateTime(o.created_at)}</strong>
+                                  <div className="orders-panel-meta">
+                                    <span className="orders-panel-meta-item">
+                                      <span>Payment</span>
+                                      <strong>{o.payment_method || 'Cash On Delivery'}</strong>
+                                    </span>
+                                    <span className="orders-panel-meta-item">
+                                      <span>Delivery</span>
+                                      <strong>{Number(o.shipping_charge) > 0 ? formatINR(o.shipping_charge) : 'To be confirmed'}</strong>
+                                    </span>
+                                    <span className="orders-panel-meta-item">
+                                      <span>Total</span>
+                                      <strong>{formatINR(o.total_amount)}</strong>
+                                    </span>
+                                  </div>
+                                  <span className="orders-panel-placed">
+                                    Order placed
+                                    <strong>{formatOrderDateTime(o.created_at)}</strong>
+                                  </span>
                                 </footer>
                                 <div className="orders-invoice-actions">
                                   <button type="button" className="btn btn-outline btn-sm" onClick={() => setInvoiceOrder(o)}>
@@ -328,7 +553,7 @@ export default function Orders() {
 
             {/* Mobile order cards — same orders array, shown below 768px */}
             <div className="orders-mobile">
-              {orders.map((o) => {
+              {visibleOrders.map((o) => {
                 const isOpen = expanded === o.id
                 return (
                   <div className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
@@ -351,6 +576,7 @@ export default function Orders() {
                     </div>
 
                     <span className="order-card-customer">{o.customer_name}</span>
+                    {o.phone && <span className="order-card-phone">{o.phone}</span>}
 
                     <div className="order-card-bottom">
                       <span className="order-card-date">
@@ -369,6 +595,13 @@ export default function Orders() {
                         <section className="order-card-detail-section">
                           <h4>Order Items</h4>
                           <OrderItemsList items={o.items} />
+                        </section>
+
+                        <section className="order-card-detail-section">
+                          <h4>Payment &amp; Totals</h4>
+                          <p className="orders-panel-labeled"><span>Payment</span><strong>{o.payment_method || 'Cash On Delivery'}</strong></p>
+                          <p className="orders-panel-labeled"><span>Delivery</span><strong>{Number(o.shipping_charge) > 0 ? formatINR(o.shipping_charge) : 'To be confirmed'}</strong></p>
+                          <p className="orders-panel-labeled"><span>Total</span><strong>{formatINR(o.total_amount)}</strong></p>
                         </section>
 
                         <p className="order-card-placed">

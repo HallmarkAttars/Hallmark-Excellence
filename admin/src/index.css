@@ -111,8 +111,8 @@ input, select, textarea { font-family: var(--font-body); }
 }
 .status-pending { background: var(--cream-deep); color: #6b6457; }
 .status-delivered { background: var(--success-bg); color: var(--success); }
-.status-shipped { background: var(--charcoal); color: var(--cream); }
-.status-processing { background: var(--warning-bg); color: var(--warning); }
+.status-shipped { background: #EAE6F5; color: #5B4A9E; }
+.status-processing { background: #E3ECF6; color: #2B5E96; }
 .status-cancelled { background: var(--danger-bg); color: var(--danger); }
 .status-returned { background: var(--cream-deep); color: #6b6457; }
 

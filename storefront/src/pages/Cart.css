@@ -275,6 +275,18 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+/* Struck-through normal per-piece price — same muted-grey strikethrough
+   treatment as the compare-at price elsewhere (product-card-compare),
+   smaller than the bulk unit price, inline right after it. */
+.cart-item-unit-struck {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #9A9286;
+  text-decoration: line-through;
+  text-decoration-color: rgba(95, 88, 78, 0.5);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .cart-item-bulk-badge {
   display: inline-flex;
   align-items: center;

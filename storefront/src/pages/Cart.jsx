@@ -180,6 +180,15 @@ export default function Cart() {
                       <span className="cart-item-unit">
                         ₹{effectivePrice.toLocaleString('en-IN')} / piece
                       </span>
+                      {/* Normal per-piece price struck through — only when a
+                          bulk discount is genuinely active on this line. When
+                          no discount applies the two prices are identical, so
+                          no strikethrough is shown. */}
+                      {bulkBadge && normalPrice > effectivePrice && (
+                        <span className="cart-item-unit-struck">
+                          ₹{normalPrice.toLocaleString('en-IN')}/piece
+                        </span>
+                      )}
                       {bulkBadge && (
                         <span className="cart-item-bulk-badge">✓ {bulkBadge}</span>
                       )}
@@ -236,9 +245,19 @@ export default function Cart() {
 
                     <div className="cart-item-total-col">
                       <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
-                      <p className={`cart-item-sub${lineSavings > 0 ? ' is-struck' : ''}`}>
-                        ₹{normalPrice.toLocaleString('en-IN')} × {item.quantity}
-                      </p>
+                      {/* With a bulk discount the struck line is the plain
+                          normal TOTAL (price × qty) so the hierarchy reads
+                          bold bulk total → struck normal total → saving.
+                          Without a discount keep the ₹X × qty breakdown. */}
+                      {lineSavings > 0 ? (
+                        <p className="cart-item-sub is-struck">
+                          ₹{(normalPrice * item.quantity).toLocaleString('en-IN')}
+                        </p>
+                      ) : (
+                        <p className="cart-item-sub">
+                          ₹{normalPrice.toLocaleString('en-IN')} × {item.quantity}
+                        </p>
+                      )}
                       {lineSavings > 0 && (
                         <p className="cart-item-saving">Saving ₹{lineSavings.toLocaleString('en-IN')}</p>
                       )}

@@ -1,14 +1,19 @@
 // ============================================================================
 // Invoice PDF / print — premium A4 document generation (no screenshots).
 //
-// DESIGN: luxury ecommerce invoice for Hallmark Excellence.
-//   • Header  — logo (aspect-preserved) + brand name + tagline | INVOICE +
-//               invoice # / date / time, thin gold divider, contact strip
-//   • Cards   — BILL TO + ORDER INFORMATION side by side on a warm cream fill
-//   • Table   — dark header, white rows, subtle separators, brand · size
-//               detail lines, per-line "Bulk Price Applied" tag
+// DESIGN: luxury attar invoice for Hallmark of Excellence.
+//   • Frame   — hairline gold page frame with a lighter inner outline
+//   • Header  — logo (left) · brand name + tagline (centre) · gold INVOICE
+//               title + invoice # / date / time (right), thin gold divider
+//               and a centred contact bar below
+//   • Cards   — BILL TO + ORDER INFORMATION (Order ID / Date / Time / Payment
+//               / Status) side by side on a warm cream fill
+//   • Table   — dark header, white rows, subtle separators, aspect-preserved
+//               thumbnails, brand · size detail lines, per-line bulk tag
 //   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount)
-//   • Payment / status row, then a centred thank-you footer
+//   • Payment + coloured status pill, trust row, thank-you card, dark footer
+//   • Multi-page: the table header repeats, totals stay together, and the
+//     gold frame + dark footer are redrawn on every page.
 //
 // DATA: every figure is the SAVED order's own value (utils/invoice.js feeds
 // all three surfaces — screen, print, PDF — so they always agree). Nothing is
@@ -28,15 +33,32 @@ import {
   invoiceFileName,
 } from '../../utils/invoice'
 
-// --- Palette (Hallmark Excellence) ----------------------------------------
-const INK = [17, 17, 17] // #111111
-const TEXT = [34, 34, 34] // #222222
-const MUTED = [102, 102, 102] // #666666
+// --- Palette (Hallmark Excellence luxury) ----------------------------------
+const INK = [23, 21, 18] // #171512
+const TEXT = [26, 24, 21] // #1A1815
+const MUTED = [111, 106, 99] // #6F6A63
 const GOLD = [184, 134, 43] // #B8862B
-const GOLD_LIGHT = [212, 175, 55] // #D4AF37
-const CREAM = [248, 244, 236] // #F8F4EC
-const CREAM_BORDER = [232, 220, 195] // #E8DCC3 — soft cream thumb frame
-const HAIRLINE = [235, 231, 222]
+const GOLD_LIGHT = [206, 166, 86] // lighter gold for small accents
+const CREAM = [247, 242, 232] // #F7F2E8
+const CREAM_BORDER = [230, 220, 198] // #E6DCC6 — thumb frame
+const HAIRLINE = [236, 231, 220] // #ECE7DC
+const WHITE = [255, 255, 255]
+
+// Real order-status colours (unknown statuses fall back to gold).
+const STATUS_COLORS = {
+  pending: GOLD,
+  confirmed: [46, 125, 50],
+  processing: [21, 101, 192],
+  shipped: [21, 101, 192],
+  delivered: [46, 125, 50],
+  cancelled: [198, 40, 40],
+}
+function statusColor(status) {
+  const key = String(status || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+  return STATUS_COLORS[key] || STATUS_COLORS.pending
+}
 
 // --- Rupee-capable font (optional) -----------------------------------------
 // Loaded once, cached for the session; returns base64 TTF or null on failure.
@@ -145,11 +167,28 @@ function loadLogo(src) {
   return loadImageDataUrl(src)
 }
 
-// Product thumbnail: downscaled to ≤128px so the PDF stays light; the row
-// simply renders without a thumbnail when the image is missing or broken.
+// Product thumbnail: downscaled to ≤128px; returns the full { dataUrl, w, h }
+// so the table can fit it inside its frame WITHOUT stretching the aspect
+// ratio. A row simply renders without a thumbnail when the image is missing.
 function loadThumb(src) {
-  return loadImageDataUrl(src, { maxSize: 128 }).then((img) => (img ? img.dataUrl : null))
+  return loadImageDataUrl(src, { maxSize: 128 })
 }
+
+// Fit a w×h image inside a size×size box, preserving aspect ratio (contain).
+function containBox(w, h, size) {
+  const scale = Math.min(size / w, size / h)
+  const cw = w * scale
+  const ch = h * scale
+  return { w: cw, h: ch, x: (size - cw) / 2, y: (size - ch) / 2 }
+}
+
+// Trust row copy — mirrors the on-screen sheet.
+const TRUST_ITEMS = [
+  { title: '100% Original', sub: 'Authentic attars from trusted sources' },
+  { title: 'Premium Quality', sub: 'Finest ingredients & long lasting' },
+  { title: 'Secure Packaging', sub: 'Carefully packed for safe delivery' },
+  { title: 'Customer Support', sub: "We're here to help you always" },
+]
 
 // ---------------------------------------------------------------------------
 // PDF layout
@@ -167,55 +206,55 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const rupee = await registerRupeeFont(doc)
   const W = doc.internal.pageSize.getWidth() // 210
   const H = doc.internal.pageSize.getHeight() // 297
-  const M = 14 // margin
+  const M = 14 // content margin
   const CW = W - M * 2 // content width 182
 
   // ============================= HEADER =====================================
   let brandX = M
   if (logo) {
-    const logoW = 38
-    const logoH = Math.max(10, Math.min(16, (logoW * logo.h) / logo.w))
-    doc.addImage(logo.dataUrl, 'JPEG', M, 15, logoW, logoH)
-    brandX = M + logoW + 8
+    const logoW = 34
+    const logoH = Math.max(9, Math.min(14, (logoW * logo.h) / logo.w))
+    doc.addImage(logo.dataUrl, 'JPEG', M, 15.5, logoW, logoH)
+    brandX = M + logoW + 7
   }
-  // Brand name + tagline (left)
+  // Brand name + tagline (centre)
   doc.setFont('times', 'bold').setFontSize(17).setTextColor(...INK)
-  doc.text(inv.company.name, brandX, 17)
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...GOLD_LIGHT)
-  if (inv.company.tagline) doc.text(inv.company.tagline, brandX, 23.5)
+  doc.text(inv.company.name, W / 2, 17.5, { align: 'center' })
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GOLD)
+  if (inv.company.tagline) {
+    doc.text(inv.company.tagline.toUpperCase(), W / 2, 23, { align: 'center', charSpace: 1.2 })
+  }
 
-  // INVOICE title (right)
-  doc.setFont('helvetica', 'bold').setFontSize(20).setTextColor(...INK)
-  doc.text('INVOICE', W - M, 17, { align: 'right', charSpace: 2.5 })
-  let ry = 27
+  // INVOICE title (right, gold)
+  doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
+  doc.text('INVOICE', W - M, 17.5, { align: 'right', charSpace: 2.5 })
+  let ry = 26
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...TEXT)
   if (inv.orderId) {
     doc.text(`Invoice # ${inv.orderId}`, W - M, ry, { align: 'right' })
-    ry += 4.5
+    ry += 4.4
   }
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
+  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
   if (inv.date) {
     doc.text(`Date: ${inv.date}`, W - M, ry, { align: 'right' })
-    ry += 4.5
+    ry += 4.4
   }
   if (inv.time) doc.text(`Time: ${inv.time}`, W - M, ry, { align: 'right' })
 
-  // Thin gold divider
+  // Thin gold divider + centred contact bar (real config values only)
   doc.setDrawColor(...GOLD).setLineWidth(0.7)
-  doc.line(M, 43, W - M, 43)
-
-  // Business contact strip (real config values only)
+  doc.line(M, 41, W - M, 41)
   const contactBits = [inv.company.phone, inv.company.email].filter(Boolean)
   if (contactBits.length > 0) {
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(contactBits.join('   ·   '), M, 48.5)
+    doc.text(contactBits.join('   ·   '), W / 2, 46, { align: 'center' })
   }
 
   // ========================= BILL TO / ORDER INFO ===========================
   const cardGap = 8
   const cardW = (CW - cardGap) / 2 // 87
-  const padX = 4.5
-  const padY = 4.5
+  const padX = 5
+  const padY = 4.2
 
   // Measure BILL TO content
   const billLines = []
@@ -226,26 +265,27 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     const wrapped = doc.splitTextToSize(line || '', cardW - padX * 2)
     for (const l of wrapped) billLines.push({ text: l, size: 8.5, style: 'normal', color: MUTED })
   }
-  let billH = 9 // heading + gap
+  let billH = 10 // heading + gap
   billLines.forEach((l) => {
-    billH += l.size * 0.5 + (l.style === 'bold' ? 1.6 : 0.8)
+    billH += l.size * 0.5 + (l.style === 'bold' ? 1.7 : 0.9)
   })
 
-  // ORDER INFORMATION rows (real values only)
+  // ORDER INFORMATION rows (real values only) — including the real status
   const orderRows = []
   if (inv.orderId) orderRows.push(['Order ID', inv.orderId])
   if (inv.date) orderRows.push(['Date', inv.date])
   if (inv.time) orderRows.push(['Time', inv.time])
   if (inv.paymentMethod) orderRows.push(['Payment', inv.paymentMethod])
-  const orderH = 9 + orderRows.length * 6
+  if (inv.status) orderRows.push(['Status', inv.status])
+  const orderH = 10 + orderRows.length * 6.4
 
   const cardH = Math.max(billH, orderH) + padY * 2
-  let y = 56
+  let y = 52
 
   // Draw the two cards
   doc.setFillColor(...CREAM)
-  doc.setDrawColor(...GOLD_LIGHT)
-  doc.setLineWidth(0.25)
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(0.3)
   doc.roundedRect(M, y, cardW, cardH, 2.5, 2.5, 'FD')
   doc.roundedRect(M + cardW + cardGap, y, cardW, cardH, 2.5, 2.5, 'FD')
 
@@ -256,10 +296,11 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   for (const l of billLines) {
     doc.setFont('helvetica', l.style).setFontSize(l.size).setTextColor(...l.color)
     doc.text(l.text, M + padX, by)
-    by += l.size * 0.5 + (l.style === 'bold' ? 1.6 : 0.8)
+    by += l.size * 0.5 + (l.style === 'bold' ? 1.7 : 0.9)
   }
 
   // ORDER INFORMATION text
+  const infoRight = M + cardW + cardGap + cardW - padX
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GOLD)
   doc.text('ORDER INFORMATION', M + cardW + cardGap + padX, y + padY + 3.5)
   let oy = y + padY + 8
@@ -267,12 +308,12 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
     doc.text(label, M + cardW + cardGap + padX, oy)
     doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(...TEXT)
-    doc.text(value, M + cardW + cardGap + padX + 26, oy)
-    oy += 6
+    doc.text(value, infoRight, oy, { align: 'right' })
+    oy += 6.4
   }
 
   // ============================= ITEMS TABLE ================================
-  const tableStartY = y + cardH + 7
+  const tableStartY = y + cardH + 5
   autoTable(doc, {
     startY: tableStartY,
     margin: { left: M, right: M },
@@ -305,7 +346,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       textColor: TEXT,
       lineColor: HAIRLINE,
       lineWidth: 0.15,
-      cellPadding: { top: 2.4, bottom: 2.4, left: 1.5, right: 1.5 },
+      cellPadding: { top: 2.6, bottom: 2.6, left: 1.5, right: 1.5 },
     },
     headStyles: {
       font: 'helvetica',
@@ -327,12 +368,12 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       const item = inv.items[data.row.index]
       if (data.column.index === 0) {
         data.cell.styles.fontStyle = 'bold'
-        // Reserve room for the 12.7mm (~48px) thumbnail on the left of the name.
-        if (thumbs[data.row.index]) data.cell.styles.cellPadding.left = 16.5
+        // Reserve room for the 13mm thumbnail frame on the left of the name.
+        if (thumbs[data.row.index]) data.cell.styles.cellPadding.left = 17
       }
       if (data.column.index === 1) {
         data.cell.styles.textColor = MUTED
-        // The details cell may carry a “₹…/piece” bulk line — use the rupee
+        // The details cell may carry a "₹…/piece" bulk line — use the rupee
         // font so that glyph renders when the font is embedded.
         if (rupee && item?.bulkApplied) data.cell.styles.font = RUPEE_FONT
       }
@@ -341,17 +382,21 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       }
     },
     didDrawCell: (data) => {
-      // Product thumbnail inside the PRODUCT cell (left of the name).
+      // Product thumbnail inside the PRODUCT cell (left of the name),
+      // fitted inside the frame with its aspect ratio preserved (contain).
       if (data.section !== 'body' || data.column.index !== 0) return
       const thumb = thumbs[data.row.index]
       if (!thumb) return
-      const size = 12.7 // ~48px at 96dpi — matches the on-screen sheet
-      const x = data.cell.x + 1.8
-      const y = data.cell.y + (data.cell.height - size) / 2
-      // Soft cream border frame (drawn just outside the image, like the sheet)
-      doc.setDrawColor(...CREAM_BORDER).setLineWidth(0.5)
-      doc.roundedRect(x - 0.35, y - 0.35, size + 0.7, size + 0.7, 0.8, 0.8, 'S')
-      doc.addImage(thumb, 'JPEG', x, y, size, size)
+      const size = 13 // ~49px frame
+      const fx = data.cell.x + 1.8
+      const fy = data.cell.y + (data.cell.height - size) / 2
+      // Soft cream border frame
+      doc.setFillColor(...CREAM)
+      doc.setDrawColor(...CREAM_BORDER)
+      doc.setLineWidth(0.4)
+      doc.roundedRect(fx, fy, size, size, 1.4, 1.4, 'FD')
+      const box = containBox(thumb.w, thumb.h, size - 2.4)
+      doc.addImage(thumb.dataUrl, 'JPEG', fx + 1.2 + box.x, fy + 1.2 + box.y, box.w, box.h)
     },
   })
 
@@ -360,7 +405,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   // ========================= BULK PRICING BAND ==============================
   // Optional — only when the saved order actually applied bulk pricing.
   if (inv.hasBulkPricing) {
-    if (ty > H - 60) {
+    if (ty > H - 58) {
       doc.addPage()
       ty = M
     }
@@ -368,29 +413,29 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.setFillColor(...CREAM)
     doc.roundedRect(M, ty, CW, bandH, 1.5, 1.5, 'F')
     doc.setFillColor(...GOLD)
-    doc.rect(M, ty, 1.4, bandH, 'F')
+    doc.circle(M + 5, ty + bandH / 2, 2.4, 'F') // gold check badge
     doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GOLD)
-    doc.text('BULK PRICING APPLIED', M + 5, ty + 4.5)
+    doc.text('BULK PRICING APPLIED', M + 12, ty + 4.5)
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
     doc.text(
       'Special quantity pricing has been applied to this order based on the applicable bulk tier.',
-      M + 5,
+      M + 12,
       ty + 8.5
     )
-    ty += bandH + 6
+    ty += bandH + 4
   }
 
   // ============================ PRICE SUMMARY ===============================
-  const sumW = 80
+  const sumW = 78
   const sumX = W - M - sumW
-  if (ty > H - 55) {
+  if (ty > H - 58) {
     doc.addPage()
     ty = M
   }
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Subtotal', sumX, ty)
   drawMoney(doc, rupee, inv.subtotal, W - M, ty, { align: 'right' })
-  ty += 6
+  ty += 5.5
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Delivery / Transport', sumX, ty)
   if (inv.delivery == null) {
@@ -399,17 +444,17 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   } else {
     drawMoney(doc, rupee, inv.delivery, W - M, ty, { align: 'right' })
   }
-  ty += 5
+  ty += 4.5
   doc.setDrawColor(...GOLD).setLineWidth(0.4)
   doc.line(sumX, ty, W - M, ty)
-  ty += 5.5
+  ty += 5
   doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(...INK)
   doc.text('TOTAL', sumX, ty)
   drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 13, color: GOLD })
-  ty += 11
+  ty += 10
 
-  // ========================= PAYMENT + STATUS ===============================
-  if (ty > H - 50) {
+  // ======================= PAYMENT + STATUS (pill) ==========================
+  if (ty > H - 52) {
     doc.addPage()
     ty = M
   }
@@ -417,47 +462,95 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.text('PAYMENT METHOD', M, ty)
   doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor(...INK)
   doc.text(inv.paymentMethod || '', M, ty + 4.5)
+
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
   doc.text('ORDER STATUS', W / 2, ty)
-  doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor(...INK)
-  doc.text(inv.status || '', W / 2, ty + 4.5)
-  ty += 15
+  // Status pill — colour derived from the REAL status text
+  const statusText = inv.status || ''
+  const statusC = statusColor(statusText)
+  doc.setFont('helvetica', 'bold').setFontSize(9)
+  const pillTextW = doc.getTextWidth(statusText)
+  const pillW = pillTextW + 8
+  const pillH = 6.5
+  const pillX = W / 2
+  const pillY = ty + 2
+  doc.setFillColor(...statusC)
+  doc.roundedRect(pillX, pillY, pillW, pillH, pillH / 2, pillH / 2, 'F')
+  doc.setTextColor(...WHITE)
+  doc.text(statusText, pillX + pillW / 2, pillY + pillH / 2 + 1, { align: 'center' })
+  ty += 13
 
-  // ============================== FOOTER ====================================
-  if (ty > H - 45) {
+  // ============================= TRUST ROW ==================================
+  if (ty > H - 68) {
     doc.addPage()
-    ty = M + 4
+    ty = M
   }
-  doc.setDrawColor(...[218, 213, 202]).setLineWidth(0.2)
-  doc.line(M, ty, W - M, ty)
-  ty += 6.5
-  doc.setFont('times', 'italic').setFontSize(11).setTextColor(...TEXT)
-  doc.text(inv.company.thanks, W / 2, ty, { align: 'center' })
-  ty += 6
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...GOLD_LIGHT)
-  if (inv.company.tagline) doc.text(inv.company.tagline, W / 2, ty, { align: 'center' })
-  ty += 5
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-  const footContact = [inv.company.phone, inv.company.email].filter(Boolean).join('   ·   ')
-  if (footContact) {
-    doc.text(footContact, W / 2, ty, { align: 'center' })
-    ty += 4.5
-  }
-  if (inv.company.address) {
-    doc.text(inv.company.address, W / 2, ty, { align: 'center' })
-    ty += 4.5
-  }
-  doc.text(inv.company.gstNote, W / 2, ty, { align: 'center' })
-  ty += 3.5
-  doc.text('This is a computer-generated invoice.', W / 2, ty, { align: 'center' })
+  const trustGap = 6
+  const trustCol = (CW - trustGap * 3) / 4 // 41
+  const trustItems = TRUST_ITEMS // brand promises — always shown (matches the screen sheet)
+  // Measure sub-line wrapping so all four columns stay aligned
+  let trustH = 8
+  trustItems.forEach((t) => {
+    const lines = doc.splitTextToSize(t.sub, trustCol - 6)
+    trustH = Math.max(trustH, 8 + lines.length * 4.2)
+  })
+  trustItems.forEach((t, i) => {
+    const cx = M + i * (trustCol + trustGap)
+    doc.setFillColor(...GOLD)
+    doc.circle(cx + 2, ty + 2, 1.7, 'F')
+    doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...INK)
+    doc.text(t.title, cx + 6, ty + 1.2)
+    const lines = doc.splitTextToSize(t.sub, trustCol - 6)
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
+    doc.text(lines, cx + 6, ty + 5)
+  })
+  ty += trustH + 5
 
-  // Page footer on every page: invoice ref (left) + page numbers (right)
+  // =========================== THANK-YOU CARD ===============================
+  if (ty > H - 62) {
+    doc.addPage()
+    ty = M
+  }
+  const thanksH = 25
+  doc.setFillColor(...CREAM)
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(M, ty, CW, thanksH, 3, 3, 'FD')
+  doc.setFont('times', 'bold').setFontSize(13).setTextColor(...GOLD)
+  doc.text('Thank You!', W / 2, ty + 8, { align: 'center' })
+  doc.setFont('times', 'italic').setFontSize(10.5).setTextColor(...TEXT)
+  doc.text(inv.company.thanks, W / 2, ty + 14.5, { align: 'center' })
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
+  doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 19.5, { align: 'center' })
+  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
+  doc.text(`— Team ${inv.company.name}`, W / 2, ty + 24, { align: 'center' })
+  ty += thanksH + 6
+
+  // ================== PAGE FRAME + DARK FOOTER (every page) =================
   const pages = doc.getNumberOfPages()
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i)
-    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
-    if (inv.orderId) doc.text(`Invoice ${inv.orderId}`, M, H - 7)
-    doc.text(`Page ${i} of ${pages}`, W - M, H - 7, { align: 'right' })
+
+    // Hairline gold page frame + lighter inner outline
+    doc.setDrawColor(...GOLD)
+    doc.setLineWidth(0.3)
+    doc.roundedRect(M - 3, M - 3, CW + 6, H - (M - 3) * 2, 2, 2, 'S')
+    doc.setDrawColor(...GOLD_LIGHT)
+    doc.setLineWidth(0.15)
+    doc.roundedRect(M - 1.7, M - 1.7, CW + 3.4, H - (M - 1.7) * 2, 1.5, 1.5, 'S')
+
+    // Dark footer band (bottom)
+    const bandY = H - M - 18
+    const bandH = 16
+    doc.setFillColor(...INK)
+    doc.roundedRect(M - 1, bandY, CW + 2, bandH, 2, 2, 'F')
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...CREAM)
+    if (inv.orderId) doc.text(`Invoice ${inv.orderId}`, M + 2, bandY + 5)
+    doc.text(`Page ${i} of ${pages}`, W - M - 2, bandY + 5, { align: 'right' })
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GOLD_LIGHT)
+    doc.text(inv.company.gstNote, W / 2, bandY + 10.5, { align: 'center' })
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...CREAM)
+    doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, bandY + 15, { align: 'center' })
   }
 
   return doc
@@ -498,7 +591,7 @@ function renderPrintHtml(inv, logo) {
       if (it.detail) details.push(`<span class="detail-main">${escapeHtml(it.detail)}</span>`)
       if (it.bulkApplied) details.push(`<span class="detail-bulk">Bulk Price Applied</span>`)
       const thumb = it.image
-        ? `<img class="thumb" src="${escapeHtml(it.image)}" alt="" onerror="this.style.display='none'" />`
+        ? `<span class="thumb-frame"><img class="thumb" src="${escapeHtml(it.image)}" alt="" onerror="this.style.display='none'" /></span>`
         : ''
       return `<tr>
         <td class="name">${thumb}<span>${escapeHtml(it.name)}</span></td>
@@ -521,8 +614,18 @@ function renderPrintHtml(inv, logo) {
   if (inv.date) orderInfo.push(`<li><span>Date</span><strong>${escapeHtml(inv.date)}</strong></li>`)
   if (inv.time) orderInfo.push(`<li><span>Time</span><strong>${escapeHtml(inv.time)}</strong></li>`)
   if (inv.paymentMethod) orderInfo.push(`<li><span>Payment</span><strong>${escapeHtml(inv.paymentMethod)}</strong></li>`)
+  if (inv.status) orderInfo.push(`<li><span>Status</span><strong>${escapeHtml(inv.status)}</strong></li>`)
 
-  const contactBits = [inv.company.phone, inv.company.email].filter(Boolean).join('  ·  ')
+  const contactBits = [inv.company.phone, inv.company.email].filter(Boolean).join('   ·   ')
+  const statusCls = String(inv.status || 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'pending'
+
+  const trust = `
+    <div class="trust">
+      <div class="trust-item"><span class="trust-icon">✓</span><div><strong>100% Original</strong><span>Authentic attars from trusted sources</span></div></div>
+      <div class="trust-item"><span class="trust-icon">◆</span><div><strong>Premium Quality</strong><span>Finest ingredients &amp; long lasting</span></div></div>
+      <div class="trust-item"><span class="trust-icon">◈</span><div><strong>Secure Packaging</strong><span>Carefully packed for safe delivery</span></div></div>
+      <div class="trust-item"><span class="trust-icon">✦</span><div><strong>Customer Support</strong><span>We're here to help you always</span></div></div>
+    </div>`
 
   return `<!doctype html>
 <html lang="en">
@@ -531,118 +634,152 @@ function renderPrintHtml(inv, logo) {
 <title>Invoice ${escapeHtml(inv.orderId || '')}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #222; background: #fff; }
-  .sheet { width: 210mm; min-height: 285mm; margin: 0 auto; padding: 14mm; }
-  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 12px; border-bottom: 1.2px solid #b8862b; }
-  .brand { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
-  .brand img { height: 38px; width: auto; object-fit: contain; }
-  .brand-text .company { display: block; font-size: 17px; font-weight: 700; color: #111; }
-  .brand-text .tagline { display: block; font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: #d4af37; margin-top: 3px; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1815; background: #fff; }
+  .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; }
+  .frame { position: relative; margin: 6mm; padding: 12mm; border: 1px solid rgba(184,134,43,.45); outline: 1px solid rgba(184,134,43,.14); outline-offset: 3px; }
+  .corner { position: absolute; width: 7mm; height: 7mm; border: 0 solid #b8862b; }
+  .corner.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+  .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
+  .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
+  .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+  .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 3mm; border-bottom: 1.2px solid #b8862b; }
+  .brand img { height: 11mm; width: auto; object-fit: contain; }
+  .brand-center { text-align: center; }
+  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 700; color: #171512; }
+  .brand-center .tagline { display: block; font-size: 7px; letter-spacing: .22em; text-transform: uppercase; color: #b8862b; margin-top: 1mm; }
   .title { text-align: right; }
-  .title h2 { font-size: 22px; letter-spacing: 0.18em; color: #111; font-weight: 700; }
-  .title p { font-size: 8.5px; color: #666; margin-top: 3px; }
-  .title p strong { color: #111; }
-  .contact { font-size: 8px; color: #666; padding: 5px 0 0; }
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-top: 7mm; }
-  .card { background: #f8f4ec; border: 1px solid #d4af37; border-radius: 3px; padding: 4.5mm 5mm; }
-  .card h3 { font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; color: #b8862b; margin-bottom: 3.5mm; }
-  .card p { font-size: 9px; color: #222; line-height: 1.5; }
-  .card p.customer { font-size: 11px; font-weight: 700; color: #111; }
+  .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
+  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; white-space: nowrap; }
+  .title p strong { color: #171512; }
+  .contact { display: flex; justify-content: center; gap: 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 7mm; }
+  .card { background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; padding: 4.5mm 5mm; }
+  .card h3 { font-size: 7.5px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(184,134,43,.25); }
+  .card p { font-size: 9px; color: #1a1815; line-height: 1.5; }
+  .card p.customer { font-size: 11px; font-weight: 700; color: #171512; }
   .card ul { list-style: none; }
-  .card ul li { display: flex; justify-content: space-between; gap: 12px; font-size: 9px; color: #666; padding: 1.4mm 0; border-bottom: 1px solid rgba(184, 134, 43, 0.14); }
+  .card ul li { display: flex; justify-content: space-between; gap: 12px; font-size: 8.5px; color: #6f6a63; padding: 1.3mm 0; border-bottom: 1px solid rgba(184,134,43,.16); }
   .card ul li:last-child { border-bottom: none; }
-  .card ul li strong { color: #111; font-weight: 600; text-align: right; }
+  .card ul li strong { color: #171512; font-weight: 700; text-align: right; }
   table.items { width: 100%; border-collapse: collapse; margin-top: 7mm; }
-  table.items th { background: #111; color: #f8f4ec; text-align: left; font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3mm 2.5mm; border-bottom: 1.5px solid #b8862b; }
+  table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; }
   table.items th.num, table.items td.num { text-align: right; }
-  table.items td { padding: 2.6mm 2.5mm; font-size: 9px; border-bottom: 1px solid #ebe7de; vertical-align: top; }
-  table.items td.name { font-weight: 700; color: #111; }
-  table.items td.name img.thumb { width: 12.7mm; height: 12.7mm; object-fit: cover; border-radius: 1.5mm; margin-right: 2.5mm; vertical-align: middle; background: #f6f0e5; border: 1px solid #e8dcc3; }
-  table.items td.detail { color: #666; }
+  table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; }
+  table.items tbody tr:nth-child(even) { background: #fbf9f4; }
+  table.items td.name { font-weight: 700; color: #171512; }
+  table.items td.name .thumb-frame { display: inline-flex; align-items: center; justify-content: center; width: 12mm; height: 12mm; background: #f7f2e8; border: 1px solid #e6dcc6; border-radius: 1.5mm; overflow: hidden; margin-right: 2.5mm; vertical-align: middle; }
+  table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
+  table.items td.detail { color: #6f6a63; }
   table.items td.detail .detail-main { display: block; }
-  table.items td.detail .detail-bulk { display: inline-block; margin-top: 1.5mm; font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #b8862b; }
-  .bulk-band { display: flex; align-items: baseline; gap: 10px; background: #f8f4ec; border-left: 3px solid #b8862b; border-radius: 2px; padding: 3.5mm 5mm; margin-top: 6mm; }
-  .bulk-band strong { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: #b8862b; white-space: nowrap; }
-  .bulk-band span { font-size: 8.5px; color: #666; }
-  .summary { width: 82mm; margin-left: auto; margin-top: 6mm; }
-  .row { display: flex; justify-content: space-between; padding: 1.8mm 0; font-size: 9.5px; color: #666; }
-  .row.grand { border-top: 1px solid #b8862b; margin-top: 2mm; padding-top: 3mm; font-size: 11px; font-weight: 700; color: #111; }
+  table.items td.detail .detail-bulk { display: inline-block; margin-top: 1.2mm; font-size: 7px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #b8862b; }
+  .bulk-band { display: flex; align-items: center; gap: 8px; background: #f7f2e8; border-left: 3px solid #b8862b; border-radius: 4px; padding: 3mm 5mm; margin-top: 6mm; }
+  .bulk-band strong { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: #b8862b; white-space: nowrap; }
+  .bulk-band span { font-size: 8px; color: #6f6a63; }
+  .lower { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 7mm; }
+  .summary { width: 78mm; }
+  .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
+  .row span:last-child { color: #1a1815; }
+  .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 10.5px; font-weight: 700; color: #171512; }
   .row.grand .amount { color: #b8862b; font-size: 13px; }
-  .pay { display: flex; gap: 24mm; margin-top: 6mm; }
-  .pay .label { font-size: 8px; letter-spacing: 0.18em; text-transform: uppercase; color: #b8862b; margin-bottom: 1.5mm; }
-  .pay .value { font-size: 10px; font-weight: 700; color: #111; }
-  .foot { text-align: center; margin-top: 10mm; padding-top: 6mm; border-top: 1px solid #dad5ca; }
-  .foot .thanks { font-family: Georgia, serif; font-style: italic; font-size: 12px; color: #222; }
-  .foot .tagline { font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: #d4af37; margin-top: 2.5mm; }
-  .foot .contact-line { font-size: 8px; color: #666; margin-top: 2mm; }
-  .foot .gst { font-size: 8px; color: #666; margin-top: 2.5mm; }
-  .foot .generated { font-size: 8px; color: #666; margin-top: 1.5mm; }
-  @page { size: A4; margin: 12mm; }
-  @media print { body { background: #fff; } }
+  .pay { display: flex; gap: 10mm; }
+  .pay .label { font-size: 7.5px; letter-spacing: .18em; text-transform: uppercase; color: #b8862b; margin-bottom: 1.2mm; }
+  .pay .value { font-size: 9.5px; font-weight: 700; color: #171512; }
+  .pill { display: inline-block; padding: 1mm 2.5mm; border-radius: 999px; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(184,134,43,.12); color: #8a5f1e; border: 1px solid rgba(184,134,43,.35); }
+  .pill.confirmed, .pill.delivered { background: rgba(46,125,50,.1); color: #2e7d32; border-color: rgba(46,125,50,.35); }
+  .pill.processing, .pill.shipped { background: rgba(21,101,192,.1); color: #1565c0; border-color: rgba(21,101,192,.35); }
+  .pill.cancelled { background: rgba(198,40,40,.1); color: #c62828; border-color: rgba(198,40,40,.35); }
+  .trust { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4mm; margin-top: 7mm; padding-top: 5mm; border-top: 1px solid #ece7dc; }
+  .trust-item { display: flex; align-items: flex-start; gap: 2mm; }
+  .trust-icon { display: inline-flex; align-items: center; justify-content: center; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: #f7f2e8; border: 1px solid rgba(184,134,43,.35); color: #b8862b; font-size: 7px; flex-shrink: 0; }
+  .trust-item div { display: flex; flex-direction: column; }
+  .trust-item strong { font-size: 7.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #171512; line-height: 1.35; }
+  .trust-item div span { font-size: 7.5px; color: #6f6a63; line-height: 1.45; }
+  .thanks { margin-top: 7mm; padding: 5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; text-align: center; }
+  .thanks .t { font-family: Georgia, serif; font-size: 15px; font-weight: 700; color: #b8862b; margin-bottom: 2mm; }
+  .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
+  .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
+  .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
+  .foot { margin-top: 6mm; padding: 4mm; background: #171512; border-radius: 5px; text-align: center; }
+  .foot p { font-size: 8px; color: rgba(247,242,232,.75); line-height: 1.7; }
+  .foot p:first-child { color: rgba(184,134,43,.9); }
+  /* The frame's own margin (6mm) + padding (12mm) provide the ~18mm safe
+     page margin, so @page must NOT add more — a 210mm sheet inside 12mm
+     @page margins would measure 234mm and clip the gold frame's right edge
+     in real print / Save-as-PDF. */
+  @page { size: A4; margin: 0; }
+  @media print { body { background: #fff; } .frame { break-inside: auto; } }
 </style>
 </head>
 <body>
   <div class="sheet">
-    <div class="head">
-      <div class="brand">
-        ${logo ? `<img src="${logo.dataUrl}" alt="" />` : ''}
-        <div class="brand-text">
+    <div class="frame">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+      <div class="head">
+        <div class="brand">${logo ? `<img src="${logo.dataUrl}" alt="" />` : ''}</div>
+        <div class="brand-center">
           <span class="company">${escapeHtml(inv.company.name)}</span>
           ${inv.company.tagline ? `<span class="tagline">${escapeHtml(inv.company.tagline)}</span>` : ''}
         </div>
+        <div class="title">
+          <h2>Invoice</h2>
+          ${inv.orderId ? `<p>Invoice # <strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
+          ${inv.date ? `<p>Date: ${escapeHtml(inv.date)}</p>` : ''}
+          ${inv.time ? `<p>Time: ${escapeHtml(inv.time)}</p>` : ''}
+        </div>
       </div>
-      <div class="title">
-        <h2>Invoice</h2>
-        ${inv.orderId ? `<p>Invoice # <strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
-        ${inv.date ? `<p>Date: ${escapeHtml(inv.date)}</p>` : ''}
-        ${inv.time ? `<p>Time: ${escapeHtml(inv.time)}</p>` : ''}
+
+      ${contactBits ? `<div class="contact"><span>${escapeHtml(contactBits)}</span></div>` : ''}
+
+      <div class="cards">
+        <div class="card">
+          <h3>Bill To</h3>
+          ${billTo.join('')}
+        </div>
+        <div class="card">
+          <h3>Order Information</h3>
+          <ul>${orderInfo.join('')}</ul>
+        </div>
       </div>
-    </div>
 
-    <p class="contact">${escapeHtml(contactBits)}</p>
+      <table class="items">
+        <thead>
+          <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+          ${rows || '<tr><td colspan="5">No items recorded for this order.</td></tr>'}
+        </tbody>
+      </table>
 
-    <div class="cards">
-      <div class="card">
-        <h3>Bill To</h3>
-        ${billTo.join('')}
+      ${inv.hasBulkPricing
+        ? `<div class="bulk-band"><strong>✓ Bulk Pricing Applied</strong><span>Special quantity pricing has been applied to this order based on the applicable bulk tier.</span></div>`
+        : ''}
+
+      <div class="lower">
+        <div class="summary">
+          <div class="row"><span>Subtotal</span><span>${formatINR(inv.subtotal)}</span></div>
+          <div class="row"><span>Delivery / Transport</span><span>${inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span></div>
+          <div class="row grand"><span>Total</span><span class="amount">${formatINR(inv.total)}</span></div>
+        </div>
+        <div class="pay">
+          <div><p class="label">Payment Method</p><p class="value">${escapeHtml(inv.paymentMethod)}</p></div>
+          <div><p class="label">Order Status</p><p class="value"><span class="pill ${statusCls}">${escapeHtml(inv.status)}</span></p></div>
+        </div>
       </div>
-      <div class="card">
-        <h3>Order Information</h3>
-        <ul>${orderInfo.join('')}</ul>
+
+      ${trust}
+
+      <div class="thanks">
+        <p class="t">Thank You!</p>
+        <p class="line">${escapeHtml(inv.company.thanks)}</p>
+        <p class="sub">We truly appreciate your trust in our attars.</p>
+        <p class="sign">— Team ${escapeHtml(inv.company.name)}</p>
       </div>
-    </div>
 
-    <table class="items">
-      <thead>
-        <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr>
-      </thead>
-      <tbody>
-        ${rows || '<tr><td colspan="5">No items recorded for this order.</td></tr>'}
-      </tbody>
-    </table>
-
-    ${inv.hasBulkPricing
-      ? `<div class="bulk-band"><strong>Bulk Pricing Applied</strong><span>Special quantity pricing has been applied to this order based on the applicable bulk tier.</span></div>`
-      : ''}
-
-    <div class="summary">
-      <div class="row"><span>Subtotal</span><span>${formatINR(inv.subtotal)}</span></div>
-      <div class="row"><span>Delivery / Transport</span><span>${inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span></div>
-      <div class="row grand"><span>Total</span><span class="amount">${formatINR(inv.total)}</span></div>
-    </div>
-
-    <div class="pay">
-      <div><p class="label">Payment Method</p><p class="value">${escapeHtml(inv.paymentMethod)}</p></div>
-      <div><p class="label">Order Status</p><p class="value">${escapeHtml(inv.status)}</p></div>
-    </div>
-
-    <div class="foot">
-      <p class="thanks">${escapeHtml(inv.company.thanks)}</p>
-      ${inv.company.tagline ? `<p class="tagline">${escapeHtml(inv.company.tagline)}</p>` : ''}
-      ${contactBits ? `<p class="contact-line">${escapeHtml(contactBits)}</p>` : ''}
-      ${inv.company.address ? `<p class="contact-line">${escapeHtml(inv.company.address)}</p>` : ''}
-      <p class="gst">${escapeHtml(inv.company.gstNote)}</p>
-      <p class="generated">This is a computer-generated invoice.</p>
+      <div class="foot">
+        <p>${escapeHtml(inv.company.gstNote)}</p>
+        <p>© ${escapeHtml(inv.company.name)}. All rights reserved.</p>
+      </div>
     </div>
   </div>
 </body>
