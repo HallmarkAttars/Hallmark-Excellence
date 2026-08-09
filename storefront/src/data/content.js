@@ -52,6 +52,9 @@ export const NAV_LINKS = [
   { to: '/categories', label: 'Categories' },
   { to: '/brand/arees', label: 'Arees' },
   { to: '/brand/dahab', label: 'Dahab' },
+  { to: '/brand/misk-al-arab', label: 'Misk Al Arab' },
+  { to: '/brand/oud-al-haramain', label: 'Oud Al Haramain' },
+  { to: '/brand/amber-oud', label: 'Amber Oud' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
   { to: '/track-order', label: 'Track Order' },
@@ -91,7 +94,8 @@ export const HOME_BRANDS = {
 }
 
 // --------------------------------------------------------------------------
-// COLLECTIONS — homepage Arees / Dahab banners (image lives in assets.js)
+// COLLECTIONS — homepage brand banner copy (fallbacks; live copy comes from
+// the Admin/database per brand and overrides these when set).
 // --------------------------------------------------------------------------
 export const COLLECTIONS = {
   arees: {
@@ -104,6 +108,24 @@ export const COLLECTIONS = {
     eyebrow: 'Dahab Collection',
     lines: ['Rich Heritage', 'Lasting Impressions'],
     description: 'A rich fragrance collection created to leave a lasting impression.',
+    button: 'Shop Now',
+  },
+  'misk-al-arab': {
+    eyebrow: 'Misk Al Arab Collection',
+    lines: ['The essence of purity', 'and tradition'],
+    description: 'Soft, clean musks crafted with care.',
+    button: 'Shop Now',
+  },
+  'oud-al-haramain': {
+    eyebrow: 'Oud Al Haramain Collection',
+    lines: ['Sacred oud,', 'deeply rooted'],
+    description: 'Rich and smoky scents of timeless heritage.',
+    button: 'Shop Now',
+  },
+  'amber-oud': {
+    eyebrow: 'Amber Oud Collection',
+    lines: ['Warm amber,', 'luminous oud'],
+    description: 'Golden resinous blends of quiet luxury.',
     button: 'Shop Now',
   },
 }
@@ -215,6 +237,9 @@ export const FOOTER = {
         { label: 'Categories', to: '/categories' },
         { label: 'Arees', to: '/brand/arees' },
         { label: 'Dahab', to: '/brand/dahab' },
+        { label: 'Misk Al Arab', to: '/brand/misk-al-arab' },
+        { label: 'Oud Al Haramain', to: '/brand/oud-al-haramain' },
+        { label: 'Amber Oud', to: '/brand/amber-oud' },
       ],
     },
     {

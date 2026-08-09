@@ -45,6 +45,71 @@
   flex: 1;
 }
 
+/* ---------- "Featured Brands" row label ---------- */
+.brands-row-label {
+  margin: 0 0 14px;
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+/* ---------- Secondary brand cards (3-up desktop, stacked mobile) ----------
+   Mobile: one full-width card per brand, in admin order — the whole "Our
+   Brands" section reads as five vertical cards. */
+.brands-secondary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 32px;
+}
+.brands-secondary > * {
+  min-width: 0;
+  display: flex;
+}
+.brands-secondary .brand-card {
+  width: 100%;
+  flex: 1;
+}
+/* Tablet: 2-up (2 + 1 wraps gracefully); 3-up only once cards have room. */
+@media (min-width: 768px) {
+  .brands-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+@media (min-width: 900px) {
+  .brands-secondary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+}
+@media (min-width: 1024px) {
+  .brands-secondary { gap: 24px; }
+}
+
+/* ---------- Default (non-Arees/Dahab) theme — cream, gold ---------- */
+.collection-banner--default {
+  background: var(--cream-deep);
+  border: 1px solid var(--line);
+}
+.collection-banner--default .collection-banner-eyebrow { color: var(--gold-deep); }
+.collection-banner--default .collection-banner-title { color: var(--charcoal); }
+.collection-banner--default .collection-banner-tagline { color: var(--charcoal-soft); }
+.collection-banner--default .collection-banner-btn { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
+.collection-banner--default .collection-banner-btn:hover { background: var(--ink); }
+
+/* ---------- Monogram fallback when a brand has no image yet ---------- */
+.collection-banner-image--monogram {
+  background:
+    radial-gradient(300px 180px at 80% 0%, rgba(198, 154, 75, 0.25), transparent 65%),
+    linear-gradient(140deg, #1B1814 0%, #2a241c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.collection-banner-image--monogram span {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 8vw, 5rem);
+  color: var(--gold-light);
+}
+
 /* ---------- Card ---------- */
 .collection-banner {
   width: 100%;

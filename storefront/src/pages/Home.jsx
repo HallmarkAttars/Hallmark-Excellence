@@ -3,6 +3,7 @@ import Hero from '../components/home/Hero'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
 import CollectionBanner from '../components/home/CollectionBanner'
+import BrandCard from '../components/home/BrandCard'
 import FeaturedProducts from '../components/home/FeaturedProducts'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import SocialStrip from '../components/home/SocialStrip'
@@ -15,7 +16,10 @@ import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getCategories, getBrands, getProducts } from '../services/mockApi'
 import { HOME_BRANDS } from '../data/content'
 
-const BRAND_ORDER = ['arees', 'dahab']
+// Admin-controlled brand order (brands.display_order, lowest first). Brands
+// without a position sort last — fallback slug order keeps Arees/Dahab first
+// until the database is fully configured.
+const FALLBACK_ORDER = ['arees', 'dahab', 'misk-al-arab', 'oud-al-haramain', 'amber-oud']
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -39,10 +43,26 @@ export default function Home() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  // Arees first, then Dahab — regardless of API ordering.
-  const orderedBrands = BRAND_ORDER
-    .map((slug) => brands.find((b) => b.slug === slug))
-    .filter(Boolean)
+  // Active brands only, sorted by the admin's display position. Featured
+  // (large cards) come first, the rest render as compact cards below. If no
+  // brand has a display_type yet, the first two act as featured so the section
+  // keeps its premium look pre-configuration.
+  const orderedBrands = brands
+    .filter((b) => b.is_active !== false)
+    .sort((a, b) => {
+      const ao = a.display_order ?? Number.MAX_SAFE_INTEGER
+      const bo = b.display_order ?? Number.MAX_SAFE_INTEGER
+      if (ao !== bo) return ao - bo
+      const ia = FALLBACK_ORDER.indexOf(a.slug)
+      const ib = FALLBACK_ORDER.indexOf(b.slug)
+      return (ia === -1 ? FALLBACK_ORDER.length : ia) - (ib === -1 ? FALLBACK_ORDER.length : ib)
+    })
+  const featuredBrands = orderedBrands.filter((b) => b.display_type === 'featured')
+  const secondaryBrands = orderedBrands.filter((b) => b.display_type !== 'featured')
+  const featured =
+    featuredBrands.length > 0 ? featuredBrands : orderedBrands.slice(0, 2)
+  const secondary =
+    featuredBrands.length > 0 ? secondaryBrands : orderedBrands.slice(2)
 
   // Admin-controlled featured products — uses the same is_featured field the
   // admin panel toggles. No extra API read: it reuses the products already
@@ -81,13 +101,29 @@ export default function Home() {
                 <div className="section-head">
                   <h2 className="section-title-upper">{HOME_BRANDS.title}</h2>
                 </div>
+
+                {/* FEATURED — the two large banners (image | content) */}
+                {featured.length > 0 && (
+                  <div className="brands-row-label">Featured Brands</div>
+                )}
                 <div className="collections-section">
-                  {orderedBrands.map((brand, i) => (
+                  {featured.map((brand, i) => (
                     <Reveal key={brand.id} delay={i * 120}>
                       <CollectionBanner brand={brand} />
                     </Reveal>
                   ))}
                 </div>
+
+                {/* SECONDARY — the remaining brands, three-up on desktop */}
+                {secondary.length > 0 && (
+                  <div className="brands-secondary">
+                    {secondary.map((brand, i) => (
+                      <Reveal key={brand.id} delay={i * 100}>
+                        <BrandCard brand={brand} />
+                      </Reveal>
+                    ))}
+                  </div>
+                )}
               </div>
             </section>
           )}

@@ -55,8 +55,15 @@
     white-space: nowrap;
     transition: color 0.2s ease;
   }
+  /* Eleven links need tighter spacing at narrower desktop widths so the
+     single row never overflows — relaxed as the viewport grows. */
   @media (min-width: 1200px) and (max-width: 1399px) {
-    .navbar-nav { gap: 22px; }
+    .navbar-nav { gap: 12px; }
+    .navbar-link { font-size: 0.76rem; }
+  }
+  @media (min-width: 1400px) and (max-width: 1599px) {
+    .navbar-nav { gap: 16px; }
+    .navbar-link { font-size: 0.8rem; }
   }
   .navbar-link::after {
     content: '';

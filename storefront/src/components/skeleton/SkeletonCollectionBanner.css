@@ -155,16 +155,90 @@
   .skeleton-collection-btn { height: 40px; width: 144px; }
 }
 
+/* ---------- Secondary brand cards skeleton (3-up desktop) ---------- */
+.skeleton-secondary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 32px;
+}
+@media (min-width: 768px) {
+  .skeleton-secondary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+@media (min-width: 900px) {
+  .skeleton-secondary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+}
+@media (min-width: 1024px) {
+  .skeleton-secondary-grid { gap: 24px; }
+}
+
+.skeleton-brand-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.skeleton-brand-media {
+  aspect-ratio: 16 / 10;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
+}
+.skeleton-brand-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+.skeleton-brand-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 18px 20px 20px;
+  flex: 1;
+}
+.skeleton-brand-eyebrow { width: 45%; height: 9px; }
+.skeleton-brand-title { width: 70%; height: 16px; }
+.skeleton-brand-title.short { width: 52%; }
+.skeleton-brand-tagline { width: 88%; height: 10px; }
+
+.skeleton-brand-body .skeleton-block {
+  background: linear-gradient(
+    100deg,
+    var(--cream-deep) 40%,
+    #e3d7c0 50%,
+    var(--cream-deep) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
 /* ---------- Reduced motion: static blocks, no sweep/shimmer ---------- */
 @media (prefers-reduced-motion: reduce) {
   .skeleton-collection-media,
   .skeleton-collection-content .skeleton-block,
-  .skeleton-collection-btn {
+  .skeleton-collection-btn,
+  .skeleton-brand-media,
+  .skeleton-brand-body .skeleton-block {
     animation: none !important;
   }
   .skeleton-collection-media { background: var(--cream-deep); }
   .skeleton-collection-media::after { display: none; }
+  .skeleton-brand-media { background: var(--cream-deep); }
+  .skeleton-brand-media::after { display: none; }
   .skeleton-collection-content .skeleton-block,
-  .skeleton-collection-btn { background: var(--cream-deep); }
+  .skeleton-collection-btn,
+  .skeleton-brand-body .skeleton-block { background: var(--cream-deep); }
 }
 

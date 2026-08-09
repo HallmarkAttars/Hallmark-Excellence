@@ -21,10 +21,15 @@ export const IMAGES = {
   // Hero — full-bleed background image (dark overlay is applied in CSS)
   heroBackground: '/Hero.png',
 
-  // Homepage collection banners
+  // Homepage collection banners — used as FALLBACKS; the live card/cover
+  // images come from the Admin/database per brand (brands.card_image_url /
+  // cover_image_url) and take precedence when set.
   collections: {
     arees: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1200&q=70',
     dahab: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=70',
+    'misk-al-arab': 'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=1200&q=70',
+    'oud-al-haramain': 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1200&q=70',
+    'amber-oud': 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=70',
   },
 
   // About page story image — local file in /public
