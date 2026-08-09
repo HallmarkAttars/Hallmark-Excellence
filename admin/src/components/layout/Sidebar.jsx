@@ -9,8 +9,7 @@ const NAV_ITEMS = [
   { to: '/admin/products', label: 'Products', permission: 'products.view' },
   { to: '/admin/orders', label: 'Orders', permission: 'orders.view' },
   { to: '/admin/categories', label: 'Categories', permission: 'categories.view' },
-  { to: '/admin/brands/arees', label: 'Arees Brand', permission: 'brands.view' },
-  { to: '/admin/brands/dahab', label: 'Dahab Brand', permission: 'brands.view' },
+  { to: '/admin/brands', label: 'Brands', permission: 'brands.view' },
   { to: '/admin/brands/bulk-pricing', label: 'Brand Bulk Pricing', permission: 'brands.view' },
   { to: '/admin/employees', label: 'Employees', permission: 'employees.view' },
 ]

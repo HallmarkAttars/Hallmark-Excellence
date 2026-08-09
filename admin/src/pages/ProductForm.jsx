@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
 import { resolveBulkFields, resolveVariantBulkFields } from '../utils/bulkValidation'
 import './ProductForm.css'
@@ -21,6 +21,14 @@ export default function ProductForm() {
   const isEdit = Boolean(id)
   const navigate = useNavigate()
 
+  // Optional locked-brand context: /admin/products/new?brand=<id>&brandName=..
+  // &brandSlug=.. (used by the per-brand product pages). While present, the
+  // brand field is read-only so a product can never be assigned elsewhere.
+  const [searchParams] = useSearchParams()
+  const lockedBrandId = isEdit ? null : searchParams.get('brand')
+  const lockedBrandName = searchParams.get('brandName')
+  const lockedBrandSlug = searchParams.get('brandSlug')
+
   const [form, setForm] = useState(EMPTY)
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -39,6 +47,10 @@ export default function ProductForm() {
   useEffect(() => {
     getCategories().then(setCategories)
     getBrands().then(setBrands)
+    // Pre-select the locked brand for brand-scoped "Add Product" flows.
+    if (lockedBrandId) {
+      setForm((f) => ({ ...f, brand_id: lockedBrandId }))
+    }
     if (isEdit) {
       getProduct(id).then((p) => {
         if (p) {
@@ -86,8 +98,10 @@ export default function ProductForm() {
     const categoryId = e.target.value
     const selectedCat = categories.find((c) => String(c.id) === categoryId)
     // If changing from Attar to a non-Attar category, clear the brand selection
+    // — UNLESS the brand is locked (brand-scoped "Add Product"): the lock must
+    // survive a category change so the product can never lose its brand.
     if (selectedCat && selectedCat.slug !== 'attar' && selectedCat.name !== 'Attar') {
-      setForm((f) => ({ ...f, category_id: categoryId, brand_id: '' }))
+      setForm((f) => ({ ...f, category_id: categoryId, brand_id: lockedBrandId || '' }))
     } else {
       setForm((f) => ({ ...f, category_id: categoryId }))
     }
@@ -314,7 +328,12 @@ export default function ProductForm() {
       } else {
         await createProduct(payload)
       }
-      navigate('/admin/products')
+      // Brand-scoped add flows return to that brand's product page.
+      if (!isEdit && lockedBrandSlug) {
+        navigate(`/admin/brands/${lockedBrandSlug}`)
+      } else {
+        navigate('/admin/products')
+      }
     } catch (err) {
       setError(err.message || 'Failed to save product. Please try again.')
       setSaving(false)
@@ -667,15 +686,21 @@ export default function ProductForm() {
               value={form.brand_id}
               onChange={handleChange}
               required={isAttarCategory}
-              disabled={!isAttarCategory}
-              style={!isAttarCategory ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+              disabled={!isAttarCategory || Boolean(lockedBrandId)}
+              style={!isAttarCategory || lockedBrandId ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
             >
               <option value="">Select Brand</option>
               {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
+            {/* Locked-brand context (added from a brand page) — never editable. */}
+            {lockedBrandId && (
+              <small style={{ color: '#1e7a46', display: 'block', marginTop: 4, fontWeight: 600 }}>
+                🔒 Brand locked to {lockedBrandName || 'this brand'} — added from its product page
+              </small>
+            )}
             {/* Only a real hint when Attar is selected AND no brand is chosen
                 yet — never shown as a false error once a brand is picked. */}
-            {isAttarCategory && !form.brand_id && (
+            {isAttarCategory && !form.brand_id && !lockedBrandId && (
               <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>
                 Brand is required for Attar products
               </small>

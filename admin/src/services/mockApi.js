@@ -85,15 +85,31 @@ export async function deleteCategory(id) {
 }
 
 // --- Brands ------------------------------------------------------------------
+// Admin sees ALL brands (active + inactive) via the protected endpoint so the
+// brand management screen can edit/reactivate any brand. Falls back to the
+// public endpoint if the deployed server hasn't been updated yet (404), so the
+// admin never breaks during a rolling deploy.
 export async function getBrands() {
-  const data = await adminApi.get('/api/brands', readToken())
-  return data.brands ?? []
+  try {
+    const data = await adminApi.get('/api/admin/brands', readToken())
+    return data.brands ?? []
+  } catch {
+    const data = await adminApi.get('/api/brands', readToken())
+    return data.brands ?? []
+  }
 }
 
 // Updates ONLY the combined brand bulk pricing fields (bulk_enabled /
 // standard_price / bulk_unit_price / bulk_min_qty) on a brand.
 export async function updateBrandBulkPricing(id, data) {
   const res = await adminApi.patch(`/api/admin/brands/${id}`, data, readToken())
+  return res.brand ?? res ?? null
+}
+
+// Updates the STOREFRONT MANAGEMENT fields (copy, imagery, position, display
+// type, active state) — distinct from the bulk-pricing PATCH above.
+export async function updateBrandDetails(id, data) {
+  const res = await adminApi.put(`/api/admin/brands/${id}`, data, readToken())
   return res.brand ?? res ?? null
 }
 

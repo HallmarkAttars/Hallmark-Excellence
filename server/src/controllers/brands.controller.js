@@ -1,12 +1,15 @@
 const supabase = require('../config/supabase')
 
 // GET /api/brands
-// Public.
+// Public — returns ONLY active brands (inactive brands are hidden from the
+// storefront). Ordering is left to the client (storefront sorts by
+// display_order) so this endpoint keeps working before/after migrations.
 async function getBrands(req, res) {
   try {
     const { data, error } = await supabase
       .from('brands')
       .select('*')
+      .eq('is_active', true)
       .order('name', { ascending: true })
 
     if (error) {
@@ -17,6 +20,29 @@ async function getBrands(req, res) {
     return res.json({ brands: data })
   } catch (err) {
     console.error('getBrands error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// GET /api/admin/brands
+// Protected (requirePermission 'brands.view'). Returns ALL brands — active
+// AND inactive — so the admin brand management screen can edit/reactivate
+// any brand. Same no-server-order policy as the public endpoint.
+async function getAdminBrands(req, res) {
+  try {
+    const { data, error } = await supabase
+      .from('brands')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('getAdminBrands error:', error)
+      return res.status(500).json({ error: 'Failed to fetch brands.' })
+    }
+
+    return res.json({ brands: data })
+  } catch (err) {
+    console.error('getAdminBrands error:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -159,4 +185,87 @@ async function updateBrandBulkPricing(req, res) {
   }
 }
 
-module.exports = { getBrands, getBrandProducts, updateBrandBulkPricing }
+// PUT /api/admin/brands/:id
+// Protected (requirePermission 'brands.edit'). Updates the STOREFRONT
+// MANAGEMENT fields of a brand (copy, imagery, position, display type,
+// active state). The bulk-pricing fields are NOT writable here — they are
+// owned exclusively by PATCH /api/admin/brands/:id (updateBrandBulkPricing),
+// so the two concerns never step on each other.
+//
+// Validation:
+//   - name            required, non-empty string
+//   - display_order   whole number >= 0
+//   - display_type    'featured' | 'standard'
+//   - is_active       boolean
+//   - everything else optional text/image URLs (empty → null)
+async function updateBrandDetails(req, res) {
+  try {
+    const { id } = req.params
+    const body = req.body || {}
+
+    if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) {
+      return res.status(400).json({ error: 'Brand name is required.' })
+    }
+
+    const updates = {}
+
+    if (body.name !== undefined) updates.name = body.name.trim()
+
+    for (const field of ['collection_label', 'tagline', 'description', 'long_description']) {
+      if (body[field] !== undefined) {
+        updates[field] = typeof body[field] === 'string' && body[field].trim() ? body[field].trim() : null
+      }
+    }
+
+    for (const field of ['logo_url', 'cover_image_url', 'card_image_url']) {
+      if (body[field] !== undefined) {
+        updates[field] = typeof body[field] === 'string' && body[field].trim() ? body[field].trim() : null
+      }
+    }
+
+    if (body.display_order !== undefined) {
+      const order = Number(body.display_order)
+      if (!Number.isInteger(order) || order < 0) {
+        return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
+      }
+      updates.display_order = order
+    }
+
+    if (body.display_type !== undefined) {
+      if (body.display_type !== 'featured' && body.display_type !== 'standard') {
+        return res.status(400).json({ error: 'Homepage display type must be "featured" or "standard".' })
+      }
+      updates.display_type = body.display_type
+    }
+
+    if (body.is_active !== undefined) {
+      updates.is_active = Boolean(body.is_active)
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No brand fields to update.' })
+    }
+
+    const { data, error } = await supabase
+      .from('brands')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .maybeSingle()
+
+    if (error) {
+      console.error('updateBrandDetails error:', error)
+      return res.status(500).json({ error: 'Failed to update brand.' })
+    }
+    if (!data) {
+      return res.status(404).json({ error: 'Brand not found.' })
+    }
+
+    return res.json({ brand: data })
+  } catch (err) {
+    console.error('updateBrandDetails error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+module.exports = { getBrands, getAdminBrands, getBrandProducts, updateBrandBulkPricing, updateBrandDetails }

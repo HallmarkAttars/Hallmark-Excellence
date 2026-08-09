@@ -98,6 +98,8 @@ export const adminApi = {
     apiFetch(path, { method: 'POST', body, headers: token ? { Authorization: `Bearer ${token}` } : {} }),
   patch: (path, body, token) =>
     apiFetch(path, { method: 'PATCH', body, headers: token ? { Authorization: `Bearer ${token}` } : {} }),
+  put: (path, body, token) =>
+    apiFetch(path, { method: 'PUT', body, headers: token ? { Authorization: `Bearer ${token}` } : {} }),
   del: (path, token) => apiFetch(path, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} }),
   upload: (path, file, token) => uploadFile(path, file, token),
 }

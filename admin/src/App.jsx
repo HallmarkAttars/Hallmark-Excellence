@@ -9,8 +9,9 @@ import Products from './pages/Products'
 import ProductForm from './pages/ProductForm'
 import Orders from './pages/Orders'
 import Categories from './pages/Categories'
-import BrandArees from './pages/BrandArees'
-import BrandDahab from './pages/BrandDahab'
+import Brands from './pages/Brands'
+import BrandProductsPage from './pages/BrandProductsPage'
+import BrandForm from './pages/BrandForm'
 import BrandBulkPricing from './pages/BrandBulkPricing'
 import Employees from './pages/Employees'
 
@@ -29,8 +30,32 @@ export default function App() {
               <Route path="/admin/products/:id/edit" element={<ProductForm />} />
               <Route path="/admin/orders" element={<Orders />} />
               <Route path="/admin/categories" element={<Categories />} />
-              <Route path="/admin/brands/arees" element={<BrandArees />} />
-              <Route path="/admin/brands/dahab" element={<BrandDahab />} />
+              <Route
+                path="/admin/brands"
+                element={
+                  <RequirePermission permission="brands.view">
+                    <Brands />
+                  </RequirePermission>
+                }
+              />
+              {/* One generic per-brand products screen for ALL five brands
+                  (also serves the legacy /admin/brands/arees + dahab URLs). */}
+              <Route
+                path="/admin/brands/:slug"
+                element={
+                  <RequirePermission permission="brands.view">
+                    <BrandProductsPage />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path="/admin/brands/:slug/edit"
+                element={
+                  <RequirePermission permission="brands.edit">
+                    <BrandForm />
+                  </RequirePermission>
+                }
+              />
               <Route
                 path="/admin/brands/bulk-pricing"
                 element={
