@@ -207,6 +207,34 @@ export function effectiveUnitPrice(item, brandBulkStatus) {
   return applicableUnitPrice(item)
 }
 
+// Price + active flag to DISPLAY for a product (or variant) of a brand whose
+// combined bulk may be active in the cart. Used by the product cards, quick
+// view and product detail — the DISPLAY surfaces that mirror the cart.
+//
+//   statusEntry  — one entry of computeBrandBulkStatus(...), or null when the
+//                  product has no brand / its brand is not in the cart
+//   normalPrice  — the product's OWN normal price (variant or product level)
+//
+// Brand bulk only takes over the display when it is a GENUINE discount below
+// the product's own normal price — the exact guard effectiveUnitPrice()
+// applies when charging — so what is shown always matches what is charged.
+// A product already cheaper than the brand bulk unit price keeps its own
+// price and never claims "Bulk Applied".
+//
+// Returns { active, displayPrice }.
+export function brandBulkDisplay(statusEntry, normalPrice) {
+  const normal = Number(normalPrice)
+  const brandPrice = Number(statusEntry?.bulkUnitPrice)
+  // The `> 0` check intentionally mirrors effectiveUnitPrice()'s guard — an
+  // active-but-invalid entry can never surface a ₹0 (or negative) price.
+  const active =
+    Boolean(statusEntry?.active) &&
+    Number.isFinite(brandPrice) &&
+    brandPrice > 0 &&
+    brandPrice < normal
+  return { active, displayPrice: active ? brandPrice : normal }
+}
+
 // Unit price to display for an order-summary line. Prefers a unit_price that
 // was already resolved on the line (e.g. the checkout snapshot computed by the
 // cart context, which includes brand bulk) and falls back to the pure

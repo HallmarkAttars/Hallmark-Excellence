@@ -202,6 +202,15 @@
   font-weight: 600;
   color: #8a5a14;
 }
+/* Active state — the brand's combined bulk is currently applied (green,
+   matching the Cart page's active brand-bulk banner). */
+.quickview-bulk-chip.is-active {
+  background: #1E4A2E;
+  color: #F2F7F3;
+}
+.quickview-brand-bulk .quickview-bulk-detail {
+  color: #1E4A2E;
+}
 
 .quickview-bulk-progress {
   width: 100%;

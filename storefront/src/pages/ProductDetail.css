@@ -126,6 +126,19 @@
 .brand-bulk-row-link:hover { color: var(--gold-deep); border-color: var(--gold); }
 .brand-bulk-row-link span { transition: transform 0.25s ease; }
 .brand-bulk-row-link:hover span { transform: translateX(4px); }
+/* Active state — the brand's combined bulk is currently applied (green,
+   matching the Cart page's active brand-bulk banner). */
+.brand-bulk-row.is-active {
+  background: rgba(30, 74, 46, 0.06);
+  border-color: rgba(30, 74, 46, 0.3);
+  border-left-color: #1E4A2E;
+}
+.brand-bulk-row.is-active .brand-bulk-row-label {
+  color: #1E4A2E;
+}
+.brand-bulk-row.is-active .brand-bulk-row-text strong {
+  color: #1E4A2E;
+}
 
 /* --- Live bulk progress indicator (updates with the quantity) --- */
 .bulk-progress {

@@ -30,6 +30,7 @@ import {
   computeBrandBulkStatus,
   effectiveUnitPrice,
   resolvedUnitPrice,
+  brandBulkDisplay,
 } from './bulk'
 
 // Spec test line: Normal ₹100 · Bulk ₹80 · Qty 100 · Bulk ON
@@ -422,5 +423,59 @@ describe('resolvedUnitPrice (order-summary lines)', () => {
   it('handles missing/empty lines safely', () => {
     expect(resolvedUnitPrice(null)).toBe(0)
     expect(resolvedUnitPrice({})).toBe(0)
+  })
+})
+
+describe('brandBulkDisplay (display guard — what is shown matches what is charged)', () => {
+  // Status entries shaped exactly like computeBrandBulkStatus output.
+  const activeArees = { name: 'Arees', bulk_enabled: true, bulkUnitPrice: 2000, bulkMinQty: 91, totalQty: 91, active: true }
+  const inactiveArees = { ...activeArees, active: false, totalQty: 50 }
+
+  it('shows the brand bulk price when the brand is active AND it is a genuine discount', () => {
+    expect(brandBulkDisplay(activeArees, 2500)).toEqual({ active: true, displayPrice: 2000 })
+  })
+
+  it('keeps the product price when the product is CHEAPER than the brand bulk price', () => {
+    // Headline guard: a ₹1,500 product under a ₹2,000 brand bulk must keep
+    // ₹1,500 — never display ₹2,000 (the cart charges ₹1,500 for it too).
+    expect(brandBulkDisplay(activeArees, 1500)).toEqual({ active: false, displayPrice: 1500 })
+  })
+
+  it('keeps the product price when the brand bulk price EQUALS it (no genuine discount)', () => {
+    // Strict `<` guard: equal prices never claim "Bulk Applied".
+    expect(brandBulkDisplay(activeArees, 2000)).toEqual({ active: false, displayPrice: 2000 })
+  })
+
+  it('keeps normal pricing when the brand is NOT active (below threshold)', () => {
+    expect(brandBulkDisplay(inactiveArees, 2500)).toEqual({ active: false, displayPrice: 2500 })
+  })
+
+  it('keeps normal pricing when there is no status entry (unbranded / brand not in cart)', () => {
+    expect(brandBulkDisplay(null, 2500)).toEqual({ active: false, displayPrice: 2500 })
+    expect(brandBulkDisplay(undefined, 2500)).toEqual({ active: false, displayPrice: 2500 })
+  })
+
+  it('never activates on a missing or non-finite bulk unit price', () => {
+    expect(brandBulkDisplay({ ...activeArees, bulkUnitPrice: null }, 2500)).toEqual({ active: false, displayPrice: 2500 })
+    expect(brandBulkDisplay({ ...activeArees, bulkUnitPrice: 'oops' }, 2500)).toEqual({ active: false, displayPrice: 2500 })
+  })
+
+  it('coerces string prices from the database', () => {
+    expect(brandBulkDisplay(activeArees, '2500')).toEqual({ active: true, displayPrice: 2000 })
+  })
+
+  it('integrates with computeBrandBulkStatus: real derived status drives the display', () => {
+    // 91 Arees pieces (any products) → active → display shows the brand price.
+    const status = computeBrandBulkStatus([line('b1', 91)], brandsById)
+    expect(brandBulkDisplay(status.b1, 2500)).toEqual({ active: true, displayPrice: 2000 })
+    // 90 pieces → still inactive → display keeps the normal price.
+    const below = computeBrandBulkStatus([line('b1', 90)], brandsById)
+    expect(brandBulkDisplay(below.b1, 2500)).toEqual({ active: false, displayPrice: 2500 })
+  })
+
+  it('a missing/NaN product price never claims bulk', () => {
+    const r = brandBulkDisplay(activeArees, undefined)
+    expect(r.active).toBe(false)
+    expect(Number.isNaN(r.displayPrice)).toBe(true)
   })
 })

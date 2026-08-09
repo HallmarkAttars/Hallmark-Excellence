@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
-import { hasAnyBulk } from '../../utils/bulk'
+import { hasAnyBulk, brandBulkDisplay } from '../../utils/bulk'
 import QuantityControl from './QuantityControl'
 import QuickView from './QuickView'
 import './ProductCard.css'
@@ -52,7 +52,7 @@ function EyeIcon() {
 }
 
 export default function ProductCard({ product, onNavigate }) {
-  const { items, addItem, updateQty, removeItem } = useCart()
+  const { items, addItem, updateQty, removeItem, brandStatus } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -139,6 +139,19 @@ export default function ProductCard({ product, onNavigate }) {
   // products). Cards deliberately do NOT show a specific bulk price before a
   // size is selected; the detail page shows the exact numbers per variant.
   const showBulk = hasAnyBulk(product)
+
+  // Combined BRAND bulk — when the brand's combined cart quantity (across ALL
+  // of its products, not just this one) reaches its threshold, the brand bulk
+  // unit price takes over the display — matching exactly what
+  // effectiveUnitPrice() charges in the cart. Derived live from the cart
+  // context, so every card of the brand flips together the moment the
+  // threshold is crossed, with no per-product cart line required.
+  const brandBulk =
+    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
+  // Display price + active flag — brand bulk only takes over when it is a
+  // genuine discount below THIS product's normal price (shared guard, mirrors
+  // effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
+  const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandBulk, price)
 
   const handleAdd = () => {
     if (soldOut || adding) return
@@ -251,7 +264,7 @@ export default function ProductCard({ product, onNavigate }) {
 
         {hasPrice && (
           <div className="product-card-price-row">
-            <span className="product-card-price">{formatPrice(price)}</span>
+            <span className="product-card-price">{formatPrice(displayPrice)}</span>
             {showCompareAt && (
               <span className="product-card-compare">
                 {formatPrice(Number(compareAt))}
@@ -263,13 +276,20 @@ export default function ProductCard({ product, onNavigate }) {
           </div>
         )}
 
-        {showBulk && (
+        {brandBulkActive ? (
+          <div className="product-card-bulk">
+            <span className="product-card-bulk-chip is-active">
+              <span aria-hidden="true">✓</span>{' '}
+              {brandBulk.name ? `${brandBulk.name} Bulk Applied` : 'Bulk Applied'}
+            </span>
+          </div>
+        ) : showBulk ? (
           <div className="product-card-bulk">
             <span className="product-card-bulk-chip">
               <span aria-hidden="true">🔥</span> Bulk Price Available
             </span>
           </div>
-        )}
+        ) : null}
 
         {cartLine ? (
           <QuantityControl

@@ -278,6 +278,13 @@
   box-shadow: 0 2px 6px rgba(27, 24, 20, 0.18);
 }
 .product-card-bulk-chip span { font-size: 10px; line-height: 1; }
+/* Active state — the brand's combined bulk is currently applied (green,
+   matching the Cart page's active brand-bulk banner). Shown INSTEAD of the
+   dormant chip, never alongside it. */
+.product-card-bulk-chip.is-active {
+  background: linear-gradient(135deg, #1E4A2E 0%, #2B5A38 100%);
+  color: #F2F7F3;
+}
 .product-card-bulk-detail {
   font-size: 12px;
   font-weight: 600;

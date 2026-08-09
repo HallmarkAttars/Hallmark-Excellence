@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
-import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining } from '../../utils/bulk'
+import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining, brandBulkDisplay } from '../../utils/bulk'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -14,7 +14,7 @@ import './QuickView.css'
 const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
 
 export default function QuickView({ product, onClose, onNavigate }) {
-  const { addItem } = useCart()
+  const { addItem, brandStatus } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
@@ -36,6 +36,18 @@ export default function QuickView({ product, onClose, onNavigate }) {
     : Number(product.price)
   const stock = hasVariants ? selectedVariant?.stock : product.stock
   const soldOut = Number(stock) <= 0
+
+  // Combined BRAND bulk — when the brand's combined cart quantity reaches its
+  // threshold, the brand bulk unit price takes over the display (exactly what
+  // effectiveUnitPrice() charges in the cart). Derived live from the cart
+  // context, so the modal flips the instant any card of the brand crosses the
+  // threshold — no per-product cart line needed.
+  const brandBulk =
+    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
+  // Display price + active flag — brand bulk only takes over when it is a
+  // genuine discount below THIS product's normal price (shared guard, mirrors
+  // effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
+  const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandBulk, price)
 
   // Optional bulk purchasing — configured PER VARIANT. The selected variant's
   // own bulk config is the single source of truth; variant-less products fall
@@ -189,7 +201,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
           )}
 
           <div className="quickview-price-row">
-            <span className="quickview-price">{formatPrice(price)}</span>
+            <span className="quickview-price">{formatPrice(displayPrice)}</span>
             {showCompareAt && (
               <span className="quickview-compare">
                 {formatPrice(Number(compareAt))}
@@ -200,14 +212,23 @@ export default function QuickView({ product, onClose, onNavigate }) {
             )}
           </div>
 
-          {bulkEnabled && (
+          {brandBulkActive ? (
+            <div className="quickview-bulk quickview-brand-bulk">
+              <span className="quickview-bulk-chip is-active" aria-hidden="true">
+                ✓ {brandBulk.name ? `${brandBulk.name} Bulk Applied` : 'Bulk Applied'}
+              </span>
+              <span className="quickview-bulk-detail">
+                You're paying {formatPrice(Number(brandBulk.bulkUnitPrice))} / piece
+              </span>
+            </div>
+          ) : bulkEnabled ? (
             <div className="quickview-bulk">
               <span className="quickview-bulk-chip" aria-hidden="true">🔥 Bulk Price</span>
               <span className="quickview-bulk-detail">
                 {formatPrice(bulkPrice)} / piece · Buy {bulkMinQty}+ pieces
               </span>
             </div>
-          )}
+          ) : null}
 
           {product.description && (
             <p className="quickview-desc">{product.description}</p>
@@ -263,7 +284,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
             </button>
           </div>
 
-          {bulkEnabled && (
+          {bulkEnabled && !brandBulkActive && (
             <div className="quickview-bulk-progress" aria-live="polite">
               {stockCanReachBulk ? (
                 bulkUnlocked ? (

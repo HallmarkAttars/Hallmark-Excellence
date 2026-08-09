@@ -3,14 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts, getBrandBySlug } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining, brandBulkConfig } from '../utils/bulk'
+import { isBulkEnabled, bulkPriceOf, bulkMinQtyOf, bulkRemaining, brandBulkConfig, brandBulkDisplay } from '../utils/bulk'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const { addItem } = useCart()
+  const { addItem, brandStatus } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
@@ -118,6 +118,19 @@ export default function ProductDetail() {
   // Combined BRAND bulk config — valid only when the brand has it enabled.
   const brandBulk = brand ? brandBulkConfig(brand) : null
 
+  // Combined BRAND bulk — LIVE status derived from the cart context (every
+  // cart line of this brand, not just this product). When the brand's
+  // combined quantity reaches its threshold, the brand bulk unit price takes
+  // over this product's display — matching exactly what effectiveUnitPrice()
+  // charges in the cart. Reflected at page-load too, so arriving with
+  // qualifying items already in the cart shows the bulk price immediately.
+  const brandStatusEntry =
+    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
+  // Display price + active flag — brand bulk only takes over when it is a
+  // genuine discount below THIS (selected variant's) normal price (shared
+  // guard, mirrors effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
+  const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandStatusEntry, price)
+
   const stockStatus = () => {
     if (stock > 5) return { text: 'In Stock', className: 'in-stock' }
     if (stock > 0) return { text: `Only ${stock} left`, className: 'low-stock' }
@@ -202,9 +215,14 @@ export default function ProductDetail() {
 
       <div className="product-detail-info">
         <h1>{product.name}</h1>
-        <p className="product-detail-price">₹{Number(price).toLocaleString('en-IN')}</p>
+        <p className="product-detail-price">₹{Number(displayPrice).toLocaleString('en-IN')}</p>
 
-        {bulkEnabled && (
+        {/* When the brand's combined bulk is active it takes precedence over
+            this product's own per-product bulk in the display — the cart
+            charges the brand price, so the page shows the brand price. The
+            per-product block returns unchanged once the brand drops back
+            below its threshold. */}
+        {bulkEnabled && !brandBulkActive && (
           <div className="bulk-pricing-block">
             <p className="bulk-pricing-label">
               <span aria-hidden="true">🔥</span> Bulk Purchasing
@@ -232,14 +250,29 @@ export default function ProductDetail() {
             items in the cart (mix & match). Shown alongside the per-product
             block when both apply, each clearly labelled. */}
         {brandBulk && (
-          <div className="brand-bulk-row">
-            <p className="brand-bulk-row-label">
-              <span aria-hidden="true">🤝</span> {brand.name} · Bulk Pricing
-            </p>
-            <p className="brand-bulk-row-text">
-              Buy <strong>{brandBulk.bulkMinQty}+ pieces</strong> of any {brand.name} item for{' '}
-              <strong>₹{brandBulk.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>
-            </p>
+          <div className={`brand-bulk-row ${brandBulkActive ? 'is-active' : ''}`}>
+            {brandBulkActive ? (
+              <>
+                <p className="brand-bulk-row-label">
+                  <span aria-hidden="true">✓</span> {brand.name} · Bulk Pricing
+                </p>
+                <p className="brand-bulk-row-text">
+                  <strong>{brand.name} bulk pricing is active</strong> — you're paying{' '}
+                  <strong>₹{brandStatusEntry.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>{' '}
+                  across your {brand.name} items.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="brand-bulk-row-label">
+                  <span aria-hidden="true">🤝</span> {brand.name} · Bulk Pricing
+                </p>
+                <p className="brand-bulk-row-text">
+                  Buy <strong>{brandBulk.bulkMinQty}+ pieces</strong> of any {brand.name} item for{' '}
+                  <strong>₹{brandBulk.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>
+                </p>
+              </>
+            )}
             {product.brand_slug && (
               <Link to={`/brand/${product.brand_slug}`} className="brand-bulk-row-link">
                 View {brand.name} bulk pricing <span aria-hidden="true">→</span>
@@ -301,7 +334,7 @@ export default function ProductDetail() {
         {/* Live bulk progress — updates instantly with the quantity. Reads
             the SELECTED variant's own bulk config; hides entirely when that
             variant has bulk off (or no valid config). */}
-        {bulkEnabled && (
+        {bulkEnabled && !brandBulkActive && (
           <div className="bulk-progress" aria-live="polite">
             {stockCanReachBulk ? (
               <>
