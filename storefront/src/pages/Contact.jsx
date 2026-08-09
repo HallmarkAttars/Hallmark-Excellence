@@ -238,6 +238,26 @@ export default function Contact() {
   // only place an order is created.
   const orderPlaced = isCheckout && Boolean(result?.orderNumber)
 
+  // The order success view appears via an inline state swap (no route change),
+  // so the browser keeps the checkout page's scroll position — a customer who
+  // submits from near the bottom of the long form would land on the footer
+  // instead of the confirmation. Jump back to the top the moment the success
+  // view mounts. Fires ONLY when orderPlaced flips true; normal scrolling is
+  // untouched afterwards. 'instant' is required because the global CSS uses
+  // scroll-behavior: smooth, which would otherwise animate the jump.
+  useEffect(() => {
+    if (!orderPlaced) return
+    // Engines that support the scroll-behavior CSS property (Chrome 61+,
+    // Firefox 36+, Safari 15.4+) also accept behavior: 'instant', so this
+    // feature check doubles as support for the instant scroll option; the
+    // plain two-arg call covers anything older.
+    if ('scrollBehavior' in document.documentElement.style) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [orderPlaced])
+
   const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
 
   const handleChange = (e) => {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { getBrands } from '../services/mockApi'
 import { computeBrandBulkStatus, effectiveUnitPrice } from '../utils/bulk'
 
@@ -95,7 +95,16 @@ export function CartProvider({ children }) {
     }
   }, [])
 
+  // Persist ONLY real changes — never on mount. On first render the storage
+  // already holds exactly what was loaded, so writing again is at best
+  // redundant and at worst a stale-write hazard (e.g. if the loaded cart is
+  // cleared in the same session, the mount write must not resurrect it).
+  const isFirstRender = useRef(true)
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
@@ -187,7 +196,22 @@ export function CartProvider({ children }) {
     )
   }, [])
 
-  const clearCart = useCallback(() => setItems([]), [])
+  // Clear BOTH layers in one atomic call: the in-memory state AND the
+  // persisted copy. clearCart is called only after the backend confirms the
+  // order was created, so the customer can never lose an order that failed —
+  // and a refresh can never resurrect the old cart from storage. The persist
+  // effect then re-writes '[]' after the commit, keeping both layers in sync.
+  const clearCart = useCallback(() => {
+    // In-memory state always clears. The storage write is best-effort (same
+    // tolerance as readStoredCart): persistence must never be able to throw
+    // AFTER a successful order and bounce the customer into the error path.
+    setItems([])
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // Storage unavailable — the empty in-memory cart is still correct.
+    }
+  }, [])
 
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items])
 
