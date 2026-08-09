@@ -538,7 +538,7 @@ export default function Contact() {
   // --- Contact / Checkout view -------------------------------------------
   return (
     <div>
-      <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : ''}`}>
+      <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : 'page-heading--contact'}`}>
         <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
         <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>
         {isCheckout && <p className="checkout-head-sub">Complete your order securely</p>}

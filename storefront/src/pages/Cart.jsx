@@ -249,11 +249,31 @@ export default function Cart() {
             })}
           </div>
 
-          {/* Trust badges — bottom of the items area */}
+          {/* Trust cards — bottom of the items area. Headings are the same
+              claims as before; subtitles are descriptive copy already used
+              elsewhere on the site (e.g. the checkout trust strip). */}
           <div className="cart-trust" aria-label="Store promises">
-            <span><SecureIcon size={16} /> Secure Packaging</span>
-            <span><BoxIcon size={16} /> 100% Original Products</span>
-            <span><ReturnsIcon size={16} /> Easy Returns</span>
+            <span className="cart-trust-item">
+              <SecureIcon size={18} />
+              <span className="cart-trust-text">
+                <strong>Secure Packaging</strong>
+                <small>Carefully packed</small>
+              </span>
+            </span>
+            <span className="cart-trust-item">
+              <BoxIcon size={18} />
+              <span className="cart-trust-text">
+                <strong>100% Original Products</strong>
+                <small>Authentic products only</small>
+              </span>
+            </span>
+            <span className="cart-trust-item">
+              <ReturnsIcon size={18} />
+              <span className="cart-trust-text">
+                <strong>Easy Returns</strong>
+                <small>Easy return support</small>
+              </span>
+            </span>
           </div>
         </section>
 

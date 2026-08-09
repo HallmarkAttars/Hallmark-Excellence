@@ -37,13 +37,13 @@
 }
 .cart-empty .btn { padding: 15px 40px; }
 
-/* ---------- Page scaffold ---------- */
-.cart-page {
-  max-width: 1320px;
-  margin-inline: auto;
-  padding-inline: 16px;
-  padding-top: 40px;
-  padding-bottom: 90px;
+/* ---------- Page scaffold ----------
+   `.container.cart-page` (two classes) beats `.container`'s `padding: 0 …`
+   shorthand in the cascade — component CSS loads before index.css, so the
+   bare `.cart-page` top/bottom padding was silently overridden to 0. */
+.container.cart-page {
+  padding-top: 44px;
+  padding-bottom: 72px;
 }
 
 /* ---------- Header: serif title + subtitle + items pill ---------- */
@@ -397,41 +397,63 @@
   color: #1E4A2E;
 }
 
-/* ---------- Trust badges under the items ---------- */
+/* ---------- Trust badges under the items ----------
+   Three equal white cards — icon + title + subtitle. The cards add real
+   height to the left column so it visually balances the taller Order
+   Summary on the right (no artificial stretching). */
 .cart-trust {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 20px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   margin-top: 22px;
-  padding: 15px 22px;
+}
+.cart-trust-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 22px;
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
+  min-width: 0;
 }
-.cart-trust span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+.cart-trust-item svg {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.cart-trust-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.cart-trust-text strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  letter-spacing: 0.01em;
+}
+.cart-trust-text small {
+  font-size: 0.74rem;
   color: var(--charcoal-soft);
-  letter-spacing: 0.02em;
+  line-height: 1.4;
 }
-.cart-trust svg { color: var(--gold); flex-shrink: 0; }
 
-/* ---------- Order summary (sticky on desktop) ---------- */
+/* ---------- Order summary (sticky on desktop only) ---------- */
 .cart-summary {
   background: var(--white);
   border: 1px solid rgba(80, 60, 30, 0.10);
   border-radius: 16px;
-  padding: 26px 24px;
+  padding: 24px 22px;
   box-shadow: var(--shadow-soft);
   min-width: 0;
 }
+/* Sticky offset clears the sticky navbar (--header-h: 80px). A plain
+   top: 24px would slide the card under the navbar, so the navbar-aware
+   offset is the correct value here. Mobile never sticks. */
 @media (min-width: 1024px) {
-  .cart-summary { position: sticky; top: 100px; }
+  .cart-summary { position: sticky; top: calc(var(--header-h) + 20px); }
 }
 .cart-summary-title {
   font-family: var(--font-body);
@@ -564,8 +586,8 @@
    Tablet (768–1023px) — two columns get compact
    ============================================================ */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .cart-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
-  .cart-summary { position: sticky; top: 100px; }
+  /* Single column — a 320px summary squeezed next to the items is cramped;
+     the summary stacks below the trust row instead (same as mobile). */
   .cart-item {
     grid-template-columns: 96px minmax(0, 1fr);
     gap: 18px;
@@ -588,7 +610,7 @@
    Mobile (<768px) — single column, compact premium cards
    ============================================================ */
 @media (max-width: 767px) {
-  .cart-page { padding-inline: 14px; padding-top: 26px; }
+  .container.cart-page { padding-top: 26px; padding-bottom: 64px; }
   .cart-head { margin-bottom: 20px; }
   .cart-layout { gap: 20px; }
 
@@ -628,9 +650,9 @@
   .cart-item-bulk { width: 100%; text-align: left; }
   .cart-item-total-col { align-items: flex-end; }
 
-  /* Trust badges wrap nicely on narrow screens */
-  .cart-trust { justify-content: center; padding: 13px 16px; gap: 10px 18px; }
-  .cart-trust span { font-size: 0.74rem; }
+  /* Trust cards stack into a single column on narrow screens */
+  .cart-trust { grid-template-columns: 1fr; gap: 10px; }
+  .cart-trust-item { padding: 16px; }
 
   /* Summary becomes a full-width card below the items */
   .cart-summary { padding: 22px 18px; }
