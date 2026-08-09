@@ -1,0 +1,73 @@
+/* ============================================================
+   AnimatedCheck — shared premium success checkmark
+   ------------------------------------------------------------
+   Ring draws → check strokes itself → badge pops 0.7→1 with a
+   subtle gold glow. Used by the Order Tracking success panel and
+   the Order Placed confirmation. Only transform/opacity/stroke
+   animate — no layout shift. Reduced motion shows the finished
+   checkmark instantly.
+   ============================================================ */
+
+.animated-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  animation: animated-check-pop 0.5s cubic-bezier(0.22, 0.9, 0.32, 1.25) both;
+  filter: drop-shadow(0 0 14px rgba(184, 137, 56, 0.35));
+}
+.animated-check svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Gold ring draws itself around the check */
+.animated-check-circle {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  animation: animated-check-circle-draw 0.6s ease-out 0.1s forwards;
+}
+@keyframes animated-check-circle-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Checkmark strokes itself in just after the ring starts */
+.animated-check-mark {
+  fill: none;
+  stroke: var(--gold-deep);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: animated-check-mark-draw 0.4s ease-out 0.45s forwards;
+}
+@keyframes animated-check-mark-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Badge pops in (0.7 → 1.06 → 1) with the glow */
+@keyframes animated-check-pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Reduced motion: static, fully-drawn checkmark — no delays, no pop. */
+@media (prefers-reduced-motion: reduce) {
+  .animated-check {
+    animation: none !important;
+    filter: none !important;
+  }
+  .animated-check-circle,
+  .animated-check-mark {
+    animation-delay: 0ms !important;
+    stroke-dashoffset: 0;
+  }
+}

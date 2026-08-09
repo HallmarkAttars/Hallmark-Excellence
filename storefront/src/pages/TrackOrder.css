@@ -585,50 +585,12 @@
   margin: 2px 0 0;
 }
 
-/* ---------- Success checkmark: pop + ring draw + stroke + glow ---------- */
+/* ---------- Success checkmark: shared AnimatedCheck component ----------
+   (pop + ring draw + stroke + glow + reduced-motion all live in
+   components/ui/AnimatedCheck.css — one source of truth with the
+   order-success page.) */
 .track-success-panel { transition: opacity 0.28s ease; }
 .track-success-panel.is-leaving { opacity: 0; }
-
-.track-anim-badge {
-  width: 88px;
-  height: 88px;
-  animation: track-badge-pop 0.5s cubic-bezier(0.22, 0.9, 0.32, 1.25) both;
-  filter: drop-shadow(0 0 14px rgba(184, 137, 56, 0.35));
-}
-@keyframes track-badge-pop {
-  from { transform: scale(0.7); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-.track-anim-badge svg { width: 100%; height: 100%; overflow: visible; }
-
-/* Gold ring draws itself around the check */
-.track-anim-circle {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-dasharray: 151;
-  stroke-dashoffset: 151;
-  animation: track-circle-draw 0.6s ease-out 0.1s forwards;
-}
-@keyframes track-circle-draw {
-  to { stroke-dashoffset: 0; }
-}
-
-/* Checkmark strokes itself in just after the ring starts */
-.track-anim-check {
-  fill: none;
-  stroke: var(--gold-deep);
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 40;
-  stroke-dashoffset: 40;
-  animation: track-check-draw 0.4s ease-out 0.45s forwards;
-}
-@keyframes track-check-draw {
-  to { stroke-dashoffset: 0; }
-}
 
 /* ---------- Error: subtle shake + small inline error icon ---------- */
 .track-shake { animation: track-shake 0.5s ease-in-out; }
@@ -643,11 +605,4 @@
 /* Result cards reveal one by one after the checkmark settles */
 .track-result-item { animation: fade-up 0.5s ease-out both; }
 
-/* Reduced motion: the global rule zeroes animation durations but not
-   delays — zero the delays too so the checkmark appears instantly. */
-@media (prefers-reduced-motion: reduce) {
-  .track-anim-circle,
-  .track-anim-check {
-    animation-delay: 0 !important;
-  }
-}
+/* Reduced motion for the shared checkmark lives in AnimatedCheck.css. */

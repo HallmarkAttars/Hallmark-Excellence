@@ -1064,17 +1064,9 @@
 }
 
 .order-success-head { margin-bottom: 28px; }
-.order-success-check {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--gold);
-  color: var(--ink);
-  margin-bottom: 16px;
-}
+/* The animated checkmark badge (shared AnimatedCheck component) — the ring
+   draws itself and the check strokes itself in; only spacing lives here. */
+.order-success-badge { margin-bottom: 16px; }
 .order-success-head h1 {
   font-size: clamp(2rem, 3.4vw, 2.6rem);
   line-height: 1.1;

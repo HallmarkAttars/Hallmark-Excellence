@@ -3,6 +3,7 @@ import { Navigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../services/api'
 import { submitContactMessage, submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
+import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
 import {
   isBulkApplicable,
@@ -181,14 +182,6 @@ function OrderSummaryItem({ item }) {
         )}
       </span>
     </div>
-  )
-}
-
-function CheckIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m5 12.5 4.5 4.5L19 7.5" />
-    </svg>
   )
 }
 
@@ -469,16 +462,23 @@ export default function Contact() {
     const paymentMethod = order?.payment_method || 'Cash On Delivery'
     const orderStatus = order?.order_status || 'Pending'
     const orderNumber = result.orderNumber
+    // Real line count (sum of quantities) for the confirmation summary.
+    const itemCount = items.reduce((acc, it) => acc + Number(it.quantity ?? it.qty ?? 1), 0)
     // Real Supabase creation timestamp from the persisted order row.
     const placedAt = formatOrderPlacedAt(order?.created_at)
 
     return (
       <div className="order-success-wrapper">
         <div className="order-success-card">
-          <div className="order-success-head">
-            <span className="order-success-check success-check">
-              <CheckIcon />
-            </span>
+          {/* role="status" announces the confirmation to screen readers the
+              moment it appears after the real order creation succeeds. */}
+          <div className="order-success-head" role="status">
+            {/* Premium animated checkmark — the same ring-draw + self-stroking
+                check as the tracking page. Rendered ONLY after the real order
+                was created. It confirms the order was RECEIVED, never that it
+                is confirmed — the stored status below stays exactly as the
+                database assigned it (Pending for new orders). */}
+            <AnimatedCheck size={76} className="order-success-badge" />
             <h1 className="success-fade success-fade-1">Order Placed Successfully</h1>
             <p className="order-success-id success-fade success-fade-2">
               Order ID: <strong>#{orderNumber}</strong>
@@ -489,7 +489,7 @@ export default function Contact() {
               </p>
             )}
             <p className="order-success-sub success-fade">
-              Thank you for your order. We have received your order successfully.
+              Thank you for your order. Your order has been received successfully.
             </p>
           </div>
 
@@ -514,6 +514,14 @@ export default function Contact() {
                 item={item}
               />
             ))}
+            <div className="order-success-row">
+              <span>Customer Name</span>
+              <span>{order?.customer_name || order?.name || form.name}</span>
+            </div>
+            <div className="order-success-row">
+              <span>Items</span>
+              <span>{itemCount}</span>
+            </div>
             <div className="order-success-row">
               <span>Subtotal</span>
               <span>₹{orderTotal.toLocaleString('en-IN')}</span>

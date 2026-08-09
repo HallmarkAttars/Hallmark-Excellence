@@ -6,6 +6,7 @@ import {
   normalizeOrderId,
 } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
+import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { TRACK_ORDER_PAGE } from '../data/content'
 import './TrackOrder.css'
 
@@ -445,12 +446,9 @@ export default function TrackOrder() {
             role="status"
             aria-live="polite"
           >
-            <div className="track-anim-badge" aria-hidden="true">
-              <svg viewBox="0 0 52 52">
-                <circle className="track-anim-circle" cx="26" cy="26" r="24" />
-                <path className="track-anim-check" d="M15 27.5l7.5 7.5L37 19.5" />
-              </svg>
-            </div>
+            {/* Shared premium checkmark — ring draws, check strokes itself in.
+                Rendered ONLY after the backend confirmed the order exists. */}
+            <AnimatedCheck />
             <p className="track-anim-title">
               {orders.length === 1 ? 'Order Found' : 'Orders Found'}
             </p>
