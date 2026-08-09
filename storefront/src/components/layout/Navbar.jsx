@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
-import { NAV_LINKS } from '../../data/content'
+import { NAV_LINKS, BRAND_LINKS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import SearchOverlay from './SearchOverlay'
 import './Navbar.css'
@@ -24,6 +24,14 @@ function CartIcon() {
   )
 }
 
+function ChevronIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
 function MenuIcon({ open }) {
   return open ? (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
@@ -39,8 +47,18 @@ function MenuIcon({ open }) {
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [dropOpen, setDropOpen] = useState(false)
+  const [mobileBrandsOpen, setMobileBrandsOpen] = useState(false)
+  const dropRef = useRef(null)
   const { itemCount } = useCart()
   const location = useLocation()
+
+  // Any brand page highlights the "Brands" dropdown trigger.
+  const isBrandActive = location.pathname.startsWith('/brand/')
+
+  // The Brands dropdown / drawer group is anchored right after the Categories
+  // link in both the desktop nav and the mobile drawer.
+  const BRANDS_AFTER = '/categories'
 
   // One subtle cart-badge pop whenever the count increases (an item was
   // added). Keying the badge re-runs the CSS pop; decreases and quantity
@@ -53,10 +71,29 @@ export default function Navbar() {
     prevCount.current = itemCount
   }, [itemCount])
 
-  // Close the mobile menu whenever the route changes.
+  // Close the mobile menu and the desktop dropdown whenever the route changes.
   useEffect(() => {
     setMenuOpen(false)
+    setDropOpen(false)
+    setMobileBrandsOpen(false)
   }, [location.pathname])
+
+  // Close the desktop dropdown on outside click or Escape while it's open.
+  useEffect(() => {
+    if (!dropOpen) return
+    const onDown = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setDropOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [dropOpen])
 
   // Lock body scroll while an overlay is open.
   useEffect(() => {
@@ -87,14 +124,46 @@ export default function Navbar() {
 
           <nav className="navbar-nav" aria-label="Main navigation">
             {NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                className={({ isActive }) => `navbar-link ${isActive ? 'is-active' : ''}`}
-              >
-                {link.label}
-              </NavLink>
+              <Fragment key={link.to}>
+                <NavLink
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) => `navbar-link ${isActive ? 'is-active' : ''}`}
+                >
+                  {link.label}
+                </NavLink>
+                {link.to === BRANDS_AFTER && (
+                  <div
+                    className={`navbar-drop ${dropOpen ? 'is-open' : ''}`}
+                    ref={dropRef}
+                    onMouseEnter={() => setDropOpen(true)}
+                    onMouseLeave={() => setDropOpen(false)}
+                  >
+                    <button
+                      type="button"
+                      className={`navbar-link navbar-drop-trigger ${isBrandActive ? 'is-active' : ''}`}
+                      aria-haspopup="true"
+                      aria-expanded={dropOpen}
+                      onClick={() => setDropOpen((o) => !o)}
+                    >
+                      Brands
+                      <span className="navbar-drop-caret"><ChevronIcon /></span>
+                    </button>
+                    <div className={`navbar-drop-menu ${dropOpen ? 'is-open' : ''}`}>
+                      {BRAND_LINKS.map((brand) => (
+                        <NavLink
+                          key={brand.to}
+                          to={brand.to}
+                          className={({ isActive }) => `navbar-drop-link ${isActive ? 'is-active' : ''}`}
+                          onClick={() => setDropOpen(false)}
+                        >
+                          {brand.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Fragment>
             ))}
           </nav>
 
@@ -156,15 +225,41 @@ export default function Navbar() {
 
         <div className="navbar-drawer-links">
           {NAV_LINKS.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) => `navbar-drawer-link ${isActive ? 'is-active' : ''}`}
-              onClick={() => setMenuOpen(false)}
-            >
-              {link.label}
-            </NavLink>
+            <Fragment key={link.to}>
+              <NavLink
+                to={link.to}
+                end={link.end}
+                className={({ isActive }) => `navbar-drawer-link ${isActive ? 'is-active' : ''}`}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </NavLink>
+              {link.to === BRANDS_AFTER && (
+                <div className="navbar-drawer-group">
+                  <button
+                    type="button"
+                    className={`navbar-drawer-trigger ${mobileBrandsOpen ? 'is-open' : ''}`}
+                    aria-expanded={mobileBrandsOpen}
+                    onClick={() => setMobileBrandsOpen((o) => !o)}
+                  >
+                    <span>Brands</span>
+                    <span className="navbar-drawer-caret"><ChevronIcon /></span>
+                  </button>
+                  <div className={`navbar-drawer-sublinks ${mobileBrandsOpen ? 'is-open' : ''}`}>
+                    {BRAND_LINKS.map((brand) => (
+                      <NavLink
+                        key={brand.to}
+                        to={brand.to}
+                        className={({ isActive }) => `navbar-drawer-sublink ${isActive ? 'is-active' : ''}`}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {brand.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       </nav>

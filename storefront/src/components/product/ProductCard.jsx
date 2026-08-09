@@ -98,10 +98,16 @@ export default function ProductCard({ product, onNavigate }) {
       }
     : null
 
+  // The card manages ONLY the default-variant / plain (non-pack) line. Pack
+  // lines (children of bulk pricing) are keyed by product + pack id and are
+  // controlled from the product detail / quick view — never from here. Without
+  // the pack_id guard a variant-less pack product would match its pack line,
+  // then the card's Remove/quantity keys (which have no pack id) would no-op.
   const cartLine = items.find((i) =>
-    hasVariants
+    i.pack_id == null &&
+    (hasVariants
       ? i.product_id === product.id && i.variant_id === defaultVariant.id
-      : i.product_id === product.id && i.variant_id == null
+      : i.product_id === product.id && i.variant_id == null)
   )
   const lineKey = hasVariants
     ? `${product.id}-v${defaultVariant.id}`

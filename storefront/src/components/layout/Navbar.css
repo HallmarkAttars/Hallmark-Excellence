@@ -55,16 +55,6 @@
     white-space: nowrap;
     transition: color 0.2s ease;
   }
-  /* Eleven links need tighter spacing at narrower desktop widths so the
-     single row never overflows — relaxed as the viewport grows. */
-  @media (min-width: 1200px) and (max-width: 1399px) {
-    .navbar-nav { gap: 12px; }
-    .navbar-link { font-size: 0.76rem; }
-  }
-  @media (min-width: 1400px) and (max-width: 1599px) {
-    .navbar-nav { gap: 16px; }
-    .navbar-link { font-size: 0.8rem; }
-  }
   .navbar-link::after {
     content: '';
     position: absolute;
@@ -79,6 +69,72 @@
   }
   .navbar-link:hover, .navbar-link.is-active { color: var(--ink); }
   .navbar-link:hover::after, .navbar-link.is-active::after { transform: scaleX(1); }
+
+  /* ---------- Brands dropdown ---------- */
+  .navbar-drop { position: relative; }
+  .navbar-drop-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 8px 0;
+    cursor: pointer;
+  }
+  .navbar-drop-caret {
+    display: inline-flex;
+    transition: transform 0.25s ease;
+  }
+  .navbar-drop.is-open .navbar-drop-caret { transform: rotate(180deg); }
+
+  /* Premium cream panel — subtle border + soft shadow, above page content */
+  .navbar-drop-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    min-width: 230px;
+    padding: 8px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 18px 44px rgba(29, 25, 20, 0.16);
+    z-index: 40;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
+  }
+  /* Invisible bridge over the trigger→menu gap so hover stays continuous */
+  .navbar-drop-menu::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+  }
+  .navbar-drop-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .navbar-drop-link {
+    display: block;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--charcoal-soft);
+    white-space: nowrap;
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+  .navbar-drop-link:hover,
+  .navbar-drop-link.is-active { background: var(--cream-deep); color: var(--gold-deep); }
 }
 
 /* Mobile header is compact (64–72px), desktop uses --header-h (76–88px) */
@@ -216,3 +272,64 @@
 .navbar-drawer-link:hover, .navbar-drawer-link.is-active {
   color: var(--gold-deep);
 }
+
+/* ---------- Mobile drawer: expandable Brands group ---------- */
+.navbar-drawer-group {
+  border-bottom: 1px solid rgba(80, 60, 30, 0.08);
+}
+
+.navbar-drawer-trigger {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--charcoal);
+  transition: color 0.2s ease;
+}
+.navbar-drawer-trigger:hover { color: var(--gold-deep); }
+
+.navbar-drawer-caret {
+  display: inline-flex;
+  color: var(--gold-deep);
+  transition: transform 0.25s ease;
+}
+.navbar-drawer-trigger.is-open .navbar-drawer-caret { transform: rotate(180deg); }
+
+.navbar-drawer-sublinks {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  /* visibility keeps the collapsed sublinks out of the tab order too */
+  visibility: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease, visibility 0s 0.3s;
+}
+.navbar-drawer-sublinks.is-open {
+  max-height: 320px;
+  opacity: 1;
+  visibility: visible;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.navbar-drawer-sublink {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding-left: 18px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--charcoal-soft);
+  transition: color 0.2s ease;
+}
+.navbar-drawer-sublink:hover,
+.navbar-drawer-sublink.is-active { color: var(--gold-deep); }

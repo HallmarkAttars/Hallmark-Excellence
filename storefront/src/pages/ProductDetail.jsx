@@ -188,6 +188,12 @@ export default function ProductDetail() {
             name: product.name,
             price: Number(price),
             image: product.image,
+            // Brand context MUST ride on the line — combined brand bulk
+            // pricing is derived from it. Without these, a product added
+            // here would price differently from the same product added via
+            // a product card (which passes the full object).
+            brand_id: product.brand_id ?? null,
+            brand_name: product.brand_name ?? null,
             bulk_enabled: product.bulk_enabled,
             bulk_price: product.bulk_price,
             bulk_min_qty: product.bulk_min_qty,
@@ -239,6 +245,12 @@ export default function ProductDetail() {
           name: product.name,
           price: Number(price),
           image: product.image,
+          // Brand context MUST ride on the line — combined brand bulk
+          // pricing is derived from it. Without these, a product added
+          // here would price differently from the same product added via
+          // a product card (which passes the full object).
+          brand_id: product.brand_id ?? null,
+          brand_name: product.brand_name ?? null,
           // Product-level bulk — only used for variant-less products (the
           // per-variant config rides on variantInfo and wins in the cart).
           bulk_enabled: product.bulk_enabled,
