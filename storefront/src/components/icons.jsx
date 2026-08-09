@@ -142,3 +142,29 @@ export function RabbitIcon({ size = 24 }) {
     </svg>
   )
 }
+
+export function PhoneIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6.5 3.5h3.2l1.7 4.5-1.9 1.5a12.3 12.3 0 0 0 5.5 5.5l1.5-1.9 4.5 1.7v3.2a2 2 0 0 1-2.2 2A16.6 16.6 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z" />
+    </svg>
+  )
+}
+
+export function MailIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="m3.5 8 8.5 5.5L20.5 8" />
+    </svg>
+  )
+}
+
+export function ClockIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  )
+}

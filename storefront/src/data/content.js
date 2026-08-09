@@ -164,12 +164,37 @@ export const ABOUT = {
 // CONTACT — Contact page / checkout page headings + side info block
 // --------------------------------------------------------------------------
 export const CONTACT = {
-  eyebrow: 'Get in Touch',
-  title: 'Contact Us',
+  eyebrow: 'Contact Us',
+  title: "We'd Love to Hear From You",
+  subtitle:
+    'Have a question about our products, orders or collections? Our team is here to help.',
   info: {
     title: 'Visit or Reach Us',
-    // phone / email / address come from BUSINESS
+    phoneLabel: 'Phone',
+    emailLabel: 'Email',
+    addressLabel: 'Address',
+    // Values come from BUSINESS (single source of truth) — never duplicated here.
   },
+  // Reassurance strip below the contact grid. Every claim is already used
+  // elsewhere on the site (contact success toast / secure checkout copy) —
+  // nothing new is invented here.
+  benefits: [
+    {
+      key: 'quick',
+      title: 'Quick Response',
+      subtitle: "We'll get back to you shortly",
+    },
+    {
+      key: 'secure',
+      title: 'Secure Communication',
+      subtitle: 'Your information is safe with us',
+    },
+    {
+      key: 'support',
+      title: 'Customer Support',
+      subtitle: 'Our team is here to help',
+    },
+  ],
   checkout: {
     eyebrow: 'Checkout',
     title: 'Complete Your Order',

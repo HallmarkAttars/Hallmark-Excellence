@@ -19,6 +19,9 @@ import {
   SecureIcon,
   BoxIcon,
   QualityIcon,
+  PhoneIcon,
+  MailIcon,
+  ClockIcon,
 } from '../components/icons'
 import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
@@ -539,6 +542,7 @@ export default function Contact() {
         <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
         <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>
         {isCheckout && <p className="checkout-head-sub">Complete your order securely</p>}
+        {!isCheckout && <p className="page-heading-sub">{CONTACT.subtitle}</p>}
       </div>
 
       {isCheckout ? (
@@ -867,38 +871,78 @@ export default function Contact() {
           </div>
         </div>
       ) : (
-        <div className="container contact-layout">
+        <div className="container contact-layout contact-layout--page">
           <div className="contact-form-col">
             {result?.sent && (
-              <div className="contact-toast">
+              <div className="contact-toast" role="status">
                 <strong>Message sent</strong>
                 <p>Thanks for reaching out — we'll get back to you shortly.</p>
               </div>
             )}
 
             {!result && (
-              <form className="contact-form" onSubmit={handleSubmit} noValidate>
+              <form
+                className="contact-form contact-form--page"
+                onSubmit={handleSubmit}
+                noValidate
+                aria-label="Contact form"
+              >
+                <h2 className="contact-form-title">Get in Touch</h2>
+
                 <div className="form-field">
                   <label htmlFor="name">
                     Name <span className="required-star">*</span>
                   </label>
-                  <input id="name" name="name" value={form.name} onChange={handleChange} required />
+                  <input
+                    id="name"
+                    name="name"
+                    placeholder="Enter your name"
+                    autoComplete="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                  />
                   {fieldErrors.name && <p className="field-hint field-hint--error">{fieldErrors.name}</p>}
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="email">Email</label>
-                  <input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
+                  <label htmlFor="email">
+                    Email <span className="required-star">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="message">Message</label>
-                  <textarea id="message" name="message" rows={4} value={form.message} onChange={handleChange} required />
+                  <label htmlFor="message">
+                    Message <span className="required-star">*</span>
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    rows={4}
+                    placeholder="How can we help you?"
+                    value={form.message}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
 
                 {error && <p className="contact-error">{error}</p>}
 
-                <button className="btn btn-primary" type="submit" disabled={submitting}>
+                <button
+                  className="btn btn-primary contact-submit"
+                  type="submit"
+                  disabled={submitting}
+                >
                   {submitting ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
@@ -906,32 +950,85 @@ export default function Contact() {
           </div>
 
           <div className="contact-info-col">
-            <div className="contact-info-block">
-              <h3>{CONTACT.info.title}</h3>
-              <p>{BUSINESS.phoneDisplay}</p>
-              <p>{BUSINESS.email}</p>
-              <p>{BUSINESS.address}</p>
+            <div className="contact-info-card">
+              <h2 className="contact-info-title">{CONTACT.info.title}</h2>
+
+              <ul className="contact-info-list">
+                <li className="contact-info-item">
+                  <span className="contact-info-icon" aria-hidden="true">
+                    <PhoneIcon size={17} />
+                  </span>
+                  <span className="contact-info-label">{CONTACT.info.phoneLabel}</span>
+                  <a
+                    className="contact-info-value contact-info-link"
+                    href={`tel:${BUSINESS.phoneTel}`}
+                  >
+                    {BUSINESS.phoneDisplay}
+                  </a>
+                </li>
+                <li className="contact-info-item">
+                  <span className="contact-info-icon" aria-hidden="true">
+                    <MailIcon size={17} />
+                  </span>
+                  <span className="contact-info-label">{CONTACT.info.emailLabel}</span>
+                  <a
+                    className="contact-info-value contact-info-link"
+                    href={`mailto:${BUSINESS.email}`}
+                  >
+                    {BUSINESS.email}
+                  </a>
+                </li>
+                <li className="contact-info-item">
+                  <span className="contact-info-icon" aria-hidden="true">
+                    <MapPinIcon size={17} />
+                  </span>
+                  <span className="contact-info-label">{CONTACT.info.addressLabel}</span>
+                  <span className="contact-info-value">{BUSINESS.address}</span>
+                </li>
+              </ul>
+
+              {/* Real Arees Attars location — interactive Google Maps embed.
+                  The q= query pins the business address so the marker lands on
+                  the actual shop, not the centre of Chennai. */}
+              <div className="contact-map">
+                <iframe
+                  src={BUSINESS.mapEmbedUrl}
+                  title="Arees Attars Chennai Location"
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <a
+                  className="contact-map-link"
+                  href={BUSINESS.mapDirectionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get Directions <span className="contact-map-link-arrow" aria-hidden="true">→</span>
+                </a>
+              </div>
             </div>
-            {/* Real Arees Attars location — interactive Google Maps embed.
-                The q= query pins the business address so the marker lands on
-                the actual shop, not the centre of Chennai. */}
-            <div className="contact-map">
-              <iframe
-                src={BUSINESS.mapEmbedUrl}
-                title="Arees Attars Chennai Location"
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              <a
-                className="contact-map-link"
-                href={BUSINESS.mapDirectionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Get Directions
-              </a>
-            </div>
+          </div>
+
+          {/* Reassurance row — claims already used on the site, never invented */}
+          <div className="contact-benefits" aria-label="Contact support promises">
+            {CONTACT.benefits.map((b) => (
+              <div className="contact-benefit" key={b.key}>
+                <span className="contact-benefit-icon" aria-hidden="true">
+                  {b.key === 'quick' ? (
+                    <ClockIcon size={18} />
+                  ) : b.key === 'secure' ? (
+                    <SecureIcon size={18} />
+                  ) : (
+                    <UserIcon size={18} />
+                  )}
+                </span>
+                <div>
+                  <strong>{b.title}</strong>
+                  <span>{b.subtitle}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
