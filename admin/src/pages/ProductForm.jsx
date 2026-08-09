@@ -44,6 +44,20 @@ export default function ProductForm() {
   // Per-variant Unit search query (for the combobox).
   const [unitQueries, setUnitQueries] = useState({})
 
+  // --- Pack state ----------------------------------------------------------
+  // Flexible pack options (children of bulk pricing). Each pack: { id?,
+  // name?, usage_label, pack_quantity, price, is_active, display_order }.
+  // The name auto-generates from pack_quantity when left blank.
+  const [packs, setPacks] = useState([])
+  const EMPTY_PACK = () => ({
+    name: '',
+    usage_label: '',
+    pack_quantity: '',
+    price: '',
+    is_active: true,
+    display_order: packs.length + 1,
+  })
+
   useEffect(() => {
     getCategories().then(setCategories)
     getBrands().then(setBrands)
@@ -88,6 +102,20 @@ export default function ProductForm() {
               }))
             )
           }
+          // Load existing pack options (if any) returned by the backend.
+          if (Array.isArray(p.packs) && p.packs.length > 0) {
+            setPacks(
+              p.packs.map((pk) => ({
+                id: pk.id,
+                name: pk.name ?? '',
+                usage_label: pk.usage_label ?? '',
+                pack_quantity: pk.pack_quantity ?? '',
+                price: pk.price ?? '',
+                is_active: pk.is_active !== false,
+                display_order: pk.display_order ?? 0,
+              }))
+            )
+          }
         }
         setLoading(false)
       })
@@ -111,6 +139,77 @@ export default function ProductForm() {
   const isAttarCategory = selectedCategory?.slug === 'attar' || selectedCategory?.name === 'Attar'
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+
+  // --- Pack helpers --------------------------------------------------------
+  const updatePack = (index, field, value) => {
+    setPacks((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)))
+  }
+
+  const addPack = () => setPacks((prev) => [...prev, EMPTY_PACK()])
+
+  const removePack = (index) => {
+    setPacks((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const movePack = (index, dir) => {
+    setPacks((prev) => {
+      const next = [...prev]
+      const target = index + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[index], next[target]] = [next[target], next[index]]
+      return next.map((p, i) => ({ ...p, display_order: i + 1 }))
+    })
+  }
+
+  // A pack's display name — auto-generates from the quantity when blank.
+  const packLabel = (p) =>
+    (p.name || '').trim() ||
+    (p.pack_quantity != null && String(p.pack_quantity).trim() !== ''
+      ? `Pack of ${p.pack_quantity}`
+      : 'New Pack')
+
+  // Per-piece rate shown while editing (display only — never saved directly;
+  // the backend derives it from price ÷ pack_quantity at order time).
+  const packPerPiece = (p) => {
+    const qty = Number(p.pack_quantity)
+    const price = Number(p.price)
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(price) || price < 0) return null
+    return price / qty
+  }
+
+  // Packs are children of bulk pricing: the section renders when the product
+  // participates in ANY bulk tier — product-level bulk (variant-less
+  // products), per-variant bulk (variant products), OR the selected brand's
+  // combined brand bulk (pack products like Royal Marriage carry their bulk
+  // at the brand level). Mirrors the storefront showPacks gate exactly, so
+  // packs the customer can buy are always manageable here.
+  const selectedBrand = brands.find((b) => String(b.id) === String(form.brand_id))
+  const brandBulkAvailable = Boolean(selectedBrand && selectedBrand.bulk_enabled === true)
+  const bulkAvailable =
+    form.bulk_enabled ||
+    variants.some((v) => v.bulk_enabled) ||
+    brandBulkAvailable
+
+  // Validate the pack set (only meaningful when packs are configured).
+  const validatePacks = () => {
+    if (packs.length === 0) return ''
+    const seen = new Set()
+    for (const p of packs) {
+      const qty = Number(p.pack_quantity)
+      if (p.pack_quantity === '' || p.pack_quantity == null || !Number.isInteger(qty) || qty <= 0) {
+        return 'Each pack needs a whole-number quantity greater than 0.'
+      }
+      const price = Number(p.price)
+      if (p.price === '' || p.price == null || !Number.isFinite(price) || price < 0) {
+        return 'Each pack needs a price greater than or equal to 0.'
+      }
+      if (seen.has(qty)) {
+        return `Duplicate pack: Pack of ${qty} already exists for this product.`
+      }
+      seen.add(qty)
+    }
+    return ''
+  }
 
   // Only preview locally here — the actual Cloudinary upload happens on
   // submit, so we don't upload a file the admin might still cancel out of.
@@ -282,6 +381,14 @@ export default function ProductForm() {
       return
     }
 
+    // Optional pack options — only validated when packs exist (and the admin
+    // section is only rendered when bulk pricing is available).
+    const packError = validatePacks()
+    if (packError) {
+      setError(packError)
+      return
+    }
+
     setSaving(true)
     try {
       let image = existingImages[0] || null
@@ -305,6 +412,21 @@ export default function ProductForm() {
 
       const baseStock = hasVariants ? Number(defaultVariant?.stock ?? form.stock) : Number(form.stock)
 
+      // Pack payload — only packs with a real quantity are sent (blank draft
+      // rows are dropped). The name is optional; the backend auto-generates
+      // "Pack of N" when blank.
+      const packsPayload = packs
+        .filter((p) => p.pack_quantity !== '' && p.pack_quantity != null)
+        .map((p, i) => ({
+          id: p.id ?? undefined,
+          name: (p.name || '').trim() || undefined,
+          usage_label: (p.usage_label || '').trim() || null,
+          pack_quantity: Number(p.pack_quantity),
+          price: Number(p.price),
+          is_active: p.is_active !== false,
+          display_order: p.display_order != null ? Number(p.display_order) : i + 1,
+        }))
+
       const payload = {
         name: form.name,
         description: form.description,
@@ -321,6 +443,7 @@ export default function ProductForm() {
         brand_id: form.brand_id || null,
         image,
         variants: variantsPayload,
+        packs: packsPayload,
       }
 
       if (isEdit) {
@@ -669,6 +792,137 @@ export default function ProductForm() {
             </div>
           ))}
         </div>
+
+        {/* -------- Optional PACK OPTIONS (children of bulk pricing) --------
+            Rendered ONLY when the product participates in bulk purchasing
+            (product-level bulk OR any variant bulk). Pack options let the
+            customer buy bundles of pieces (Pack of 10 / 20 / 50…) — the
+            actual piece quantity (pack_quantity × packs) feeds the existing
+            bulk engine. When bulk is OFF, the section (and the storefront
+            pack selector) never appear. */}
+        {bulkAvailable && (
+          <div className="packs-section">
+            <div className="variants-header packs-header">
+              <h3>Pack Options</h3>
+              <button type="button" className="btn btn-outline btn-sm" onClick={addPack}>
+                + Add Pack
+              </button>
+            </div>
+
+            {packs.length === 0 && (
+              <p className="variants-empty">
+                No packs yet. Add one to let customers buy this product in bundles
+                (e.g. Pack of 10). Packs are only available because bulk pricing is on.
+              </p>
+            )}
+
+            {packs.map((p, index) => {
+              const perPiece = packPerPiece(p)
+              return (
+                <div className={`pack-card${p.is_active ? '' : ' is-inactive'}`} key={index}>
+                  <div className="variant-card-head pack-card-head">
+                    <span className="variant-title">{packLabel(p)}</span>
+                    <div className="pack-card-actions">
+                      <button
+                        type="button"
+                        className="pack-move"
+                        onClick={() => movePack(index, -1)}
+                        disabled={index === 0}
+                        title="Move up"
+                        aria-label="Move pack up"
+                      >↑</button>
+                      <button
+                        type="button"
+                        className="pack-move"
+                        onClick={() => movePack(index, 1)}
+                        disabled={index === packs.length - 1}
+                        title="Move down"
+                        aria-label="Move pack down"
+                      >↓</button>
+                      <button
+                        type="button"
+                        className="variant-delete"
+                        onClick={() => removePack(index)}
+                        title="Delete pack"
+                        aria-label="Delete pack"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="variant-grid pack-grid">
+                    <div className="form-field">
+                      <label htmlFor={`pack-name-${index}`}>Pack Name (optional)</label>
+                      <input
+                        id={`pack-name-${index}`}
+                        type="text"
+                        placeholder={p.pack_quantity ? `Pack of ${p.pack_quantity}` : 'e.g. Pack of 10'}
+                        value={p.name}
+                        onChange={(e) => updatePack(index, 'name', e.target.value)}
+                      />
+                      <small className="field-example">Blank auto-generates “Pack of N”.</small>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor={`pack-usage-${index}`}>Usage Label (optional)</label>
+                      <input
+                        id={`pack-usage-${index}`}
+                        type="text"
+                        placeholder="e.g. Family Pack"
+                        value={p.usage_label}
+                        onChange={(e) => updatePack(index, 'usage_label', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor={`pack-qty-${index}`}>Pieces per Pack</label>
+                      <input
+                        id={`pack-qty-${index}`}
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="e.g. 10"
+                        value={p.pack_quantity}
+                        onChange={(e) => updatePack(index, 'pack_quantity', e.target.value)}
+                      />
+                      <small className="field-example">How many pieces are in one pack.</small>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor={`pack-price-${index}`}>Pack Price (₹)</label>
+                      <input
+                        id={`pack-price-${index}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="e.g. 400"
+                        value={p.price}
+                        onChange={(e) => updatePack(index, 'price', e.target.value)}
+                      />
+                      <small className="field-example">
+                        {perPiece != null ? `₹${perPiece.toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece` : 'Price of one whole pack.'}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="pack-card-foot">
+                    <label className="default-radio">
+                      <input
+                        type="checkbox"
+                        checked={p.is_active}
+                        onChange={(e) => updatePack(index, 'is_active', e.target.checked)}
+                      />
+                      <span>{p.is_active ? 'Active' : 'Inactive — hidden from customers'}</span>
+                    </label>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         <div className="form-row form-row-2">
           <div className="form-field">

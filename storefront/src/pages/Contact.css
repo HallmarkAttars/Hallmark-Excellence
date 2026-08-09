@@ -781,6 +781,23 @@
   color: var(--gold-deep);
   font-weight: 500;
 }
+.order-summary-pack {
+  font-size: 0.75rem;
+  color: var(--charcoal-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.order-summary-pack strong {
+  color: var(--charcoal);
+  font-weight: 600;
+}
+.order-summary-pack em {
+  font-style: normal;
+  color: var(--gold-deep);
+  font-weight: 500;
+}
 .order-summary-bulk-note {
   font-size: 0.72rem;
   font-weight: 700;

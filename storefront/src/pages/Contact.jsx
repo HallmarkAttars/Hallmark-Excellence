@@ -80,6 +80,11 @@ function OrderSummaryItem({ item }) {
   const rawQty = item.quantity ?? item.qty
   const unitPrice = resolvedUnitPrice(item)
   const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
+  // PACK line: quantity is the ACTUAL piece count; the pack metadata tells
+  // the customer how many packs that represents (never confuse the two).
+  const isPack = item.pack_id != null
+  const packLabel =
+    item.pack_name || (item.pack_size != null ? `Pack of ${item.pack_size}` : '')
   const lineTotal = unitPrice * quantity
   const bulkApplicable = isBulkApplicable(item)
   const bulkUnlocked = isBulkUnlocked(item)
@@ -120,11 +125,12 @@ function OrderSummaryItem({ item }) {
     hasBulkDiscount && normalUnitPrice != null && normalUnitPrice > unitPrice
   const normalLineTotal =
     showCompareAt && normalUnitPrice != null ? normalUnitPrice * quantity : null
-  const label =
-    item.variant_label ||
-    (item.quantity_value != null && item.quantity_unit
-      ? `${item.quantity_value} ${item.quantity_unit}`
-      : '')
+  const label = isPack
+    ? packLabel
+    : item.variant_label ||
+      (item.quantity_value != null && item.quantity_unit
+        ? `${item.quantity_value} ${item.quantity_unit}`
+        : '')
   const image = itemImage(item)
 
   return (
@@ -147,8 +153,17 @@ function OrderSummaryItem({ item }) {
       <div className="order-summary-item-info">
         <span className="order-summary-name">{item.name}</span>
         {label && <span className="order-summary-variant">{label}</span>}
+        {isPack && (
+          <span className="order-summary-pack">
+            <strong>{item.number_of_packs} pack{item.number_of_packs === 1 ? '' : 's'}</strong>
+            <span> · {quantity} pieces</span>
+            {item.pack_usage_label && <em> · {item.pack_usage_label}</em>}
+          </span>
+        )}
         <span className="order-summary-qty">
-          ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
+          {isPack && !showCompareAt
+            ? `₹${item.pack_price != null ? Number(item.pack_price).toLocaleString('en-IN') : (unitPrice * (item.pack_size || 1)).toLocaleString('en-IN')} / pack`
+            : `₹${unitPrice.toLocaleString('en-IN')} × ${quantity}`}
           {showCompareAt && (
             <span className="order-summary-qty-struck">
               {' '}₹{normalUnitPrice.toLocaleString('en-IN')}/piece
@@ -413,6 +428,7 @@ export default function Contact() {
           const unit_price = resolvedUnitPrice(item)
           const quantity = Number(item.quantity ?? item.qty ?? 1)
           const hasVariant = item.variant_id != null
+          const hasPack = item.pack_id != null
           return {
             product_id: item.product_id ?? item.id,
             product_name: item.name,
@@ -426,6 +442,15 @@ export default function Contact() {
                   variant_label: item.variant_label,
                   quantity_value: item.quantity_value,
                   quantity_unit: item.quantity_unit,
+                }
+              : {}),
+            // Pack purchase metadata — the server resolves the pack row from
+            // the database (pack_size/pack_price are authoritative) and
+            // computes actual pieces itself; these fields identify the pack.
+            ...(hasPack
+              ? {
+                  pack_id: item.pack_id,
+                  number_of_packs: item.number_of_packs,
                 }
               : {}),
           }

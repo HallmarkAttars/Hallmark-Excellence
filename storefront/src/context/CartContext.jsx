@@ -16,21 +16,29 @@ function readStoredCart() {
 
 // Build a stable unique line key. Variant items are keyed by product id +
 // variant id so different quantity variants (3 ML vs 6 ML) stay separate.
-// Legacy items (no variant) are keyed by product id alone.
+// Pack items are keyed by product id + pack id so different packs (Pack of
+// 10 vs Pack of 20) stay separate lines. Legacy items (no variant/pack) are
+// keyed by product id alone.
 function lineKey(item) {
+  if (item.pack_id != null) return `${item.product_id}-p${item.pack_id}`
   return item.variant_id != null ? `${item.product_id}-v${item.variant_id}` : `${item.product_id}-`
 }
 
 // Normalize a stored cart item into the canonical shape used everywhere.
 function normalizeItem(raw) {
   const variant = raw.variant_id != null
+  const pack = raw.pack_id != null
   return {
     product_id: raw.product_id ?? raw.id,
     name: raw.name,
     image: raw.image,
+    // For a PACK line, quantity is the ACTUAL PIECE count (pack_size ×
+    // number_of_packs) — the same unit the bulk engine evaluates, so pack
+    // thresholds work without any pricing-engine change.
     quantity: Number(raw.quantity ?? raw.qty ?? 1),
     // Selected price is the variant price when a variant exists, otherwise
-    // the legacy product price.
+    // the legacy product price. For a PACK line it is the pack's per-piece
+    // rate (pack_price ÷ pack_size), so bulk discounts compare correctly.
     selected_price: Number(raw.selected_price ?? raw.price ?? 0),
     // Brand context — needed for combined brand bulk pricing. Legacy stored
     // carts without brand_id simply skip brand-level discounts until the item
@@ -53,6 +61,18 @@ function normalizeItem(raw) {
           // only ever applies to the default variant.
           variant_is_default: raw.variant_is_default === true,
           stock: raw.stock != null ? Number(raw.stock) : null,
+        }
+      : {}),
+    // Pack purchase metadata (children of bulk pricing) — preserved so cart,
+    // checkout and order all show "3 packs · 30 pieces" with the pack price.
+    ...(pack
+      ? {
+          pack_id: raw.pack_id,
+          pack_name: raw.pack_name ?? null,
+          pack_usage_label: raw.pack_usage_label ?? null,
+          pack_size: Number(raw.pack_size ?? 1),
+          number_of_packs: Number(raw.number_of_packs ?? 1),
+          pack_price: Number(raw.pack_price ?? 0),
         }
       : {}),
   }
@@ -108,18 +128,32 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  const addItem = useCallback((product, qty = 1, variant = null) => {
+  const addItem = useCallback((product, qty = 1, variant = null, pack = null) => {
     setItems((prev) => {
       const hasVariant = Boolean(variant && variant.variant_id != null)
+      const hasPack = Boolean(pack && pack.pack_id != null)
 
       // Legacy products (no variant) keep using product.price.
-      const selected_price = hasVariant ? Number(variant.price) : Number(product.price)
+      const selected_price = hasVariant
+        ? Number(variant.price)
+        : hasPack
+          ? Number(pack.price) / Number(pack.pack_size || 1)
+          : Number(product.price)
+
+      // PACK line: the customer-facing quantity is the NUMBER OF PACKS, but
+      // the line's `quantity` (what every bulk calculation reads) is the
+      // ACTUAL PIECE count — pack_size × number_of_packs. This is the single
+      // conversion point the existing bulk engine needs.
+      const number_of_packs = hasPack ? Math.max(1, Number(qty) || 1) : null
+      const quantity = hasPack
+        ? Number(pack.pack_size || 1) * number_of_packs
+        : Math.max(1, Number(qty) || 1)
 
       const newItem = {
         product_id: product.id,
         name: product.name,
         image: product.image,
-        quantity: Math.max(1, Number(qty) || 1),
+        quantity,
         selected_price,
         // Brand context carried on the line for combined brand bulk pricing.
         brand_id: product.brand_id ?? null,
@@ -148,23 +182,51 @@ export function CartProvider({ children }) {
               stock: variant.stock != null ? Number(variant.stock) : null,
             }
           : {}),
+        // Pack metadata — rides on the line so cart/checkout/order stay
+        // consistent and historically accurate.
+        ...(hasPack
+          ? {
+              pack_id: pack.pack_id,
+              pack_name: pack.name || `Pack of ${pack.pack_size}`,
+              pack_usage_label: pack.usage_label ?? null,
+              pack_size: Number(pack.pack_size || 1),
+              number_of_packs,
+              pack_price: Number(pack.price || 0),
+            }
+          : {}),
       }
 
-      // Merge ONLY when BOTH product_id AND variant_id match.
+      // Merge ONLY when product_id AND (variant_id OR pack_id) match.
       const existingIndex = prev.findIndex((i) => lineKey(i) === lineKey(newItem))
 
       if (existingIndex >= 0) {
         const existing = prev[existingIndex]
-        const combined = Math.max(1, existing.quantity + newItem.quantity)
+        // PACK merge: combine the NUMBER OF PACKS, then recompute the actual
+        // piece count (pack_size × packs) so the bulk math stays honest.
+        const combinedPacks = hasPack
+          ? Math.max(1, (existing.number_of_packs || 1) + number_of_packs)
+          : null
+        const combined = hasPack
+          ? (existing.pack_size || 1) * combinedPacks
+          : Math.max(1, existing.quantity + newItem.quantity)
         // Respect the selected variant's stock limit when applicable.
         const capped =
           newItem.stock != null ? Math.min(combined, newItem.stock) : combined
+        // PACK + stock cap: the piece count is capped, so the NUMBER OF PACKS
+        // must be recomputed from the capped pieces (never more packs than
+        // the stock can physically fill) — the two must always stay in sync
+        // ("2 packs · 10 pieces" would be a contradiction).
+        const cappedPacks =
+          hasPack && newItem.pack_size != null
+            ? Math.max(1, Math.floor(capped / newItem.pack_size))
+            : combinedPacks
         // Refresh the line's bulk config too, so a config change the admin
         // made since the item was first added is picked up on re-add.
         const updated = [...prev]
         updated[existingIndex] = {
           ...existing,
-          quantity: capped,
+          quantity: hasPack ? cappedPacks * newItem.pack_size : capped,
+          ...(hasPack ? { number_of_packs: cappedPacks } : {}),
           // Refresh brand context too — a line stored before brand_id existed
           // (legacy cart) must pick up the brand so combined brand bulk can
           // apply to the re-added item.
@@ -191,6 +253,16 @@ export function CartProvider({ children }) {
       prev.map((i) => {
         if (lineKey(i) !== key) return i
         const max = i.stock != null ? i.stock : Number.MAX_SAFE_INTEGER
+        // PACK line: the stepper changes the NUMBER OF PACKS; the piece count
+        // (pack_size × packs) is recomputed so bulk thresholds stay accurate.
+        // Both stay in sync even under a stock cap — packs are capped to
+        // floor(stock / pack_size) so pieces can never exceed the stock.
+        if (i.pack_id != null && i.pack_size != null) {
+          const maxPacks =
+            i.stock != null ? Math.floor(i.stock / i.pack_size) : Number.MAX_SAFE_INTEGER
+          const packs = Math.min(Math.max(1, qty), maxPacks)
+          return { ...i, number_of_packs: packs, quantity: packs * i.pack_size }
+        }
         return { ...i, quantity: Math.min(Math.max(1, qty), max) }
       })
     )

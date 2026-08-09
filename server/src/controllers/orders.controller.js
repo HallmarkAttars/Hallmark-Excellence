@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
-const { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor } = require('../utils/orderPricing')
+const { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor, resolvePackLine } = require('../utils/orderPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -184,6 +184,12 @@ async function trackOrder(req, res) {
       ...(it.brand_name ? { brand_name: it.brand_name } : {}),
       ...(it.bulk_applied ? { bulk_applied: true, bulk_price: it.bulk_price ?? null } : {}),
       ...(it.brand_bulk_applied ? { brand_bulk_applied: true } : {}),
+      // Pack purchase metadata — preserved for the customer's own invoice.
+      ...(it.pack_id ? { pack_id: it.pack_id, pack_name: it.pack_name } : {}),
+      ...(it.pack_size != null
+        ? { pack_size: Number(it.pack_size), number_of_packs: Number(it.number_of_packs ?? 1), actual_piece_quantity: Number(it.actual_piece_quantity ?? it.quantity) }
+        : {}),
+      ...(it.pack_price != null ? { pack_price: Number(it.pack_price) } : {}),
     }))
 
     return res.json({
@@ -291,6 +297,29 @@ async function createOrder(req, res) {
       return res.status(500).json({ error: 'Failed to validate products. Please try again.' })
     }
 
+    // --- Fetch pack rows (if any) so pack pricing is authoritative ----------
+    // A pack line carries pack_id + number_of_packs; the pack's OWN quantity
+    // and price come from the database — never from the client. The actual
+    // piece quantity (pack_quantity × number_of_packs) then feeds the same
+    // bulk engine as a normal line, so thresholds are evaluated on pieces.
+    const packIds = items
+      .filter((it) => it.pack_id != null)
+      .map((it) => String(it.pack_id))
+
+    let dbPacks = []
+    if (packIds.length > 0) {
+      const { data: ps, error: pErr } = await supabase
+        .from('product_packs')
+        .select('id, product_id, name, usage_label, pack_quantity, price, is_active')
+        .in('id', packIds)
+      if (pErr && !/does not exist|could not find/i.test(pErr.message)) {
+        console.error('[createOrder] packs fetch error:', pErr.message)
+        return res.status(500).json({ error: 'Failed to validate product packs. Please try again.' })
+      }
+      dbPacks = ps || []
+    }
+    const packMap = new Map(dbPacks.map((p) => [String(p.id), p]))
+
     const variantIds = items
       .filter((it) => it.variant_id != null)
       .map((it) => String(it.variant_id))
@@ -372,11 +401,24 @@ async function createOrder(req, res) {
     }
 
     // Combined quantity per brand across ALL lines (mix & match any items).
+    // For a PACK line the quantity is the ACTUAL piece count (pack_quantity ×
+    // number_of_packs) — never the number of packs — so brand thresholds are
+    // evaluated on pieces, exactly like every other line.
     const brandTotals = {}
     for (const item of items) {
       const product = productMap.get(String(item.product_id ?? item.id))
       if (!product || product.brand_id == null) continue
-      const qty = Math.floor(Number(item.quantity ?? item.qty ?? 1))
+      let qty = Math.floor(Number(item.quantity ?? item.qty ?? 1))
+      if (item.pack_id != null) {
+        const pack = packMap.get(String(item.pack_id))
+        // Ownership check mirrors the line-pricing pass: a pack belonging to a
+        // DIFFERENT product is invalid and must not inflate this brand's
+        // totals (the pricing pass rejects such lines outright).
+        const resolved = pack && String(pack.product_id) === String(product.id)
+          ? resolvePackLine(pack, item.number_of_packs ?? item.pack_count ?? 1)
+          : null
+        if (resolved) qty = resolved.quantity
+      }
       if (!Number.isFinite(qty) || qty < 1) continue
       const bid = String(product.brand_id)
       brandTotals[bid] = (brandTotals[bid] || 0) + qty
@@ -392,7 +434,41 @@ async function createOrder(req, res) {
         if (!product) {
           throw new Error('One of the products in your cart is no longer available. Please refresh and try again.')
         }
-        const quantity = Math.floor(Number(item.quantity ?? item.qty ?? 1))
+
+        // --- Pack line resolution (authoritative from the DB) ---------------
+        // When the customer bought via a pack, the pack row decides the piece
+        // count and the per-piece normal price. quantity below = ACTUAL PIECES
+        // (pack_quantity × number_of_packs) so every subsequent bulk threshold
+        // evaluates pieces exactly as a normal line would.
+        let packFields = {}
+        let packLine = null
+        if (item.pack_id != null) {
+          const pack = packMap.get(String(item.pack_id))
+          if (!pack || String(pack.product_id) !== String(product.id)) {
+            throw new Error(`The selected pack for ${product.name} is no longer available. Please refresh and try again.`)
+          }
+          // A disabled pack is not purchasable by NEW customers (the storefront
+          // hides it); an order already carrying it still resolves so existing
+          // carts/historical data keep working. The piece count and per-piece
+          // rate come from the pure resolver — never from the client.
+          packLine = resolvePackLine(pack, item.number_of_packs ?? item.pack_count ?? 1)
+          if (!packLine) {
+            throw new Error(`The selected pack for ${product.name} is no longer available. Please refresh and try again.`)
+          }
+          packFields = {
+            pack_id: pack.id,
+            pack_name: pack.name || `Pack of ${packLine.packSize}`,
+            pack_usage_label: pack.usage_label || null,
+            pack_size: packLine.packSize,
+            number_of_packs: packLine.number_of_packs,
+            actual_piece_quantity: packLine.quantity,
+            pack_price: round2(packLine.packPrice),
+          }
+        }
+
+        const quantity = packLine
+          ? packLine.quantity
+          : Math.floor(Number(item.quantity ?? item.qty ?? 1))
         if (!Number.isFinite(quantity) || quantity < 1) {
           throw new Error(`Invalid quantity for ${product.name}.`)
         }
@@ -405,7 +481,14 @@ async function createOrder(req, res) {
         let bulkPrice = product.bulk_price
         let bulkMinQty = product.bulk_min_qty
 
-        if (item.variant_id != null) {
+        // PACK line: the pack's per-piece rate IS the line's normal unit
+        // price (never the product/variant single-unit price), so a bulk tier
+        // can only apply when it is a genuine discount below the pack's own
+        // per-piece rate. Pack lines are product-level — they never carry a
+        // variant.
+        if (packLine) {
+          unitPrice = packLine.normalUnitPrice
+        } else if (item.variant_id != null) {
           const variant = variantMap.get(String(item.variant_id))
           if (!variant || String(variant.product_id) !== String(product.id)) {
             throw new Error(`The selected size/variant of ${product.name} is no longer available. Please refresh and try again.`)
@@ -443,7 +526,10 @@ async function createOrder(req, res) {
         // The pure math lives in utils/orderPricing.js (unit-tested). Bulk
         // applies when the SELECTED variant's own config is enabled and the
         // quantity reaches ITS minimum — every value below comes from the
-        // database, never from the client.
+        // database, never from the client. For a PACK line the normal unit
+        // price is the pack's own per-piece rate (pack_price / pack_size),
+        // so a bulk tier only ever applies when it is a genuine discount
+        // below the pack's per-piece rate — exactly the existing guard.
         const normalUnitPrice = unitPrice
         const pricing = applyBulkPricing({
           normalUnitPrice,
@@ -477,6 +563,9 @@ async function createOrder(req, res) {
           quantity,
           unit_price: round2(unitPrice),
           subtotal: round2(unitPrice * quantity),
+          // Pack metadata rides on the line so orders/invoices/tracking stay
+          // historically accurate even if the pack is edited later.
+          ...packFields,
           // Optional reference values: the normal price this line would have
           // used, and the bulk config that unlocked the discount. Kept for
           // display/debugging — the charged amount is always unit_price.

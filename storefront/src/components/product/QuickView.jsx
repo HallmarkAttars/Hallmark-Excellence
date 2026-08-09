@@ -28,6 +28,25 @@ export default function QuickView({ product, onClose, onNavigate }) {
   const [selectedVariant, setSelectedVariant] = useState(() =>
     hasVariants ? variants.find((v) => v.is_default) || variants[0] : null
   )
+  // Combined BRAND bulk — when the brand's combined cart quantity reaches its
+  // threshold, the brand bulk unit price takes over the display (exactly what
+  // effectiveUnitPrice() charges in the cart). Derived live from the cart
+  // context, so the modal flips the instant any card of the brand crosses the
+  // threshold — no per-product cart line needed. Declared BEFORE showPacks
+  // (which reads brandBulk.bulk_enabled) to avoid a TDZ crash on render.
+  const brandBulk =
+    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
+
+  // Active pack options — shown only when bulk pricing is available (packs
+  // are children of bulk pricing) AND the product has packs configured.
+  const activePacks = (Array.isArray(product.packs) ? product.packs : []).filter((pk) => pk.is_active !== false)
+  const hasPacks = activePacks.length > 0
+  const bulkAvailable = hasVariants
+    ? variants.some((v) => v.bulk_enabled === true)
+    : Boolean(product.bulk_enabled)
+  // Brand-level bulk also unlocks the pack selector.
+  const showPacks = hasPacks && (bulkAvailable || Boolean(brandBulk?.bulk_enabled))
+  const [selectedPack, setSelectedPack] = useState(() => (hasPacks ? activePacks[0] : null))
 
   // Price / stock resolve to the selected variant when variants exist,
   // otherwise fall back to the product-level values — same as the detail page.
@@ -36,14 +55,13 @@ export default function QuickView({ product, onClose, onNavigate }) {
     : Number(product.price)
   const stock = hasVariants ? selectedVariant?.stock : product.stock
   const soldOut = Number(stock) <= 0
+  // PACK purchases: the stepper counts PACKS, so the max is the number of
+  // whole packs the available stock can fill (floor(stock / pack_size)).
+  const maxPacks =
+    showPacks && selectedPack && stock != null && Number.isFinite(Number(stock))
+      ? Math.max(1, Math.floor(Number(stock) / Number(selectedPack.pack_quantity)))
+      : 999
 
-  // Combined BRAND bulk — when the brand's combined cart quantity reaches its
-  // threshold, the brand bulk unit price takes over the display (exactly what
-  // effectiveUnitPrice() charges in the cart). Derived live from the cart
-  // context, so the modal flips the instant any card of the brand crosses the
-  // threshold — no per-product cart line needed.
-  const brandBulk =
-    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
   // Display price + active flag — brand bulk only takes over when it is a
   // genuine discount below THIS product's normal price (shared guard, mirrors
   // effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
@@ -105,8 +123,50 @@ export default function QuickView({ product, onClose, onNavigate }) {
   }, [onClose])
 
   const handleAdd = () => {
-    if (hasVariants && !selectedVariant) return
+    if (hasVariants && !showPacks && !selectedVariant) return
+    if (showPacks && !selectedPack) return
     if (soldOut || adding) return
+
+    // PACK purchase: build the pack object for the cart line (same shape as
+    // ProductDetail) — the line's quantity becomes actual pieces.
+    const packInfo = showPacks
+      ? {
+          pack_id: selectedPack.id,
+          name: selectedPack.name || `Pack of ${selectedPack.pack_quantity}`,
+          usage_label: selectedPack.usage_label || null,
+          pack_size: Number(selectedPack.pack_quantity),
+          price: Number(selectedPack.price),
+        }
+      : null
+    if (packInfo) {
+      setAdding(true)
+      try {
+        addItem(
+          {
+            id: product.id,
+            name: product.name,
+            price: Number(price),
+            image: product.image,
+            bulk_enabled: product.bulk_enabled,
+            bulk_price: product.bulk_price,
+            bulk_min_qty: product.bulk_min_qty,
+          },
+          qty,
+          null,
+          packInfo
+        )
+        addTimer.current = setTimeout(() => {
+          setAdding(false)
+          setAdded(true)
+          notifyAddSuccess(product)
+          addedTimer.current = setTimeout(() => setAdded(false), 1600)
+        }, 350)
+      } catch {
+        setAdding(false)
+        notifyAddError()
+      }
+      return
+    }
 
     // Build the complete selected variant info — identical to ProductDetail,
     // including THIS variant's own bulk config.
@@ -234,7 +294,36 @@ export default function QuickView({ product, onClose, onNavigate }) {
             <p className="quickview-desc">{product.description}</p>
           )}
 
-          {hasVariants && (
+          {showPacks ? (
+            <div className="quickview-variants">
+              <p className="quickview-variants-title">Select Pack</p>
+              <div className="quickview-variant-options">
+                {activePacks.map((p) => {
+                  const active = selectedPack?.id === p.id
+                  const perPiece = Number(p.price) / Number(p.pack_quantity)
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`quickview-variant ${active ? 'is-active' : ''}`}
+                      onClick={() => setSelectedPack(p)}
+                      aria-pressed={active}
+                    >
+                      <span className="quickview-variant-name">
+                        {p.name || `Pack of ${p.pack_quantity}`}
+                      </span>
+                      <span className="quickview-variant-meta">
+                        {p.pack_quantity} pieces · ₹{Number(p.price).toLocaleString('en-IN')}
+                        {Number.isFinite(perPiece) && perPiece > 0 && (
+                          <em>₹{perPiece.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/pc</em>
+                        )}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : hasVariants ? (
             <div className="quickview-variants">
               <p className="quickview-variants-title">Select Quantity</p>
               <div className="quickview-variant-options">
@@ -254,26 +343,31 @@ export default function QuickView({ product, onClose, onNavigate }) {
                 })}
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="quickview-actions">
             <div className="quickview-qty">
               <button
                 type="button"
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
-                aria-label="Decrease quantity"
+                aria-label={showPacks ? 'Decrease number of packs' : 'Decrease quantity'}
               >
                 −
               </button>
               <span aria-live="polite">{qty}</span>
               <button
                 type="button"
-                onClick={() => setQty((q) => (stock > 0 ? Math.min(stock, q + 1) : q))}
-                aria-label="Increase quantity"
+                onClick={() => setQty((q) => (showPacks ? Math.min(maxPacks, q + 1) : stock > 0 ? Math.min(stock, q + 1) : q))}
+                aria-label={showPacks ? 'Increase number of packs' : 'Increase quantity'}
               >
                 +
               </button>
             </div>
+            {showPacks && (
+              <div className="quickview-pack-readout" aria-live="polite">
+                {qty} pack{qty === 1 ? '' : 's'} = {Number(selectedPack?.pack_quantity || 0) * qty} pieces
+              </div>
+            )}
             <button
               type="button"
               className="quickview-add"

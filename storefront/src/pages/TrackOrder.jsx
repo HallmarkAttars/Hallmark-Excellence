@@ -75,11 +75,19 @@ function TrackItem({ item }) {
   const unitPrice = Number.isFinite(Number(item.unit_price)) ? Number(item.unit_price) : 0
   const quantity = Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0 ? Number(item.quantity) : 1
   const lineTotal = unitPrice * quantity
-  const label =
-    item.variant_label ||
-    (item.quantity_value != null && item.quantity_unit
-      ? `${item.quantity_value} ${item.quantity_unit}`
-      : '')
+  // PACK purchase — the API carries the pack metadata on the line (never
+  // confuses packs with pieces). The pack name shows as the label, the pack
+  // price as the per-pack rate, and the quantity column is ACTUAL pieces.
+  const isPack = item.pack_id != null
+  const packLabel =
+    item.pack_name || (item.pack_size != null ? `Pack of ${item.pack_size}` : '')
+  const packCount = Number(item.number_of_packs ?? 1)
+  const label = isPack
+    ? packLabel
+    : item.variant_label ||
+      (item.quantity_value != null && item.quantity_unit
+        ? `${item.quantity_value} ${item.quantity_unit}`
+        : '')
   const image = itemImage(item)
 
   return (
@@ -97,7 +105,19 @@ function TrackItem({ item }) {
       <div className="track-item-info">
         <span className="track-item-name">{item.product_name}</span>
         {label && <span className="track-item-variant">{label}</span>}
-        <span className="track-item-qty">₹{unitPrice.toLocaleString('en-IN')} × {quantity}</span>
+        {isPack && (
+          <span className="track-item-pack">
+            <strong>{packCount} pack{packCount === 1 ? '' : 's'}</strong>
+            <span> · {quantity} pieces</span>
+          </span>
+        )}
+        <span className="track-item-qty">
+          {isPack
+            ? item.pack_price != null
+              ? `₹${Number(item.pack_price).toLocaleString('en-IN')} / pack`
+              : `₹${unitPrice.toLocaleString('en-IN')} / piece`
+            : `₹${unitPrice.toLocaleString('en-IN')} × ${quantity}`}
+        </span>
       </div>
       <span className="track-item-price" aria-label={`Line total ₹${lineTotal.toLocaleString('en-IN')}`}>
         ₹{lineTotal.toLocaleString('en-IN')}

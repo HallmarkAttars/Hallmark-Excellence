@@ -223,6 +223,56 @@
   color: var(--cream);
 }
 
+/* -------- Pack selector (children of bulk pricing) -------- */
+.pack-selector { margin-top: 20px; }
+.pack-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pack-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 18px;
+  border: 1px solid rgba(36, 31, 25, 0.35);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: #000;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pack-option:hover {
+  background: var(--cream-deep);
+  border-color: var(--gold);
+  color: var(--charcoal);
+}
+.pack-option.is-active {
+  background: var(--charcoal);
+  border-color: var(--charcoal);
+  color: var(--cream);
+}
+.pack-option-name { font-weight: 600; font-size: 0.92rem; }
+.pack-option-meta { font-size: 0.78rem; opacity: 0.85; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pack-option-per-piece { font-style: normal; text-decoration: line-through; opacity: 0.75; }
+.pack-qty-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pack-qty-readout {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  color: var(--charcoal-soft);
+  line-height: 1.35;
+}
+.pack-qty-readout strong { color: var(--charcoal); font-weight: 600; }
+
 /* Stock status colors */
 .product-detail-stock.in-stock { color: #2e7d32; }
 .product-detail-stock.low-stock { color: #b26a00; }

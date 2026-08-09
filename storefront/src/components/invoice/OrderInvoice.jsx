@@ -192,6 +192,13 @@ export default function OrderInvoice({ order }) {
                 </td>
                 <td className="invoice-item-detail">
                   {it.detail && <span className="invoice-item-detail-main">{it.detail}</span>}
+                  {it.pack && (
+                    <span className="invoice-pack-tag">
+                      {it.pack.name}
+                      {it.pack.packs != null && ` · ${it.pack.packs} pack${it.pack.packs === 1 ? '' : 's'} · ${it.pack.pieces} pieces`}
+                      {it.pack.price != null && ` · ${formatINR(it.pack.price)} / pack`}
+                    </span>
+                  )}
                   {it.bulkApplied && (
                     <span className="invoice-bulk-tag">
                       {it.bulkPrice != null && `${formatINR(it.bulkPrice)} / piece  ·  `}Bulk
@@ -199,7 +206,7 @@ export default function OrderInvoice({ order }) {
                     </span>
                   )}
                 </td>
-                <td className="invoice-num">{it.qty}</td>
+                <td className="invoice-num">{it.pack ? (it.pack.pieces ?? it.qty) : it.qty}</td>
                 <td className="invoice-num">{formatINR(it.rate)}</td>
                 <td className="invoice-num invoice-amount">{formatINR(it.amount)}</td>
               </tr>

@@ -321,6 +321,18 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     body: inv.items.map((it) => {
       const detailLines = []
       if (it.detail) detailLines.push(it.detail)
+      // PACK purchase — show pack name + packs/pieces breakdown so the PDF
+      // never confuses packs with pieces.
+      if (it.pack) {
+        const packLines = [it.pack.name]
+        if (it.pack.packs != null) {
+          packLines.push(`${it.pack.packs} pack${it.pack.packs === 1 ? '' : 's'} · ${it.pack.pieces} pieces`)
+        }
+        if (it.pack.price != null) {
+          packLines.push(rupee ? money(it.pack.price) : pdfMoney(it.pack.price) + ' / pack')
+        }
+        detailLines.push(packLines.join('\n'))
+      }
       if (it.bulkApplied) {
         // The bulk unit price rides in the saved snapshot (per-product or
         // brand combined) — shown here for reference; the charged amount is
@@ -334,7 +346,8 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       return [
         it.name,
         detailLines.join('\n'),
-        String(it.qty),
+        // Qty column: actual pieces for a pack line, plain qty otherwise.
+        it.pack ? String(it.pack.pieces ?? it.qty) : String(it.qty),
         rupee ? money(it.rate) : pdfMoney(it.rate),
         rupee ? money(it.amount) : pdfMoney(it.amount),
       ]
@@ -589,6 +602,15 @@ function renderPrintHtml(inv, logo) {
     .map((it) => {
       const details = []
       if (it.detail) details.push(`<span class="detail-main">${escapeHtml(it.detail)}</span>`)
+      // PACK purchase — show pack name + packs/pieces breakdown.
+      if (it.pack) {
+        const packBits = [it.pack.name]
+        if (it.pack.packs != null) {
+          packBits.push(`${it.pack.packs} pack${it.pack.packs === 1 ? '' : 's'} · ${it.pack.pieces} pieces`)
+        }
+        if (it.pack.price != null) packBits.push(formatINR(it.pack.price) + ' / pack')
+        details.push(`<span class="detail-pack">${escapeHtml(packBits.join(' · '))}</span>`)
+      }
       if (it.bulkApplied) details.push(`<span class="detail-bulk">Bulk Price Applied</span>`)
       const thumb = it.image
         ? `<span class="thumb-frame"><img class="thumb" src="${escapeHtml(it.image)}" alt="" onerror="this.style.display='none'" /></span>`
@@ -596,7 +618,7 @@ function renderPrintHtml(inv, logo) {
       return `<tr>
         <td class="name">${thumb}<span>${escapeHtml(it.name)}</span></td>
         <td class="detail">${details.join('')}</td>
-        <td class="num">${it.qty}</td>
+        <td class="num">${it.pack ? (it.pack.pieces ?? it.qty) : it.qty}</td>
         <td class="num">${formatINR(it.rate)}</td>
         <td class="num">${formatINR(it.amount)}</td>
       </tr>`

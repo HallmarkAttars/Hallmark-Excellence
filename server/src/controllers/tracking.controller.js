@@ -85,6 +85,12 @@ function toSafeTrackingOrder(row) {
     ...(it.quantity_value != null && it.quantity_unit
       ? { quantity_value: it.quantity_value, quantity_unit: it.quantity_unit }
       : {}),
+    // Pack purchase metadata — preserved for the customer's own invoice.
+    ...(it.pack_id ? { pack_id: it.pack_id, pack_name: it.pack_name } : {}),
+    ...(it.pack_size != null
+      ? { pack_size: Number(it.pack_size), number_of_packs: Number(it.number_of_packs ?? 1), actual_piece_quantity: Number(it.actual_piece_quantity ?? it.quantity) }
+      : {}),
+    ...(it.pack_price != null ? { pack_price: Number(it.pack_price) } : {}),
   }))
 
   return {

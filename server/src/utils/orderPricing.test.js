@@ -12,7 +12,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor } from './orderPricing.js'
+import { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor, resolvePackLine } from './orderPricing.js'
 
 // Baseline: normal ₹100, bulk ₹80 at 100+ pieces.
 const call = (over = {}) =>
@@ -230,6 +230,165 @@ describe('resolveBrandBulkPricing', () => {
   it('handles empty inputs safely', () => {
     expect(resolveBrandBulkPricing({})).toEqual({})
     expect(resolveBrandBulkPricing({ brandTotals: null, brandConfigs: null })).toEqual({})
+  })
+})
+
+// ============================================================================
+// PACK PURCHASES — pack size × number of packs = ACTUAL PIECES.
+// ============================================================================
+// Pack size and bulk pricing are SEPARATE concepts: the pack decides HOW
+// MANY PIECES the customer buys, then the existing bulk engine decides WHICH
+// price applies. The pack's per-piece rate (pack_price / pack_quantity) is
+// the line's normal unit price.
+//
+// Spec scenarios:
+//   Pack of 10 @ ₹400 → per-piece rate ₹40
+//   Pack of 20 @ ₹740 → per-piece rate ₹37
+//   Pack of 50 @ ₹1,700 → per-piece rate ₹34
+
+const pack10 = { id: 'p10', pack_quantity: 10, price: 400 }
+const pack20 = { id: 'p20', pack_quantity: 20, price: 740 }
+const pack50 = { id: 'p50', pack_quantity: 50, price: 1700 }
+
+describe('resolvePackLine (pack → actual pieces + per-piece rate)', () => {
+  it('converts pack quantity × number of packs into ACTUAL pieces', () => {
+    expect(resolvePackLine(pack10, 1)).toMatchObject({ quantity: 10, number_of_packs: 1 })
+    expect(resolvePackLine(pack10, 2)).toMatchObject({ quantity: 20, number_of_packs: 2 })
+    expect(resolvePackLine(pack10, 3)).toMatchObject({ quantity: 30, number_of_packs: 3 })
+  })
+
+  it('derives the pack per-piece rate (never hard-coded)', () => {
+    expect(resolvePackLine(pack10, 1).normalUnitPrice).toBe(40)   // ₹400 / 10
+    expect(resolvePackLine(pack20, 1).normalUnitPrice).toBe(37)   // ₹740 / 20
+    expect(resolvePackLine(pack50, 1).normalUnitPrice).toBe(34)   // ₹1,700 / 50
+  })
+
+  it('echoes the pack size / price for the order snapshot', () => {
+    const r = resolvePackLine(pack20, 3)
+    expect(r.packSize).toBe(20)
+    expect(r.packPrice).toBe(740)
+    expect(r.quantity).toBe(60)
+  })
+
+  it('rejects a missing pack and invalid counts', () => {
+    expect(resolvePackLine(null, 1)).toBeNull()
+    expect(resolvePackLine(undefined, 1)).toBeNull()
+    expect(resolvePackLine(pack10, 0)).toBeNull()
+    expect(resolvePackLine(pack10, -2)).toBeNull()
+    expect(resolvePackLine(pack10, 2.7)).toBeNull() // whole packs only
+  })
+
+  it('rejects a pack with invalid quantity or price', () => {
+    expect(resolvePackLine({ pack_quantity: 0, price: 400 }, 1)).toBeNull()
+    expect(resolvePackLine({ pack_quantity: -5, price: 400 }, 1)).toBeNull()
+    expect(resolvePackLine({ pack_quantity: 10.5, price: 400 }, 1)).toBeNull()
+    expect(resolvePackLine({ pack_quantity: 10, price: undefined }, 1)).toBeNull()
+    expect(resolvePackLine({ pack_quantity: 10, price: -1 }, 1)).toBeNull()
+  })
+
+  it('coerces string values returned by PostgREST', () => {
+    const r = resolvePackLine({ pack_quantity: '10', price: '400' }, '2')
+    expect(r.quantity).toBe(20)
+    expect(r.normalUnitPrice).toBe(40)
+  })
+})
+
+describe('pack × bulk pricing (bulk evaluates ACTUAL PIECES, never packs)', () => {
+  it('bulk stays inactive below the threshold (Pack of 10 × 1 = 10 pieces, min 20)', () => {
+    const line = resolvePackLine(pack10, 1)
+    const r = applyBulkPricing({
+      normalUnitPrice: line.normalUnitPrice,
+      quantity: line.quantity,
+      bulkEnabled: true,
+      bulkPrice: 37,
+      bulkMinQty: 20,
+    })
+    expect(r.unitPrice).toBe(40) // pack per-piece rate (normal)
+    expect(r.bulkApplied).toBe(false)
+  })
+
+  it('bulk activates once pieces reach the threshold (Pack of 10 × 2 = 20 pieces, min 20)', () => {
+    const line = resolvePackLine(pack10, 2)
+    const r = applyBulkPricing({
+      normalUnitPrice: line.normalUnitPrice,
+      quantity: line.quantity,
+      bulkEnabled: true,
+      bulkPrice: 37,
+      bulkMinQty: 20,
+    })
+    expect(r.unitPrice).toBe(37)
+    expect(r.bulkApplied).toBe(true)
+  })
+
+  it('never applies a bulk tier above the pack per-piece rate (genuine-discount guard)', () => {
+    // Pack of 10 per-piece rate is ₹40; a ₹42 tier is NOT a discount → normal.
+    const line = resolvePackLine(pack10, 5)
+    const r = applyBulkPricing({
+      normalUnitPrice: line.normalUnitPrice,
+      quantity: line.quantity,
+      bulkEnabled: true,
+      bulkPrice: 42,
+      bulkMinQty: 20,
+    })
+    expect(r.unitPrice).toBe(40)
+    expect(r.bulkApplied).toBe(false)
+  })
+
+  it('charges exactly the pack-based totals the spec demands', () => {
+    // Pack of 10 @ ₹400 × 3 packs = 30 pieces; 30 ≥ 20 → bulk ₹37 → ₹1,110
+    const line = resolvePackLine(pack10, 3)
+    const r = applyBulkPricing({
+      normalUnitPrice: line.normalUnitPrice,
+      quantity: line.quantity,
+      bulkEnabled: true,
+      bulkPrice: 37,
+      bulkMinQty: 20,
+    })
+    expect(line.quantity).toBe(30)
+    expect(r.unitPrice * line.quantity).toBe(1110)
+  })
+})
+
+describe('pack × brand bulk (combined brand quantity in PIECES)', () => {
+  it('sums pack lines into the brand total as ACTUAL pieces, then activates', () => {
+    // Dahab: Pack of 10 × 2 (=20) + Pack of 20 × 1 (=20) → 40 combined pieces.
+    const brandTotals = { 'brand-dahab': 0 }
+    brandTotals['brand-dahab'] =
+      resolvePackLine(pack10, 2).quantity + resolvePackLine(pack20, 1).quantity
+    expect(brandTotals['brand-dahab']).toBe(40)
+
+    const active = resolveBrandBulkPricing({
+      brandTotals,
+      brandConfigs: { 'brand-dahab': { bulk_enabled: true, bulk_unit_price: 42, bulk_min_qty: 12 } },
+    })
+    expect(active['brand-dahab'].totalQty).toBe(40)
+    expect(active['brand-dahab'].bulkUnitPrice).toBe(42)
+  })
+
+  it('keeps brands independent: Arees packs never count toward Dahab', () => {
+    const brandTotals = {
+      'brand-arees': resolvePackLine(pack10, 2).quantity, // 20 Arees pieces
+      'brand-dahab': resolvePackLine(pack10, 1).quantity, // 10 Dahab pieces
+    }
+    const active = resolveBrandBulkPricing({
+      brandTotals,
+      brandConfigs: {
+        'brand-arees': { bulk_enabled: true, bulk_unit_price: 42, bulk_min_qty: 20 },
+        'brand-dahab': { bulk_enabled: true, bulk_unit_price: 42, bulk_min_qty: 12 },
+      },
+    })
+    expect(active['brand-arees']).toBeDefined()  // 20 ≥ 20
+    expect(active['brand-dahab']).toBeUndefined() // 10 < 12
+  })
+
+  it('applies brand bulk only when it beats the pack per-piece rate', () => {
+    const line = resolvePackLine(pack50, 1) // ₹34/piece rate
+    const active = resolveBrandBulkPricing({
+      brandTotals: { 'brand-x': 50 },
+      brandConfigs: { 'brand-x': { bulk_enabled: true, bulk_unit_price: 42, bulk_min_qty: 12 } },
+    })
+    // ₹42 is ABOVE the pack's ₹34 rate → not a discount → never applied.
+    expect(brandBulkUnitPriceFor(line.normalUnitPrice, 'brand-x', active)).toBeNull()
   })
 })
 

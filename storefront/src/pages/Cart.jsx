@@ -133,13 +133,18 @@ export default function Cart() {
 
           <div className="cart-items">
             {pricedItems.map((item) => {
-              const key = item.variant_id != null
-                ? `${item.product_id}-v${item.variant_id}`
-                : `${item.product_id}-`
-              const label = item.variant_label
-                || (item.quantity_value != null && item.quantity_unit
-                    ? `${item.quantity_value} ${item.quantity_unit}`
-                    : '')
+              const isPack = item.pack_id != null
+              const key = isPack
+                ? `${item.product_id}-p${item.pack_id}`
+                : item.variant_id != null
+                  ? `${item.product_id}-v${item.variant_id}`
+                  : `${item.product_id}-`
+              const label = isPack
+                ? (item.pack_name || `Pack of ${item.pack_size}`)
+                : item.variant_label
+                  || (item.quantity_value != null && item.quantity_unit
+                      ? `${item.quantity_value} ${item.quantity_unit}`
+                      : '')
               // Resolved pricing — unit_price already includes any active
               // brand-level combined bulk discount (brand bulk wins over
               // per-product bulk).
@@ -166,7 +171,17 @@ export default function Cart() {
               // tested): what this row SHOWS, never what it charges.
               const showCompareAt = showStruckUnitPrice(bulkBadge, normalPrice, effectivePrice)
               const discountActive = hasLineSavings(lineSavings)
-              const totalLine = lineTotalDisplay(normalPrice, item.quantity, lineSavings)
+              // PACK lines render the no-discount breakdown as "₹400 × 3 packs"
+              // (never "₹40 × 30" — that would confuse packs with pieces). The
+              // struck normal TOTAL is still price × quantity (both in pieces).
+              const totalLine = isPack
+                ? {
+                    struck: discountActive,
+                    text: discountActive
+                      ? `₹${formatINR(normalPrice * item.quantity)}`
+                      : `₹${item.pack_price.toLocaleString('en-IN')} × ${item.number_of_packs} pack${item.number_of_packs === 1 ? '' : 's'}`,
+                  }
+                : lineTotalDisplay(normalPrice, item.quantity, lineSavings)
               return (
                 <article key={key} className="cart-item">
                   {/* Left — product image (square, cream stage, never cropped) */}
@@ -187,9 +202,21 @@ export default function Cart() {
                     {item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
                     <h3 className="cart-item-name">{item.name}</h3>
                     {label && <p className="cart-item-variant">{label}</p>}
+                    {/* Pack line readout — never confuses packs with pieces. */}
+                    {isPack && (
+                      <p className="cart-item-pack">
+                        <strong>{item.number_of_packs} pack{item.number_of_packs === 1 ? '' : 's'}</strong>
+                        <span> · {item.quantity} pieces</span>
+                        {item.pack_usage_label && (
+                          <em> · {item.pack_usage_label}</em>
+                        )}
+                      </p>
+                    )}
                     <div className="cart-item-price-row">
                       <span className="cart-item-unit">
-                        ₹{effectivePrice.toLocaleString('en-IN')} / piece
+                        {isPack && !discountActive
+                          ? `₹${item.pack_price.toLocaleString('en-IN')} / pack`
+                          : `₹${effectivePrice.toLocaleString('en-IN')} / piece`}
                       </span>
                       {/* Normal per-piece price struck through — only when a
                           bulk discount is genuinely active on this line. When
@@ -216,14 +243,16 @@ export default function Cart() {
                   <div className="cart-item-buybox">
                     <QuantityControl
                       className="cart-item-qty"
-                      value={item.quantity}
-                      max={item.stock != null ? item.stock : null}
+                      value={isPack ? item.number_of_packs : item.quantity}
+                      max={isPack
+                        ? (item.stock != null && item.pack_size != null ? Math.floor(item.stock / item.pack_size) : 999)
+                        : (item.stock != null ? item.stock : null)}
                       onChange={(n) => updateQty(key, n)}
                       onRemove={() => removeItem(key)}
                       labels={{
-                        decrease: `Decrease quantity of ${item.name}`,
-                        increase: `Increase quantity of ${item.name}`,
-                        input: `Quantity of ${item.name}`,
+                        decrease: `Decrease ${isPack ? 'packs' : 'quantity'} of ${item.name}`,
+                        increase: `Increase ${isPack ? 'packs' : 'quantity'} of ${item.name}`,
+                        input: `${isPack ? 'Number of packs' : 'Quantity'} of ${item.name}`,
                       }}
                     />
 

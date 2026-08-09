@@ -116,4 +116,45 @@ function brandBulkUnitPriceFor(normalUnitPrice, brandId, activeBrandBulk) {
   return price
 }
 
-module.exports = { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor }
+// Resolve a PACK purchase into an order line's piece count and per-piece rate.
+//
+// Pack size and bulk pricing are SEPARATE concepts: the pack decides HOW MANY
+// PIECES the customer buys (pack_quantity × number_of_packs), then the
+// existing bulk engine decides WHICH price applies to those pieces. The
+// pack's per-piece rate (pack_price / pack_quantity) is the line's normal
+// unit price, so a bulk tier can only ever apply when it is a genuine
+// discount below the pack's own per-piece rate — the same guard every other
+// line gets.
+//
+//   pack           — the DB pack row { pack_quantity, price } (never client data)
+//   numberOfPacks  — how many packs the customer selected
+//
+// Returns null when the pack or count is invalid (invalid data can never
+// produce a price). Otherwise:
+//   quantity        — ACTUAL PIECES (pack_quantity × number_of_packs)
+//   normalUnitPrice — pack_price / pack_quantity (the pack's own per-piece rate)
+//   packSize, packPrice, number_of_packs — echoed for the order snapshot
+function resolvePackLine(pack, numberOfPacks) {
+  if (!pack) return null
+  const packSize = Number(pack.pack_quantity)
+  const packPrice = Number(pack.price)
+  const packs = Number(numberOfPacks)
+  // Whole numbers only: a fractional pack size ("10.5 pieces per pack") or
+  // pack count ("2.7 packs") is invalid data and can never produce a price.
+  if (
+    !Number.isFinite(packSize) || !Number.isInteger(packSize) || packSize < 1 ||
+    !Number.isFinite(packPrice) || packPrice < 0 ||
+    !Number.isFinite(packs) || !Number.isInteger(packs) || packs < 1
+  ) {
+    return null
+  }
+  return {
+    quantity: packSize * packs,
+    normalUnitPrice: packPrice / packSize,
+    packSize,
+    packPrice,
+    number_of_packs: packs,
+  }
+}
+
+module.exports = { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor, resolvePackLine }

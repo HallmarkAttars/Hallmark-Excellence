@@ -262,6 +262,21 @@
   text-transform: uppercase;
   color: var(--charcoal-soft);
 }
+.cart-item-pack {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--charcoal-soft);
+}
+.cart-item-pack strong {
+  color: var(--charcoal);
+  font-weight: 600;
+}
+.cart-item-pack em {
+  font-style: normal;
+  color: var(--gold-deep);
+  font-weight: 500;
+}
+
 .cart-item-price-row {
   display: flex;
   align-items: center;

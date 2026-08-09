@@ -286,6 +286,30 @@
   border-color: var(--charcoal);
   color: var(--cream);
 }
+.quickview-variant-name,
+.quickview-variant-meta {
+  display: block;
+}
+.quickview-variant-meta {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.quickview-variant-meta em {
+  font-style: normal;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.quickview-pack-readout {
+  font-size: 0.75rem;
+  color: var(--charcoal-soft);
+  align-self: center;
+  white-space: nowrap;
+}
 
 /* ---------- Actions ---------- */
 .quickview-actions {

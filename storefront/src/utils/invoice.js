@@ -131,6 +131,19 @@ export function formatOrderForInvoice(order) {
       (it.quantity_value != null && it.quantity_unit
         ? `${it.quantity_value} ${it.quantity_unit}`
         : '')
+    // PACK purchase metadata — preserved from the order snapshot so invoices
+    // show "Pack of 10 · 3 packs · 30 pieces" (never ambiguous pack/piece
+    // counts).
+    const pack = it.pack_id != null
+      ? {
+          id: it.pack_id,
+          name: it.pack_name || (it.pack_size != null ? `Pack of ${it.pack_size}` : ''),
+          size: it.pack_size != null ? Number(it.pack_size) : null,
+          packs: it.number_of_packs != null ? Number(it.number_of_packs) : null,
+          pieces: it.actual_piece_quantity != null ? Number(it.actual_piece_quantity) : qty,
+          price: it.pack_price != null ? Number(it.pack_price) : null,
+        }
+      : null
     // Detail line: BRAND · SIZE — only when the saved snapshot actually
     // carries those values. Nothing is invented.
     const brand = it.brand_name || ''
@@ -155,6 +168,7 @@ export function formatOrderForInvoice(order) {
       size,
       bulkApplied,
       bulkPrice,
+      pack,
       qty: Number.isFinite(qty) ? qty : 1,
       rate: Number.isFinite(rate) ? rate : 0,
       amount: Number.isFinite(rate) && Number.isFinite(qty) ? rate * qty : 0,

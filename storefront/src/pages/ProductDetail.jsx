@@ -19,6 +19,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
   const [selectedVariant, setSelectedVariant] = useState(null)
+  const [selectedPack, setSelectedPack] = useState(null)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [adding, setAdding] = useState(false)
@@ -40,6 +41,7 @@ export default function ProductDetail() {
     setQty(1)
     setAdded(false)
     setSelectedVariant(null)
+    setSelectedPack(null)
     setBrand(null)
     getProductById(id)
       .then((p) => {
@@ -50,6 +52,11 @@ export default function ProductDetail() {
           const variants = Array.isArray(p.variants) ? p.variants : []
           if (variants.length > 0) {
             setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
+          }
+          // Auto-select the first pack when pack options exist.
+          const activePacks = (Array.isArray(p.packs) ? p.packs : []).filter((pk) => pk.is_active !== false)
+          if (activePacks.length > 0) {
+            setSelectedPack(activePacks[0])
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
           // Load the brand row for the combined brand bulk pricing block.
@@ -90,10 +97,28 @@ export default function ProductDetail() {
   const variants = Array.isArray(product.variants) ? product.variants : []
   const hasVariants = variants.length > 0
 
+  // Active pack options — only shown when bulk pricing is available (packs
+  // are children of bulk pricing) AND the product has packs configured.
+  const activePacks = (Array.isArray(product.packs) ? product.packs : []).filter((pk) => pk.is_active !== false)
+  const hasPacks = activePacks.length > 0
+  const bulkAvailable =
+    hasVariants
+      ? variants.some((v) => v.bulk_enabled === true)
+      : Boolean(product.bulk_enabled)
+  // Brand-level bulk also unlocks the pack selector (pack products like
+  // Royal Marriage carry their bulk at the brand level).
+  const showPacks = hasPacks && (bulkAvailable || Boolean(brand && brand.bulk_enabled === true))
+
   // Price and stock come from the selected variant when variants exist,
   // otherwise fall back to the product-level values (legacy products).
   const price = hasVariants ? selectedVariant?.price : product.price
   const stock = hasVariants ? selectedVariant?.stock : product.stock
+  // PACK purchases: the stepper counts PACKS, so the max is the number of
+  // whole packs the available stock can fill (floor(stock / pack_size)).
+  const maxPacks =
+    showPacks && selectedPack && stock != null && Number.isFinite(Number(stock))
+      ? Math.max(1, Math.floor(Number(stock) / Number(selectedPack.pack_quantity)))
+      : 999
 
   const variantLabel = (v) =>
     v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
@@ -138,8 +163,51 @@ export default function ProductDetail() {
   }
 
   const handleAdd = () => {
-    if (hasVariants && !selectedVariant) return
+    if (hasVariants && !showPacks && !selectedVariant) return
+    if (showPacks && !selectedPack) return
     if (stock <= 0 || adding) return
+
+    // PACK purchase: build the pack object for the cart line. The line's
+    // quantity becomes actual pieces (pack_size × number_of_packs); the
+    // selected_price is the pack's per-piece rate so bulk compares correctly.
+    const packInfo = showPacks
+      ? {
+          pack_id: selectedPack.id,
+          name: selectedPack.name || `Pack of ${selectedPack.pack_quantity}`,
+          usage_label: selectedPack.usage_label || null,
+          pack_size: Number(selectedPack.pack_quantity),
+          price: Number(selectedPack.price),
+        }
+      : null
+    if (packInfo) {
+      setAdding(true)
+      try {
+        addItem(
+          {
+            id: product.id,
+            name: product.name,
+            price: Number(price),
+            image: product.image,
+            bulk_enabled: product.bulk_enabled,
+            bulk_price: product.bulk_price,
+            bulk_min_qty: product.bulk_min_qty,
+          },
+          qty,
+          null,
+          packInfo
+        )
+        addTimer.current = setTimeout(() => {
+          setAdding(false)
+          setAdded(true)
+          notifyAddSuccess(product)
+          addedTimer.current = setTimeout(() => setAdded(false), 2000)
+        }, 350)
+      } catch {
+        setAdding(false)
+        notifyAddError()
+      }
+      return
+    }
 
     // Build the complete selected variant info for the cart item — including
     // THIS variant's own bulk config so the cart/checkout use the exact price
@@ -284,7 +352,36 @@ export default function ProductDetail() {
         <p className="product-detail-description">{product.description}</p>
         <p className={`product-detail-stock ${stockState.className}`}>{stockState.text}</p>
 
-        {hasVariants && (
+        {showPacks ? (
+          <div className="pack-selector">
+            <p className="variant-selector-title">Select Pack</p>
+            <div className="pack-options">
+              {activePacks.map((p) => {
+                const active = selectedPack?.id === p.id
+                const perPiece = Number(p.price) / Number(p.pack_quantity)
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`pack-option ${active ? 'is-active' : ''}`}
+                    onClick={() => setSelectedPack(p)}
+                    aria-pressed={active}
+                  >
+                    <span className="pack-option-name">
+                      {p.name || `Pack of ${p.pack_quantity}`}
+                    </span>
+                    <span className="pack-option-meta">
+                      {p.pack_quantity} pieces · ₹{Number(p.price).toLocaleString('en-IN')}
+                      {Number.isFinite(perPiece) && perPiece > 0 && (
+                        <em className="pack-option-per-piece">₹{perPiece.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/pc</em>
+                      )}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : hasVariants ? (
           <div className="variant-selector">
             <p className="variant-selector-title">Select Quantity</p>
             <div className="variant-options">
@@ -304,24 +401,50 @@ export default function ProductDetail() {
               })}
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="product-detail-actions">
-          <div className="qty-selector">
-            <button
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <span aria-live="polite">{qty}</span>
-            <button
-              onClick={() => setQty((q) => (stock > 0 ? Math.min(stock, q + 1) : q))}
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
-          </div>
+          {showPacks ? (
+            <div className="pack-qty-wrap">
+              <div className="qty-selector">
+                <button
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  aria-label="Decrease number of packs"
+                >
+                  −
+                </button>
+                <span aria-live="polite">{qty}</span>
+                <button
+                  onClick={() => setQty((q) => Math.min(maxPacks, q + 1))}
+                  aria-label="Increase number of packs"
+                >
+                  +
+                </button>
+              </div>
+              <div className="pack-qty-readout" aria-live="polite">
+                <strong>{qty} pack{qty === 1 ? '' : 's'}</strong>
+                <span>
+                  = {Number(selectedPack?.pack_quantity || 0) * qty} total pieces
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="qty-selector">
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span aria-live="polite">{qty}</span>
+              <button
+                onClick={() => setQty((q) => (stock > 0 ? Math.min(stock, q + 1) : q))}
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          )}
           <button
             className="btn btn-primary"
             onClick={handleAdd}

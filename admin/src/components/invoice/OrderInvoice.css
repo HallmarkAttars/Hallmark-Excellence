@@ -257,6 +257,18 @@
 .invoice-item-name-text { min-width: 0; }
 .invoice-item-detail { color: #6f6a63; white-space: nowrap; }
 .invoice-item-detail-main { display: inline-block; }
+.invoice-pack-tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #171512;
+  background: #f7f2e8;
+  border: 1px solid rgba(184, 134, 43, 0.35);
+  border-radius: 4px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
 .invoice-bulk-tag {
   display: inline-block;
   margin-left: 8px;
@@ -542,6 +554,7 @@
   .invoice-item-name { min-width: 0; }
   .invoice-thumb-frame { width: 40px; height: 40px; }
   .invoice-item-detail { white-space: normal; }
+  .invoice-pack-tag { display: block; margin: 2px 0 0; white-space: normal; }
   .invoice-bulk-tag { display: block; margin: 2px 0 0; }
   .invoice-bulk-band { flex-wrap: wrap; gap: 6px; }
 }

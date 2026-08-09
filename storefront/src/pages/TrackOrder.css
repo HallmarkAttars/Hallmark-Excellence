@@ -366,6 +366,17 @@
   color: var(--gold-deep);
   font-weight: 500;
 }
+.track-item-pack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--gold-deep);
+  font-weight: 500;
+}
+.track-item-pack strong {
+  font-weight: 700;
+}
 .track-item-qty {
   font-size: 13px;
   font-weight: 500;

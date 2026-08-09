@@ -50,6 +50,21 @@ function OrderItemsList({ items }) {
           || (item.quantity_value != null && item.quantity_unit
               ? `${item.quantity_value} ${item.quantity_unit}`
               : '')
+        // Pack purchase — show pack name + packs count + actual pieces instead
+        // of the ambiguous single number. All values ride the stored snapshot,
+        // so historical orders stay accurate even if the pack is edited later.
+        const isPack = item.pack_size != null && item.number_of_packs != null
+        const packLine = isPack
+          ? `${item.pack_name || `Pack of ${item.pack_size}`} · ${item.number_of_packs} pack${item.number_of_packs > 1 ? 's' : ''} · ${item.actual_piece_quantity ?? item.pack_size * item.number_of_packs} pieces`
+          : null
+        // Without bulk the pack price is what was charged (₹400 / pack × 3).
+        // With a per-piece bulk discount the charged unit IS unit_price, so
+        // the breakdown must show unit_price × pieces — never the normal pack
+        // price (which would contradict the subtotal).
+        const bulkCharged = item.bulk_applied === true || item.brand_bulk_applied === true
+        const meta = isPack && !bulkCharged
+          ? `${formatINR(item.pack_price ?? unitPrice)} / pack × ${item.number_of_packs}`
+          : `${formatINR(unitPrice)} × ${qty}${isPack ? ' pieces' : ''}`
         return (
           <div className="orders-panel-item" key={i}>
             <div className="orders-panel-item-img">
@@ -66,7 +81,8 @@ function OrderItemsList({ items }) {
             <div className="orders-panel-item-info">
               <span className="orders-panel-item-name">{name}</span>
               {label && <span className="orders-panel-item-variant">{label}</span>}
-              <span className="orders-panel-item-meta">{formatINR(unitPrice)} × {qty}</span>
+              {packLine && <span className="orders-panel-item-pack">{packLine}</span>}
+              <span className="orders-panel-item-meta">{meta}</span>
               {item.bulk_applied === true && (
                 <span className="orders-panel-item-bulk">
                   Bulk price applied{item.normal_unit_price != null ? ` — normal was ${formatINR(item.normal_unit_price)}` : ''}
