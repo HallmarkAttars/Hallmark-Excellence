@@ -1,0 +1,129 @@
+/* ============================================================
+   SocialStrip skeleton — mirrors "Follow Our Journey" strip
+   Reuses the shared shimmer system from SkeletonBase.css
+   (no new animation keyframes). Mirrors the real `.social-section`
+   > `.social-head` > `.social-grid` > `.social-cta` structure.
+   ============================================================ */
+
+.skeleton-social-section {
+  padding: 72px 0 80px;
+  background: var(--cream);
+  border-top: 1px solid var(--line-soft);
+  box-sizing: border-box;
+}
+@media (max-width: 767px) {
+  .skeleton-social-section { padding: 56px 0 64px; }
+}
+
+.skeleton-social-section .container {
+  max-width: var(--container);
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- Centered heading: title block + subtitle block --- */
+.skeleton-social-head {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.skeleton-social-head .skeleton-block {
+  display: block;
+  margin: 0 auto 14px;
+}
+.skeleton-social-title {
+  width: 260px;
+  height: 32px;
+}
+.skeleton-social-sub {
+  width: 320px;
+  max-width: 90%;
+  height: 12px;
+}
+
+/* --- Square photo tiles (matches .social-tile) --- */
+.skeleton-social-grid {
+  display: flex;
+  gap: 12px;
+  margin: 0 -16px;
+  padding: 0 16px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.skeleton-social-grid::-webkit-scrollbar { display: none; }
+.skeleton-social-tile {
+  flex: 0 0 42%;
+  min-width: 132px;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--cream-deep);
+}
+.skeleton-social-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+@media (max-width: 360px) {
+  .skeleton-social-grid {
+    margin: 0 -14px;
+    padding: 0 14px 8px;
+  }
+}
+
+/* --- Desktop: 6-column grid --- */
+@media (min-width: 768px) {
+  .skeleton-social-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .skeleton-social-tile { min-width: 0; }
+}
+@media (max-width: 1023px) and (min-width: 768px) {
+  .skeleton-social-grid { grid-template-columns: repeat(3, 1fr); }
+  .skeleton-social-tile:nth-child(n + 4) { display: none; }
+}
+
+/* --- CTA placeholder --- */
+.skeleton-social-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+.skeleton-social-cta .skeleton-block {
+  width: 240px;
+  height: 44px;
+  border-radius: 2px;
+  background: linear-gradient(
+    100deg,
+    var(--cream-deep) 40%,
+    #e3d7c0 50%,
+    var(--cream-deep) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ---------- Reduced motion: static blocks, no sweep/shimmer ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-social-tile,
+  .skeleton-social-cta .skeleton-block {
+    animation: none !important;
+  }
+  .skeleton-social-tile { background: var(--cream-deep); }
+  .skeleton-social-tile::after { display: none; }
+  .skeleton-social-cta .skeleton-block { background: var(--cream-deep); }
+}
+

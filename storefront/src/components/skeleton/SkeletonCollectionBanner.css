@@ -1,0 +1,170 @@
+/* ============================================================
+   "Our Brands" skeleton — mirrors CollectionBanner layout
+   Reuses the shared shimmer system from SkeletonBase.css
+   (no new animation keyframes). Layout mirrors the real
+   `.our-brands-section` > `.collections-section` > banner grid.
+   ============================================================ */
+
+.skeleton-brands-section {
+  padding: 24px 0 48px;
+}
+@media (min-width: 768px) {
+  .skeleton-brands-section { padding: 40px 0 56px; }
+}
+@media (min-width: 1024px) {
+  .skeleton-brands-section { padding: 48px 0 64px; }
+}
+
+.skeleton-brands-section .container {
+  max-width: var(--container);
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* The two card grid — stacked mobile, two-up desktop (matches
+   `.collections-section`). */
+.skeleton-collections-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 768px) {
+  .skeleton-collections-grid { gap: 16px; }
+}
+@media (min-width: 1024px) {
+  .skeleton-collections-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+
+/* --- Section heading block --- */
+.skeleton-brands-head {
+  margin-bottom: 36px;
+}
+.skeleton-brands-head .skeleton-block {
+  width: 220px;
+  height: 32px;
+}
+
+/* --- Individual banner card --- */
+.skeleton-collection-banner {
+  width: 100%;
+  min-height: 220px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--cream-deep);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+}
+/* Grid: IMAGE left | CONTENT right — same 42/58 split as real banner */
+.skeleton-collection-inner {
+  display: grid;
+  grid-template-columns: 42% 58%;
+  height: 100%;
+  min-height: 220px;
+}
+.skeleton-collection-media {
+  position: relative;
+  order: 1;
+  height: 100%;
+  min-height: 220px;
+  overflow: hidden;
+  /* Sweep overlay, same as .skeleton-media */
+  background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
+}
+.skeleton-collection-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+.skeleton-collection-content {
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px;
+  min-width: 0;
+}
+.skeleton-collection-eyebrow {
+  width: 38%;
+  height: 10px;
+}
+.skeleton-collection-title {
+  width: 78%;
+  height: 18px;
+}
+.skeleton-collection-title.short {
+  width: 58%;
+}
+.skeleton-collection-tagline {
+  width: 88%;
+  height: 11px;
+  margin-top: 2px;
+}
+.skeleton-collection-btn {
+  width: 132px;
+  height: 38px;
+  margin-top: 6px;
+  border-radius: 2px;
+  background: linear-gradient(
+    100deg,
+    var(--cream-deep) 40%,
+    #e3d7c0 50%,
+    var(--cream-deep) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Reuse shared shimmer blocks for text lines */
+.skeleton-collection-content .skeleton-block {
+  background: linear-gradient(
+    100deg,
+    var(--cream-deep) 40%,
+    #e3d7c0 50%,
+    var(--cream-deep) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ---------- Tablet (768–1023px) — 45/55 split, roomier ---------- */
+@media (min-width: 768px) {
+  .skeleton-collection-banner,
+  .skeleton-collection-inner,
+  .skeleton-collection-media { min-height: 240px; }
+  .skeleton-collection-inner { grid-template-columns: 45% 55%; }
+  .skeleton-collection-content { padding: 24px 28px; }
+  .skeleton-collection-title { height: 22px; }
+}
+
+/* ---------- Desktop (1024px+) ---------- */
+@media (min-width: 1024px) {
+  .skeleton-collection-banner,
+  .skeleton-collection-inner,
+  .skeleton-collection-media { min-height: 300px; }
+  .skeleton-collection-content { padding: 28px 32px; }
+  .skeleton-collection-btn { height: 40px; width: 144px; }
+}
+
+/* ---------- Reduced motion: static blocks, no sweep/shimmer ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-collection-media,
+  .skeleton-collection-content .skeleton-block,
+  .skeleton-collection-btn {
+    animation: none !important;
+  }
+  .skeleton-collection-media { background: var(--cream-deep); }
+  .skeleton-collection-media::after { display: none; }
+  .skeleton-collection-content .skeleton-block,
+  .skeleton-collection-btn { background: var(--cream-deep); }
+}
+
