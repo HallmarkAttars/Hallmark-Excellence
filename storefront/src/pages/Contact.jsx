@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, Link } from 'react-router-dom'
 import { api } from '../services/api'
-import { submitContactMessage, submitOrder } from '../services/mockApi'
+import { submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
@@ -11,6 +11,7 @@ import {
   bulkSavings,
   resolvedUnitPrice,
 } from '../utils/bulk'
+import { submitContactForm } from '../utils/contactForm'
 import {
   UserIcon,
   HomeIcon,
@@ -409,8 +410,12 @@ export default function Contact() {
         return
       }
     } else {
-      if (!form.name || !form.email || !form.message) {
+      if (!form.name.trim() || !form.email.trim() || !form.phone || !form.message.trim()) {
         setError('Please fill in all required fields.')
+        return
+      }
+      if (!phoneValid) {
+        setError('Enter a valid 10-digit mobile number.')
         return
       }
     }
@@ -488,9 +493,13 @@ export default function Contact() {
         clearCart()
         setResult({ orderNumber: res.orderNumber, order: res.order })
       } else {
-        await submitContactMessage(form)
+        // Contact form → Formspree. Only the four contact fields are sent —
+        // no cart/order/auth data ever leaves the browser here. A non-OK
+        // response OR a network failure throws the friendly message, keeping
+        // the customer's input intact so they can retry.
+        await submitContactForm(form)
         setResult({ sent: true })
-        setForm({ name: '', email: '', phone: '', address: '', pincode: '', message: '' })
+        setForm({ name: '', email: '', phone: '', house: '', building: '', landmark: '', pincode: '', city: '', addressLabel: 'Home', message: '' })
       }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
@@ -970,8 +979,8 @@ export default function Contact() {
           <div className="contact-form-col">
             {result?.sent && (
               <div className="contact-toast" role="status">
-                <strong>Message sent</strong>
-                <p>Thanks for reaching out — we'll get back to you shortly.</p>
+                <strong>✓ Message sent successfully.</strong>
+                <p>Thank you for contacting us. We'll get back to you soon.</p>
               </div>
             )}
 
@@ -985,11 +994,11 @@ export default function Contact() {
                 <h2 className="contact-form-title">Get in Touch</h2>
 
                 <div className="form-field">
-                  <label htmlFor="name">
+                  <label htmlFor="contact-name">
                     Name <span className="required-star">*</span>
                   </label>
                   <input
-                    id="name"
+                    id="contact-name"
                     name="name"
                     placeholder="Enter your name"
                     autoComplete="name"
@@ -1001,11 +1010,11 @@ export default function Contact() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="email">
+                  <label htmlFor="contact-email">
                     Email <span className="required-star">*</span>
                   </label>
                   <input
-                    id="email"
+                    id="contact-email"
                     name="email"
                     type="email"
                     placeholder="you@example.com"
@@ -1017,11 +1026,38 @@ export default function Contact() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor="message">
+                  <label htmlFor="contact-phone">
+                    Phone Number <span className="required-star">*</span>
+                  </label>
+                  <div className="phone-field-row">
+                    <span className="phone-prefix" aria-hidden="true">+91</span>
+                    <input
+                      id="contact-phone"
+                      name="phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      autoComplete="tel-national"
+                      className="phone-national-input"
+                      placeholder="9876543210"
+                      value={form.phone}
+                      onChange={handlePhoneChange}
+                      required
+                    />
+                  </div>
+                  {fieldErrors.phone && (
+                    <p className="field-hint field-hint--error" id="contact-phone-error">
+                      {fieldErrors.phone}
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="contact-message">
                     Message <span className="required-star">*</span>
                   </label>
                   <textarea
-                    id="message"
+                    id="contact-message"
                     name="message"
                     rows={4}
                     placeholder="How can we help you?"
