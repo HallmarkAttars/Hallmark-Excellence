@@ -96,6 +96,29 @@ function OrderSummaryItem({ item }) {
     !bulkApplicable ||
     itemStock == null ||
     itemStock >= Number(item.bulk_min_qty)
+  // Normal (compare-at) unit price for the line — what the customer would pay
+  // without the active bulk discount. Snapshot items carry normal_unit_price
+  // (set by the cart context); legacy snapshots fall back to the line's own
+  // selected price. Mirrors the cart's struck normal-price display: it only
+  // appears when a genuine discount is active AND the normal price is really
+  // higher than the charged price, so a price identical to itself is never
+  // struck through.
+  const normalUnitPriceRaw =
+    item.normal_unit_price != null
+      ? Number(item.normal_unit_price)
+      : Number(item.selected_price ?? item.price ?? 0)
+  const normalUnitPrice =
+    Number.isFinite(normalUnitPriceRaw) && normalUnitPriceRaw > 0
+      ? normalUnitPriceRaw
+      : null
+  const hasBulkDiscount = Boolean(
+    (item.brand_bulk_applied && brandBulkSavings > 0) ||
+      (!item.brand_bulk_applied && bulkUnlocked && savedAmount > 0)
+  )
+  const showCompareAt =
+    hasBulkDiscount && normalUnitPrice != null && normalUnitPrice > unitPrice
+  const normalLineTotal =
+    showCompareAt && normalUnitPrice != null ? normalUnitPrice * quantity : null
   const label =
     item.variant_label ||
     (item.quantity_value != null && item.quantity_unit
@@ -125,6 +148,11 @@ function OrderSummaryItem({ item }) {
         {label && <span className="order-summary-variant">{label}</span>}
         <span className="order-summary-qty">
           ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
+          {showCompareAt && (
+            <span className="order-summary-qty-struck">
+              {' '}₹{normalUnitPrice.toLocaleString('en-IN')}/piece
+            </span>
+          )}
         </span>
         {item.brand_bulk_applied && brandBulkSavings > 0 && (
           <span className="order-summary-bulk-note">✓ {item.brand_name || 'Brand'} Bulk Discount Applied · You Saved ₹{brandBulkSavings.toLocaleString('en-IN')}</span>
@@ -136,12 +164,21 @@ function OrderSummaryItem({ item }) {
           <span className="order-summary-bulk-chip">🔥 Bulk Price at {item.bulk_min_qty}+ pcs</span>
         )}
       </div>
-      {/* Right side = LINE TOTAL (unit price × quantity), never the unit price */}
-      <span
-        className="order-summary-price"
-        aria-label={`Line total ₹${lineTotal.toLocaleString('en-IN')}`}
-      >
-        ₹{lineTotal.toLocaleString('en-IN')}
+      {/* Right side = LINE TOTAL (unit price × quantity), never the unit price.
+          When a bulk discount is active, the plain normal total (normal price
+          × quantity) sits struck-through below it — same pattern as the cart. */}
+      <span className="order-summary-price-wrap">
+        <span
+          className="order-summary-price"
+          aria-label={`Line total ₹${lineTotal.toLocaleString('en-IN')}`}
+        >
+          ₹{lineTotal.toLocaleString('en-IN')}
+        </span>
+        {normalLineTotal != null && (
+          <span className="order-summary-price-struck">
+            ₹{normalLineTotal.toLocaleString('en-IN')}
+          </span>
+        )}
       </span>
     </div>
   )

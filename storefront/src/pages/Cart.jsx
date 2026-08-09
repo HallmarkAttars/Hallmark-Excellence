@@ -6,6 +6,12 @@ import {
   bulkRemaining,
   bulkSavings,
 } from '../utils/bulk'
+import {
+  formatINR,
+  showStruckUnitPrice,
+  hasLineSavings,
+  lineTotalDisplay,
+} from '../utils/cartDisplay'
 import QuantityControl from '../components/product/QuantityControl'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
@@ -156,6 +162,11 @@ export default function Cart() {
               const bulkBadge = item.brand_bulk_applied
                 ? `${item.brand_name || 'Brand'} Bulk Applied`
                 : bulkUnlocked ? 'Bulk Price Applied' : null
+              // Display gating (pure helpers in utils/cartDisplay.js — unit
+              // tested): what this row SHOWS, never what it charges.
+              const showCompareAt = showStruckUnitPrice(bulkBadge, normalPrice, effectivePrice)
+              const discountActive = hasLineSavings(lineSavings)
+              const totalLine = lineTotalDisplay(normalPrice, item.quantity, lineSavings)
               return (
                 <article key={key} className="cart-item">
                   {/* Left — product image (square, cream stage, never cropped) */}
@@ -184,17 +195,17 @@ export default function Cart() {
                           bulk discount is genuinely active on this line. When
                           no discount applies the two prices are identical, so
                           no strikethrough is shown. */}
-                      {bulkBadge && normalPrice > effectivePrice && (
+                      {showCompareAt && (
                         <span className="cart-item-unit-struck">
-                          ₹{normalPrice.toLocaleString('en-IN')}/piece
+                          ₹{formatINR(normalPrice)}/piece
                         </span>
                       )}
                       {bulkBadge && (
                         <span className="cart-item-bulk-badge">✓ {bulkBadge}</span>
                       )}
                     </div>
-                    {lineSavings > 0 && (
-                      <p className="cart-item-saved">You saved ₹{lineSavings.toLocaleString('en-IN')}</p>
+                    {discountActive && (
+                      <p className="cart-item-saved">You saved ₹{formatINR(lineSavings)}</p>
                     )}
                     <button className="cart-item-remove" onClick={() => removeItem(key)}>
                       <TrashIcon size={14} /> Remove
@@ -249,17 +260,11 @@ export default function Cart() {
                           normal TOTAL (price × qty) so the hierarchy reads
                           bold bulk total → struck normal total → saving.
                           Without a discount keep the ₹X × qty breakdown. */}
-                      {lineSavings > 0 ? (
-                        <p className="cart-item-sub is-struck">
-                          ₹{(normalPrice * item.quantity).toLocaleString('en-IN')}
-                        </p>
-                      ) : (
-                        <p className="cart-item-sub">
-                          ₹{normalPrice.toLocaleString('en-IN')} × {item.quantity}
-                        </p>
-                      )}
-                      {lineSavings > 0 && (
-                        <p className="cart-item-saving">Saving ₹{lineSavings.toLocaleString('en-IN')}</p>
+                      <p className={`cart-item-sub${totalLine.struck ? ' is-struck' : ''}`}>
+                        {totalLine.text}
+                      </p>
+                      {discountActive && (
+                        <p className="cart-item-saving">Saving ₹{formatINR(lineSavings)}</p>
                       )}
                     </div>
                   </div>

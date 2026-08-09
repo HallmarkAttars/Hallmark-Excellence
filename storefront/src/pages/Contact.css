@@ -806,12 +806,43 @@
   color: var(--charcoal-soft);
   font-variant-numeric: tabular-nums;
 }
+/* Struck compare-at unit price when bulk pricing is active — the same
+   muted-grey strikethrough treatment as the cart (.cart-item-unit-struck)
+   and product cards (.product-card-compare). Never shows when the normal
+   price equals the charged price. */
+.order-summary-qty-struck {
+  margin-left: 6px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #9A9286;
+  text-decoration: line-through;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 /* Right side = LINE TOTAL (unit price × quantity) */
 .order-summary-price {
   font-family: var(--font-body);
   font-size: 18px;
   font-weight: 600;
   color: var(--charcoal);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* The line-total column stacks the charged total over the struck normal
+   total (normal price × quantity) — plain figure, cart-consistent. */
+.order-summary-price-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.15;
+}
+.order-summary-price-struck {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: #9A9286;
+  text-decoration: line-through;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
