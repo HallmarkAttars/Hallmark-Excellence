@@ -227,29 +227,51 @@
 }
 .contact-toast strong { font-family: var(--font-display); font-size: 1.2rem; color: var(--charcoal); }
 
-/* Checkout container — everything stays inside the viewport at any width. */
+/* Checkout page container — centered, capped width, never overflows.
+   display: block neutralizes the base .contact-layout grid so the 28px
+   row-gap can never add to the trust strip's own margin. */
 .contact-layout--checkout {
-  grid-template-columns: minmax(0, 1fr);
+  display: block;
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
   padding-inline: clamp(16px, 4vw, 40px);
   box-sizing: border-box;
   min-width: 0;
-  gap: 26px;
   padding-bottom: 88px;
 }
-/* Tablet 900–1023px: keep the single column (summary stacks below the form) */
-@media (min-width: 900px) and (max-width: 1023px) {
-  .contact-layout--checkout { grid-template-columns: minmax(0, 1fr); }
+/* Two-column checkout grid: Delivery Information (left) + Order Summary
+   (right). The grid sizes naturally — no fixed heights, no absolute or
+   sticky positioning. Below 1024px it falls back to one comfortable column. */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 26px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: start;
 }
-/* Desktop ≥1024px: Delivery Information (left) + sticky Order Summary (right) */
 @media (min-width: 1024px) {
-  .contact-layout--checkout {
-    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.8fr);
+  .checkout-grid {
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.8fr);
     gap: 32px;
     align-items: start;
   }
+}
+/* Mobile (<768px): show the Order Summary FIRST, directly under the
+   "Complete Your Order" heading, then the Delivery Information form.
+   Pure visual reorder — grid children honor `order`, so the DOM, form
+   logic, and desktop/tablet (≥768px) two-column layout stay untouched.
+   Note: `order` affects visual order only; keyboard/screen-reader focus
+   still follows the DOM (form first) — intentional, since the form is
+   the primary action. The grid gap owns the 16px spacing here. */
+@media (max-width: 767px) {
+  .checkout-grid { gap: 16px; }
+  .checkout-grid .checkout-summary-col { order: 1; }
+  .checkout-grid .contact-form-col { order: 2; }
+  /* The card's own 16px margin no longer needs to add to the grid gap */
+  .checkout-grid .checkout-summary-col .order-summary { margin-bottom: 0; }
 }
 @media (max-width: 767px) {
   .page-heading--checkout { padding-bottom: 12px; }
@@ -473,11 +495,13 @@
 }
 
 /* ---------- Right column: sticky Order Summary card ---------- */
+/* Order Summary column — static, normal flow, fully inside its grid column.
+   Sticky was removed: a tall summary card pinned to the viewport overlapped
+   the trust strip below it while scrolling. Static flow can never overlap. */
 .checkout-summary-col {
   min-width: 0;
-}
-@media (min-width: 1024px) {
-  .checkout-summary-col { position: sticky; top: 100px; }
+  width: 100%;
+  max-width: 100%;
 }
 
 /* The order-summary card is now the compact right-column panel */
@@ -488,6 +512,10 @@
   box-shadow: var(--shadow-soft);
   padding: 24px 22px;
   margin-bottom: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .checkout-summary-col .order-summary h3 {
   font-family: var(--font-display);
@@ -600,13 +628,14 @@
 .checkout-return-link:hover .checkout-return-arrow { transform: translateX(-3px); }
 .checkout-summary-col .checkout-return-link { margin-top: 16px; }
 
-/* ---------- Full-width trust strip AFTER the checkout grid ---------- */
+/* ---------- Trust strip — a separate block BELOW the checkout grid ----------
+   It is NOT part of the checkout grid, so no section can ever scroll
+   behind or under the Order Summary. Normal document flow only. */
 .checkout-trust-strip {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 32px;
   padding: 18px 22px;
   background: var(--white);
   border: 1px solid var(--line);

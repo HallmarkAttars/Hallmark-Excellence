@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   trackOrder,
@@ -226,6 +226,31 @@ export default function TrackOrder() {
   const [lookup, setLookup] = useState(null) // { type, value }
   const [refreshing, setRefreshing] = useState(false)
 
+  // --- Premium search animation (purely visual — never affects the lookup) --
+  // view: 'form' (search card) → 'searching' (spinner) → 'success' (animated
+  // checkmark) → 'results' (real order cards). The trackOrder() API call alone
+  // decides success/failure; these states only choreograph the presentation.
+  const [view, setView] = useState('form')
+  const [leaving, setLeaving] = useState(false) // success panel fade-out
+  const [shake, setShake] = useState(false) // subtle error shake on the card
+  const [searchLabel, setSearchLabel] = useState('') // value shown while searching
+  const animTimers = useRef([])
+
+  // Presentational helpers for the search animation flow.
+  const clearAnimTimers = () => {
+    animTimers.current.forEach((t) => window.clearTimeout(t))
+    animTimers.current = []
+  }
+  const resetSearchFlow = () => {
+    clearAnimTimers()
+    setLeaving(false)
+    setShake(false)
+    setView('form')
+  }
+
+  // Clear any in-flight animation timers when the page unmounts.
+  useEffect(() => () => clearAnimTimers(), [])
+
   const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
 
   const handleOrderIdChange = (e) => {
@@ -240,6 +265,7 @@ export default function TrackOrder() {
 
   const switchMode = (next) => {
     if (next === mode) return
+    resetSearchFlow()
     setMode(next)
     setFieldErrors({})
     setError('')
@@ -305,11 +331,31 @@ export default function TrackOrder() {
     const value =
       type === 'phone' ? normalizeIndianPhone(form.phone) : normalizeOrderId(form.orderId)
 
+    // --- Premium search animation (purely visual — the API decides) -------
+    // Show the entered value inside the searching panel, then swap in the
+    // animated checkmark ONLY after the backend confirms the order exists.
+    setSearchLabel(
+      type === 'phone' ? `+91 ${value.slice(0, 5)} ${value.slice(5)}` : value
+    )
+    clearAnimTimers()
+    setLeaving(false)
+    setShake(false)
+    setView('searching')
+
     const outcome = await runLookup({ type, value }, { mode: 'submit' })
     // Remember the verified credentials only when orders were found, so the
     // recheck/refresh always targets the exact lookup on screen.
     if (outcome === 'ok') {
       setLookup({ type, value })
+      // Checkmark draws (~0.9s), panel fades, then the real results appear.
+      setView('success')
+      animTimers.current.push(window.setTimeout(() => setLeaving(true), 900))
+      animTimers.current.push(
+        window.setTimeout(() => {
+          setLeaving(false)
+          setView('results')
+        }, 1180)
+      )
     } else {
       setLookup(null)
       if (outcome === 'empty') {
@@ -319,6 +365,10 @@ export default function TrackOrder() {
             : "We couldn't find an order with this Order ID."
         )
       }
+      // Back to the form with a subtle shake + error icon — never a checkmark.
+      setView('form')
+      setShake(true)
+      animTimers.current.push(window.setTimeout(() => setShake(false), 650))
     }
   }
 
@@ -357,14 +407,13 @@ export default function TrackOrder() {
   // "Track Order" link while already on /track-order) does not remount this
   // page, so without this button the results would be stuck on screen.
   const handleNewSearch = () => {
+    resetSearchFlow()
     setOrders([])
     setLookup(null)
     setError('')
     setRefreshNote('')
     setFieldErrors({})
   }
-
-  const showForm = orders.length === 0
 
   return (
     <div>
@@ -375,125 +424,180 @@ export default function TrackOrder() {
       </div>
 
       <div className="track-layout">
-        {showForm ? (
-          <div className="track-card">
-            {/* ONE form, two lookup methods — both call the same trackOrder() */}
-            <div className="track-tabs" role="tablist" aria-label="How would you like to track your order?">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === 'orderId'}
-                className={`track-tab${mode === 'orderId' ? ' is-active' : ''}`}
-                onClick={() => switchMode('orderId')}
-              >
-                Order ID
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === 'phone'}
-                className={`track-tab${mode === 'phone' ? ' is-active' : ''}`}
-                onClick={() => switchMode('phone')}
-              >
-                Mobile Number
-              </button>
+        {/* SEARCHING — the entered value fades into a circular progress ring.
+            Only the real trackOrder() API call can move past this state. */}
+        {view === 'searching' && (
+          <div className="track-anim-panel" role="status" aria-live="polite">
+            <div className="track-searching-value" aria-hidden="true">{searchLabel}</div>
+            <div className="track-spinner-wrap" aria-hidden="true">
+              <span className="track-spinner" />
             </div>
-
-            <form className="track-form" onSubmit={handleSubmit} noValidate>
-              {mode === 'orderId' ? (
-                <div className="form-field">
-                  <label htmlFor="track-order-id">
-                    Order ID <span className="required-star">*</span>
-                  </label>
-                  <input
-                    id="track-order-id"
-                    name="orderId"
-                    type="text"
-                    placeholder="ORD-571848"
-                    autoComplete="off"
-                    value={form.orderId}
-                    onChange={handleOrderIdChange}
-                    required
-                  />
-                  {fieldErrors.orderId && (
-                    <p className="field-hint field-hint--error">{fieldErrors.orderId}</p>
-                  )}
-                  <p className="field-hint">
-                    Enter the Order ID from your confirmation email or receipt.
-                  </p>
-                </div>
-              ) : (
-                <div className="form-field">
-                  <label htmlFor="track-phone">
-                    Mobile Number <span className="required-star">*</span>
-                  </label>
-                  <div className="track-phone-row">
-                    <span className="track-phone-prefix" aria-hidden="true">+91</span>
-                    <input
-                      id="track-phone"
-                      name="phone"
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      autoComplete="tel-national"
-                      pattern="[0-9]{10}"
-                      placeholder="9876543210"
-                      className="track-phone-input"
-                      value={form.phone}
-                      onChange={handlePhoneChange}
-                      required
-                    />
-                  </div>
-                  {fieldErrors.phone && (
-                    <p className="field-hint field-hint--error">{fieldErrors.phone}</p>
-                  )}
-                  <p className="field-hint">
-                    We'll show every order placed with this number.
-                  </p>
-                </div>
-              )}
-
-              {error && <p className="track-error" role="alert">{error}</p>}
-
-              <button className="btn btn-primary track-submit" type="submit" disabled={submitting}>
-                {submitting ? 'Finding orders…' : 'Find Orders'}
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="track-result" aria-live="polite">
-            {/* Verified header */}
-            <div className="track-found-head">
-              <span className="track-found-check">
-                <CheckIcon />
-              </span>
-              <h2>{orders.length === 1 ? 'Order Found' : `${orders.length} Orders Found`}</h2>
-              {lookup && lookup.type === 'phone' && (
-                <p className="track-placed-on">Orders for +91 {lookup.value}</p>
-              )}
-            </div>
-
-            {orders.map((order) => (
-              <OrderResultCard key={order.orderId} order={order} />
-            ))}
-
-            <div className="track-actions">
-              {refreshNote && <p className="track-note" role="status">{refreshNote}</p>}
-              <button
-                className="btn btn-outline"
-                type="button"
-                onClick={handleRefresh}
-                disabled={refreshing || !lookup}
-              >
-                {refreshing ? 'Checking…' : 'Refresh Status'}
-              </button>
-              <button className="btn btn-outline" type="button" onClick={handleNewSearch}>
-                Search Another Order
-              </button>
-              <Link to="/shop" className="btn btn-gold">Continue Shopping</Link>
-            </div>
+            <p className="track-anim-title">Searching…</p>
+            <p className="track-anim-sub">Checking the details you entered</p>
           </div>
         )}
+
+        {/* SUCCESS — animated checkmark. Rendered ONLY after the backend
+            confirmed the order(s) exist; never before. */}
+        {view === 'success' && (
+          <div
+            className={`track-anim-panel track-success-panel${leaving ? ' is-leaving' : ''}`}
+            role="status"
+            aria-live="polite"
+          >
+            <div className="track-anim-badge" aria-hidden="true">
+              <svg viewBox="0 0 52 52">
+                <circle className="track-anim-circle" cx="26" cy="26" r="24" />
+                <path className="track-anim-check" d="M15 27.5l7.5 7.5L37 19.5" />
+              </svg>
+            </div>
+            <p className="track-anim-title">
+              {orders.length === 1 ? 'Order Found' : 'Orders Found'}
+            </p>
+            <p className="track-anim-sub">
+              Loading your {orders.length === 1 ? 'order' : 'orders'}…
+            </p>
+          </div>
+        )}
+
+        {/* FORM or RESULTS — normal document flow once the animation settles */}
+        {view !== 'searching' && view !== 'success' &&
+          (orders.length > 0 ? (
+            <div className="track-result" aria-live="polite">
+              {/* Verified header */}
+              <div className="track-found-head">
+                <span className="track-found-check">
+                  <CheckIcon />
+                </span>
+                <h2>{orders.length === 1 ? 'Order Found' : `${orders.length} Orders Found`}</h2>
+                {lookup && lookup.type === 'phone' && (
+                  <p className="track-placed-on">Orders for +91 {lookup.value}</p>
+                )}
+              </div>
+
+              {/* Cards reveal one by one (staggered) — fast, never slow */}
+              {orders.map((order, i) => (
+                <div
+                  className="track-result-item"
+                  style={{ animationDelay: `${Math.min(i * 0.12, 0.6)}s` }}
+                  key={order.orderId}
+                >
+                  <OrderResultCard order={order} />
+                </div>
+              ))}
+
+              <div className="track-actions">
+                {refreshNote && <p className="track-note" role="status">{refreshNote}</p>}
+                <button
+                  className="btn btn-outline"
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={refreshing || !lookup}
+                >
+                  {refreshing ? 'Checking…' : 'Refresh Status'}
+                </button>
+                <button className="btn btn-outline" type="button" onClick={handleNewSearch}>
+                  Search Another Order
+                </button>
+                <Link to="/shop" className="btn btn-gold">Continue Shopping</Link>
+              </div>
+            </div>
+          ) : (
+            <div className={`track-card${shake ? ' track-shake' : ''}`}>
+              {/* ONE form, two lookup methods — both call the same trackOrder() */}
+              <div className="track-tabs" role="tablist" aria-label="How would you like to track your order?">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'orderId'}
+                  className={`track-tab${mode === 'orderId' ? ' is-active' : ''}`}
+                  onClick={() => switchMode('orderId')}
+                >
+                  Order ID
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'phone'}
+                  className={`track-tab${mode === 'phone' ? ' is-active' : ''}`}
+                  onClick={() => switchMode('phone')}
+                >
+                  Mobile Number
+                </button>
+              </div>
+
+              <form className="track-form" onSubmit={handleSubmit} noValidate>
+                {mode === 'orderId' ? (
+                  <div className="form-field">
+                    <label htmlFor="track-order-id">
+                      Order ID <span className="required-star">*</span>
+                    </label>
+                    <input
+                      id="track-order-id"
+                      name="orderId"
+                      type="text"
+                      placeholder="ORD-571848"
+                      autoComplete="off"
+                      value={form.orderId}
+                      onChange={handleOrderIdChange}
+                      required
+                    />
+                    {fieldErrors.orderId && (
+                      <p className="field-hint field-hint--error">{fieldErrors.orderId}</p>
+                    )}
+                    <p className="field-hint">
+                      Enter the Order ID from your confirmation email or receipt.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="form-field">
+                    <label htmlFor="track-phone">
+                      Mobile Number <span className="required-star">*</span>
+                    </label>
+                    <div className="track-phone-row">
+                      <span className="track-phone-prefix" aria-hidden="true">+91</span>
+                      <input
+                        id="track-phone"
+                        name="phone"
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={10}
+                        autoComplete="tel-national"
+                        pattern="[0-9]{10}"
+                        placeholder="9876543210"
+                        className="track-phone-input"
+                        value={form.phone}
+                        onChange={handlePhoneChange}
+                        required
+                      />
+                    </div>
+                    {fieldErrors.phone && (
+                      <p className="field-hint field-hint--error">{fieldErrors.phone}</p>
+                    )}
+                    <p className="field-hint">
+                      We'll show every order placed with this number.
+                    </p>
+                  </div>
+                )}
+
+                {error && (
+                  <p className="track-error" role="alert">
+                    <span className="track-error-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="m9 9 6 6M15 9l-6 6" />
+                      </svg>
+                    </span>
+                    {error}
+                  </p>
+                )}
+
+                <button className="btn btn-primary track-submit" type="submit" disabled={submitting}>
+                  {submitting ? 'Finding orders…' : 'Find Orders'}
+                </button>
+              </form>
+            </div>
+          ))}
       </div>
     </div>
   )
