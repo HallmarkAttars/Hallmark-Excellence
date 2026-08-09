@@ -211,6 +211,33 @@ export default function BrandBulkPricing() {
                   </div>
                 )}
 
+                {/* Computed readout — Saving ₹/piece + discount %, derived live
+                    from the typed values. Never editable; only shown while the
+                    numbers form a genuine discount (bulk below standard). */}
+                {isOn &&
+                  Number.isFinite(Number(form.standard_price)) &&
+                  Number(form.standard_price) > 0 &&
+                  Number.isFinite(Number(form.bulk_unit_price)) &&
+                  Number(form.bulk_unit_price) > 0 &&
+                  Number(form.bulk_unit_price) < Number(form.standard_price) && (
+                    <div className="brand-bulk-readout">
+                      <span>
+                        Saving: <strong>₹{(Number(form.standard_price) - Number(form.bulk_unit_price)).toLocaleString('en-IN')}/piece</strong>
+                      </span>
+                      <span>
+                        Discount:{' '}
+                        <strong>
+                          {Math.round(
+                            ((Number(form.standard_price) - Number(form.bulk_unit_price)) /
+                              Number(form.standard_price)) *
+                              100,
+                          )}
+                          %
+                        </strong>
+                      </span>
+                    </div>
+                  )}
+
                 {errors[brand.id] && <p className="login-error brand-bulk-error">{errors[brand.id]}</p>}
                 {successes[brand.id] && <p className="brand-bulk-success">{successes[brand.id]}</p>}
 

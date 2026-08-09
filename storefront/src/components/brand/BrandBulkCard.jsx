@@ -77,8 +77,8 @@ export default function BrandBulkCard({ brand }) {
         <p className="brand-bulk-card-title">{brandName} · Bulk Pricing</p>
         <p className="brand-bulk-card-sub">Combined-quantity discount</p>
         <p className="brand-bulk-card-desc">
-          Mix &amp; match any {brandName} item. Discounts unlock when your total
-          quantity across all items reaches {bulkMinQty} pieces.
+          Mix &amp; match any {brandName} item. Discounts unlock when your combined{' '}
+          {brandName} quantity reaches {bulkMinQty} pieces.
         </p>
       </div>
 
@@ -111,15 +111,33 @@ export default function BrandBulkCard({ brand }) {
         </table>
       </div>
 
+      {/* Clear minimum-quantity summary — below the table, always visible so
+          the threshold is unambiguous (never "all items" — each brand's
+          quantity is counted separately). */}
+      <div className="brand-bulk-min">
+        <p className="brand-bulk-min-label">
+          Minimum quantity: <strong>{bulkMinQty} pieces</strong>
+        </p>
+        <p className="brand-bulk-min-note">
+          <span aria-hidden="true">✓</span> Bulk price {fmt(bulkUnitPrice)}/piece applies to
+          all {brandName} items once your combined {brandName} quantity reaches {bulkMinQty}.
+        </p>
+      </div>
+
       {/* Live quantity indicator — shown only when this brand's items are
           already in the visitor's cart. Recomputes on every cart change. */}
       {cartQty > 0 && (
         <div className="brand-bulk-cart" aria-live="polite">
           {unlocked ? (
-            <p className="brand-bulk-cart-status is-unlocked">
-              ✓ Bulk unlocked — {fmt(bulkUnitPrice)}/piece applies to all{' '}
-              {brandName} items in your cart
-            </p>
+            <>
+              <p className="brand-bulk-cart-status is-unlocked">
+                ✓ Bulk unlocked — {cartQty} {brandName} pieces in cart ·{' '}
+                {fmt(bulkUnitPrice)}/piece applied
+              </p>
+              <p className="brand-bulk-cart-reached">
+                Minimum quantity reached: {bulkMinQty} pieces
+              </p>
+            </>
           ) : (
             <>
               <p className="brand-bulk-cart-status">

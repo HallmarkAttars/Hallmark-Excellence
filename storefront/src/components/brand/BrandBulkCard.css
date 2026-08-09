@@ -91,13 +91,30 @@
   color: #8fd0a4;
   font-weight: 700;
   white-space: nowrap;
+}.brand-bulk-table .brand-bulk-save-pct { margin-left: 6px; font-size: 0.72rem; font-weight: 600; color: rgba(232, 225, 214, 0.6); }
+
+/* ---------- Minimum-quantity summary below the table ---------- */
+.brand-bulk-min {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border: 1px solid rgba(198, 154, 75, 0.32);
+  border-radius: 10px;
+  background: rgba(198, 154, 75, 0.08);
 }
-.brand-bulk-table .brand-bulk-save-pct {
-  margin-left: 6px;
-  font-size: 0.72rem;
+.brand-bulk-min-label {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: rgba(232, 225, 214, 0.6);
+  color: var(--cream);
 }
+.brand-bulk-min-label strong { color: var(--gold-light); }
+.brand-bulk-min-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(232, 225, 214, 0.78);
+}
+.brand-bulk-min-note span { color: #8fd0a4; }
 
 /* ---------- Live cart quantity indicator ---------- */
 .brand-bulk-cart {
@@ -115,6 +132,14 @@
 .brand-bulk-cart-status.is-unlocked {
   color: #8fd0a4;
   font-weight: 600;
+}
+.brand-bulk-cart-reached {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(232, 225, 214, 0.55);
+  font-variant-numeric: tabular-nums;
 }
 .brand-bulk-cart-track {
   height: 8px;
