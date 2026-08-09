@@ -229,10 +229,13 @@ function OrderResultCard({ order }) {
 export default function TrackOrder() {
   const location = useLocation()
 
-  // Optional prefill from the order-success screen (router state carries the
-  // just-created order number). The phone is never prefilled — the customer
-  // must always enter it.
-  const prefillOrderId = location.state?.orderNumber || ''
+  // Optional prefill — the customer must still enter the phone (never
+  // prefilled) and press Find Orders. Sources, in priority order:
+  //   1. ?order_id= query param — the Track Order button in the Brevo
+  //      confirmation email deep-links here with the saved order number.
+  //   2. router state from the order-success screen.
+  const queryOrderId = normalizeOrderId(new URLSearchParams(location.search).get('order_id'))
+  const prefillOrderId = queryOrderId || location.state?.orderNumber || ''
 
   const [mode, setMode] = useState('orderId') // 'orderId' | 'phone'
   const [form, setForm] = useState({ orderId: prefillOrderId, phone: '' })

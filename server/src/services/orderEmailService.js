@@ -16,6 +16,10 @@
 
 const brevo = require('@getbrevo/brevo')
 
+// NOTE: the installed @getbrevo/brevo@6 SDK uses the new client API
+// (new BrevoClient({ apiKey }) + client.transactionalEmails.sendTransacEmail).
+// The legacy v5 API (TransactionalEmailsApi / SendSmtpEmail) no longer exists.
+
 // --- Currency / date helpers ----------------------------------------------
 
 // Indian-formatted amount WITHOUT the ₹ symbol (e.g. 3350 -> "3,350").
@@ -56,6 +60,17 @@ function safeImage(url) {
   return /^https?:\/\//i.test(String(url)) ? String(url) : ''
 }
 
+// ${FRONTEND_URL}/track-order?order_id=${orderNumber} — the Track Order button
+// target in the CUSTOMER confirmation email. The base URL comes ONLY from the
+// server environment (never hardcoded in code, never exposed to the frontend).
+// Returns '' when FRONTEND_URL or the order number is missing so the template
+// simply omits the button.
+function buildTrackOrderUrl(orderNumber) {
+  const base = (process.env.FRONTEND_URL || '').trim().replace(/\/+$/, '')
+  if (!base || !orderNumber) return ''
+  return `${base}/track-order?order_id=${encodeURIComponent(String(orderNumber))}`
+}
+
 // --- Params builder --------------------------------------------------------
 
 // Builds ONE params object shared by BOTH templates from the SAVED order row.
@@ -65,6 +80,8 @@ function safeImage(url) {
 // Money fields ship twice so templates can display either form:
 //   formatted string, e.g. "3,350"        -> {{params.total}}
 //   raw number,     e.g. 3350             -> {{params.totalRaw}}
+// trackOrderUrl is the customer template's Track Order button deep-link,
+// built from process.env.FRONTEND_URL (never hardcoded).
 // The example admin subject "New Order #{{params.orderId}} - ₹{{params.total}}"
 // renders as "New Order #ORD-123456 - ₹3,350" with the template's own ₹ sign.
 function buildOrderEmailParams(order) {
@@ -111,6 +128,10 @@ function buildOrderEmailParams(order) {
     orderDate: formatOrderDate(order?.created_at),
     orderStatus: order?.order_status || 'Pending',
 
+    // Track Order deep-link for the customer template's button (built from
+    // the configured FRONTEND_URL — never hardcoded).
+    trackOrderUrl: buildTrackOrderUrl(order?.order_number),
+
     // Customer
     customerName: notesInfo.customer_name || '',
     customerEmail: notesInfo.email || '',
@@ -150,15 +171,16 @@ function buildOrderEmailParams(order) {
 
 let _client = null
 
-// Lazily created Brevo transactional API client. Returns null when the API
-// key is not configured — emails are then skipped (the order is unaffected).
+// Lazily created Brevo client. The installed @getbrevo/brevo is the NEW v6
+// SDK (BrevoClient) — the legacy TransactionalEmailsApi / SendSmtpEmail
+// classes no longer exist, so this is the only supported way to construct it.
+// Returns null when the API key is not configured — emails are then skipped
+// (the order is unaffected). The key never leaves the server environment.
 function getBrevoClient() {
   if (_client) return _client
   const apiKey = process.env.BREVO_API_KEY
   if (!apiKey) return null
-  const apiInstance = new brevo.TransactionalEmailsApi()
-  apiInstance.authentications['apiKey'].apiKey = apiKey
-  _client = apiInstance
+  _client = new brevo.BrevoClient({ apiKey })
   return _client
 }
 
@@ -180,20 +202,26 @@ async function sendTemplateEmail({ tag, to, templateId, params }) {
     return { status: 'skipped' }
   }
 
-  const sendSmtpEmail = new brevo.SendSmtpEmail()
-  sendSmtpEmail.to = to
-  sendSmtpEmail.templateId = id
-  sendSmtpEmail.params = params
-
   try {
     const timeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Brevo request timed out')), REQUEST_TIMEOUT_MS)
     )
-    await Promise.race([client.sendTransacEmail(sendSmtpEmail), timeout])
+    // v6 SDK request object — templateId / to / params are the exact fields
+    // the Brevo templates expect (the old SendSmtpEmail class is gone).
+    await Promise.race([
+      client.transactionalEmails.sendTransacEmail({
+        templateId: id,
+        to,
+        params,
+      }),
+      timeout,
+    ])
     return { status: 'sent' }
   } catch (err) {
-    // Log only the generic message — never the API key, tokens or payment data.
-    console.error(`[ORDER EMAIL ERROR] ${tag} failed: ${err.message || err}`)
+    // Log only the generic message + HTTP status — never the API key, tokens
+    // or payment data (a 400/404 here usually means a template id mismatch).
+    const status = err?.statusCode ?? err?.status
+    console.error(`[ORDER EMAIL ERROR] ${tag} failed${status ? ` (HTTP ${status})` : ''}: ${err.message || err}`)
     return { status: 'failed' }
   }
 }
