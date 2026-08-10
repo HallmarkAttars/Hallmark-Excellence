@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getOrders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminStatusBadge from '../components/ui/AdminStatusBadge'
@@ -204,6 +205,9 @@ function csvCell(value) {
 
 export default function Orders() {
   const { can } = useAuth()
+  const [searchParams] = useSearchParams()
+  // Deep-link target from the notification bell: /admin/orders?open=<orderId>
+  const openOrderId = searchParams.get('open')
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
@@ -229,11 +233,21 @@ export default function Orders() {
 
   useEffect(() => {
     getOrders().then((o) => {
-      setOrders([...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
+      const sorted = [...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      setOrders(sorted)
       setLoading(false)
+      // Notification-bell deep link: expand that exact order and bring it
+      // into view once the list has rendered.
+      if (openOrderId && sorted.some((ord) => ord.id === openOrderId)) {
+        setExpanded(openOrderId)
+        requestAnimationFrame(() => {
+          const el = document.getElementById(`order-row-${openOrderId}`)
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        })
+      }
     })
     return () => window.clearTimeout(feedbackTimer.current)
-  }, [])
+  }, [openOrderId])
 
   // Debounce the search query; `searching` is true while a keystroke is
   // pending (drives the tiny spinner in the input).
@@ -550,7 +564,7 @@ export default function Orders() {
                   <tbody>
                     {visibleOrders.map((o) => (
                       <Fragment key={o.id}>
-                        <tr className={`orders-row ${expanded === o.id ? 'is-expanded' : ''}`}>
+                        <tr id={`order-row-${o.id}`} className={`orders-row ${expanded === o.id ? 'is-expanded' : ''}`}>
                           <td className="orders-expand-cell">
                             <ExpandButton
                               expanded={expanded === o.id}
@@ -678,7 +692,7 @@ export default function Orders() {
               {visibleOrders.map((o) => {
                 const isOpen = expanded === o.id
                 return (
-                  <div className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
+                  <div id={`order-row-${o.id}`} className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
                     {/* Header — truncated order id + status badge; clickable */}
                     <div
                       className="order-card-head"
