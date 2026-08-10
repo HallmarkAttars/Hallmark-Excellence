@@ -12,7 +12,6 @@ import Categories from './pages/Categories'
 import Brands from './pages/Brands'
 import BrandProductsPage from './pages/BrandProductsPage'
 import BrandForm from './pages/BrandForm'
-import BrandBulkPricing from './pages/BrandBulkPricing'
 import Employees from './pages/Employees'
 
 export default function App() {
@@ -53,14 +52,6 @@ export default function App() {
                 element={
                   <RequirePermission permission="brands.edit">
                     <BrandForm />
-                  </RequirePermission>
-                }
-              />
-              <Route
-                path="/admin/brands/bulk-pricing"
-                element={
-                  <RequirePermission permission="brands.view">
-                    <BrandBulkPricing />
                   </RequirePermission>
                 }
               />

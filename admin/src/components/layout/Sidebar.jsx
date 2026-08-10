@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { to: '/admin/orders', label: 'Orders', permission: 'orders.view' },
   { to: '/admin/categories', label: 'Categories', permission: 'categories.view' },
   { to: '/admin/brands', label: 'Brands', permission: 'brands.view' },
-  { to: '/admin/brands/bulk-pricing', label: 'Brand Bulk Pricing', permission: 'brands.view' },
   { to: '/admin/employees', label: 'Employees', permission: 'employees.view' },
 ]
 

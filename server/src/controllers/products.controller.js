@@ -48,6 +48,14 @@ const VARIANT_SELECT = `
   total_price, price_per_unit, is_default
 `
 
+// Fallback variant select for databases where the variant total-pricing
+// migration (migration_add_variant_total_pricing.sql — total_price /
+// price_per_unit) has not been applied yet. The legacy `price` column drives
+// the fallbacks so nothing breaks before the migration runs.
+const VARIANT_SELECT_BASE = `
+  id, product_id, quantity_value, quantity_unit, display_label, price, is_default
+`
+
 // The authoritative purchasable amount for ONE selected variant. Legacy
 // variants (pre-migration) have no total_price — their old `price` value is
 // used as the total so existing data keeps charging exactly as before.
@@ -113,14 +121,29 @@ function toVariant(v) {
   }
 }
 
+// Runs a product_variants query, retrying against the base select when the
+// total-pricing columns are missing (pre-migration DB). Mirrors the products
+// table pattern (selectProducts) so the API works before AND after the
+// migration_add_variant_total_pricing.sql migration is applied.
+async function selectVariants(build) {
+  let res = await build(VARIANT_SELECT)
+  if (isMissingColumnError(res.error)) {
+    console.warn('[products] Variant total-pricing columns missing (total_price, price_per_unit). Run server/db/migration_add_variant_total_pricing.sql in the Supabase SQL editor to enable per-unit pricing.')
+    res = await build(VARIANT_SELECT_BASE)
+  }
+  return res
+}
+
 // Fetch all variants for a set of product ids, grouped by product_id.
 async function fetchVariantsByProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length === 0) return {}
 
-  const { data, error } = await supabase
-    .from('product_variants')
-    .select(VARIANT_SELECT)
-    .in('product_id', productIds)
+  const { data, error } = await selectVariants((select) =>
+    supabase
+      .from('product_variants')
+      .select(select)
+      .in('product_id', productIds)
+  )
 
   if (error) throw error
 
@@ -239,10 +262,12 @@ async function getProductById(req, res) {
     // Fetch variants separately, sorted by quantity_value ASC.
     let variants = []
     try {
-      const { data: vs, error: vErr } = await supabase
-        .from('product_variants')
-        .select(VARIANT_SELECT)
-        .eq('product_id', id)
+      const { data: vs, error: vErr } = await selectVariants((select) =>
+        supabase
+          .from('product_variants')
+          .select(select)
+          .eq('product_id', id)
+      )
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -362,10 +387,12 @@ async function getAdminProductById(req, res) {
 
     let variants = []
     try {
-      const { data: vs, error: vErr } = await supabase
-        .from('product_variants')
-        .select(VARIANT_SELECT)
-        .eq('product_id', id)
+      const { data: vs, error: vErr } = await selectVariants((select) =>
+        supabase
+          .from('product_variants')
+          .select(select)
+          .eq('product_id', id)
+      )
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -462,17 +489,26 @@ function validateVariant(v) {
 }
 
 // Normalize an incoming variants array into rows for product_variants.
+//
+// The legacy `price` column is NOT NULL in the live schema and is deliberately
+// never dropped (backward compatibility), so it is ALWAYS populated here —
+// with the variant's total price. New flows read total_price / price_per_unit;
+// pre-migration flows (or any legacy reader) read `price` and get the same
+// authoritative total, so an insert can never violate the NOT NULL constraint.
 function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
-  return variants.map((v) => ({
-    quantity_value: v.quantity_value ?? 0,
-    quantity_unit: v.quantity_unit ?? 'ML',
-    display_label: v.display_label ?? '',
-    price: v.price,
-    total_price: v.total_price != null ? v.total_price : v.price,
-    price_per_unit: v.price_per_unit != null ? v.price_per_unit : v.price,
-    is_default: v.is_default ?? false,
-  }))
+  return variants.map((v) => {
+    const total = v.total_price != null ? v.total_price : v.price
+    return {
+      quantity_value: v.quantity_value ?? 0,
+      quantity_unit: v.quantity_unit ?? 'ML',
+      display_label: v.display_label ?? '',
+      price: total,
+      total_price: total,
+      price_per_unit: v.price_per_unit != null ? v.price_per_unit : v.price,
+      is_default: v.is_default ?? false,
+    }
+  })
 }
 
 async function insertVariants(productId, variants) {
@@ -481,14 +517,27 @@ async function insertVariants(productId, variants) {
 
   const payload = rows.map((r) => ({ ...r, product_id: productId }))
 
-  const { data, error } = await supabase
+  // Full payload (total_price / price_per_unit). If those columns are missing
+  // (pre-migration DB), retry with ONLY the legacy columns so admin saves
+  // never fail — the legacy `price` column carries the total until the
+  // migration is applied.
+  let res = await supabase
     .from('product_variants')
     .insert(payload)
     .select(VARIANT_SELECT)
 
-  if (error) throw error
+  if (isMissingColumnError(res.error)) {
+    console.warn('[products] Variant total-pricing columns missing — saving with legacy columns only.')
+    const legacyPayload = payload.map(({ total_price, price_per_unit, ...rest }) => rest)
+    res = await supabase
+      .from('product_variants')
+      .insert(legacyPayload)
+      .select(VARIANT_SELECT_BASE)
+  }
 
-  return sortVariants((data || []).map(toVariant))
+  if (res.error) throw res.error
+
+  return sortVariants((res.data || []).map(toVariant))
 }
 
 // POST /api/admin/products
@@ -500,8 +549,13 @@ async function createProduct(req, res) {
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants
     } = req.body
 
-    if (!name || price === undefined || price === null) {
-      return res.status(400).json({ error: 'name and price are required.' })
+    // Only the name is strictly required. The purchasable price now comes
+    // EXCLUSIVELY from product variants (default variant's total price); the
+    // legacy products.price column is kept for backward compatibility and is
+    // populated from the default variant total when variants exist (see
+    // attachVariants). Variant-less products default to 0.
+    if (!name) {
+      return res.status(400).json({ error: 'name is required.' })
     }
 
     // If the selected category is "Attar", brand is required
@@ -520,7 +574,7 @@ async function createProduct(req, res) {
       name,
       slug: slugify(name),
       description: description ?? null,
-      price,
+      price: price ?? 0,
       compare_at_price: compare_at_price ?? null,
       rating: rating ?? null,
       review_count: review_count ?? null,
@@ -713,4 +767,12 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  // Shared variant helpers — reused by brands.controller.js so the brand
+  // products endpoint surfaces the same default-variant TOTAL prices and
+  // variant arrays as every other product listing.
+  attachVariants,
+  fetchVariantsByProducts,
+  defaultVariant,
+  sortVariants,
+  toVariant,
 }

@@ -572,11 +572,6 @@
 .checkout-summary-col .order-summary-variant { font-size: 0.7rem; }
 .checkout-summary-col .order-summary-qty { font-size: 12px; }
 .checkout-summary-col .order-summary-price { font-size: 15px; }
-.checkout-summary-col .order-summary-bulk-note { font-size: 0.68rem; }
-.checkout-summary-col .order-summary-bulk-chip {
-  padding: 2px 7px;
-  font-size: 0.58rem;
-}
 
 /* Subtotal / delivery / total rows */
 .checkout-summary-col .order-summary-row {
@@ -798,42 +793,12 @@
   color: var(--gold-deep);
   font-weight: 500;
 }
-.order-summary-bulk-note {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #1E4A2E;
-}
-.order-summary-bulk-chip {
-  align-self: flex-start;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #1B1814 0%, #2a241c 100%);
-  color: #F5E9CF;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 /* "₹400 × 4" — explains how the line total is built */
 .order-summary-qty {
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
   color: var(--charcoal-soft);
-  font-variant-numeric: tabular-nums;
-}
-/* Struck compare-at unit price when bulk pricing is active — the same
-   muted-grey strikethrough treatment as the cart (.cart-item-unit-struck)
-   and product cards (.product-card-compare). Never shows when the normal
-   price equals the charged price. */
-.order-summary-qty-struck {
-  margin-left: 6px;
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: #9A9286;
-  text-decoration: line-through;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 /* Informational per-unit price next to a variant line (e.g. "₹10 / piece"

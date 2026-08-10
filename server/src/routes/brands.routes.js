@@ -4,7 +4,6 @@ const {
   getBrands,
   getAdminBrands,
   getBrandProducts,
-  updateBrandBulkPricing,
   updateBrandDetails,
 } = require('../controllers/brands.controller')
 
@@ -18,12 +17,8 @@ router.get('/brands/:slug/products', getBrandProducts)
 // Full brand list (active + inactive) for the brand management screen.
 router.get('/admin/brands', requireAuth, requirePermission('brands.view'), getAdminBrands)
 
-// Combined brand bulk pricing fields (bulk_enabled / standard_price /
-// bulk_unit_price / bulk_min_qty) — unchanged.
-router.patch('/admin/brands/:id', requireAuth, requirePermission('brands.edit'), updateBrandBulkPricing)
-
 // Storefront management fields (copy, imagery, position, display type,
-// active state) — separate from the bulk-pricing PATCH above.
+// active state).
 router.put('/admin/brands/:id', requireAuth, requirePermission('brands.edit'), updateBrandDetails)
 
 module.exports = router

@@ -9,7 +9,7 @@
 //   • Cards   — BILL TO + ORDER INFORMATION (Order ID / Date / Time / Payment
 //               / Status) side by side on a warm cream fill
 //   • Table   — dark header, white rows, subtle separators, aspect-preserved
-//               thumbnails, brand · size detail lines, per-line bulk tag
+//               thumbnails, brand · size detail lines
 //   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount)
 //   • Payment + coloured status pill, trust row, thank-you card, dark footer
 //   • Multi-page: the table header repeats, totals stay together, and the
@@ -333,16 +333,6 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
         }
         detailLines.push(packLines.join('\n'))
       }
-      if (it.bulkApplied) {
-        // The bulk unit price rides in the saved snapshot (per-product or
-        // brand combined) — shown here for reference; the charged amount is
-        // the RATE column. Never recalculated.
-        detailLines.push(
-          it.bulkPrice != null
-            ? `Bulk Price Applied · ${rupee ? money(it.bulkPrice) : pdfMoney(it.bulkPrice)} / piece`
-            : 'Bulk Price Applied'
-        )
-      }
       return [
         it.name,
         detailLines.join('\n'),
@@ -386,9 +376,6 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       }
       if (data.column.index === 1) {
         data.cell.styles.textColor = MUTED
-        // The details cell may carry a "₹…/piece" bulk line — use the rupee
-        // font so that glyph renders when the font is embedded.
-        if (rupee && item?.bulkApplied) data.cell.styles.font = RUPEE_FONT
       }
       if ((data.column.index === 3 || data.column.index === 4) && rupee) {
         data.cell.styles.font = RUPEE_FONT
@@ -414,29 +401,6 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   })
 
   let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 6
-
-  // ========================= BULK PRICING BAND ==============================
-  // Optional — only when the saved order actually applied bulk pricing.
-  if (inv.hasBulkPricing) {
-    if (ty > H - 58) {
-      doc.addPage()
-      ty = M
-    }
-    const bandH = 12
-    doc.setFillColor(...CREAM)
-    doc.roundedRect(M, ty, CW, bandH, 1.5, 1.5, 'F')
-    doc.setFillColor(...GOLD)
-    doc.circle(M + 5, ty + bandH / 2, 2.4, 'F') // gold check badge
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GOLD)
-    doc.text('BULK PRICING APPLIED', M + 12, ty + 4.5)
-    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(
-      'Special quantity pricing has been applied to this order based on the applicable bulk tier.',
-      M + 12,
-      ty + 8.5
-    )
-    ty += bandH + 4
-  }
 
   // ============================ PRICE SUMMARY ===============================
   const sumW = 78
@@ -611,7 +575,6 @@ function renderPrintHtml(inv, logo) {
         if (it.pack.price != null) packBits.push(formatINR(it.pack.price) + ' / pack')
         details.push(`<span class="detail-pack">${escapeHtml(packBits.join(' · '))}</span>`)
       }
-      if (it.bulkApplied) details.push(`<span class="detail-bulk">Bulk Price Applied</span>`)
       const thumb = it.image
         ? `<span class="thumb-frame"><img class="thumb" src="${escapeHtml(it.image)}" alt="" onerror="this.style.display='none'" /></span>`
         : ''
@@ -693,10 +656,6 @@ function renderPrintHtml(inv, logo) {
   table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
   table.items td.detail { color: #6f6a63; }
   table.items td.detail .detail-main { display: block; }
-  table.items td.detail .detail-bulk { display: inline-block; margin-top: 1.2mm; font-size: 7px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #b8862b; }
-  .bulk-band { display: flex; align-items: center; gap: 8px; background: #f7f2e8; border-left: 3px solid #b8862b; border-radius: 4px; padding: 3mm 5mm; margin-top: 6mm; }
-  .bulk-band strong { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: #b8862b; white-space: nowrap; }
-  .bulk-band span { font-size: 8px; color: #6f6a63; }
   .lower { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 7mm; }
   .summary { width: 78mm; }
   .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
@@ -772,10 +731,6 @@ function renderPrintHtml(inv, logo) {
           ${rows || '<tr><td colspan="5">No items recorded for this order.</td></tr>'}
         </tbody>
       </table>
-
-      ${inv.hasBulkPricing
-        ? `<div class="bulk-band"><strong>✓ Bulk Pricing Applied</strong><span>Special quantity pricing has been applied to this order based on the applicable bulk tier.</span></div>`
-        : ''}
 
       <div class="lower">
         <div class="summary">

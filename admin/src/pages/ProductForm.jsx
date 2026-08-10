@@ -5,8 +5,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 import './ProductForm.css'
 
 const EMPTY = {
-  name: '', description: '', price: '',
-  compare_at_price: '',
+  name: '', description: '',
   rating: '', review_count: '',
   is_featured: false,
   category_id: '', brand_id: '',
@@ -57,9 +56,8 @@ export default function ProductForm() {
       getProduct(id).then((p) => {
         if (p) {
           setForm({
-            name: p.name, description: p.description ?? '', price: p.price,
+            name: p.name, description: p.description ?? '',
             category_id: p.category_id ?? '', brand_id: p.brand_id ?? '',
-            compare_at_price: p.compare_at_price ?? '',
             rating: p.rating ?? '',
             review_count: p.review_count ?? '',
             is_featured: Boolean(p.is_featured),
@@ -180,24 +178,6 @@ export default function ProductForm() {
       return
     }
 
-    // The authoritative selling price: the default variant's TOTAL price when
-    // variants exist, otherwise the plain product price (variant-less products).
-    const defaultVariant = variants.find((v) => v.is_default) || variants[0]
-    const sellingPrice = hasVariants ? Number(defaultVariant?.total_price ?? form.price) : Number(form.price)
-    const parsedCompareAt = form.compare_at_price === '' || form.compare_at_price == null ? null : Number(form.compare_at_price)
-    if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
-      setError('Selling price must be a number >= 0.')
-      return
-    }
-    if (parsedCompareAt !== null && (!Number.isFinite(parsedCompareAt) || parsedCompareAt < 0)) {
-      setError('MRP / Original Price must be a number >= 0.')
-      return
-    }
-    if (parsedCompareAt !== null && parsedCompareAt <= sellingPrice) {
-      setError('MRP / Original Price must be higher than the selling price to show as a struck-through price.')
-      return
-    }
-
     setSaving(true)
     try {
       let image = existingImages[0] || null
@@ -217,11 +197,12 @@ export default function ProductForm() {
         is_default: Boolean(v.is_default),
       }))
 
+      // The purchasable price comes ONLY from the product variants (the
+      // backend derives the product-level price from the default variant's
+      // total). No product-level price or MRP is sent anymore.
       const payload = {
         name: form.name,
         description: form.description,
-        price: sellingPrice,
-        compare_at_price: parsedCompareAt,
         rating: form.rating ? Number(form.rating) : null,
         review_count: form.review_count ? Number(form.review_count) : null,
         is_featured: Boolean(form.is_featured),
@@ -268,24 +249,6 @@ export default function ProductForm() {
           <textarea id="description" name="description" rows={4} value={form.description} onChange={handleChange} required />
         </div>
 
-        <div className="form-field">
-          <label htmlFor="price">Price (₹)</label>
-          <input
-            id="price"
-            name="price"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={handleChange}
-            disabled={hasVariants}
-            required={!hasVariants}
-          />
-          {hasVariants && (
-            <small className="price-hint">Price is automatically taken from the Default Variant.</small>
-          )}
-        </div>
-
         <div className="form-field featured-field">
           <label className="featured-toggle">
             <input
@@ -300,22 +263,6 @@ export default function ProductForm() {
               <small>Shows this product in the “Featured Products” section on the storefront.</small>
             </span>
           </label>
-        </div>
-
-        {/* -------- Optional pricing: MRP (struck-through display only) -------- */}
-        <div className="form-field">
-          <label htmlFor="compare_at_price">MRP / Original Price (₹)</label>
-          <input
-            id="compare_at_price"
-            name="compare_at_price"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Optional"
-            value={form.compare_at_price}
-            onChange={handleChange}
-          />
-          <small className="field-example">Shown struck-through when higher than the selling price.</small>
         </div>
 
         {/* -------- Ratings (shown on the storefront cards only when set) -------- */}
@@ -362,9 +309,9 @@ export default function ProductForm() {
 
           {variants.length === 0 && (
             <p className="variants-empty">
-              No variants yet. A product without variants is sold at its normal price.
-              Add a variant (e.g. 100 Pieces → ₹1000 total, ₹10 per piece) to offer
-              pack/size options.
+              No variants yet. Add a variant (e.g. 100 Pieces → ₹1000 total, ₹10
+              per piece) to offer pack/size options. Products are sold by their
+              variants.
             </p>
           )}
 

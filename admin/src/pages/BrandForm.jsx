@@ -148,7 +148,7 @@ export default function BrandForm() {
         <div className="page-header">
           <h1>Edit Brand</h1>
         </div>
-        <p className="brand-bulk-note">
+        <p className="brand-form-note">
           You have view-only access — ask an Admin or Manager to change brand details.
         </p>
         <Link to="/admin/brands" className="btn btn-outline btn-sm">Back to Brands</Link>

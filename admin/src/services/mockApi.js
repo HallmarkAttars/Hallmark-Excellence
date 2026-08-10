@@ -99,15 +99,8 @@ export async function getBrands() {
   }
 }
 
-// Updates ONLY the combined brand bulk pricing fields (bulk_enabled /
-// standard_price / bulk_unit_price / bulk_min_qty) on a brand.
-export async function updateBrandBulkPricing(id, data) {
-  const res = await adminApi.patch(`/api/admin/brands/${id}`, data, readToken())
-  return res.brand ?? res ?? null
-}
-
 // Updates the STOREFRONT MANAGEMENT fields (copy, imagery, position, display
-// type, active state) — distinct from the bulk-pricing PATCH above.
+// type, active state).
 export async function updateBrandDetails(id, data) {
   const res = await adminApi.put(`/api/admin/brands/${id}`, data, readToken())
   return res.brand ?? res ?? null

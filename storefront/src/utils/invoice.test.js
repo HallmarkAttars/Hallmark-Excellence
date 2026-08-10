@@ -4,9 +4,6 @@
 // Covers the presentation-only fields added for the premium invoice:
 //   - item.image        (thumbnail from the saved snapshot)
 //   - item.brand/size   (BRAND · SIZE detail line)
-//   - item.bulkApplied  (per-product OR combined brand bulk)
-//   - item.bulkPrice    (the actual bulk unit price charged)
-//   - order.hasBulkPricing
 // plus regression guards that money math and order metadata are untouched.
 //
 // Run with:  npm test  (storefront)
@@ -92,86 +89,6 @@ describe('detail line — BRAND · SIZE (real values only)', () => {
   })
 })
 
-describe('bulk pricing flags on items', () => {
-  it('flags a line priced under per-product bulk', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        { product_name: 'Black Oud', unit_price: 110, quantity: 90, bulk_applied: true, bulk_price: 110 },
-      ])
-    )
-    expect(inv.items[0].bulkApplied).toBe(true)
-    expect(inv.items[0].bulkPrice).toBe(110)
-  })
-
-  it('flags a line priced under combined brand bulk', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        { product_name: 'Black Oud', unit_price: 2000, quantity: 91, brand_bulk_applied: true, brand_bulk_price: 2000 },
-      ])
-    )
-    expect(inv.items[0].bulkApplied).toBe(true)
-    expect(inv.items[0].bulkPrice).toBe(2000)
-  })
-
-  it('prefers the per-product bulk price over the brand bulk price', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        {
-          product_name: 'Oud',
-          unit_price: 110,
-          quantity: 90,
-          bulk_applied: true,
-          bulk_price: 110,
-          brand_bulk_applied: true,
-          brand_bulk_price: 120,
-        },
-      ])
-    )
-    expect(inv.items[0].bulkPrice).toBe(110)
-  })
-
-  it('leaves bulkPrice null when the applied price is missing or invalid', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        { product_name: 'Oud', unit_price: 110, quantity: 90, bulk_applied: true },
-        { product_name: 'Oud 2', unit_price: 110, quantity: 90, brand_bulk_applied: true, brand_bulk_price: 0 },
-      ])
-    )
-    expect(inv.items[0].bulkPrice).toBeNull()
-    expect(inv.items[1].bulkPrice).toBeNull()
-  })
-
-  it('does not flag regular (non-bulk) lines', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([{ product_name: 'Musk', unit_price: 200, quantity: 90 }])
-    )
-    expect(inv.items[0].bulkApplied).toBe(false)
-    expect(inv.items[0].bulkPrice).toBeNull()
-  })
-})
-
-describe('order.hasBulkPricing (drives the optional band)', () => {
-  it('is true when any line was bulk-priced', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        { product_name: 'A', unit_price: 110, quantity: 90, bulk_applied: true, bulk_price: 110 },
-        { product_name: 'B', unit_price: 45, quantity: 1 },
-      ])
-    )
-    expect(inv.hasBulkPricing).toBe(true)
-  })
-
-  it('is false when no line was bulk-priced', () => {
-    const inv = formatOrderForInvoice(
-      baseOrder([
-        { product_name: 'A', unit_price: 200, quantity: 90 },
-        { product_name: 'B', unit_price: 45, quantity: 1 },
-      ])
-    )
-    expect(inv.hasBulkPricing).toBe(false)
-  })
-})
-
 describe('money math is untouched (regression guard)', () => {
   it('line amounts stay rate × quantity and subtotal sums them', () => {
     const inv = formatOrderForInvoice(
@@ -226,8 +143,6 @@ describe('order metadata + notes-shaped orders', () => {
             variant_label: '100 ML',
             unit_price: 110,
             quantity: 2,
-            bulk_applied: true,
-            bulk_price: 110,
           },
         ],
       }),
@@ -238,9 +153,6 @@ describe('order metadata + notes-shaped orders', () => {
     expect(inv.customer.name).toBe('dolphin web')
     expect(inv.items[0].image).toBe('https://img/x.jpg')
     expect(inv.items[0].detail).toBe('AREES · 100 ML')
-    expect(inv.items[0].bulkApplied).toBe(true)
-    expect(inv.items[0].bulkPrice).toBe(110)
-    expect(inv.hasBulkPricing).toBe(true)
     expect(inv.items[0].amount).toBe(220)
   })
 })

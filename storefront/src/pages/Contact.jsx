@@ -539,9 +539,9 @@ export default function Contact() {
   }
 
   // Real line-level subtotal for the checkout summary — the sum of the same
-  // resolved unit prices × quantities the item rows display (brand bulk and
-  // per-product bulk already included). Delivery is confirmed later, so the
-  // Total row uses the cart's authoritative total from the checkout state.
+  // resolved unit prices × quantities the item rows display. Delivery is
+  // confirmed later, so the Total row uses the cart's authoritative total
+  // from the checkout state.
   const checkoutSubtotal = isCheckout && checkout
     ? checkout.checkoutItems.reduce((acc, it) => {
         const unitPrice = lineUnitPrice(it)

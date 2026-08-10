@@ -269,51 +269,8 @@
   padding: 1px 7px;
   white-space: nowrap;
 }
-.invoice-bulk-tag {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #b8862b;
-  white-space: nowrap;
-}
 .invoice-amount { font-weight: 700; color: #171512; }
 .invoice-empty { color: #8f8980; font-style: italic; }
-
-/* ---------- Bulk pricing band (only when the order applied bulk) ---------- */
-.invoice-bulk-band {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  background: #f7f2e8;
-  border-left: 3px solid #b8862b;
-  border-radius: 4px;
-  padding: 3mm 5mm;
-  margin-top: 6mm;
-}
-.invoice-bulk-band-check {
-  display: inline-flex;
-  align-self: center;
-  width: 20px;
-  height: 20px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #b8862b;
-  color: #fff;
-  flex-shrink: 0;
-}
-.invoice-bulk-band strong {
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #b8862b;
-  white-space: nowrap;
-  font-weight: 700;
-}
-.invoice-bulk-band > span:last-child { font-size: 11.5px; color: #6f6a63; }
 
 /* ---------- Lower zone: totals (right) + payment / status ---------- */
 .invoice-lower {
@@ -555,8 +512,6 @@
   .invoice-thumb-frame { width: 40px; height: 40px; }
   .invoice-item-detail { white-space: normal; }
   .invoice-pack-tag { display: block; margin: 2px 0 0; white-space: normal; }
-  .invoice-bulk-tag { display: block; margin: 2px 0 0; }
-  .invoice-bulk-band { flex-wrap: wrap; gap: 6px; }
 }
 @media (max-width: 420px) {
   .invoice-trust { grid-template-columns: 1fr; }

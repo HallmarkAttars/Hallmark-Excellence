@@ -183,8 +183,6 @@ async function trackOrder(req, res) {
       ...(it.variant_total_price != null ? { variant_total_price: Number(it.variant_total_price) } : {}),
       ...(it.variant_price_per_unit != null ? { variant_price_per_unit: Number(it.variant_price_per_unit) } : {}),
       ...(it.brand_name ? { brand_name: it.brand_name } : {}),
-      ...(it.bulk_applied ? { bulk_applied: true, bulk_price: it.bulk_price ?? null } : {}),
-      ...(it.brand_bulk_applied ? { brand_bulk_applied: true } : {}),
       // Pack purchase metadata — preserved for the customer's own invoice.
       ...(it.pack_id ? { pack_id: it.pack_id, pack_name: it.pack_name } : {}),
       ...(it.pack_size != null

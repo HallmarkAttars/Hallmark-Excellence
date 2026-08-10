@@ -26,8 +26,7 @@
   font-size: 0.75rem; background: var(--danger-bg); color: var(--danger);
 }
 
-.featured-badge,
-.bulk-badge {
+.featured-badge {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 8px;
@@ -39,10 +38,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   vertical-align: middle;
-}
-.bulk-badge {
-  background: rgba(30, 74, 46, 0.12);
-  color: #1E4A2E;
 }
 .status-toggle.is-active { background: var(--success-bg); color: var(--success); }
 

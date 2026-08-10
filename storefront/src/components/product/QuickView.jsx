@@ -35,17 +35,6 @@ export default function QuickView({ product, onClose, onNavigate }) {
     : null
   const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
 
-  const compareAt = product.compare_at_price ?? product.original_price
-  const showCompareAt =
-    compareAt != null &&
-    Number.isFinite(Number(compareAt)) &&
-    Number(compareAt) > totalPrice
-  const discountPct = showCompareAt
-    ? Math.round((1 - totalPrice / Number(compareAt)) * 100)
-    : null
-  // Guarded to > 0 so a sub-1% rounding never shows “0% OFF”.
-  const showDiscount = discountPct != null && discountPct > 0
-
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
   const ratingDisplay = hasRating
     ? Number(product.rating).toFixed(2).replace(/\.?0+$/, '')
@@ -133,14 +122,6 @@ export default function QuickView({ product, onClose, onNavigate }) {
               <span className="quickview-per-unit">
                 {formatPrice(perUnit)} / {unitDisplay(selectedUnit)}
               </span>
-            )}
-            {showCompareAt && (
-              <span className="quickview-compare">
-                {formatPrice(Number(compareAt))}
-              </span>
-            )}
-            {showDiscount && (
-              <span className="quickview-discount">-{discountPct}% OFF</span>
             )}
           </div>
 

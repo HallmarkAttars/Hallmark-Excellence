@@ -73,18 +73,6 @@ export default function ProductCard({ product, onNavigate }) {
   const ratingDisplay = hasRating
     ? Number(product.rating).toFixed(2).replace(/\.?0+$/, '')
     : ''
-  const compareAt = product.compare_at_price ?? product.original_price
-  const showCompareAt =
-    compareAt != null &&
-    Number.isFinite(Number(compareAt)) &&
-    Number(compareAt) > price
-  // Discount chip is derived from the same existing compare-at logic.
-  // Guarded to > 0 so a sub-1% rounding (e.g. 999 vs 1000) never shows “0% OFF”.
-  const discountPct = showCompareAt
-    ? Math.round((1 - price / Number(compareAt)) * 100)
-    : null
-  const showDiscount = discountPct != null && discountPct > 0
-
   // Add to Cart always takes the customer to the product details page, where
   // they pick the variant and quantity. Nothing is ever added to the cart
   // directly from a product card.
@@ -179,14 +167,6 @@ export default function ProductCard({ product, onNavigate }) {
         {hasPrice && (
           <div className="product-card-price-row">
             <span className="product-card-price">{formatPrice(price)}</span>
-            {showCompareAt && (
-              <span className="product-card-compare">
-                {formatPrice(Number(compareAt))}
-              </span>
-            )}
-            {showDiscount && (
-              <span className="product-card-discount">{discountPct}% OFF</span>
-            )}
           </div>
         )}
 

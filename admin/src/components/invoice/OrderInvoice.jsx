@@ -188,12 +188,6 @@ export default function OrderInvoice({ order }) {
                       {it.pack.price != null && ` · ${formatINR(it.pack.price)} / pack`}
                     </span>
                   )}
-                  {it.bulkApplied && (
-                    <span className="invoice-bulk-tag">
-                      {it.bulkPrice != null && `${formatINR(it.bulkPrice)} / piece  ·  `}Bulk
-                      Price Applied
-                    </span>
-                  )}
                 </td>
                 <td className="invoice-num">{it.pack ? (it.pack.pieces ?? it.qty) : it.qty}</td>
                 <td className="invoice-num">{formatINR(it.rate)}</td>
@@ -207,18 +201,6 @@ export default function OrderInvoice({ order }) {
             )}
           </tbody>
         </table>
-
-        {/* Bulk pricing band — only when the saved order applied bulk pricing */}
-        {inv.hasBulkPricing && (
-          <div className="invoice-bulk-band" role="note">
-            <span className="invoice-bulk-band-check" aria-hidden="true">{icons.check}</span>
-            <strong>Bulk Pricing Applied</strong>
-            <span>
-              Special quantity pricing has been applied to this order based on the
-              applicable bulk tier.
-            </span>
-          </div>
-        )}
 
         {/* Totals (right) + payment / status */}
         <div className="invoice-lower">
