@@ -131,6 +131,26 @@
   background: var(--cream);
 }
 
+/* The Default variant gets a subtle gold ring so it stands out. */
+.variant-card.is-default {
+  border-color: rgba(184, 134, 43, 0.55);
+  box-shadow: 0 0 0 1px rgba(184, 134, 43, 0.16);
+}
+
+.variant-default-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(184, 134, 43, 0.14);
+  color: #8a6a2f;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .variant-card-head {
   display: flex;
   align-items: center;
@@ -171,10 +191,46 @@
   .variant-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (min-width: 720px) {
-  .variant-grid { grid-template-columns: repeat(4, 1fr); }
+  .variant-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .variant-grid .form-field { margin-bottom: 0; }
+
+/* -------- Variant Total Price — read-only, auto-calculated -------- */
+.variant-total-field { margin-top: 14px; }
+
+.variant-total-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Read-only field — tinted so it reads as computed, not editable. */
+.variant-total-readonly {
+  background: #faf8f2 !important;
+  color: var(--charcoal);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: not-allowed;
+}
+
+.variant-total-lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  background: rgba(184, 134, 43, 0.12);
+  color: #8a6a2f;
+  font-size: 13px;
+}
+
+.variant-total-formula {
+  color: #8a6a2f;
+  font-weight: 500;
+}
 
 .field-example {
   color: rgba(20, 17, 13, 0.4);

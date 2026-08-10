@@ -4,6 +4,7 @@ import { getProducts, getCategories, deleteProduct, toggleProductStatus } from '
 import { useAuth } from '../context/AuthContext'
 import AdminProductCard from '../components/ui/AdminProductCard'
 import { resolveProductImage, handleProductImageError } from '../utils/productImage'
+import { perUnitDisplay } from '../utils/variantValidation'
 import './Products.css'
 
 export default function Products() {
@@ -25,6 +26,22 @@ export default function Products() {
   useEffect(load, [])
 
   const categoryName = (id) => categories.find((c) => c.id === id)?.name || '—'
+
+  // PRICE column shows the DEFAULT variant's PRICE PER UNIT with the unit
+  // from that variant (e.g. "₹45 / piece") — never the Variant Total Price
+  // and never the legacy product-level price while variants exist.
+  const renderPriceCell = (p) => {
+    const info = perUnitDisplay(p)
+    if (info) {
+      return (
+        <span className="products-price-cell">
+          ₹{Number(info.perUnit).toLocaleString('en-IN')}
+          <span className="products-price-unit"> / {info.unitLabel}</span>
+        </span>
+      )
+    }
+    return <span className="products-price-cell">₹{Number(p.price ?? 0).toLocaleString('en-IN')}</span>
+  }
 
   const handleToggle = async (product) => {
     const updated = await toggleProductStatus(product.id, product.is_active)
@@ -69,7 +86,7 @@ export default function Products() {
                       {p.is_featured && <span className="featured-badge">Featured</span>}
                     </td>
                     <td>{categoryName(p.category_id)}</td>
-                    <td>₹{Number(p.price).toLocaleString('en-IN')}</td>
+                    <td>{renderPriceCell(p)}</td>
                     <td>
                       <button
                         className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}
@@ -103,6 +120,13 @@ export default function Products() {
                   canDelete={can('products.delete')}
                 />
               ))}
+            </div>
+
+            {/* Small info box — explains what the PRICE column actually shows. */}
+            <div className="price-note" role="note">
+              <strong>The price shown is the Price Per Unit of the Default Variant.</strong>
+              <span>“₹45 / piece” means ₹45 for one piece.</span>
+              <span>Variant Total Price is calculated automatically as Quantity × Price Per Unit.</span>
             </div>
           </>
         )}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getProductsByBrand, getCategories, deleteProduct, toggleProductStatus, getBrands } from '../services/mockApi'
 import AdminProductCard from '../components/ui/AdminProductCard'
 import { resolveProductImage, handleProductImageError } from '../utils/productImage'
+import { perUnitDisplay } from '../utils/variantValidation'
 import './Products.css'
 
 export default function BrandProductsAdmin({ brandSlug }) {
@@ -54,6 +55,21 @@ export default function BrandProductsAdmin({ brandSlug }) {
   }, [products, query, statusFilter, categoryFilter])
 
   const hasFilters = query.trim() !== '' || statusFilter !== 'all' || categoryFilter !== 'all'
+
+  // PRICE column shows the DEFAULT variant's Price Per Unit + its unit
+  // ("₹45 / piece") — mirrors the main Products list.
+  const renderPriceCell = (p) => {
+    const info = perUnitDisplay(p)
+    if (info) {
+      return (
+        <span className="products-price-cell">
+          ₹{Number(info.perUnit).toLocaleString('en-IN')}
+          <span className="products-price-unit"> / {info.unitLabel}</span>
+        </span>
+      )
+    }
+    return <span className="products-price-cell">₹{Number(p.price ?? 0).toLocaleString('en-IN')}</span>
+  }
 
   // Add Product is opened in the brand's context — the brand is locked in the
   // form so a product can never be assigned to the wrong brand.
@@ -135,7 +151,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
                         <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
                         <td className="products-name">{p.name}</td>
                         <td>{categoryName(p.category_id)}</td>
-                        <td>₹{Number(p.price).toLocaleString('en-IN')}</td>
+                        <td>{renderPriceCell(p)}</td>
                         <td>
                           <button
                             className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}

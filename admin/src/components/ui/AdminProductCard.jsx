@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { resolveProductImage, handleProductImageError } from '../../utils/productImage'
+import { perUnitDisplay } from '../../utils/variantValidation'
 import './AdminProductCard.css'
 
 // Shared mobile product card used by ALL admin product-management pages
@@ -14,6 +15,10 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
   // NOTE: `.status-toggle` and `.featured-badge` are defined in the pages'
   // shared `Products.css` (both consumers import it). Keep that import when
   // reusing this card anywhere else.
+
+  // Price shows the DEFAULT variant's PRICE PER UNIT + its unit ("₹45 / piece"),
+  // mirroring the desktop table — never the Variant Total Price.
+  const perUnitInfo = perUnitDisplay(product)
 
   return (
     <div className="product-card-mobile">
@@ -37,7 +42,14 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
             {product.is_featured && <span className="featured-badge">Featured</span>}
           </div>
           <span className="product-card-category">{category}</span>
-          <span className="product-card-price">₹{Number(product.price).toLocaleString('en-IN')}</span>
+          {perUnitInfo ? (
+            <span className="product-card-price">
+              ₹{Number(perUnitInfo.perUnit).toLocaleString('en-IN')}
+              <span className="product-card-price-unit"> / {perUnitInfo.unitLabel}</span>
+            </span>
+          ) : (
+            <span className="product-card-price">₹{Number(product.price ?? 0).toLocaleString('en-IN')}</span>
+          )}
         </div>
       </div>
 

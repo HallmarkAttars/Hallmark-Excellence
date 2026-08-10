@@ -116,6 +116,26 @@ export default function ProductForm() {
   // --- Variant helpers -----------------------------------------------------
   const hasVariants = variants.length > 0
 
+  // Variant Total Price is ALWAYS computed automatically: Quantity × Price
+  // Per Unit (e.g. 60 × ₹45 = ₹2,700). Returns '' while either input is
+  // missing/invalid so the read-only field never shows a fabricated number.
+  const computeVariantTotal = (quantity, perUnit) => {
+    const q = Number(quantity)
+    const p = Number(perUnit)
+    if (
+      String(quantity ?? '').trim() === '' ||
+      String(perUnit ?? '').trim() === '' ||
+      !Number.isFinite(q) ||
+      !Number.isFinite(p) ||
+      q <= 0 ||
+      p < 0
+    ) {
+      return ''
+    }
+    // Round to 2 decimals to match the numeric(10,2) column.
+    return Math.round(q * p * 100) / 100
+  }
+
   const addVariant = () => {
     setVariants((prev) => [
       ...prev,
@@ -130,7 +150,18 @@ export default function ProductForm() {
   }
 
   const updateVariant = (index, field, value) => {
-    setVariants((prev) => prev.map((v, i) => (i === index ? { ...v, [field]: value } : v)))
+    setVariants((prev) =>
+      prev.map((v, i) => {
+        if (i !== index) return v
+        const next = { ...v, [field]: value }
+        // Recompute the read-only Variant Total Price whenever Quantity or
+        // Price Per Unit changes.
+        if (field === 'quantity_value' || field === 'price_per_unit') {
+          next.total_price = computeVariantTotal(next.quantity_value, next.price_per_unit)
+        }
+        return next
+      })
+    )
   }
 
   const removeVariant = (index) => {
@@ -316,9 +347,12 @@ export default function ProductForm() {
           )}
 
           {variants.map((v, index) => (
-            <div className="variant-card" key={index}>
+            <div className={`variant-card${v.is_default ? ' is-default' : ''}`} key={index}>
               <div className="variant-card-head">
-                <span className="variant-title">Variant {index + 1}</span>
+                <span className="variant-title">
+                  Variant {index + 1}
+                  {v.is_default && <span className="variant-default-badge">Default</span>}
+                </span>
                 <button
                   type="button"
                   className="variant-delete"
@@ -365,20 +399,6 @@ export default function ProductForm() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
-                  <input
-                    id={`total-price-${index}`}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={v.total_price}
-                    onChange={(e) => updateVariant(index, 'total_price', e.target.value)}
-                  />
-                  <small className="field-example">What the customer pays for one variant</small>
-                </div>
-
-                <div className="form-field">
                   <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
                   <input
                     id={`per-unit-${index}`}
@@ -389,8 +409,34 @@ export default function ProductForm() {
                     value={v.price_per_unit}
                     onChange={(e) => updateVariant(index, 'price_per_unit', e.target.value)}
                   />
-                  <small className="field-example">Display only, e.g. ₹10 per piece</small>
+                  <small className="field-example">e.g. ₹45 for one piece</small>
                 </div>
+              </div>
+
+              {/* Variant Total Price — READ-ONLY, always auto-calculated as
+                  Quantity × Price Per Unit. The admin never types it. */}
+              <div className="form-field variant-total-field">
+                <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
+                <div className="variant-total-input-row">
+                  <input
+                    id={`total-price-${index}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="—"
+                    value={v.total_price === '' ? '' : Number(v.total_price)}
+                    readOnly
+                    tabIndex={-1}
+                    aria-readonly="true"
+                    className="variant-total-readonly"
+                  />
+                  <span className="variant-total-lock" title="Calculated automatically" aria-hidden="true">
+                    🔒
+                  </span>
+                </div>
+                <small className="field-example variant-total-formula">
+                  Automatically calculated: {String(v.quantity_value ?? '').trim() || '—'} × ₹{String(v.price_per_unit ?? '').trim() || '—'}
+                </small>
               </div>
 
               <div className="variant-default">

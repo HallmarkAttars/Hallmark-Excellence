@@ -7,7 +7,7 @@
 // Run with:  npm test  (admin)
 
 import { describe, it, expect } from 'vitest'
-import { UNIT_OPTIONS, normalizeUnit, validateVariants } from './variantValidation'
+import { UNIT_OPTIONS, defaultVariantOf, normalizeUnit, perUnitDisplay, perUnitLabel, validateVariants } from './variantValidation'
 
 // Valid baseline variant (matching the acceptance-test Testers product).
 const variant = (overrides = {}) => ({
@@ -121,5 +121,75 @@ describe('normalizeUnit — legacy units canonicalized', () => {
   it('preserves truly unknown units as-is', () => {
     expect(normalizeUnit('Bottle')).toBe('Bottle')
     expect(normalizeUnit('  Pack  ')).toBe('Pack')
+  })
+})
+
+describe('perUnitLabel — the "/ unit" suffix for per-unit price displays', () => {
+  it('maps the three standard units to their singular display forms', () => {
+    expect(perUnitLabel('Pieces')).toBe('piece')
+    expect(perUnitLabel('ML')).toBe('ml')
+    expect(perUnitLabel('Gram')).toBe('gram')
+  })
+
+  it('is case- and whitespace-insensitive', () => {
+    expect(perUnitLabel('PIECES')).toBe('piece')
+    expect(perUnitLabel('  pieces  ')).toBe('piece')
+    expect(perUnitLabel('ml')).toBe('ml')
+    expect(perUnitLabel('GRAM')).toBe('gram')
+  })
+
+  it('falls back to the lowercased unit for unknown units (never "/ piece")', () => {
+    expect(perUnitLabel('Bottle')).toBe('bottle')
+    expect(perUnitLabel('GM')).toBe('gm')
+  })
+
+  it('never returns an empty string', () => {
+    expect(perUnitLabel('')).toBe('unit')
+    expect(perUnitLabel(null)).toBe('unit')
+    expect(perUnitLabel(undefined)).toBe('unit')
+  })
+})
+
+describe('defaultVariantOf / perUnitDisplay — the PRICE column source', () => {
+  const product = (variants) => ({ id: 'p1', price: 999, variants })
+  const v = (overrides = {}) => ({
+    quantity_value: 100, quantity_unit: 'Pieces',
+    total_price: 2700, price_per_unit: 45,
+    is_default: false,
+    ...overrides,
+  })
+
+  it('prefers the is_default variant over the first one', () => {
+    const p = product([v({ quantity_value: 60, price_per_unit: 45, is_default: true }), v({ quantity_value: 100, price_per_unit: 42 })])
+    expect(defaultVariantOf(p).quantity_value).toBe(60)
+  })
+
+  it('falls back to the first variant when none is flagged default', () => {
+    expect(defaultVariantOf(product([v(), v()])).quantity_value).toBe(100)
+  })
+
+  it('returns null for products without variants (caller falls back to product.price)', () => {
+    expect(defaultVariantOf(product([]))).toBeNull()
+    expect(defaultVariantOf(product(null))).toBeNull()
+    expect(defaultVariantOf({})).toBeNull()
+  })
+
+  it('builds the per-unit display from the DEFAULT variant, not the total', () => {
+    const p = product([v({ quantity_value: 60, total_price: 2700, price_per_unit: 45, is_default: true })])
+    expect(perUnitDisplay(p)).toEqual({ perUnit: 45, unitLabel: 'piece' })
+  })
+
+  it('keeps a legit 0 per-unit price (nullish, not falsy)', () => {
+    const p = product([v({ price_per_unit: 0, is_default: true })])
+    expect(perUnitDisplay(p).perUnit).toBe(0)
+  })
+
+  it('falls back to the legacy price when price_per_unit is missing', () => {
+    const legacy = { quantity_value: 60, quantity_unit: 'ML', price: 300, is_default: true }
+    expect(perUnitDisplay(product([legacy]))).toEqual({ perUnit: 300, unitLabel: 'ml' })
+  })
+
+  it('returns null (no variants) so variant-less products keep product.price', () => {
+    expect(perUnitDisplay(product([]))).toBeNull()
   })
 })

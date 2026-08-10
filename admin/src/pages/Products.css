@@ -18,6 +18,17 @@
   font-weight: 600;
   color: var(--charcoal);
 }
+
+/* Price cell = Default variant's Price Per Unit + its unit ("₹45 / piece"). */
+.products-price-cell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.products-price-unit {
+  color: rgba(20, 17, 13, 0.5);
+  font-weight: 500;
+}
+
 .products-actions { display: flex; gap: 8px; }
 .confirm-dialog-text { font-size: 13px; color: rgba(20, 17, 13, 0.75); }
 
@@ -40,6 +51,26 @@
   vertical-align: middle;
 }
 .status-toggle.is-active { background: var(--success-bg); color: var(--success); }
+
+/* Small info box below the products list — explains that the price shown is
+   the DEFAULT variant's Price Per Unit, and that Variant Total Price is
+   auto-calculated (Quantity × Price Per Unit). Visible on desktop AND mobile. */
+.price-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: rgba(184, 134, 43, 0.08);
+  border: 1px solid rgba(184, 134, 43, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: rgba(20, 17, 13, 0.7);
+}
+.price-note strong {
+  color: #8a6a2f;
+  font-size: 0.8rem;
+}
 
 .modal-scrim {
   position: fixed; inset: 0; background: rgba(20,17,13,0.45);

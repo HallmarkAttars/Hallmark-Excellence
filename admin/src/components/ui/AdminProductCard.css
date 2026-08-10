@@ -85,6 +85,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Muted per-unit suffix ("₹45 / piece") — the unit comes from the variant. */
+.product-card-price-unit {
+  color: rgba(20, 17, 13, 0.5);
+  font-weight: 500;
+  font-size: 13px;
+}
+
 /* Stock (left) + status toggle (right) */
 .product-card-stock {
   display: flex;
