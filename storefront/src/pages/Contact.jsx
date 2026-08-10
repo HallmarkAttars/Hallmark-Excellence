@@ -5,12 +5,7 @@ import { submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
-import {
-  isBulkApplicable,
-  isBulkUnlocked,
-  bulkSavings,
-  resolvedUnitPrice,
-} from '../utils/bulk'
+import { resolvedUnitPrice } from '../utils/bulk'
 import { submitContactForm } from '../utils/contactForm'
 import {
   UserIcon,
@@ -74,42 +69,26 @@ function itemImage(item) {
 function OrderSummaryItem({ item }) {
   // Reuse the exact values the cart/checkout already compute — never a new
   // pricing system. Uses the pre-resolved unit_price carried on the checkout
-  // snapshot (which already includes any active combined brand bulk) and falls
-  // back to the pure per-line bulk math (bulk once unlocked) for legacy
-  // snapshots. × quantity = line total — identical to the cart and to the
-  // server-side order math.
+  // snapshot (which already includes any active combined brand bulk).
+  // × quantity = line total — identical to the cart and to the server-side
+  // order math.
   const rawQty = item.quantity ?? item.qty
   const unitPrice = resolvedUnitPrice(item)
   const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
-  // PACK line: quantity is the ACTUAL piece count; the pack metadata tells
-  // the customer how many packs that represents (never confuse the two).
-  const isPack = item.pack_id != null
-  const packLabel =
-    item.pack_name || (item.pack_size != null ? `Pack of ${item.pack_size}` : '')
   const lineTotal = unitPrice * quantity
-  const bulkApplicable = isBulkApplicable(item)
-  const bulkUnlocked = isBulkUnlocked(item)
-  const savedAmount = bulkSavings(item)
   // Brand-level combined bulk discount on this line (from the resolved cart
   // snapshot) — the charged amount is always unitPrice.
   const brandBulkSavings =
     item.brand_bulk_applied && item.normal_unit_price != null
       ? Math.max(0, (Number(item.normal_unit_price) - unitPrice) * quantity)
       : 0
-  // Don't advertise an unlock path when the available stock can't physically
-  // reach the bulk threshold (e.g. stock 50 vs bulk quantity 100).
-  const itemStock = item.stock != null ? Number(item.stock) : null
-  const stockCanReachBulk =
-    !bulkApplicable ||
-    itemStock == null ||
-    itemStock >= Number(item.bulk_min_qty)
   // Normal (compare-at) unit price for the line — what the customer would pay
-  // without the active bulk discount. Snapshot items carry normal_unit_price
-  // (set by the cart context); legacy snapshots fall back to the line's own
-  // selected price. Mirrors the cart's struck normal-price display: it only
-  // appears when a genuine discount is active AND the normal price is really
-  // higher than the charged price, so a price identical to itself is never
-  // struck through.
+  // without the active brand bulk discount. Snapshot items carry
+  // normal_unit_price (set by the cart context); legacy snapshots fall back
+  // to the line's own selected price. Mirrors the cart's struck normal-price
+  // display: it only appears when a genuine discount is active AND the normal
+  // price is really higher than the charged price, so a price identical to
+  // itself is never struck through.
   const normalUnitPriceRaw =
     item.normal_unit_price != null
       ? Number(item.normal_unit_price)
@@ -118,20 +97,15 @@ function OrderSummaryItem({ item }) {
     Number.isFinite(normalUnitPriceRaw) && normalUnitPriceRaw > 0
       ? normalUnitPriceRaw
       : null
-  const hasBulkDiscount = Boolean(
-    (item.brand_bulk_applied && brandBulkSavings > 0) ||
-      (!item.brand_bulk_applied && bulkUnlocked && savedAmount > 0)
-  )
+  const hasBulkDiscount = Boolean(item.brand_bulk_applied && brandBulkSavings > 0)
   const showCompareAt =
     hasBulkDiscount && normalUnitPrice != null && normalUnitPrice > unitPrice
   const normalLineTotal =
     showCompareAt && normalUnitPrice != null ? normalUnitPrice * quantity : null
-  const label = isPack
-    ? packLabel
-    : item.variant_label ||
-      (item.quantity_value != null && item.quantity_unit
-        ? `${item.quantity_value} ${item.quantity_unit}`
-        : '')
+  const label = item.variant_label ||
+    (item.quantity_value != null && item.quantity_unit
+      ? `${item.quantity_value} ${item.quantity_unit}`
+      : '')
   const image = itemImage(item)
 
   return (
@@ -154,17 +128,8 @@ function OrderSummaryItem({ item }) {
       <div className="order-summary-item-info">
         <span className="order-summary-name">{item.name}</span>
         {label && <span className="order-summary-variant">{label}</span>}
-        {isPack && (
-          <span className="order-summary-pack">
-            <strong>{item.number_of_packs} pack{item.number_of_packs === 1 ? '' : 's'}</strong>
-            <span> · {quantity} pieces</span>
-            {item.pack_usage_label && <em> · {item.pack_usage_label}</em>}
-          </span>
-        )}
         <span className="order-summary-qty">
-          {isPack && !showCompareAt
-            ? `₹${item.pack_price != null ? Number(item.pack_price).toLocaleString('en-IN') : (unitPrice * (item.pack_size || 1)).toLocaleString('en-IN')} / pack`
-            : `₹${unitPrice.toLocaleString('en-IN')} × ${quantity}`}
+          ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
           {showCompareAt && (
             <span className="order-summary-qty-struck">
               {' '}₹{normalUnitPrice.toLocaleString('en-IN')}/piece
@@ -173,12 +138,6 @@ function OrderSummaryItem({ item }) {
         </span>
         {item.brand_bulk_applied && brandBulkSavings > 0 && (
           <span className="order-summary-bulk-note">✓ {item.brand_name || 'Brand'} Bulk Discount Applied · You Saved ₹{brandBulkSavings.toLocaleString('en-IN')}</span>
-        )}
-        {!item.brand_bulk_applied && bulkUnlocked && savedAmount > 0 && (
-          <span className="order-summary-bulk-note">✓ Bulk Price Applied · You Saved ₹{savedAmount.toLocaleString('en-IN')}</span>
-        )}
-        {!item.brand_bulk_applied && bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
-          <span className="order-summary-bulk-chip">🔥 Bulk Price at {item.bulk_min_qty}+ pcs</span>
         )}
       </div>
       {/* Right side = LINE TOTAL (unit price × quantity), never the unit price.
@@ -426,14 +385,13 @@ export default function Contact() {
         // Build a complete snapshot of every item so orders remain
         // historically accurate even if the product/variant is edited later.
         const items = checkout.checkoutItems.map((item) => {
-          // Send the APPLIED unit price (per-product bulk once unlocked AND
-          // any active combined brand bulk) so the snapshot mirrors what the
-          // customer is charged — the server still recomputes everything
-          // authoritatively from the database.
+          // Send the APPLIED unit price (including any active combined brand
+          // bulk) so the snapshot mirrors what the customer is charged — the
+          // server still recomputes everything authoritatively from the
+          // database.
           const unit_price = resolvedUnitPrice(item)
           const quantity = Number(item.quantity ?? item.qty ?? 1)
           const hasVariant = item.variant_id != null
-          const hasPack = item.pack_id != null
           return {
             product_id: item.product_id ?? item.id,
             product_name: item.name,
@@ -447,15 +405,6 @@ export default function Contact() {
                   variant_label: item.variant_label,
                   quantity_value: item.quantity_value,
                   quantity_unit: item.quantity_unit,
-                }
-              : {}),
-            // Pack purchase metadata — the server resolves the pack row from
-            // the database (pack_size/pack_price are authoritative) and
-            // computes actual pieces itself; these fields identify the pack.
-            ...(hasPack
-              ? {
-                  pack_id: item.pack_id,
-                  number_of_packs: item.number_of_packs,
                 }
               : {}),
           }

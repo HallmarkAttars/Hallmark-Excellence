@@ -100,6 +100,10 @@
   font-weight: 500;
   color: rgba(20, 17, 13, 0.7);
 }
+/* Stock label removed — keep the status toggle right-aligned */
+.product-card-stock .status-toggle {
+  margin-left: auto;
+}
 
 /* Edit | Delete — equal 44px touch targets */
 .product-card-actions {

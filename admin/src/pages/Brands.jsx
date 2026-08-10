@@ -64,7 +64,7 @@ export default function Brands() {
 
       <p className="brands-intro">
         Manage the storefront's five brands — copy, imagery, position, featured/standard
-        placement and active state. Product bulk pricing lives under{' '}
+        placement and active state. Combined brand bulk pricing lives under{' '}
         <Link to="/admin/brands/bulk-pricing">Brand Bulk Pricing</Link>.
       </p>
 

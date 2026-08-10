@@ -4,7 +4,6 @@ import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
 import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { SHOP_PAGE } from '../data/content'
-import { hasAnyBulk } from '../utils/bulk'
 import './Shop.css'
 
 const SORT_OPTIONS = [
@@ -27,7 +26,6 @@ export default function Shop() {
 
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [brandFilter, setBrandFilter] = useState('all')
-  const [bulkOnly, setBulkOnly] = useState(false)
   const [sort, setSort] = useState('default')
 
   // Shows the "waking up our servers" notice only after `loading` has stayed
@@ -67,13 +65,8 @@ export default function Shop() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // A product counts as "bulk available" when ANY of its variants has bulk
-  // configured (or its product-level config for variant-less products).
-  const hasBulkProducts = useMemo(() => products.some(hasAnyBulk), [products])
-
   const visibleProducts = useMemo(() => {
     let list = [...products]
-    if (bulkOnly) list = list.filter(hasAnyBulk)
     if (categoryFilter !== 'all') list = list.filter((p) => p.category_id === categoryFilter)
     if (brandFilter !== 'all') list = list.filter((p) => p.brand_id === brandFilter)
     if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
@@ -82,7 +75,7 @@ export default function Shop() {
     if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
     // 'default' and 'newest' keep original order
     return list
-  }, [products, categoryFilter, brandFilter, bulkOnly, sort])
+  }, [products, categoryFilter, brandFilter, sort])
 
   // Category and Brand are mutually exclusive.
   // Selecting a category clears the brand; selecting a brand clears the category.
@@ -180,23 +173,6 @@ export default function Shop() {
         </div>
 
         <div className="filter-drawer-body">
-          {/* Bulk Price Available — optional, only shown when real bulk
-              products exist in the current dataset */}
-          {hasBulkProducts && (
-            <div className="filter-card">
-              <h3 className="filter-card-title">Bulk Purchasing</h3>
-              <div className="filter-rows">
-                <button
-                  type="button"
-                  className={`filter-row ${bulkOnly ? 'is-active' : ''}`}
-                  onClick={() => setBulkOnly((b) => !b)}
-                >
-                  🔥 Bulk Price Available
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Category */}
           <div className="filter-card">
             <h3 className="filter-card-title">Category</h3>

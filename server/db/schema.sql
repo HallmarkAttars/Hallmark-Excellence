@@ -24,10 +24,6 @@ create table if not exists products (
   description text,
   price numeric(10,2) not null,
   compare_at_price numeric(10,2),
-  bulk_price numeric(10,2),
-  bulk_min_qty int,
-  bulk_enabled boolean not null default false,
-  stock int default 0,
   category_id uuid references categories(id) on delete set null,
   brand_id uuid references brands(id) on delete set null,
   images jsonb default '[]',
@@ -35,6 +31,11 @@ create table if not exists products (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Note: stock, product-level bulk (bulk_price / bulk_min_qty / bulk_enabled)
+-- and pack options (product_packs) were removed from the application.
+-- Existing databases should run migration_drop_stock_bulk_packs.sql.
+-- Brand-level bulk pricing lives on the brands table and is unaffected.
 
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),

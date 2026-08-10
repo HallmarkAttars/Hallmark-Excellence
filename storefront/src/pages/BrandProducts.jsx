@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import BrandBulkCard from '../components/brand/BrandBulkCard'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
-import { hasAnyBulk } from '../utils/bulk'
 import './BrandProducts.css'
 
 // Same client-side sort options as the Shop page — no backend, no extra reads.
@@ -40,7 +39,6 @@ export default function BrandProducts() {
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [categoryFilter, setCategoryFilter] = useState('all')
-  const [bulkOnly, setBulkOnly] = useState(false)
   const [sort, setSort] = useState('default')
   const [openMenu, setOpenMenu] = useState(null) // 'filter' | 'sort' | null
 
@@ -48,7 +46,6 @@ export default function BrandProducts() {
     setLoading(true)
     setError(null)
     setCategoryFilter('all')
-    setBulkOnly(false)
     setSort('default')
     setOpenMenu(null)
     Promise.all([getBrandBySlug(slug), getProductsByBrand(slug)])
@@ -83,23 +80,16 @@ export default function BrandProducts() {
     return Array.from(seen, ([id, name]) => ({ id, name }))
   }, [products])
 
-  // Dynamically detected bulk-enabled products for this brand ONLY — the
-  // banner and filter never mix Arees and Dahab data. A product qualifies
-  // when ANY of its variants has bulk configured.
-  const bulkProducts = useMemo(() => products.filter(hasAnyBulk), [products])
-  const hasBulkProducts = bulkProducts.length > 0
-
   // Client-side filter + sort over the loaded array (same logic as the Shop page).
   const visibleProducts = useMemo(() => {
     let list = [...products]
-    if (bulkOnly) list = list.filter(hasAnyBulk)
     if (categoryFilter !== 'all') list = list.filter((p) => p.category_id === categoryFilter)
     if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
     if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
     if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name))
     if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
     return list
-  }, [products, categoryFilter, bulkOnly, sort])
+  }, [products, categoryFilter, sort])
 
   const brandName = brand?.name || 'Brand'
   const activeSort = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Featured'
@@ -111,18 +101,6 @@ export default function BrandProducts() {
   const toggleSort = (value) => {
     setSort((cur) => (cur === value ? 'default' : value))
     setOpenMenu(null)
-  }
-
-  // "Shop Bulk Products" from the banner — enables the bulk filter and jumps
-  // to the product grid.
-  const shopBulk = () => {
-    setBulkOnly(true)
-    setOpenMenu(null)
-    requestAnimationFrame(() => {
-      document
-        .getElementById('brand-product-grid')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
   }
 
   return (
@@ -146,26 +124,6 @@ export default function BrandProducts() {
             the brand's bulk pricing is actually configured (optional). */}
         <BrandBulkCard brand={brand} />
 
-        {/* Optional Bulk Purchasing promotion — shown ONLY when this brand
-            actually has bulk-enabled products (dynamic, never hardcoded). */}
-        {hasBulkProducts && (
-          <section className="bulk-banner" aria-label="Bulk purchasing available">
-            <div className="bulk-banner-text">
-              <p className="bulk-banner-title">
-                <span aria-hidden="true">🔥</span> Bulk Purchase · Buy More, Save More
-              </p>
-              <p className="bulk-banner-desc">
-                Special bulk prices available on selected {brandName} products.
-                Buy the required quantity and unlock exclusive bulk pricing
-                automatically at checkout.
-              </p>
-            </div>
-            <button type="button" className="bulk-banner-btn" onClick={shopBulk}>
-              Shop Bulk Products
-            </button>
-          </section>
-        )}
-
         {/* Toolbar: real product count + client-side filter/sort */}
         <div className="brand-toolbar">
           <p className="brand-count">
@@ -173,19 +131,6 @@ export default function BrandProducts() {
           </p>
 
           <div className="brand-toolbar-actions">
-            {hasBulkProducts && (
-              <div className="brand-menu">
-                <button
-                  type="button"
-                  className={`brand-menu-btn ${bulkOnly ? 'is-active' : ''}`}
-                  onClick={() => setBulkOnly((b) => !b)}
-                  aria-pressed={bulkOnly}
-                >
-                  🔥 Bulk Price Available
-                </button>
-              </div>
-            )}
-
             {categories.length > 0 && (
               <div className="brand-menu">
                 <button
@@ -264,11 +209,7 @@ export default function BrandProducts() {
             loading={loading}
             error={error}
             onRetry={() => setReloadKey((k) => k + 1)}
-            emptyMessage={
-              bulkOnly
-                ? 'No bulk-enabled products from this brand yet.'
-                : 'No products from this brand yet.'
-            }
+            emptyMessage="No products from this brand yet."
           />
         </div>
       </div>

@@ -360,6 +360,16 @@
 .cart-item-qty .qty-control-input { font-weight: 700; font-size: 15px; color: var(--ink); }
 .cart-item-qty:focus-within { box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.55) inset; }
 
+/* Static line quantity — informational only (no stepper). Shows only when
+   the same variant was added more than once and the line merged. */
+.cart-item-qty-static {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Per-product bulk progress (own config only) */
 .cart-item-bulk {
   width: 100%;

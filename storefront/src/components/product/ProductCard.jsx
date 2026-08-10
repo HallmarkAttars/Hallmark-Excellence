@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
-import { hasAnyBulk, brandBulkDisplay } from '../../utils/bulk'
-import QuantityControl from './QuantityControl'
+import { brandBulkDisplay } from '../../utils/bulk'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -52,8 +51,9 @@ function EyeIcon() {
 }
 
 export default function ProductCard({ product, onNavigate }) {
-  const { items, addItem, updateQty, removeItem, brandStatus } = useCart()
+  const { addItem, brandStatus } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
+  const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const addTimer = useRef(null)
@@ -72,56 +72,10 @@ export default function ProductCard({ product, onNavigate }) {
     : ''
 
   const hasVariants = variants.length > 0
-  const soldOut = Number(product.stock) <= 0
 
   // Price is already resolved to the default variant price by the API.
   const price = Number(product.price)
   const hasPrice = Number.isFinite(price) && price > 0
-
-  // When the product has variants, the card always operates on the default
-  // variant — exactly like the product detail page — so the card's quantity
-  // controls and the detail page share one cart line per product.
-  const variantForCart = hasVariants
-    ? {
-        variant_id: defaultVariant.id,
-        variant_label: variantLabel,
-        quantity_value: defaultVariant.quantity_value,
-        quantity_unit: defaultVariant.quantity_unit,
-        price: Number(defaultVariant.price),
-        stock: defaultVariant.stock,
-        is_default: true,
-        // The card adds the DEFAULT variant, so it carries that size's own
-        // bulk config (per-variant bulk).
-        bulk_enabled: defaultVariant.bulk_enabled === true,
-        bulk_price: defaultVariant.bulk_price != null ? Number(defaultVariant.bulk_price) : null,
-        bulk_min_qty: defaultVariant.bulk_min_qty != null ? Number(defaultVariant.bulk_min_qty) : null,
-      }
-    : null
-
-  // The card manages ONLY the default-variant / plain (non-pack) line. Pack
-  // lines (children of bulk pricing) are keyed by product + pack id and are
-  // controlled from the product detail / quick view — never from here. Without
-  // the pack_id guard a variant-less pack product would match its pack line,
-  // then the card's Remove/quantity keys (which have no pack id) would no-op.
-  const cartLine = items.find((i) =>
-    i.pack_id == null &&
-    (hasVariants
-      ? i.product_id === product.id && i.variant_id === defaultVariant.id
-      : i.product_id === product.id && i.variant_id == null)
-  )
-  const lineKey = hasVariants
-    ? `${product.id}-v${defaultVariant.id}`
-    : `${product.id}-`
-
-  // Stock cap for the quantity control — uses existing stock data only.
-  // Variant lines carry their own stock; legacy products use product.stock.
-  // When no stock field exists, no cap is applied.
-  const maxStock =
-    cartLine?.stock != null
-      ? cartLine.stock
-      : Number(product.stock) > 0
-        ? Number(product.stock)
-        : null
 
   // Conditional rows — only render when real data exists. No invented values.
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
@@ -140,11 +94,6 @@ export default function ProductCard({ product, onNavigate }) {
     ? Math.round((1 - price / Number(compareAt)) * 100)
     : null
   const showDiscount = discountPct != null && discountPct > 0
-  // Subtle listing indicator — shown when bulk pricing is available on this
-  // product at all (any variant, or the product itself for variant-less
-  // products). Cards deliberately do NOT show a specific bulk price before a
-  // size is selected; the detail page shows the exact numbers per variant.
-  const showBulk = hasAnyBulk(product)
 
   // Combined BRAND bulk — when the brand's combined cart quantity (across ALL
   // of its products, not just this one) reaches its threshold, the brand bulk
@@ -159,13 +108,21 @@ export default function ProductCard({ product, onNavigate }) {
   // effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
   const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandBulk, price)
 
+  // Products WITH variants must be purchased via the product details page —
+  // the customer selects the capacity/size there. The card's Add to Cart
+  // button therefore navigates to the product page instead of adding an
+  // arbitrary quantity. Variant-less products add directly (one unit at the
+  // product's own price).
   const handleAdd = () => {
-    if (soldOut || adding) return
+    if (adding) return
+    if (hasVariants) {
+      handleNavigate()
+      navigate(`/product/${product.id}`)
+      return
+    }
     setAdding(true)
     try {
-      // Existing cart operation — unchanged. Runs synchronously, so the brief
-      // ADDING state is purely perceived feedback + a duplicate-click guard.
-      addItem(product, 1, variantForCart)
+      addItem(product, 1, null)
       addTimer.current = setTimeout(() => {
         setAdding(false)
         // Success notification ONLY after the cart operation succeeded.
@@ -209,18 +166,11 @@ export default function ProductCard({ product, onNavigate }) {
           />
         </Link>
 
-        {/* Reference layout: the top-left badge area carries status badges only
-            (Sold Out / Featured). The discount lives in the price row as
-            "25% OFF" — matching the reference card. Every badge is driven by
-            real product data (is_featured / stock); nothing is ever invented. */}
-        {(soldOut || product.is_featured === true) && (
+        {/* Status badges only (Featured). Driven by real product data
+            (is_featured); nothing is ever invented. */}
+        {product.is_featured === true && (
           <div className="product-card-badges">
-            {product.is_featured === true && (
-              <span className="product-card-badge is-featured">Featured</span>
-            )}
-            {soldOut && (
-              <span className="product-card-badge is-soldout">Sold Out</span>
-            )}
+            <span className="product-card-badge is-featured">Featured</span>
           </div>
         )}
 
@@ -282,55 +232,31 @@ export default function ProductCard({ product, onNavigate }) {
           </div>
         )}
 
-        {brandBulkActive ? (
+        {brandBulkActive && (
           <div className="product-card-bulk">
             <span className="product-card-bulk-chip is-active">
               <span aria-hidden="true">✓</span>{' '}
               {brandBulk.name ? `${brandBulk.name} Bulk Applied` : 'Bulk Applied'}
             </span>
           </div>
-        ) : showBulk ? (
-          <div className="product-card-bulk">
-            <span className="product-card-bulk-chip">
-              <span aria-hidden="true">🔥</span> Bulk Price Available
-            </span>
-          </div>
-        ) : null}
-
-        {cartLine ? (
-          <QuantityControl
-            className="product-card-qty"
-            value={cartLine.quantity}
-            max={maxStock}
-            onChange={(n) => updateQty(lineKey, n)}
-            onRemove={() => removeItem(lineKey)}
-            labels={{
-              label: `Quantity for ${product.name}`,
-              decrease: `Decrease quantity of ${product.name}`,
-              increase: `Increase quantity of ${product.name}`,
-              input: `Quantity of ${product.name}`,
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className="btn product-card-btn"
-            onClick={handleAdd}
-            disabled={soldOut || adding}
-            aria-label={`Add ${product.name} to cart`}
-          >
-            {soldOut ? (
-              'Sold Out'
-            ) : adding ? (
-              'Adding…'
-            ) : (
-              <>
-                <BagIcon />
-                Add to Cart
-              </>
-            )}
-          </button>
         )}
+
+        <button
+          type="button"
+          className="btn product-card-btn"
+          onClick={handleAdd}
+          disabled={adding}
+          aria-label={`Add ${product.name} to cart`}
+        >
+          {adding ? (
+            'Adding…'
+          ) : (
+            <>
+              <BagIcon />
+              Add to Cart
+            </>
+          )}
+        </button>
       </div>
 
       {quickViewOpen && (

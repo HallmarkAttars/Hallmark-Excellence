@@ -5,18 +5,19 @@ const supabase = require('../config/supabase')
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled, rating, review_count, is_featured, stock,
+  id, name, description, price, compare_at_price, rating, review_count, is_featured,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
 
-// Fallback select for databases where the pricing migration
-// (migration_add_pricing_fields.sql — compare_at_price / bulk_price /
-// bulk_min_qty) has not been applied yet. is_featured is kept because the
-// column already exists in the production schema.
+// Fallback select for databases where the pricing/rating migration
+// (migration_add_pricing_fields.sql — compare_at_price /
+// migration_add_ratings.sql — rating, review_count) has not been applied
+// yet. is_featured is kept because the column already exists in the
+// production schema.
 const PRODUCT_SELECT_BASE = `
-  id, name, description, price, is_featured, stock,
+  id, name, description, price, is_featured,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -36,84 +37,17 @@ function isMissingColumnError(error) {
 async function selectProducts(build) {
   let res = await build(PRODUCT_SELECT)
   if (isMissingColumnError(res.error)) {
-    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, bulk_price, bulk_min_qty, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
     res = await build(PRODUCT_SELECT_BASE)
   }
   return res
 }
 
-const PACK_SELECT = `
-  id, product_id, name, usage_label, pack_quantity, price, is_active, display_order, created_at, updated_at
-`
-
-// Public pack shape — only the fields a customer needs. `active` filters
-// happen in the query; the public projection never leaks internal columns.
-function toPack(p) {
-  return {
-    id: p.id,
-    name: p.name || (p.pack_quantity != null ? `Pack of ${p.pack_quantity}` : ''),
-    usage_label: p.usage_label || null,
-    pack_quantity: p.pack_quantity,
-    price: p.price,
-    is_active: p.is_active !== false,
-    display_order: p.display_order ?? 0,
-  }
-}
-
-// Fetch all packs for a set of product ids, grouped by product_id, ordered
-// by display_order (stable tie-break by pack_quantity).
-async function fetchPacksByProducts(productIds) {
-  if (!Array.isArray(productIds) || productIds.length === 0) return {}
-
-  const { data, error } = await supabase
-    .from('product_packs')
-    .select(PACK_SELECT)
-    .in('product_id', productIds)
-    .order('display_order', { ascending: true })
-    .order('pack_quantity', { ascending: true })
-
-  if (error) {
-    // Pre-migration DB (table missing) simply means no packs — the feature
-    // is dormant, never a hard failure.
-    if (/does not exist|could not find/i.test(error.message)) {
-      return {}
-    }
-    throw error
-  }
-
-  const grouped = {}
-  for (const p of data || []) {
-    if (!grouped[p.product_id]) grouped[p.product_id] = []
-    grouped[p.product_id].push(toPack(p))
-  }
-  return grouped
-}
-
 const VARIANT_SELECT = `
-  id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default,
-  bulk_enabled, bulk_price, bulk_min_qty
+  id, product_id, quantity_value, quantity_unit, display_label, price, is_default
 `
 
-// Fallback variant select for databases where the per-variant bulk migration
-// (migration_add_variant_bulk_fields.sql) has not been applied yet. Without
-// these columns, variants simply carry no bulk config (bulk OFF for all).
-const VARIANT_SELECT_BASE = `
-  id, product_id, quantity_value, quantity_unit, display_label, price, stock, is_default
-`
-
-// Runs a variant query, retrying against the base select when the per-variant
-// bulk columns are missing. Lets the API work both before and after the
-// variant-bulk migration is applied.
-async function selectVariants(build) {
-  let res = await build(VARIANT_SELECT)
-  if (isMissingColumnError(res.error)) {
-    console.warn('[products] Variant bulk columns missing in product_variants (bulk_enabled, bulk_price, bulk_min_qty). Run server/db/migration_add_variant_bulk_fields.sql in the Supabase SQL editor to enable per-variant bulk pricing.')
-    res = await build(VARIANT_SELECT_BASE)
-  }
-  return res
-}
-
-// Return the variant that should drive the product-level price/stock.
+// Return the variant that should drive the product-level price.
 // Defaults to the variant flagged is_default, otherwise the first one.
 function defaultVariant(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return null
@@ -130,14 +64,14 @@ function sortVariants(variants) {
 // is applied. These are stripped from writes on pre-migration databases so
 // admin saves keep working; the values simply stay dormant until the
 // columns exist.
-const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'bulk_price', 'bulk_min_qty', 'bulk_enabled', 'rating', 'review_count']
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count']
 
 // Runs an insert/update against the full payload, retrying without the
 // optional (migration-dependent) fields when their columns are missing.
 async function withOptionalFieldRetry(operation, payload, select, baseSelect) {
   const res = await operation(payload, select)
   if (isMissingColumnError(res.error)) {
-    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, bulk_price, bulk_min_qty, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
     const basePayload = { ...payload }
     for (const key of OPTIONAL_FIELD_KEYS) delete basePayload[key]
     return operation(basePayload, baseSelect)
@@ -153,12 +87,7 @@ function toVariant(v) {
     quantity_unit: v.quantity_unit,
     display_label: v.display_label,
     price: v.price,
-    stock: v.stock,
     is_default: v.is_default ?? false,
-    // Per-variant optional bulk purchasing (admin-configured per size).
-    bulk_enabled: v.bulk_enabled === true,
-    bulk_price: v.bulk_price ?? null,
-    bulk_min_qty: v.bulk_min_qty ?? null,
   }
 }
 
@@ -166,12 +95,10 @@ function toVariant(v) {
 async function fetchVariantsByProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length === 0) return {}
 
-  const { data, error } = await selectVariants((select) =>
-    supabase
-      .from('product_variants')
-      .select(select)
-      .in('product_id', productIds)
-  )
+  const { data, error } = await supabase
+    .from('product_variants')
+    .select(VARIANT_SELECT)
+    .in('product_id', productIds)
 
   if (error) throw error
 
@@ -193,17 +120,7 @@ function attachVariants(rows, variantsByProduct) {
     const variants = variantsByProduct[row.id] || []
     const dv = defaultVariant(variants)
     const price = variants.length > 0 ? dv.price : row.price
-    const stock = variants.length > 0 ? dv.stock : row.stock
-    return { ...row, price, stock, variants }
-  })
-}
-
-// Attach packs to an array of product rows. `activeOnly` controls the public
-// projection: customers only ever see enabled packs; admin sees everything.
-function attachPacks(rows, packsByProduct, activeOnly = false) {
-  return rows.map((row) => {
-    const packs = (packsByProduct[row.id] || []).filter((p) => (activeOnly ? p.is_active !== false : true))
-    return { ...row, packs }
+    return { ...row, price, variants }
   })
 }
 
@@ -261,15 +178,7 @@ async function getProducts(req, res) {
       console.error('getProducts fetchVariants error:', varErr)
     }
 
-    // Active packs only on the public listing.
-    let packsByProduct = {}
-    try {
-      packsByProduct = await fetchPacksByProducts(rows.map((r) => r.id))
-    } catch (packErr) {
-      console.error('getProducts fetchPacks error:', packErr)
-    }
-
-    return res.json({ products: attachPacks(attachVariants(rows, variantsByProduct), packsByProduct, true) })
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -305,12 +214,10 @@ async function getProductById(req, res) {
     // Fetch variants separately, sorted by quantity_value ASC.
     let variants = []
     try {
-      const { data: vs, error: vErr } = await selectVariants((select) =>
-        supabase
-          .from('product_variants')
-          .select(select)
-          .eq('product_id', id)
-      )
+      const { data: vs, error: vErr } = await supabase
+        .from('product_variants')
+        .select(VARIANT_SELECT)
+        .eq('product_id', id)
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -318,28 +225,10 @@ async function getProductById(req, res) {
       console.error('getProductById fetchVariants error:', varErr)
     }
 
-    // Active packs only on the public detail.
-    let packs = []
-    try {
-      const { data: ps, error: pErr } = await supabase
-        .from('product_packs')
-        .select(PACK_SELECT)
-        .eq('product_id', id)
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .order('pack_quantity', { ascending: true })
-      if (!pErr) {
-        packs = (ps || []).map(toPack)
-      }
-    } catch (packErr) {
-      console.error('getProductById fetchPacks error:', packErr)
-    }
-
     const dv = defaultVariant(variants)
     const price = variants.length > 0 ? dv.price : product.price
-    const stock = variants.length > 0 ? dv.stock : product.stock
 
-    return res.json({ product: { ...product, price, stock, variants, packs } })
+    return res.json({ product: { ...product, price, variants } })
   } catch (err) {
     console.error('getProductById error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -414,14 +303,7 @@ async function getRelatedProducts(req, res) {
       console.error('getRelatedProducts fetchVariants error:', varErr)
     }
 
-    let packsByProduct = {}
-    try {
-      packsByProduct = await fetchPacksByProducts(rows.map((r) => r.id))
-    } catch (packErr) {
-      console.error('getRelatedProducts fetchPacks error:', packErr)
-    }
-
-    return res.json({ products: attachPacks(attachVariants(rows, variantsByProduct), packsByProduct, true) })
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getRelatedProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -455,12 +337,10 @@ async function getAdminProductById(req, res) {
 
     let variants = []
     try {
-      const { data: vs, error: vErr } = await selectVariants((select) =>
-        supabase
-          .from('product_variants')
-          .select(select)
-          .eq('product_id', id)
-      )
+      const { data: vs, error: vErr } = await supabase
+        .from('product_variants')
+        .select(VARIANT_SELECT)
+        .eq('product_id', id)
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
       }
@@ -468,27 +348,10 @@ async function getAdminProductById(req, res) {
       console.error('getAdminProductById fetchVariants error:', varErr)
     }
 
-    // Admin sees ALL packs (active + inactive).
-    let packs = []
-    try {
-      const { data: ps, error: pErr } = await supabase
-        .from('product_packs')
-        .select(PACK_SELECT)
-        .eq('product_id', id)
-        .order('display_order', { ascending: true })
-        .order('pack_quantity', { ascending: true })
-      if (!pErr) {
-        packs = (ps || []).map(toPack)
-      }
-    } catch (packErr) {
-      console.error('getAdminProductById fetchPacks error:', packErr)
-    }
-
     const dv = defaultVariant(variants)
     const price = variants.length > 0 ? dv.price : product.price
-    const stock = variants.length > 0 ? dv.stock : product.stock
 
-    return res.json({ product: { ...product, price, stock, variants, packs } })
+    return res.json({ product: { ...product, price, variants } })
   } catch (err) {
     console.error('getAdminProductById error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -520,15 +383,7 @@ async function getAdminProducts(req, res) {
       console.error('getAdminProducts fetchVariants error:', varErr)
     }
 
-    // Admin sees ALL packs (active + inactive).
-    let packsByProduct = {}
-    try {
-      packsByProduct = await fetchPacksByProducts(rows.map((r) => r.id))
-    } catch (packErr) {
-      console.error('getAdminProducts fetchPacks error:', packErr)
-    }
-
-    return res.json({ products: attachPacks(attachVariants(rows, variantsByProduct), packsByProduct, false) })
+    return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getAdminProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -548,117 +403,15 @@ function slugify(text) {
 }
 
 // Normalize an incoming variants array into rows for product_variants.
-// Per-variant bulk fields ride along: when a variant has bulk disabled, its
-// bulk values are forced to null (never fake 0 / empty).
 function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
-  return variants.map((v) => {
-    const bulkEnabled = v.bulk_enabled === true
-    return {
-      quantity_value: v.quantity_value ?? 0,
-      quantity_unit: v.quantity_unit ?? 'ML',
-      display_label: v.display_label ?? '',
-      price: v.price,
-      stock: v.stock ?? 0,
-      is_default: v.is_default ?? false,
-      bulk_enabled: bulkEnabled,
-      bulk_price: bulkEnabled ? (v.bulk_price ?? null) : null,
-      bulk_min_qty: bulkEnabled ? (v.bulk_min_qty ?? null) : null,
-    }
-  })
-}
-
-// Validate ONE variant's optional bulk configuration against ITS OWN normal
-// price (the variant that pays for the discount must be the one receiving it).
-// Returns an error message, or '' when valid (or bulk is OFF).
-function validateVariantBulkConfig(v) {
-  const bulkEnabled = v?.bulk_enabled === true
-  if (!bulkEnabled) return ''
-
-  const price = Number(v.bulk_price)
-  if (v.bulk_price == null || v.bulk_price === '' || !Number.isFinite(price) || price <= 0) {
-    return `Bulk Price is required and must be greater than 0 for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
-  }
-
-  const qty = Number(v.bulk_min_qty)
-  if (v.bulk_min_qty == null || v.bulk_min_qty === '' || !Number.isInteger(qty) || qty < 2) {
-    return `Bulk Purchase Quantity is required and must be a whole number greater than 1 for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
-  }
-
-  if (v.price != null && v.price !== '' && Number.isFinite(Number(v.price)) && price >= Number(v.price)) {
-    return `Bulk price must be lower than the normal price for the "${v.display_label || v.quantity_unit || 'variant'}" variant.`
-  }
-
-  return ''
-}
-
-// Normalize an incoming packs array into rows for product_packs.
-// Auto-generates the name ("Pack of N") when blank; a pack's price is the
-// price of ONE pack (the total), never a per-piece rate.
-function normalizePacks(packs) {
-  if (!Array.isArray(packs) || packs.length === 0) return []
-  return packs.map((p) => ({
-    name: (p.name || '').trim() || (p.pack_quantity != null ? `Pack of ${p.pack_quantity}` : ''),
-    usage_label: (p.usage_label || '').trim() || null,
-    pack_quantity: Number(p.pack_quantity),
-    price: Number(p.price),
-    is_active: p.is_active !== false,
-    display_order: Number(p.display_order ?? 0),
+  return variants.map((v) => ({
+    quantity_value: v.quantity_value ?? 0,
+    quantity_unit: v.quantity_unit ?? 'ML',
+    display_label: v.display_label ?? '',
+    price: v.price,
+    is_default: v.is_default ?? false,
   }))
-}
-
-// Validate ONE pack's values. Returns an error message, or '' when valid.
-// Rejects: quantity <= 0, invalid/negative price, duplicate pack quantity
-// (enforced across the set by the caller).
-function validatePack(p) {
-  const qty = Number(p.pack_quantity)
-  if (!Number.isInteger(qty) || qty <= 0) {
-    return 'Pack quantity must be a whole number greater than 0.'
-  }
-  const price = Number(p.price)
-  if (!Number.isFinite(price) || price < 0) {
-    return 'Pack price must be a number greater than or equal to 0.'
-  }
-  return ''
-}
-
-// Validate an optional bulk-purchasing configuration.
-//
-// bulk_enabled = true requires a valid bulk price (strictly below the normal
-// selling price) and a whole-number bulk quantity greater than 1. Returns an
-// error message, or '' when the configuration is valid.
-function validateBulkConfig(bulkEnabled, bulkPrice, bulkMinQty, sellingPrice) {
-  if (!bulkEnabled) return ''
-
-  const price = Number(bulkPrice)
-  if (bulkPrice == null || bulkPrice === '' || !Number.isFinite(price) || price <= 0) {
-    return 'Bulk Price is required and must be greater than 0 when Bulk Purchasing is enabled.'
-  }
-
-  const qty = Number(bulkMinQty)
-  if (bulkMinQty == null || bulkMinQty === '' || !Number.isInteger(qty) || qty < 2) {
-    return 'Bulk Purchase Quantity is required and must be a whole number greater than 1 when Bulk Purchasing is enabled.'
-  }
-
-  if (sellingPrice != null && sellingPrice !== '' && Number.isFinite(Number(sellingPrice)) && price >= Number(sellingPrice)) {
-    return 'Bulk price must be lower than the normal price and every variant price.'
-  }
-
-  return ''
-}
-
-// Cheapest price across the product price and EVERY variant price. Because
-// the bulk price must be lower than all of them, it must be lower than the
-// minimum — otherwise a cheaper variant would make the "discount" a markup.
-function bulkReferencePrice(productPrice, variantPrices) {
-  const prices = []
-  if (productPrice != null && productPrice !== '' && Number.isFinite(Number(productPrice))) {
-    prices.push(Number(productPrice))
-  }
-  for (const p of variantPrices || []) {
-    if (p != null && p !== '' && Number.isFinite(Number(p))) prices.push(Number(p))
-  }
-  return prices.length ? Math.min(...prices) : null
 }
 
 async function insertVariants(productId, variants) {
@@ -667,29 +420,10 @@ async function insertVariants(productId, variants) {
 
   const payload = rows.map((r) => ({ ...r, product_id: productId }))
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('product_variants')
     .insert(payload)
     .select(VARIANT_SELECT)
-
-  // The per-variant bulk columns (migration_add_variant_bulk_fields.sql:
-  // bulk_enabled / bulk_price / bulk_min_qty) may not exist on this database
-  // yet — in that case the INSERT above fails with "Could not find the
-  // 'bulk_enabled' column of 'product_variants'" and every admin save would
-  // break. Retry WITHOUT the bulk fields (mirroring the product-level
-  // withOptionalFieldRetry pattern) so create/update always succeed; the
-  // bulk config simply stays dormant until the migration is applied.
-  if (isMissingColumnError(error)) {
-    console.warn('[products] Variant bulk columns missing in product_variants (bulk_enabled, bulk_price, bulk_min_qty). Run server/db/migration_add_variant_bulk_fields.sql in the Supabase SQL editor to enable per-variant bulk pricing.')
-    const basePayload = payload.map((r) => {
-      const { bulk_enabled, bulk_price, bulk_min_qty, ...rest } = r
-      return rest
-    })
-    ;({ data, error } = await supabase
-      .from('product_variants')
-      .insert(basePayload)
-      .select(VARIANT_SELECT_BASE))
-  }
 
   if (error) throw error
 
@@ -701,55 +435,12 @@ async function insertVariants(productId, variants) {
 async function createProduct(req, res) {
   try {
     const {
-      name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled,
-      rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants, packs
+      name, description, price, compare_at_price,
+      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants
     } = req.body
 
     if (!name || price === undefined || price === null) {
       return res.status(400).json({ error: 'name and price are required.' })
-    }
-
-    // --- Optional pack options (children of bulk pricing) ------------------
-    // Validated only when packs are supplied. Duplicate pack quantities are
-    // rejected here so the DB unique constraint is the last line of defense.
-    if (packs !== undefined) {
-      const seenQtys = new Set()
-      for (const p of Array.isArray(packs) ? packs : []) {
-        const packError = validatePack(p)
-        if (packError) return res.status(400).json({ error: packError })
-        const key = String(Number(p.pack_quantity))
-        if (seenQtys.has(key)) {
-          return res.status(400).json({ error: `Duplicate pack: Pack of ${p.pack_quantity} already exists for this product.` })
-        }
-        seenQtys.add(key)
-      }
-    }
-
-    // Optional bulk purchasing: when enabled, bulk price + quantity must be
-    // valid and the bulk price must be below EVERY price (the product price
-    // and each variant price). When disabled, the bulk fields are forced to
-    // NULL (never fake 0 / empty values).
-    const isBulkEnabled = bulk_enabled === true
-    const bulkError = validateBulkConfig(
-      isBulkEnabled,
-      bulk_price,
-      bulk_min_qty,
-      bulkReferencePrice(
-        price,
-        (Array.isArray(variants) ? variants : []).map((v) => v.price)
-      )
-    )
-    if (bulkError) {
-      return res.status(400).json({ error: bulkError })
-    }
-
-    // Per-variant bulk purchasing — each variant validated against its own
-    // normal price. Skipped when bulk is disabled on that variant.
-    for (const v of Array.isArray(variants) ? variants : []) {
-      const variantBulkError = validateVariantBulkConfig(v)
-      if (variantBulkError) {
-        return res.status(400).json({ error: variantBulkError })
-      }
     }
 
     // If the selected category is "Attar", brand is required
@@ -770,12 +461,8 @@ async function createProduct(req, res) {
       description: description ?? null,
       price,
       compare_at_price: compare_at_price ?? null,
-      bulk_enabled: isBulkEnabled,
-      bulk_price: isBulkEnabled ? (bulk_price ?? null) : null,
-      bulk_min_qty: isBulkEnabled ? (bulk_min_qty ?? null) : null,
       rating: rating ?? null,
       review_count: review_count ?? null,
-      stock: stock ?? 0,
       category_id: category_id ?? null,
       brand_id: brand_id ?? null,
       image: image ?? null,
@@ -806,29 +493,11 @@ async function createProduct(req, res) {
       }
     }
 
-    // Insert packs (if any) after the product exists.
-    let insertedPacks = []
-    if (Array.isArray(packs) && packs.length > 0) {
-      try {
-        const packRows = normalizePacks(packs).map((p) => ({ ...p, product_id: data.id }))
-        const { data: pkData, error: pkError } = await supabase
-          .from('product_packs')
-          .insert(packRows)
-          .select(PACK_SELECT)
-        if (pkError) throw pkError
-        insertedPacks = (pkData || []).map(toPack)
-      } catch (packErr) {
-        console.error('createProduct insertPacks error:', packErr)
-        return res.status(500).json({ error: 'Failed to create product packs.' })
-      }
-    }
-
     const product = flattenProduct(data)
     const dv = defaultVariant(inserted)
     const pPrice = inserted.length > 0 ? dv.price : product.price
-    const pStock = inserted.length > 0 ? dv.stock : product.stock
 
-    return res.status(201).json({ product: { ...product, price: pPrice, stock: pStock, variants: inserted, packs: insertedPacks } })
+    return res.status(201).json({ product: { ...product, price: pPrice, variants: inserted } })
   } catch (err) {
     console.error('createProduct error:', err)
     return res.status(500).json({ error: 'Internal server error' })
@@ -841,65 +510,9 @@ async function updateProduct(req, res) {
   try {
     const { id } = req.params
     const {
-      name, description, price, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled,
-      rating, review_count, stock, category_id, brand_id, image, is_active, is_featured, variants, packs
+      name, description, price, compare_at_price,
+      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants
     } = req.body
-
-    // Optional bulk purchasing validation. The reference price is the CHEAPEST
-    // of { payload price, payload variant prices }, or the stored product +
-    // variant prices when the payload omits them — the bulk price must be
-    // lower than every one of them. Any bulk field present triggers
-    // validation, so a partial PATCH can never slip through an unvalidated
-    // value.
-    if (bulk_enabled !== undefined || bulk_price !== undefined || bulk_min_qty !== undefined) {
-      const isBulkEnabled =
-        bulk_enabled === true ||
-        (bulk_enabled === undefined && (bulk_price !== undefined || bulk_min_qty !== undefined))
-      let referencePrice = price
-      let variantPrices = Array.isArray(variants) ? variants.map((v) => v.price) : null
-      if (referencePrice === undefined || variantPrices === null) {
-        const [{ data: prod }, { data: vs }] = await Promise.all([
-          supabase.from('products').select('price').eq('id', id).maybeSingle(),
-          supabase.from('product_variants').select('price').eq('product_id', id),
-        ])
-        if (referencePrice === undefined) referencePrice = prod?.price
-        if (variantPrices === null) variantPrices = (vs || []).map((v) => v.price)
-      }
-      const bulkError = validateBulkConfig(
-        isBulkEnabled,
-        bulk_price,
-        bulk_min_qty,
-        bulkReferencePrice(referencePrice, variantPrices)
-      )
-      if (bulkError) {
-        return res.status(400).json({ error: bulkError })
-      }
-    }
-
-    // Per-variant bulk purchasing — each incoming variant validated against
-    // its own normal price (this replaces the variant set on save). Runs for
-    // EVERY PATCH that carries variants, regardless of bulk fields.
-    for (const v of Array.isArray(variants) ? variants : []) {
-      const variantBulkError = validateVariantBulkConfig(v)
-      if (variantBulkError) {
-        return res.status(400).json({ error: variantBulkError })
-      }
-    }
-
-    // Optional pack options — validated whenever supplied (a PATCH omitting
-    // packs leaves the existing set untouched). Duplicate quantities rejected.
-    if (packs !== undefined) {
-      const seenQtys = new Set()
-      for (const p of Array.isArray(packs) ? packs : []) {
-        const packError = validatePack(p)
-        if (packError) return res.status(400).json({ error: packError })
-        const key = String(Number(p.pack_quantity))
-        if (seenQtys.has(key)) {
-          return res.status(400).json({ error: `Duplicate pack: Pack of ${p.pack_quantity} already exists for this product.` })
-        }
-        seenQtys.add(key)
-      }
-    }
 
     // If the category is being updated to "Attar", brand is required
     if (category_id !== undefined) {
@@ -921,33 +534,17 @@ async function updateProduct(req, res) {
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
     if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
-    if (bulk_enabled !== undefined) {
-      updates.bulk_enabled = bulk_enabled === true
-      // Disabling bulk purchasing clears any stored bulk values so the
-      // storefront never shows stale bulk data for a bulk-off product.
-      if (!updates.bulk_enabled) {
-        updates.bulk_price = null
-        updates.bulk_min_qty = null
-      }
-    }
-    if (bulk_price !== undefined && (bulk_enabled === undefined || bulk_enabled === true)) {
-      updates.bulk_price = bulk_price ?? null
-    }
-    if (bulk_min_qty !== undefined && (bulk_enabled === undefined || bulk_enabled === true)) {
-      updates.bulk_min_qty = bulk_min_qty ?? null
-    }
     if (rating !== undefined) updates.rating = rating
     if (review_count !== undefined) updates.review_count = review_count
-    if (stock !== undefined) updates.stock = stock
     if (category_id !== undefined) updates.category_id = category_id
     if (brand_id !== undefined) updates.brand_id = brand_id
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
     if (is_featured !== undefined) updates.is_featured = is_featured
 
-    // A PATCH that only changes packs/variants (no scalar columns) would send
+    // A PATCH that only changes variants (no scalar columns) would send
     // PostgREST an empty update object, which it rejects — so fetch the row
-    // instead and let the pack/variant replacement below do the work.
+    // instead and let the variant replacement below do the work.
     let data
     let error
     if (Object.keys(updates).length === 0) {
@@ -991,53 +588,11 @@ async function updateProduct(req, res) {
       }
     }
 
-    // If packs were provided, replace the old set with the new one. When a
-    // PATCH omits `packs`, existing packs are left untouched (partial edits
-    // never wipe pack config).
-    let insertedPacks = []
-    if (Array.isArray(packs)) {
-      try {
-        const { error: delPackError } = await supabase
-          .from('product_packs')
-          .delete()
-          .eq('product_id', id)
-        if (delPackError) throw delPackError
-
-        if (packs.length > 0) {
-          const packRows = normalizePacks(packs).map((p) => ({ ...p, product_id: id }))
-          const { data: pkData, error: pkError } = await supabase
-            .from('product_packs')
-            .insert(packRows)
-            .select(PACK_SELECT)
-          if (pkError) throw pkError
-          insertedPacks = (pkData || []).map(toPack)
-        }
-      } catch (packErr) {
-        console.error('updateProduct packs error:', packErr)
-        return res.status(500).json({ error: 'Failed to update product packs.' })
-      }
-    } else {
-      // Fetch the current packs so the response stays complete when the
-      // PATCH did not touch them.
-      try {
-        const { data: pkData, error: pkError } = await supabase
-          .from('product_packs')
-          .select(PACK_SELECT)
-          .eq('product_id', id)
-          .order('display_order', { ascending: true })
-          .order('pack_quantity', { ascending: true })
-        if (!pkError) insertedPacks = (pkData || []).map(toPack)
-      } catch (packErr) {
-        console.error('updateProduct fetchPacks error:', packErr)
-      }
-    }
-
     const product = flattenProduct(data)
     const dv = defaultVariant(inserted)
     const pPrice = inserted.length > 0 ? dv.price : product.price
-    const pStock = inserted.length > 0 ? dv.stock : product.stock
 
-    return res.json({ product: { ...product, price: pPrice, stock: pStock, variants: inserted, packs: insertedPacks } })
+    return res.json({ product: { ...product, price: pPrice, variants: inserted } })
   } catch (err) {
     console.error('updateProduct error:', err)
     return res.status(500).json({ error: 'Internal server error' })

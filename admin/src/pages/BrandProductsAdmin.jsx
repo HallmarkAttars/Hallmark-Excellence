@@ -15,7 +15,6 @@ export default function BrandProductsAdmin({ brandSlug }) {
   // --- Search + filters (client-side over the brand's own products) ---
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [stockFilter, setStockFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
 
   const load = () => {
@@ -49,14 +48,12 @@ export default function BrandProductsAdmin({ brandSlug }) {
       if (q && !p.name.toLowerCase().includes(q)) return false
       if (statusFilter === 'active' && p.is_active === false) return false
       if (statusFilter === 'inactive' && p.is_active !== false) return false
-      if (stockFilter === 'in' && !(Number(p.stock) > 0)) return false
-      if (stockFilter === 'out' && Number(p.stock) > 0) return false
       if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false
       return true
     })
-  }, [products, query, statusFilter, stockFilter, categoryFilter])
+  }, [products, query, statusFilter, categoryFilter])
 
-  const hasFilters = query.trim() !== '' || statusFilter !== 'all' || stockFilter !== 'all' || categoryFilter !== 'all'
+  const hasFilters = query.trim() !== '' || statusFilter !== 'all' || categoryFilter !== 'all'
 
   // Add Product is opened in the brand's context — the brand is locked in the
   // form so a product can never be assigned to the wrong brand.
@@ -89,11 +86,6 @@ export default function BrandProductsAdmin({ brandSlug }) {
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-          <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} aria-label="Filter by stock">
-            <option value="all">All Stock</option>
-            <option value="in">In Stock</option>
-            <option value="out">Out of Stock</option>
-          </select>
           <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label="Filter by category">
             <option value="all">All Categories</option>
             {categories.map((c) => (
@@ -107,7 +99,6 @@ export default function BrandProductsAdmin({ brandSlug }) {
               onClick={() => {
                 setQuery('')
                 setStatusFilter('all')
-                setStockFilter('all')
                 setCategoryFilter('all')
               }}
             >
@@ -125,7 +116,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
         ) : visibleProducts.length === 0 ? (
           <div className="empty-state">
             No products match your filters.
-            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setStockFilter('all'); setCategoryFilter('all'); }}>
+            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); }}>
               Clear Search
             </button>
           </div>
@@ -136,7 +127,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
               <div className="table-scroll">
                 <table>
                   <thead>
-                    <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+                    <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
                   </thead>
                   <tbody>
                     {visibleProducts.map((p) => (
@@ -145,7 +136,6 @@ export default function BrandProductsAdmin({ brandSlug }) {
                         <td className="products-name">{p.name}</td>
                         <td>{categoryName(p.category_id)}</td>
                         <td>₹{Number(p.price).toLocaleString('en-IN')}</td>
-                        <td>{p.stock}</td>
                         <td>
                           <button
                             className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}

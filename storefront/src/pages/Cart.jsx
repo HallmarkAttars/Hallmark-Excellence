@@ -1,23 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import {
-  isBulkApplicable,
-  isBulkUnlocked,
-  bulkRemaining,
-  bulkSavings,
-} from '../utils/bulk'
-import {
   formatINR,
   showStruckUnitPrice,
   hasLineSavings,
   lineTotalDisplay,
 } from '../utils/cartDisplay'
-import QuantityControl from '../components/product/QuantityControl'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
 export default function Cart() {
-  const { pricedItems, brandStatus, removeItem, updateQty, total, itemCount } = useCart()
+  const { pricedItems, brandStatus, removeItem, total, itemCount } = useCart()
   const navigate = useNavigate()
 
   const handleCheckout = () => {
@@ -62,13 +55,13 @@ export default function Cart() {
       return { ...b, saved }
     })
 
-  // Order-level bulk savings (brand bulk + per-product bulk) for the summary
-  // promo box — derived from the resolved line prices.
+  // Order-level brand bulk savings for the summary promo box — derived from
+  // the resolved line prices (brand bulk is the only bulk discount).
   const bulkSavingsTotal = pricedItems.reduce((acc, it) => {
     if (it.brand_bulk_applied) {
       return acc + Math.max(0, it.normal_unit_price - it.unit_price) * it.quantity
     }
-    return acc + bulkSavings(it)
+    return acc
   }, 0)
 
   return (
@@ -133,55 +126,31 @@ export default function Cart() {
 
           <div className="cart-items">
             {pricedItems.map((item) => {
-              const isPack = item.pack_id != null
-              const key = isPack
-                ? `${item.product_id}-p${item.pack_id}`
-                : item.variant_id != null
-                  ? `${item.product_id}-v${item.variant_id}`
-                  : `${item.product_id}-`
-              const label = isPack
-                ? (item.pack_name || `Pack of ${item.pack_size}`)
-                : item.variant_label
-                  || (item.quantity_value != null && item.quantity_unit
-                      ? `${item.quantity_value} ${item.quantity_unit}`
-                      : '')
+              const key = item.variant_id != null
+                ? `${item.product_id}-v${item.variant_id}`
+                : `${item.product_id}-`
+              const label = item.variant_label
+                || (item.quantity_value != null && item.quantity_unit
+                    ? `${item.quantity_value} ${item.quantity_unit}`
+                    : '')
               // Resolved pricing — unit_price already includes any active
-              // brand-level combined bulk discount (brand bulk wins over
-              // per-product bulk).
+              // brand-level combined bulk discount.
               const effectivePrice = item.unit_price
               const normalPrice = item.normal_unit_price
               const subtotal = effectivePrice * item.quantity
-              const bulkApplicable = isBulkApplicable(item)
-              const bulkUnlocked = isBulkUnlocked(item)
-              const bulkSavingsAmount = bulkSavings(item)
               const brandBulkSavings =
                 item.brand_bulk_applied && normalPrice > effectivePrice
                   ? (normalPrice - effectivePrice) * item.quantity
                   : 0
-              // Brand bulk drives the charged price, so its savings are the
-              // true ones when active; per-product bulk only applies otherwise.
-              const lineSavings = item.brand_bulk_applied ? brandBulkSavings : bulkSavingsAmount
-              const itemStock = item.stock != null ? Number(item.stock) : null
-              const stockCanReachBulk =
-                itemStock == null || itemStock >= Number(item.bulk_min_qty)
+              const lineSavings = brandBulkSavings
               const bulkBadge = item.brand_bulk_applied
                 ? `${item.brand_name || 'Brand'} Bulk Applied`
-                : bulkUnlocked ? 'Bulk Price Applied' : null
+                : null
               // Display gating (pure helpers in utils/cartDisplay.js — unit
               // tested): what this row SHOWS, never what it charges.
               const showCompareAt = showStruckUnitPrice(bulkBadge, normalPrice, effectivePrice)
               const discountActive = hasLineSavings(lineSavings)
-              // PACK lines render the no-discount breakdown as "₹400 × 3 packs"
-              // (never "₹40 × 30" — that would confuse packs with pieces). The
-              // struck normal TOTAL is still price × quantity (both in pieces).
-              const totalLine = isPack
-                ? {
-                    struck: discountActive,
-                    text: discountActive
-                      ? `₹${formatINR(normalPrice * item.quantity)}`
-                      : `₹${item.pack_price.toLocaleString('en-IN')} × ${item.number_of_packs} pack${item.number_of_packs === 1 ? '' : 's'}`,
-                  }
-                : lineTotalDisplay(normalPrice, item.quantity, lineSavings)
+              const totalLine = lineTotalDisplay(normalPrice, item.quantity, lineSavings)
               return (
                 <article key={key} className="cart-item">
                   {/* Left — product image (square, cream stage, never cropped) */}
@@ -202,26 +171,12 @@ export default function Cart() {
                     {item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
                     <h3 className="cart-item-name">{item.name}</h3>
                     {label && <p className="cart-item-variant">{label}</p>}
-                    {/* Pack line readout — never confuses packs with pieces. */}
-                    {isPack && (
-                      <p className="cart-item-pack">
-                        <strong>{item.number_of_packs} pack{item.number_of_packs === 1 ? '' : 's'}</strong>
-                        <span> · {item.quantity} pieces</span>
-                        {item.pack_usage_label && (
-                          <em> · {item.pack_usage_label}</em>
-                        )}
-                      </p>
-                    )}
                     <div className="cart-item-price-row">
                       <span className="cart-item-unit">
-                        {isPack && !discountActive
-                          ? `₹${item.pack_price.toLocaleString('en-IN')} / pack`
-                          : `₹${effectivePrice.toLocaleString('en-IN')} / piece`}
+                        ₹{effectivePrice.toLocaleString('en-IN')} / piece
                       </span>
                       {/* Normal per-piece price struck through — only when a
-                          bulk discount is genuinely active on this line. When
-                          no discount applies the two prices are identical, so
-                          no strikethrough is shown. */}
+                          brand bulk discount is genuinely active on this line. */}
                       {showCompareAt && (
                         <span className="cart-item-unit-struck">
                           ₹{formatINR(normalPrice)}/piece
@@ -239,56 +194,17 @@ export default function Cart() {
                     </button>
                   </div>
 
-                  {/* Right — quantity selector + line total */}
+                  {/* Right — line total (each line is one unit of the selected
+                      variant; same variant added twice merges into a static ×N) */}
                   <div className="cart-item-buybox">
-                    <QuantityControl
-                      className="cart-item-qty"
-                      value={isPack ? item.number_of_packs : item.quantity}
-                      max={isPack
-                        ? (item.stock != null && item.pack_size != null ? Math.floor(item.stock / item.pack_size) : 999)
-                        : (item.stock != null ? item.stock : null)}
-                      onChange={(n) => updateQty(key, n)}
-                      onRemove={() => removeItem(key)}
-                      labels={{
-                        decrease: `Decrease ${isPack ? 'packs' : 'quantity'} of ${item.name}`,
-                        increase: `Increase ${isPack ? 'packs' : 'quantity'} of ${item.name}`,
-                        input: `${isPack ? 'Number of packs' : 'Quantity'} of ${item.name}`,
-                      }}
-                    />
-
-                    {/* Live per-product bulk progress (own config only — never
-                        shown when brand bulk is driving this line) */}
-                    {!item.brand_bulk_applied && bulkApplicable && stockCanReachBulk && !bulkUnlocked && (
-                      <div className="cart-item-bulk">
-                        <p className="cart-item-bulk-msg">
-                          🔥 Add {bulkRemaining(item)} more to unlock ₹
-                          {Number(item.bulk_price).toLocaleString('en-IN')}/piece
-                        </p>
-                        <div className="cart-item-bulk-track" aria-hidden="true">
-                          <div
-                            className="cart-item-bulk-fill"
-                            style={{
-                              width: `${Math.min(100, (item.quantity / Number(item.bulk_min_qty)) * 100)}%`,
-                            }}
-                          />
-                        </div>
-                        <p className="cart-item-bulk-meta">
-                          {Math.min(item.quantity, Number(item.bulk_min_qty))} / {item.bulk_min_qty}
-                        </p>
-                      </div>
+                    {item.quantity > 1 && (
+                      <p className="cart-item-qty-static">× {item.quantity}</p>
                     )}
-                    {!item.brand_bulk_applied && bulkApplicable && !stockCanReachBulk && !bulkUnlocked && (
-                      <p className="cart-item-bulk-msg is-muted">
-                        Bulk price available from {item.bulk_min_qty} pieces
-                      </p>
-                    )}
-
                     <div className="cart-item-total-col">
                       <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
                       {/* With a bulk discount the struck line is the plain
                           normal TOTAL (price × qty) so the hierarchy reads
-                          bold bulk total → struck normal total → saving.
-                          Without a discount keep the ₹X × qty breakdown. */}
+                          bold bulk total → struck normal total → saving. */}
                       <p className={`cart-item-sub${totalLine.struck ? ' is-struck' : ''}`}>
                         {totalLine.text}
                       </p>

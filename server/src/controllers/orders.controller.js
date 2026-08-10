@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
-const { applyBulkPricing, resolveBrandBulkPricing, brandBulkUnitPriceFor, resolvePackLine } = require('../utils/orderPricing')
+const { resolveBrandBulkPricing, brandBulkUnitPriceFor } = require('../utils/orderPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -275,17 +275,17 @@ async function createOrder(req, res) {
     }
 
     let productSelect =
-      'id, name, price, image, compare_at_price, bulk_price, bulk_min_qty, bulk_enabled, brand_id'
+      'id, name, price, image, compare_at_price, brand_id'
     let dbProducts
     let prodError
     ;({ data: dbProducts, error: prodError } = await supabase
       .from('products')
       .select(productSelect)
       .in('id', productIds))
-    // The bulk/pricing migration may not be applied yet — retry with the
-    // minimal select so checkout keeps working exactly as before.
+    // The compare_at_price column may not exist yet (pre-migration DB) —
+    // retry with the minimal select so checkout keeps working.
     if (prodError && /does not exist|could not find/i.test(prodError.message)) {
-      console.warn('[createOrder] Pricing/bulk columns missing — checkout running without bulk pricing.')
+      console.warn('[createOrder] compare_at_price column missing — checkout running with base product fields.')
       ;({ data: dbProducts, error: prodError } = await supabase
         .from('products')
         .select('id, name, price, image')
@@ -297,65 +297,22 @@ async function createOrder(req, res) {
       return res.status(500).json({ error: 'Failed to validate products. Please try again.' })
     }
 
-    // --- Fetch pack rows (if any) so pack pricing is authoritative ----------
-    // A pack line carries pack_id + number_of_packs; the pack's OWN quantity
-    // and price come from the database — never from the client. The actual
-    // piece quantity (pack_quantity × number_of_packs) then feeds the same
-    // bulk engine as a normal line, so thresholds are evaluated on pieces.
-    const packIds = items
-      .filter((it) => it.pack_id != null)
-      .map((it) => String(it.pack_id))
-
-    let dbPacks = []
-    if (packIds.length > 0) {
-      const { data: ps, error: pErr } = await supabase
-        .from('product_packs')
-        .select('id, product_id, name, usage_label, pack_quantity, price, is_active')
-        .in('id', packIds)
-      if (pErr && !/does not exist|could not find/i.test(pErr.message)) {
-        console.error('[createOrder] packs fetch error:', pErr.message)
-        return res.status(500).json({ error: 'Failed to validate product packs. Please try again.' })
-      }
-      dbPacks = ps || []
-    }
-    const packMap = new Map(dbPacks.map((p) => [String(p.id), p]))
-
     const variantIds = items
       .filter((it) => it.variant_id != null)
       .map((it) => String(it.variant_id))
 
     let dbVariants = []
     if (variantIds.length > 0) {
-      // Fetch the FULL variant set for every ordered product (not just the
-      // selected ones) so bulk pricing resolves against each variant's OWN
-      // admin-configured values — per-variant bulk, not a default-variant gate.
       const { data: vs, error: vErr } = await supabase
         .from('product_variants')
-        .select('id, product_id, price, display_label, quantity_value, quantity_unit, is_default, bulk_enabled, bulk_price, bulk_min_qty')
+        .select('id, product_id, price, display_label, quantity_value, quantity_unit, is_default')
         .in('product_id', productIds)
         .order('quantity_value', { ascending: true })
       if (vErr) {
-        if (/does not exist|could not find/i.test(vErr.message)) {
-          // Per-variant bulk migration not applied yet — variants carry no
-          // bulk config, so every variant line prices at its normal price.
-          console.warn('[createOrder] Variant bulk columns missing — per-variant bulk pricing unavailable.')
-          const { data: vs2, error: vErr2 } = await supabase
-            .from('product_variants')
-            .select('id, product_id, price, display_label, quantity_value, quantity_unit, is_default')
-            .in('product_id', productIds)
-            .order('quantity_value', { ascending: true })
-          if (vErr2) {
-            console.error('[createOrder] variants fetch error:', vErr2.message)
-            return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
-          }
-          dbVariants = vs2 || []
-        } else {
-          console.error('[createOrder] variants fetch error:', vErr.message)
-          return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
-        }
-      } else {
-        dbVariants = vs || []
+        console.error('[createOrder] variants fetch error:', vErr.message)
+        return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
       }
+      dbVariants = vs || []
     }
 
     const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
@@ -401,24 +358,11 @@ async function createOrder(req, res) {
     }
 
     // Combined quantity per brand across ALL lines (mix & match any items).
-    // For a PACK line the quantity is the ACTUAL piece count (pack_quantity ×
-    // number_of_packs) — never the number of packs — so brand thresholds are
-    // evaluated on pieces, exactly like every other line.
     const brandTotals = {}
     for (const item of items) {
       const product = productMap.get(String(item.product_id ?? item.id))
       if (!product || product.brand_id == null) continue
-      let qty = Math.floor(Number(item.quantity ?? item.qty ?? 1))
-      if (item.pack_id != null) {
-        const pack = packMap.get(String(item.pack_id))
-        // Ownership check mirrors the line-pricing pass: a pack belonging to a
-        // DIFFERENT product is invalid and must not inflate this brand's
-        // totals (the pricing pass rejects such lines outright).
-        const resolved = pack && String(pack.product_id) === String(product.id)
-          ? resolvePackLine(pack, item.number_of_packs ?? item.pack_count ?? 1)
-          : null
-        if (resolved) qty = resolved.quantity
-      }
+      const qty = Math.floor(Number(item.quantity ?? item.qty ?? 1))
       if (!Number.isFinite(qty) || qty < 1) continue
       const bid = String(product.brand_id)
       brandTotals[bid] = (brandTotals[bid] || 0) + qty
@@ -435,60 +379,14 @@ async function createOrder(req, res) {
           throw new Error('One of the products in your cart is no longer available. Please refresh and try again.')
         }
 
-        // --- Pack line resolution (authoritative from the DB) ---------------
-        // When the customer bought via a pack, the pack row decides the piece
-        // count and the per-piece normal price. quantity below = ACTUAL PIECES
-        // (pack_quantity × number_of_packs) so every subsequent bulk threshold
-        // evaluates pieces exactly as a normal line would.
-        let packFields = {}
-        let packLine = null
-        if (item.pack_id != null) {
-          const pack = packMap.get(String(item.pack_id))
-          if (!pack || String(pack.product_id) !== String(product.id)) {
-            throw new Error(`The selected pack for ${product.name} is no longer available. Please refresh and try again.`)
-          }
-          // A disabled pack is not purchasable by NEW customers (the storefront
-          // hides it); an order already carrying it still resolves so existing
-          // carts/historical data keep working. The piece count and per-piece
-          // rate come from the pure resolver — never from the client.
-          packLine = resolvePackLine(pack, item.number_of_packs ?? item.pack_count ?? 1)
-          if (!packLine) {
-            throw new Error(`The selected pack for ${product.name} is no longer available. Please refresh and try again.`)
-          }
-          packFields = {
-            pack_id: pack.id,
-            pack_name: pack.name || `Pack of ${packLine.packSize}`,
-            pack_usage_label: pack.usage_label || null,
-            pack_size: packLine.packSize,
-            number_of_packs: packLine.number_of_packs,
-            actual_piece_quantity: packLine.quantity,
-            pack_price: round2(packLine.packPrice),
-          }
-        }
-
-        const quantity = packLine
-          ? packLine.quantity
-          : Math.floor(Number(item.quantity ?? item.qty ?? 1))
+        const quantity = Math.floor(Number(item.quantity ?? item.qty ?? 1))
         if (!Number.isFinite(quantity) || quantity < 1) {
           throw new Error(`Invalid quantity for ${product.name}.`)
         }
 
         let unitPrice
         let variantFields = {}
-        // Bulk config source: the SELECTED variant's own per-variant bulk
-        // values, or the product-level values for variant-less products.
-        let bulkEnabled = product.bulk_enabled
-        let bulkPrice = product.bulk_price
-        let bulkMinQty = product.bulk_min_qty
-
-        // PACK line: the pack's per-piece rate IS the line's normal unit
-        // price (never the product/variant single-unit price), so a bulk tier
-        // can only apply when it is a genuine discount below the pack's own
-        // per-piece rate. Pack lines are product-level — they never carry a
-        // variant.
-        if (packLine) {
-          unitPrice = packLine.normalUnitPrice
-        } else if (item.variant_id != null) {
+        if (item.variant_id != null) {
           const variant = variantMap.get(String(item.variant_id))
           if (!variant || String(variant.product_id) !== String(product.id)) {
             throw new Error(`The selected size/variant of ${product.name} is no longer available. Please refresh and try again.`)
@@ -500,20 +398,6 @@ async function createOrder(req, res) {
             quantity_value: variant.quantity_value,
             quantity_unit: variant.quantity_unit,
           }
-          // Per-variant bulk: the selected variant's own config decides. If
-          // the variant bulk columns don't exist yet (pre-migration DB), the
-          // selected variant carries no bulk config → that line prices at its
-          // normal price (matching what the storefront displays). Only
-          // variant-less lines fall back to product-level bulk.
-          if (variant.bulk_enabled !== undefined) {
-            bulkEnabled = variant.bulk_enabled
-            bulkPrice = variant.bulk_price
-            bulkMinQty = variant.bulk_min_qty
-          } else {
-            bulkEnabled = false
-            bulkPrice = null
-            bulkMinQty = null
-          }
         } else {
           unitPrice = Number(product.price)
         }
@@ -522,29 +406,12 @@ async function createOrder(req, res) {
           throw new Error(`Invalid price for ${product.name}.`)
         }
 
-        // --- Optional bulk pricing (authoritative, server-side) -------------
-        // The pure math lives in utils/orderPricing.js (unit-tested). Bulk
-        // applies when the SELECTED variant's own config is enabled and the
-        // quantity reaches ITS minimum — every value below comes from the
-        // database, never from the client. For a PACK line the normal unit
-        // price is the pack's own per-piece rate (pack_price / pack_size),
-        // so a bulk tier only ever applies when it is a genuine discount
-        // below the pack's per-piece rate — exactly the existing guard.
-        const normalUnitPrice = unitPrice
-        const pricing = applyBulkPricing({
-          normalUnitPrice,
-          quantity,
-          bulkEnabled,
-          bulkPrice,
-          bulkMinQty,
-        })
-        unitPrice = pricing.unitPrice
-
-        // --- Combined brand bulk pricing (precedence over per-product) ------
-        // When this brand's combined-quantity discount is active, the brand
-        // bulk unit price wins over the line's own per-product bulk. It is
-        // only ever applied when it is a genuine discount below THIS line's
+        // --- Combined brand bulk pricing (the only bulk discount) -----------
+        // When this brand's combined-quantity discount is active, every line
+        // of the brand is priced at the brand bulk unit price. It is only
+        // ever applied when it is a genuine discount below THIS line's
         // normal price (brandBulkUnitPriceFor enforces that).
+        const normalUnitPrice = unitPrice
         let brandBulkApplied = false
         let brandBulkPrice = null
         let brandBulkMinQty = null
@@ -563,16 +430,10 @@ async function createOrder(req, res) {
           quantity,
           unit_price: round2(unitPrice),
           subtotal: round2(unitPrice * quantity),
-          // Pack metadata rides on the line so orders/invoices/tracking stay
-          // historically accurate even if the pack is edited later.
-          ...packFields,
-          // Optional reference values: the normal price this line would have
-          // used, and the bulk config that unlocked the discount. Kept for
-          // display/debugging — the charged amount is always unit_price.
+          // Reference value: the normal price this line would have used
+          // without the active brand bulk discount. Kept for display — the
+          // charged amount is always unit_price.
           normal_unit_price: round2(normalUnitPrice),
-          ...(pricing.bulkApplied
-            ? { bulk_price: round2(pricing.bulkPrice), bulk_min_qty: pricing.bulkMinQty, bulk_applied: true }
-            : {}),
           // Brand context + brand-level bulk snapshot (order history stays
           // accurate even if the brand config changes later).
           brand_id: product.brand_id ?? null,
