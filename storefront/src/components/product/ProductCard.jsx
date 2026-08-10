@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../../context/CartContext'
-import { useToast } from '../../context/ToastContext'
-import { brandBulkDisplay } from '../../utils/bulk'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -51,15 +48,8 @@ function EyeIcon() {
 }
 
 export default function ProductCard({ product, onNavigate }) {
-  const { addItem, brandStatus } = useCart()
-  const { notifyAddSuccess, notifyAddError } = useToast()
   const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
-  const [adding, setAdding] = useState(false)
-  const addTimer = useRef(null)
-
-  // Clear the cosmetic ADDING timer if the card unmounts mid-flight.
-  useEffect(() => () => clearTimeout(addTimer.current), [])
 
   // Surface the default variant's size/label when the product has variants.
   const variants = Array.isArray(product.variants) ? product.variants : []
@@ -73,7 +63,7 @@ export default function ProductCard({ product, onNavigate }) {
 
   const hasVariants = variants.length > 0
 
-  // Price is already resolved to the default variant price by the API.
+  // Price is already resolved to the default variant's TOTAL price by the API.
   const price = Number(product.price)
   const hasPrice = Number.isFinite(price) && price > 0
 
@@ -95,44 +85,12 @@ export default function ProductCard({ product, onNavigate }) {
     : null
   const showDiscount = discountPct != null && discountPct > 0
 
-  // Combined BRAND bulk — when the brand's combined cart quantity (across ALL
-  // of its products, not just this one) reaches its threshold, the brand bulk
-  // unit price takes over the display — matching exactly what
-  // effectiveUnitPrice() charges in the cart. Derived live from the cart
-  // context, so every card of the brand flips together the moment the
-  // threshold is crossed, with no per-product cart line required.
-  const brandBulk =
-    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
-  // Display price + active flag — brand bulk only takes over when it is a
-  // genuine discount below THIS product's normal price (shared guard, mirrors
-  // effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
-  const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandBulk, price)
-
-  // Products WITH variants must be purchased via the product details page —
-  // the customer selects the capacity/size there. The card's Add to Cart
-  // button therefore navigates to the product page instead of adding an
-  // arbitrary quantity. Variant-less products add directly (one unit at the
-  // product's own price).
+  // Add to Cart always takes the customer to the product details page, where
+  // they pick the variant and quantity. Nothing is ever added to the cart
+  // directly from a product card.
   const handleAdd = () => {
-    if (adding) return
-    if (hasVariants) {
-      handleNavigate()
-      navigate(`/product/${product.id}`)
-      return
-    }
-    setAdding(true)
-    try {
-      addItem(product, 1, null)
-      addTimer.current = setTimeout(() => {
-        setAdding(false)
-        // Success notification ONLY after the cart operation succeeded.
-        notifyAddSuccess(product)
-      }, 400)
-    } catch {
-      // Real cart errors are never hidden — show the error notification.
-      setAdding(false)
-      notifyAddError()
-    }
+    handleNavigate()
+    navigate(`/product/${product.id}`)
   }
 
   const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
@@ -220,7 +178,7 @@ export default function ProductCard({ product, onNavigate }) {
 
         {hasPrice && (
           <div className="product-card-price-row">
-            <span className="product-card-price">{formatPrice(displayPrice)}</span>
+            <span className="product-card-price">{formatPrice(price)}</span>
             {showCompareAt && (
               <span className="product-card-compare">
                 {formatPrice(Number(compareAt))}
@@ -232,30 +190,14 @@ export default function ProductCard({ product, onNavigate }) {
           </div>
         )}
 
-        {brandBulkActive && (
-          <div className="product-card-bulk">
-            <span className="product-card-bulk-chip is-active">
-              <span aria-hidden="true">✓</span>{' '}
-              {brandBulk.name ? `${brandBulk.name} Bulk Applied` : 'Bulk Applied'}
-            </span>
-          </div>
-        )}
-
         <button
           type="button"
           className="btn product-card-btn"
           onClick={handleAdd}
-          disabled={adding}
           aria-label={`Add ${product.name} to cart`}
         >
-          {adding ? (
-            'Adding…'
-          ) : (
-            <>
-              <BagIcon />
-              Add to Cart
-            </>
-          )}
+          <BagIcon />
+          Add to Cart
         </button>
       </div>
 

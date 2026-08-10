@@ -10,7 +10,7 @@
     "start": "node server.js",
     "create-admin": "node scripts/createAdmin.js",
     "seed-brand-bulk": "node scripts/seedBrandBulkPricing.js",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@getbrevo/brevo": "^6.0.2",

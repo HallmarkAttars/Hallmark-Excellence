@@ -5,7 +5,7 @@ import { submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
-import { resolvedUnitPrice } from '../utils/bulk'
+import { lineUnitPrice } from '../utils/variantPricing'
 import { submitContactForm } from '../utils/contactForm'
 import {
   UserIcon,
@@ -68,44 +68,19 @@ function itemImage(item) {
 // a neutral placeholder is shown only when no image exists.
 function OrderSummaryItem({ item }) {
   // Reuse the exact values the cart/checkout already compute — never a new
-  // pricing system. Uses the pre-resolved unit_price carried on the checkout
-  // snapshot (which already includes any active combined brand bulk).
-  // × quantity = line total — identical to the cart and to the server-side
-  // order math.
+  // pricing system. unit_price is the amount charged per ONE unit of this
+  // line: the selected variant's TOTAL price (variant products) or the
+  // product price (variant-less products). × quantity = line total —
+  // identical to the cart and to the server-side order math.
   const rawQty = item.quantity ?? item.qty
-  const unitPrice = resolvedUnitPrice(item)
+  const unitPrice = lineUnitPrice(item)
   const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
   const lineTotal = unitPrice * quantity
-  // Brand-level combined bulk discount on this line (from the resolved cart
-  // snapshot) — the charged amount is always unitPrice.
-  const brandBulkSavings =
-    item.brand_bulk_applied && item.normal_unit_price != null
-      ? Math.max(0, (Number(item.normal_unit_price) - unitPrice) * quantity)
-      : 0
-  // Normal (compare-at) unit price for the line — what the customer would pay
-  // without the active brand bulk discount. Snapshot items carry
-  // normal_unit_price (set by the cart context); legacy snapshots fall back
-  // to the line's own selected price. Mirrors the cart's struck normal-price
-  // display: it only appears when a genuine discount is active AND the normal
-  // price is really higher than the charged price, so a price identical to
-  // itself is never struck through.
-  const normalUnitPriceRaw =
-    item.normal_unit_price != null
-      ? Number(item.normal_unit_price)
-      : Number(item.selected_price ?? item.price ?? 0)
-  const normalUnitPrice =
-    Number.isFinite(normalUnitPriceRaw) && normalUnitPriceRaw > 0
-      ? normalUnitPriceRaw
-      : null
-  const hasBulkDiscount = Boolean(item.brand_bulk_applied && brandBulkSavings > 0)
-  const showCompareAt =
-    hasBulkDiscount && normalUnitPrice != null && normalUnitPrice > unitPrice
-  const normalLineTotal =
-    showCompareAt && normalUnitPrice != null ? normalUnitPrice * quantity : null
   const label = item.variant_label ||
     (item.quantity_value != null && item.quantity_unit
       ? `${item.quantity_value} ${item.quantity_unit}`
       : '')
+  const perUnit = item.variant_price_per_unit
   const image = itemImage(item)
 
   return (
@@ -130,19 +105,14 @@ function OrderSummaryItem({ item }) {
         {label && <span className="order-summary-variant">{label}</span>}
         <span className="order-summary-qty">
           ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
-          {showCompareAt && (
-            <span className="order-summary-qty-struck">
-              {' '}₹{normalUnitPrice.toLocaleString('en-IN')}/piece
+          {perUnit != null && Number.isFinite(Number(perUnit)) && (
+            <span className="order-summary-per-unit">
+              {' '}₹{Number(perUnit).toLocaleString('en-IN')} / {String(item.quantity_unit || '').toLowerCase()}
             </span>
           )}
         </span>
-        {item.brand_bulk_applied && brandBulkSavings > 0 && (
-          <span className="order-summary-bulk-note">✓ {item.brand_name || 'Brand'} Bulk Discount Applied · You Saved ₹{brandBulkSavings.toLocaleString('en-IN')}</span>
-        )}
       </div>
-      {/* Right side = LINE TOTAL (unit price × quantity), never the unit price.
-          When a bulk discount is active, the plain normal total (normal price
-          × quantity) sits struck-through below it — same pattern as the cart. */}
+      {/* Right side = LINE TOTAL (unit price × quantity), never the unit price. */}
       <span className="order-summary-price-wrap">
         <span
           className="order-summary-price"
@@ -150,11 +120,6 @@ function OrderSummaryItem({ item }) {
         >
           ₹{lineTotal.toLocaleString('en-IN')}
         </span>
-        {normalLineTotal != null && (
-          <span className="order-summary-price-struck">
-            ₹{normalLineTotal.toLocaleString('en-IN')}
-          </span>
-        )}
       </span>
     </div>
   )
@@ -385,11 +350,11 @@ export default function Contact() {
         // Build a complete snapshot of every item so orders remain
         // historically accurate even if the product/variant is edited later.
         const items = checkout.checkoutItems.map((item) => {
-          // Send the APPLIED unit price (including any active combined brand
-          // bulk) so the snapshot mirrors what the customer is charged — the
-          // server still recomputes everything authoritatively from the
-          // database.
-          const unit_price = resolvedUnitPrice(item)
+          // Send the line's unit price (the selected variant's TOTAL price,
+          // or the product price) so the snapshot mirrors what the customer
+          // is charged — the server still recomputes everything
+          // authoritatively from the database.
+          const unit_price = lineUnitPrice(item)
           const quantity = Number(item.quantity ?? item.qty ?? 1)
           const hasVariant = item.variant_id != null
           return {
@@ -405,6 +370,9 @@ export default function Contact() {
                   variant_label: item.variant_label,
                   quantity_value: item.quantity_value,
                   quantity_unit: item.quantity_unit,
+                  variant_total_price: Number(item.variant_total_price ?? unit_price),
+                  variant_price_per_unit:
+                    item.variant_price_per_unit != null ? Number(item.variant_price_per_unit) : null,
                 }
               : {}),
           }
@@ -576,7 +544,7 @@ export default function Contact() {
   // Total row uses the cart's authoritative total from the checkout state.
   const checkoutSubtotal = isCheckout && checkout
     ? checkout.checkoutItems.reduce((acc, it) => {
-        const unitPrice = resolvedUnitPrice(it)
+        const unitPrice = lineUnitPrice(it)
         const rawQty = it.quantity ?? it.qty
         const qty = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
         return acc + unitPrice * qty

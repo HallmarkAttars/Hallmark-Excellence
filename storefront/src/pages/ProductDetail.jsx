@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getProductById, getRelatedProducts, getBrandBySlug } from '../services/mockApi'
+import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { brandBulkConfig, brandBulkDisplay } from '../utils/bulk'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
 
+// Display unit for the per-unit price (e.g. "₹10 / piece").
+function unitDisplay(unit) {
+  return String(unit || '').toLowerCase()
+}
+
 export default function ProductDetail() {
   const { id } = useParams()
-  const { addItem, brandStatus } = useCart()
+  const { addItem } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
@@ -21,8 +25,8 @@ export default function ProductDetail() {
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [adding, setAdding] = useState(false)
-  // Brand row for this product — carries the combined brand bulk config.
-  const [brand, setBrand] = useState(null)
+  // How many units/packs of the SELECTED VARIANT the customer wants.
+  const [qty, setQty] = useState(1)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
 
@@ -38,7 +42,7 @@ export default function ProductDetail() {
     setActiveImage(0)
     setAdded(false)
     setSelectedVariant(null)
-    setBrand(null)
+    setQty(1)
     getProductById(id)
       .then((p) => {
         setProduct(p)
@@ -50,10 +54,6 @@ export default function ProductDetail() {
             setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
-          // Load the brand row for the combined brand bulk pricing block.
-          if (p.brand_slug) {
-            getBrandBySlug(p.brand_slug).then(setBrand).catch(() => {})
-          }
         }
       })
       .catch((err) => {
@@ -88,68 +88,55 @@ export default function ProductDetail() {
   const variants = Array.isArray(product.variants) ? product.variants : []
   const hasVariants = variants.length > 0
 
-  // Price comes from the selected variant when variants exist, otherwise the
-  // product-level price (variant-less products).
-  const price = hasVariants ? selectedVariant?.price : product.price
+  // The selected variant's TOTAL price is the authoritative amount paid for
+  // ONE unit of it (e.g. ₹7500 for "1000 Pieces"). Price-per-unit is display
+  // only. Variant-less products keep their product-level price.
+  const totalPrice = hasVariants
+    ? Number(selectedVariant?.total_price ?? selectedVariant?.price ?? 0)
+    : Number(product.price)
+  const perUnit = hasVariants
+    ? Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0)
+    : null
+  const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
 
   const variantLabel = (v) =>
     v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
 
-  // The default variant marks cart lines (is_default flag) and determines the
-  // initially displayed price.
+  // The default variant marks cart lines (is_default flag).
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
-
-  // Combined BRAND bulk config — valid only when the brand has it enabled.
-  const brandBulk = brand ? brandBulkConfig(brand) : null
-
-  // Combined BRAND bulk — LIVE status derived from the cart context (every
-  // cart line of this brand, not just this product). When the brand's
-  // combined quantity reaches its threshold, the brand bulk unit price takes
-  // over this product's display — matching exactly what effectiveUnitPrice()
-  // charges in the cart. Reflected at page-load too, so arriving with
-  // qualifying items already in the cart shows the bulk price immediately.
-  const brandStatusEntry =
-    product.brand_id != null ? brandStatus[String(product.brand_id)] : null
-  // Display price + active flag — brand bulk only takes over when it is a
-  // genuine discount below THIS (selected variant's) normal price (shared
-  // guard, mirrors effectiveUnitPrice()). Unit-tested in utils/bulk.test.js.
-  const { active: brandBulkActive, displayPrice } = brandBulkDisplay(brandStatusEntry, price)
 
   const handleAdd = () => {
     if (hasVariants && !selectedVariant) return
     if (adding) return
 
     // Build the complete selected variant info for the cart item so the cart
-    // and checkout show the exact size and price the customer picked.
+    // and checkout show the exact variant and price the customer picked.
     const variantInfo = hasVariants
       ? {
           variant_id: selectedVariant.id,
           variant_label: variantLabel(selectedVariant),
           quantity_value: selectedVariant.quantity_value,
           quantity_unit: selectedVariant.quantity_unit,
-          price: Number(selectedVariant.price),
+          total_price: Number(selectedVariant.total_price ?? selectedVariant.price),
+          price_per_unit: Number(selectedVariant.price_per_unit ?? selectedVariant.price),
           is_default: String(selectedVariant.id) === String(defaultVariant?.id),
         }
       : null
 
     setAdding(true)
     try {
-      // One unit of the selected variant (or the product itself when it has
-      // no variants). The customer never picks an arbitrary quantity.
+      // `qty` units of the selected variant. The cart line is priced at
+      // variant TOTAL price × qty.
       addItem(
         {
           id: product.id,
           name: product.name,
-          price: Number(price),
+          price: Number(product.price),
           image: product.image,
-          // Brand context MUST ride on the line — combined brand bulk
-          // pricing is derived from it. Without these, a product added
-          // here would price differently from the same product added via
-          // a product card (which passes the full object).
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
         },
-        1,
+        qty,
         variantInfo
       )
       addTimer.current = setTimeout(() => {
@@ -185,41 +172,21 @@ export default function ProductDetail() {
 
       <div className="product-detail-info">
         <h1>{product.name}</h1>
-        <p className="product-detail-price">₹{Number(displayPrice).toLocaleString('en-IN')}</p>
 
-        {/* Combined BRAND bulk pricing — separate from any product-level
-            discount (which no longer exists). Applies to the TOTAL quantity
-            across ALL of this brand's items in the cart (mix & match). */}
-        {brandBulk && (
-          <div className={`brand-bulk-row ${brandBulkActive ? 'is-active' : ''}`}>
-            {brandBulkActive ? (
-              <>
-                <p className="brand-bulk-row-label">
-                  <span aria-hidden="true">✓</span> {brand.name} · Bulk Pricing
-                </p>
-                <p className="brand-bulk-row-text">
-                  <strong>{brand.name} bulk pricing is active</strong> — you're paying{' '}
-                  <strong>₹{brandStatusEntry.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>{' '}
-                  across your {brand.name} items.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="brand-bulk-row-label">
-                  <span aria-hidden="true">🤝</span> {brand.name} · Bulk Pricing
-                </p>
-                <p className="brand-bulk-row-text">
-                  Buy <strong>{brandBulk.bulkMinQty}+ pieces</strong> of any {brand.name} item for{' '}
-                  <strong>₹{brandBulk.bulkUnitPrice.toLocaleString('en-IN')}/piece</strong>
-                </p>
-              </>
-            )}
-            {product.brand_slug && (
-              <Link to={`/brand/${product.brand_slug}`} className="brand-bulk-row-link">
-                View {brand.name} bulk pricing <span aria-hidden="true">→</span>
-              </Link>
+        {hasVariants ? (
+          <div className="product-detail-price-block">
+            <p className="product-detail-price">
+              ₹{Number(totalPrice).toLocaleString('en-IN')}{' '}
+              <span className="product-detail-price-total">total</span>
+            </p>
+            {perUnit != null && Number.isFinite(perUnit) && (
+              <p className="product-detail-per-unit">
+                ₹{perUnit.toLocaleString('en-IN')} / {unitDisplay(selectedUnit)}
+              </p>
             )}
           </div>
+        ) : (
+          <p className="product-detail-price">₹{Number(totalPrice).toLocaleString('en-IN')}</p>
         )}
 
         <p className="product-detail-description">{product.description}</p>
@@ -247,6 +214,24 @@ export default function ProductDetail() {
         )}
 
         <div className="product-detail-actions">
+          <div className="qty-selector" aria-label="Quantity">
+            <button
+              type="button"
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span aria-live="polite">{qty}</span>
+            <button
+              type="button"
+              onClick={() => setQty((q) => q + 1)}
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+
           <button
             className="btn btn-primary"
             onClick={handleAdd}

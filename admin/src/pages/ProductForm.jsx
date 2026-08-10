@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
+import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantValidation'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -11,10 +12,9 @@ const EMPTY = {
   category_id: '', brand_id: '',
 }
 
-// Preset units for the variant dropdown. A variant's EXISTING unit (from
-// previously saved products) is preserved as an extra option when it is not
-// one of these, so editing an old product never breaks its saved unit.
-const UNIT_OPTIONS = ['ML', 'Gram', 'Pieces']
+// Variant validation rules + unit canonicalization live in
+// utils/variantValidation.js (unit-tested there) and mirror the backend
+// exactly — the dropdown offers ONLY ML, Gram, Pieces.
 
 export default function ProductForm() {
   const { id } = useParams()
@@ -40,8 +40,10 @@ export default function ProductForm() {
   const [error, setError] = useState('')
 
   // --- Variant state ------------------------------------------------------
-  // Each variant carries ONLY: quantity_value + quantity_unit + price
-  // (+ is_default). Stock, bulk pricing and packs are removed.
+  // Each variant carries EXACTLY: quantity_value + quantity_unit +
+  // total_price (Variant Total Price — the amount the customer pays for one
+  // selected variant) + price_per_unit (informational display) + is_default.
+  // No stock, no bulk pricing, no package pricing.
   const [variants, setVariants] = useState([])
 
   useEffect(() => {
@@ -64,13 +66,16 @@ export default function ProductForm() {
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
-          // Load existing variants (if any) returned by the backend.
+          // Load existing variants (if any) returned by the backend. Legacy
+          // variants (pre-total-price) fall back to their old `price` value
+          // so editing an old product never loses its data.
           if (Array.isArray(p.variants) && p.variants.length > 0) {
             setVariants(
               p.variants.map((v) => ({
                 quantity_value: v.quantity_value ?? '',
-                quantity_unit: v.quantity_unit ?? 'ML',
-                price: v.price ?? '',
+                quantity_unit: normalizeUnit(v.quantity_unit) || 'ML',
+                total_price: v.total_price != null ? v.total_price : (v.price ?? ''),
+                price_per_unit: v.price_per_unit != null ? v.price_per_unit : (v.price ?? ''),
                 is_default: Boolean(v.is_default),
               }))
             )
@@ -119,7 +124,8 @@ export default function ProductForm() {
       {
         quantity_value: '',
         quantity_unit: 'ML',
-        price: '',
+        total_price: '',
+        price_per_unit: '',
         is_default: prev.length === 0, // first variant is default by default
       },
     ])
@@ -157,40 +163,6 @@ export default function ProductForm() {
     return UNIT_OPTIONS
   }
 
-  // --- Validation ----------------------------------------------------------
-  // Variants are OPTIONAL: a product without variants is sold at its normal
-  // product price. When variants exist, each must have Quantity + Unit + Price
-  // and exactly one default.
-  const validateVariants = () => {
-    if (variants.length === 0) return ''
-    const defaults = variants.filter((v) => v.is_default)
-    if (defaults.length !== 1) {
-      return 'Exactly one variant must be marked as default.'
-    }
-    // Duplicate quantity + unit check
-    const seen = new Set()
-    for (const v of variants) {
-      const q = String(v.quantity_value ?? '').trim()
-      const u = String(v.quantity_unit ?? '').trim()
-      if (!q || !u) {
-        return 'Each variant needs a Quantity Value and Unit.'
-      }
-      const numQ = Number(q)
-      if (Number.isNaN(numQ)) {
-        return 'Quantity Value must be a number.'
-      }
-      if (Number(v.price ?? '') <= 0) {
-        return 'Variant price must be greater than 0.'
-      }
-      const key = `${q.toUpperCase()}|${u.toUpperCase()}`
-      if (seen.has(key)) {
-        return 'Duplicate variant: Quantity + Unit combination already exists.'
-      }
-      seen.add(key)
-    }
-    return ''
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -202,16 +174,16 @@ export default function ProductForm() {
     }
 
     // Validate variants (optional — empty variant list is allowed)
-    const variantError = validateVariants()
+    const variantError = validateVariants(variants)
     if (variantError) {
       setError(variantError)
       return
     }
 
-    // The authoritative selling price: the default variant when variants
-    // exist, otherwise the plain product price (variant-less products).
+    // The authoritative selling price: the default variant's TOTAL price when
+    // variants exist, otherwise the plain product price (variant-less products).
     const defaultVariant = variants.find((v) => v.is_default) || variants[0]
-    const sellingPrice = hasVariants ? Number(defaultVariant?.price ?? form.price) : Number(form.price)
+    const sellingPrice = hasVariants ? Number(defaultVariant?.total_price ?? form.price) : Number(form.price)
     const parsedCompareAt = form.compare_at_price === '' || form.compare_at_price == null ? null : Number(form.compare_at_price)
     if (!Number.isFinite(sellingPrice) || sellingPrice < 0) {
       setError('Selling price must be a number >= 0.')
@@ -234,12 +206,14 @@ export default function ProductForm() {
       }
 
       // Build the variants payload for the backend — ONLY quantity value,
-      // unit, price and default flag (no stock / no bulk / no packs).
+      // unit, variant total price, price per unit and default flag
+      // (no stock / no bulk / no packs).
       const variantsPayload = variants.map((v) => ({
         quantity_value: Number(v.quantity_value),
         quantity_unit: v.quantity_unit.trim(),
         display_label: `${v.quantity_value} ${v.quantity_unit}`.trim(),
-        price: Number(v.price),
+        total_price: Number(v.total_price),
+        price_per_unit: Number(v.price_per_unit),
         is_default: Boolean(v.is_default),
       }))
 
@@ -389,7 +363,8 @@ export default function ProductForm() {
           {variants.length === 0 && (
             <p className="variants-empty">
               No variants yet. A product without variants is sold at its normal price.
-              Add a variant (e.g. 10 ML → ₹50) to offer capacity/size options.
+              Add a variant (e.g. 100 Pieces → ₹1000 total, ₹10 per piece) to offer
+              pack/size options.
             </p>
           )}
 
@@ -415,17 +390,17 @@ export default function ProductForm() {
 
               <div className="variant-grid">
                 <div className="form-field">
-                  <label htmlFor={`qty-${index}`}>Quantity Value</label>
+                  <label htmlFor={`qty-${index}`}>Quantity</label>
                   <input
                     id={`qty-${index}`}
                     type="number"
-                    min="0"
+                    min="1"
                     step="any"
-                    placeholder="e.g. 10"
+                    placeholder="e.g. 100"
                     value={v.quantity_value}
                     onChange={(e) => updateVariant(index, 'quantity_value', e.target.value)}
                   />
-                  <small className="field-example">Example: 10</small>
+                  <small className="field-example">Example: 100</small>
                 </div>
 
                 <div className="form-field">
@@ -443,16 +418,31 @@ export default function ProductForm() {
                 </div>
 
                 <div className="form-field">
-                  <label htmlFor={`price-${index}`}>Price (₹)</label>
+                  <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
                   <input
-                    id={`price-${index}`}
+                    id={`total-price-${index}`}
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    value={v.price}
-                    onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                    value={v.total_price}
+                    onChange={(e) => updateVariant(index, 'total_price', e.target.value)}
                   />
+                  <small className="field-example">What the customer pays for one variant</small>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
+                  <input
+                    id={`per-unit-${index}`}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={v.price_per_unit}
+                    onChange={(e) => updateVariant(index, 'price_per_unit', e.target.value)}
+                  />
+                  <small className="field-example">Display only, e.g. ₹10 per piece</small>
                 </div>
               </div>
 

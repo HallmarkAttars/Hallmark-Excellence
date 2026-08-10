@@ -302,6 +302,15 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* Informational per-unit price next to a variant line's total (e.g. "₹10 / piece"
+   beside "₹7500" for a 1000-pieces variant) — same muted tone, never struck. */
+.cart-item-per-unit {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #9A9286;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .cart-item-bulk-badge {
   display: inline-flex;
   align-items: center;

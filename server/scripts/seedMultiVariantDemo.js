@@ -1,8 +1,8 @@
 // Creates two MULTI-VARIANT demo products through the REAL admin API
 // (POST /api/admin/products) so they match exactly what the admin UI
-// produces — variants (Quantity Value + Unit + Price + Default), no stock,
-// no bulk, no packs. Idempotent: skips a product when its name already
-// exists (safe to re-run).
+// produces — variants (Quantity + Unit + Variant Total Price + Price Per
+// Unit + Default), no stock, no bulk, no packs. Idempotent: skips a product
+// when its name already exists (safe to re-run).
 //
 //   node scripts/seedMultiVariantDemo.js
 //
@@ -17,7 +17,12 @@ const CATEGORY_ATTAR = 'fd58b546-610e-4813-8669-f29fe051fb42'
 const IMAGE =
   'https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&q=70'
 
+// Round a per-unit price to 2 decimals (numeric(10,2) style).
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100
+
 // name | brand_id | price | compare_at | rating | reviews | description | variants
+// Each variant: Quantity + Unit + Variant Total Price (the amount paid for
+// ONE selected variant) + Price Per Unit (informational display only).
 const PRODUCTS = [
   [
     'Al Aseel',
@@ -25,9 +30,9 @@ const PRODUCTS = [
     50, 75, 4.8, 26,
     'A pure, traditional attar — clean and skin-close. Pick your size: every drop is the same beloved oil.',
     [
-      { quantity_value: 10, quantity_unit: 'ML', display_label: '10 ML', price: 50, is_default: true },
-      { quantity_value: 20, quantity_unit: 'ML', display_label: '20 ML', price: 90, is_default: false },
-      { quantity_value: 30, quantity_unit: 'ML', display_label: '30 ML', price: 130, is_default: false },
+      { quantity_value: 10, quantity_unit: 'ML', display_label: '10 ML', total_price: 50, price_per_unit: round2(50 / 10), is_default: true },
+      { quantity_value: 20, quantity_unit: 'ML', display_label: '20 ML', total_price: 90, price_per_unit: round2(90 / 20), is_default: false },
+      { quantity_value: 30, quantity_unit: 'ML', display_label: '30 ML', total_price: 130, price_per_unit: round2(130 / 30), is_default: false },
     ],
   ],
   [
@@ -36,9 +41,9 @@ const PRODUCTS = [
     150, 200, 4.9, 41,
     'Warm saffron suspended in golden oud — measured by weight, so you choose exactly how much luxury you need.',
     [
-      { quantity_value: 10, quantity_unit: 'Gram', display_label: '10 Gram', price: 150, is_default: true },
-      { quantity_value: 20, quantity_unit: 'Gram', display_label: '20 Gram', price: 280, is_default: false },
-      { quantity_value: 30, quantity_unit: 'Gram', display_label: '30 Gram', price: 400, is_default: false },
+      { quantity_value: 10, quantity_unit: 'Gram', display_label: '10 Gram', total_price: 150, price_per_unit: round2(150 / 10), is_default: true },
+      { quantity_value: 20, quantity_unit: 'Gram', display_label: '20 Gram', total_price: 280, price_per_unit: round2(280 / 20), is_default: false },
+      { quantity_value: 30, quantity_unit: 'Gram', display_label: '30 Gram', total_price: 400, price_per_unit: round2(400 / 30), is_default: false },
     ],
   ],
 ]
@@ -100,7 +105,7 @@ async function main() {
       continue
     }
     const createdVariants = (data.product?.variants || []).map(
-      (v) => `${v.display_label} @ ₹${v.price}${v.is_default ? ' (default)' : ''}`
+      (v) => `${v.display_label} @ ₹${v.total_price}${v.is_default ? ' (default)' : ''}`
     )
     console.log(`created ${name} — ₹${price} | ${createdVariants.join(', ')}`)
     created++

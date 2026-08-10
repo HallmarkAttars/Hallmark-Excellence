@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { getBrands } from '../services/mockApi'
-import { computeBrandBulkStatus, effectiveUnitPrice } from '../utils/bulk'
+import { cartTotal, lineUnitPrice } from '../utils/variantPricing'
 
 const CartContext = createContext(null)
 const STORAGE_KEY = 'ad_cart_v1'
@@ -15,7 +14,7 @@ function readStoredCart() {
 }
 
 // Build a stable unique line key. Variant items are keyed by product id +
-// variant id so different capacity variants (10 ML vs 20 ML) stay separate.
+// variant id so different variants (100 Pieces vs 1000 Pieces) stay separate.
 // Legacy items (no variant) are keyed by product id alone.
 function lineKey(item) {
   return item.variant_id != null ? `${item.product_id}-v${item.variant_id}` : `${item.product_id}-`
@@ -29,12 +28,10 @@ function normalizeItem(raw) {
     name: raw.name,
     image: raw.image,
     quantity: Number(raw.quantity ?? raw.qty ?? 1),
-    // Selected price is the variant price when a variant exists, otherwise
-    // the legacy product price.
+    // The amount charged per ONE unit of this line: the selected variant's
+    // TOTAL price, or the legacy product price for variant-less lines.
     selected_price: Number(raw.selected_price ?? raw.price ?? 0),
-    // Brand context — needed for combined brand bulk pricing. Legacy stored
-    // carts without brand_id simply skip brand-level discounts until the item
-    // is re-added.
+    // Brand context — kept for display on cart/checkout (never affects price).
     brand_id: raw.brand_id ?? null,
     brand_name: raw.brand_name ?? null,
     ...(variant
@@ -43,6 +40,16 @@ function normalizeItem(raw) {
           variant_label: raw.variant_label,
           quantity_value: raw.quantity_value,
           quantity_unit: raw.quantity_unit,
+          // Legacy stored carts may predate the new pricing fields — fall
+          // back to the stored selected price so old carts keep working.
+          variant_total_price:
+            raw.variant_total_price != null
+              ? Number(raw.variant_total_price)
+              : Number(raw.selected_price ?? raw.price ?? 0),
+          variant_price_per_unit:
+            raw.variant_price_per_unit != null
+              ? Number(raw.variant_price_per_unit)
+              : Number(raw.selected_price ?? raw.price ?? 0),
           variant_is_default: raw.variant_is_default === true,
         }
       : {}),
@@ -51,40 +58,6 @@ function normalizeItem(raw) {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(() => readStoredCart().map(normalizeItem))
-  // Fresh brand rows from the brands API — the single source of truth for
-  // combined brand bulk config. Brand bulk is DERIVED from (items × brand
-  // data) on every render, never stored, so a config change recalcs
-  // immediately.
-  const [brandById, setBrandById] = useState({})
-
-  // Fetch brand bulk config. Re-runs on mount and whenever the tab regains
-  // focus so a brand toggle flipped by the admin mid-session is picked up
-  // without a full page reload.
-  useEffect(() => {
-    let cancelled = false
-    const load = () => {
-      getBrands()
-        .then((brands) => {
-          if (cancelled) return
-          const map = {}
-          for (const b of brands || []) {
-            if (b.id != null) map[String(b.id)] = b
-          }
-          setBrandById(map)
-        })
-        .catch(() => {
-          // Brand data unavailable (offline / cold start) → brand bulk simply
-          // stays off; normal pricing continues to work.
-        })
-    }
-    load()
-    const onFocus = () => load()
-    window.addEventListener('focus', onFocus)
-    return () => {
-      cancelled = true
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [])
 
   // Persist ONLY real changes — never on mount. On first render the storage
   // already holds exactly what was loaded, so writing again is at best
@@ -99,17 +72,19 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  // Add ONE unit of the selected product/variant to the cart. The customer
-  // never chooses a quantity — each purchase is a single unit of the variant
-  // (or of the product itself for variant-less products). Adding the same
+  // Add `qty` units of the selected product/variant to the cart. The line is
+  // priced at the selected VARIANT'S TOTAL PRICE × quantity (the quantity is
+  // how many units/packs of that variant the customer wants). Adding the same
   // variant again merges into the same line.
   const addItem = useCallback((product, qty = 1, variant = null) => {
     setItems((prev) => {
       const hasVariant = Boolean(variant && variant.variant_id != null)
 
-      // Legacy products (no variant) keep using product.price.
+      // Authoritative per-line price: the selected variant's total price
+      // (never its price-per-unit), or the product price for variant-less
+      // products.
       const selected_price = hasVariant
-        ? Number(variant.price)
+        ? Number(variant.total_price ?? variant.price)
         : Number(product.price)
 
       const quantity = Math.max(1, Number(qty) || 1)
@@ -120,7 +95,7 @@ export function CartProvider({ children }) {
         image: product.image,
         quantity,
         selected_price,
-        // Brand context carried on the line for combined brand bulk pricing.
+        // Brand context carried on the line for display (never pricing).
         brand_id: product.brand_id ?? null,
         brand_name: product.brand_name ?? null,
         ...(hasVariant
@@ -129,6 +104,8 @@ export function CartProvider({ children }) {
               variant_label: variant.variant_label,
               quantity_value: variant.quantity_value,
               quantity_unit: variant.quantity_unit,
+              variant_total_price: Number(variant.total_price ?? variant.price),
+              variant_price_per_unit: Number(variant.price_per_unit ?? variant.total_price ?? variant.price),
               variant_is_default: variant.is_default === true,
             }
           : {}),
@@ -144,14 +121,19 @@ export function CartProvider({ children }) {
         updated[existingIndex] = {
           ...existing,
           quantity: combined,
-          // Refresh the price and brand context on re-add — a line stored
-          // before brand_id existed (legacy cart) must pick up the brand so
-          // combined brand bulk can apply, and a variant whose price changed
-          // since the first add should charge the current price.
+          // Refresh the price and variant info on re-add — a line stored
+          // before the new pricing fields existed (legacy cart) must pick up
+          // the current variant total price.
           selected_price: newItem.selected_price,
+          ...(hasVariant
+            ? {
+                variant_total_price: newItem.variant_total_price,
+                variant_price_per_unit: newItem.variant_price_per_unit,
+                variant_is_default: newItem.variant_is_default,
+              }
+            : {}),
           brand_id: newItem.brand_id,
           brand_name: newItem.brand_name,
-          variant_is_default: newItem.variant_is_default,
         }
         return updated
       }
@@ -170,9 +152,6 @@ export function CartProvider({ children }) {
   // and a refresh can never resurrect the old cart from storage. The persist
   // effect then re-writes '[]' after the commit, keeping both layers in sync.
   const clearCart = useCallback(() => {
-    // In-memory state always clears. The storage write is best-effort (same
-    // tolerance as readStoredCart): persistence must never be able to throw
-    // AFTER a successful order and bounce the customer into the error path.
     setItems([])
     try {
       localStorage.removeItem(STORAGE_KEY)
@@ -184,41 +163,28 @@ export function CartProvider({ children }) {
   const itemCount = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items])
 
   // --- Derived pricing ------------------------------------------------------
-  // Everything below is computed LIVE from (cart items × fresh brand data) on
-  // every change — brand bulk discounts are never stored, so toggling a brand
-  // off (or removing an item that drops a brand below its threshold) recalculates
-  // the effective prices immediately.
-  //
-  // pricedItems = items + resolved `unit_price` (brand bulk → normal) + brand
-  //   bulk metadata, so Cart.jsx and the checkout summary show exactly the
-  //   prices that will be charged.
-  // brandStatus = computeBrandBulkStatus(...) for the per-brand banners.
-  const { pricedItems, brandStatus, total } = useMemo(() => {
-    const status = computeBrandBulkStatus(items, brandById)
+  // pricedItems = items + resolved `unit_price` (= the selected variant's
+  // total price, or the product price) so the cart and checkout show exactly
+  // the prices that will be charged. Line total = unit_price × quantity
+  // (shared math in utils/variantPricing.js, unit-tested there).
+  const { pricedItems, total } = useMemo(() => {
     const resolved = items.map((i) => {
-      const unit_price = effectiveUnitPrice(i, status)
-      const st = i.brand_id != null ? status[String(i.brand_id)] : null
+      const unit_price = lineUnitPrice(i)
       return {
         ...i,
         unit_price,
-        normal_unit_price: Number(i.selected_price ?? i.price ?? 0),
-        brand_bulk_applied: Boolean(st?.active),
-        brand_bulk_price: st?.active ? Number(st.bulkUnitPrice) : null,
-        brand_bulk_min_qty: st?.active ? Number(st.bulkMinQty) : null,
-        brand_name: st?.name ?? i.brand_name ?? null,
+        normal_unit_price: unit_price,
+        brand_name: i.brand_name ?? null,
       }
     })
-    const sum = resolved.reduce((acc, i) => acc + i.unit_price * i.quantity, 0)
-    return { pricedItems: resolved, brandStatus: status, total: sum }
-  }, [items, brandById])
+    return { pricedItems: resolved, total: cartTotal(resolved) }
+  }, [items])
 
   const value = {
     items,
     // Resolved lines — same shape as items plus unit_price / normal_unit_price
-    // / brand_bulk_applied / brand_bulk_price / brand_bulk_min_qty / brand_name.
+    // / brand_name. unit_price is the per-line amount (variant total price).
     pricedItems,
-    // Per-brand combined bulk status for the brand banners in Cart.jsx.
-    brandStatus,
     addItem,
     removeItem,
     clearCart,

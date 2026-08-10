@@ -44,8 +44,26 @@ async function selectProducts(build) {
 }
 
 const VARIANT_SELECT = `
-  id, product_id, quantity_value, quantity_unit, display_label, price, is_default
+  id, product_id, quantity_value, quantity_unit, display_label, price,
+  total_price, price_per_unit, is_default
 `
+
+// The authoritative purchasable amount for ONE selected variant. Legacy
+// variants (pre-migration) have no total_price — their old `price` value is
+// used as the total so existing data keeps charging exactly as before.
+function variantTotalPrice(v) {
+  const t = Number(v?.total_price)
+  if (Number.isFinite(t) && t >= 0) return t
+  return Number(v?.price ?? 0)
+}
+
+// Informational per-unit price for a variant. Legacy variants fall back to
+// their old `price` value.
+function variantPerUnitPrice(v) {
+  const p = Number(v?.price_per_unit)
+  if (Number.isFinite(p) && p >= 0) return p
+  return Number(v?.price ?? 0)
+}
 
 // Return the variant that should drive the product-level price.
 // Defaults to the variant flagged is_default, otherwise the first one.
@@ -79,7 +97,9 @@ async function withOptionalFieldRetry(operation, payload, select, baseSelect) {
   return res
 }
 
-// Public-shaped variant object.
+// Public-shaped variant object. total_price is the authoritative amount paid
+// for ONE selected variant; price_per_unit is informational display only.
+// Legacy variants (pre-migration) fall back to their old `price` value.
 function toVariant(v) {
   return {
     id: v.id,
@@ -87,6 +107,8 @@ function toVariant(v) {
     quantity_unit: v.quantity_unit,
     display_label: v.display_label,
     price: v.price,
+    total_price: variantTotalPrice(v),
+    price_per_unit: variantPerUnitPrice(v),
     is_default: v.is_default ?? false,
   }
 }
@@ -114,12 +136,15 @@ async function fetchVariantsByProducts(productIds) {
   return grouped
 }
 
-// Attach variants to an array of flattened product rows.
+// Attach variants to an array of flattened product rows. The product-level
+// price mirrors the DEFAULT variant's TOTAL price (the authoritative
+// purchasable amount) — legacy product-level prices stay only for
+// variant-less products.
 function attachVariants(rows, variantsByProduct) {
   return rows.map((row) => {
     const variants = variantsByProduct[row.id] || []
     const dv = defaultVariant(variants)
-    const price = variants.length > 0 ? dv.price : row.price
+    const price = variants.length > 0 ? variantTotalPrice(dv) : row.price
     return { ...row, price, variants }
   })
 }
@@ -226,7 +251,7 @@ async function getProductById(req, res) {
     }
 
     const dv = defaultVariant(variants)
-    const price = variants.length > 0 ? dv.price : product.price
+    const price = variants.length > 0 ? variantTotalPrice(dv) : product.price
 
     return res.json({ product: { ...product, price, variants } })
   } catch (err) {
@@ -349,7 +374,7 @@ async function getAdminProductById(req, res) {
     }
 
     const dv = defaultVariant(variants)
-    const price = variants.length > 0 ? dv.price : product.price
+    const price = variants.length > 0 ? variantTotalPrice(dv) : product.price
 
     return res.json({ product: { ...product, price, variants } })
   } catch (err) {
@@ -402,6 +427,40 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '')    // trim hyphens
 }
 
+// Allowed units for variants (backend-authoritative validation).
+const VALID_UNITS = ['ML', 'Gram', 'Pieces']
+
+// Validate one incoming variant. Returns an error message, or null when valid.
+// Rules (server-authoritative — never trust the client):
+//   quantity_value > 0
+//   quantity_unit  in [ML, Gram, Pieces]
+//   total_price    >= 0
+//   price_per_unit >= 0
+// Legacy clients that still send only `price` map it onto both new fields
+// (total = per-unit = price), keeping in-flight admin requests working.
+function validateVariant(v) {
+  const qty = Number(v.quantity_value)
+  const unit = String(v.quantity_unit ?? '').trim()
+  const total = v.total_price != null ? Number(v.total_price) : (v.price != null ? Number(v.price) : NaN)
+  const perUnit = v.price_per_unit != null ? Number(v.price_per_unit) : (v.price != null ? Number(v.price) : NaN)
+
+  if (v.quantity_value === '' || v.quantity_value == null || !Number.isFinite(qty) || qty <= 0) {
+    return 'Variant quantity must be a number greater than 0.'
+  }
+  if (!VALID_UNITS.includes(unit)) {
+    return 'Variant unit must be one of ML, Gram, Pieces.'
+  }
+  // Empty strings are NOT a valid 0 — a missing price must be rejected, not
+  // silently coerced (Number('') would otherwise pass the >= 0 check).
+  if (v.total_price === '' || v.total_price == null || !Number.isFinite(total) || total < 0) {
+    return 'Variant total price must be a number >= 0.'
+  }
+  if (v.price_per_unit === '' || v.price_per_unit == null || !Number.isFinite(perUnit) || perUnit < 0) {
+    return 'Variant price per unit must be a number >= 0.'
+  }
+  return null
+}
+
 // Normalize an incoming variants array into rows for product_variants.
 function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
@@ -410,6 +469,8 @@ function normalizeVariants(variants) {
     quantity_unit: v.quantity_unit ?? 'ML',
     display_label: v.display_label ?? '',
     price: v.price,
+    total_price: v.total_price != null ? v.total_price : v.price,
+    price_per_unit: v.price_per_unit != null ? v.price_per_unit : v.price,
     is_default: v.is_default ?? false,
   }))
 }
@@ -485,6 +546,10 @@ async function createProduct(req, res) {
     // Insert variants (if any) after the product exists.
     let inserted = []
     if (Array.isArray(variants) && variants.length > 0) {
+      const invalid = variants.map(validateVariant).find(Boolean)
+      if (invalid) {
+        return res.status(400).json({ error: invalid })
+      }
       try {
         inserted = await insertVariants(data.id, variants)
       } catch (varErr) {
@@ -495,7 +560,7 @@ async function createProduct(req, res) {
 
     const product = flattenProduct(data)
     const dv = defaultVariant(inserted)
-    const pPrice = inserted.length > 0 ? dv.price : product.price
+    const pPrice = inserted.length > 0 ? variantTotalPrice(dv) : product.price
 
     return res.status(201).json({ product: { ...product, price: pPrice, variants: inserted } })
   } catch (err) {
@@ -572,6 +637,12 @@ async function updateProduct(req, res) {
     // If variants were provided, replace the old set with the new one.
     let inserted = []
     if (Array.isArray(variants)) {
+      if (variants.length > 0) {
+        const invalid = variants.map(validateVariant).find(Boolean)
+        if (invalid) {
+          return res.status(400).json({ error: invalid })
+        }
+      }
       try {
         const { error: delError } = await supabase
           .from('product_variants')
@@ -590,7 +661,7 @@ async function updateProduct(req, res) {
 
     const product = flattenProduct(data)
     const dv = defaultVariant(inserted)
-    const pPrice = inserted.length > 0 ? dv.price : product.price
+    const pPrice = inserted.length > 0 ? variantTotalPrice(dv) : product.price
 
     return res.json({ product: { ...product, price: pPrice, variants: inserted } })
   } catch (err) {

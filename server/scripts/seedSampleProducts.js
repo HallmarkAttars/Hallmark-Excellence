@@ -26,26 +26,28 @@ const IMAGES = {
   'amber-oud': 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=800&q=70',
 }
 
-// name | price | compare_at | stock | rating | reviews | description
+// name | price | compare_at | rating | reviews | description
 const PRODUCTS = [
-  ['misk-al-arab', 'Musk Al Arab', 799, 999, 50, 4.7, 38, 'A pure white musk attar — soft, clean and traditionally elegant.'],
-  ['misk-al-arab', 'Misk Rose', 999, 1249, 40, 4.8, 51, 'Rose and musk entwined — a romantic, skin-close fragrance.'],
-  ['oud-al-haramain', 'Oud Al Haramain', 1499, 1899, 30, 4.9, 64, 'Sacred, resinous oud — dark, smoky and deeply rooted.'],
-  ['oud-al-haramain', 'Oud & Saffron', 1799, 2199, 25, 4.8, 42, 'Royal oud wrapped in warm saffron — an evening signature.'],
-  ['amber-oud', 'Amber Oud Gold', 1299, 1599, 35, 4.7, 47, 'Golden amber and luminous oud — warm, sophisticated luxury.'],
-  ['amber-oud', 'Amber Musk', 899, 1099, 45, 4.6, 29, 'A velvety amber-musk blend — soft, warm and quietly alluring.'],
+  ['misk-al-arab', 'Musk Al Arab', 799, 999, 4.7, 38, 'A pure white musk attar — soft, clean and traditionally elegant.'],
+  ['misk-al-arab', 'Misk Rose', 999, 1249, 4.8, 51, 'Rose and musk entwined — a romantic, skin-close fragrance.'],
+  ['oud-al-haramain', 'Oud Al Haramain', 1499, 1899, 4.9, 64, 'Sacred, resinous oud — dark, smoky and deeply rooted.'],
+  ['oud-al-haramain', 'Oud & Saffron', 1799, 2199, 4.8, 42, 'Royal oud wrapped in warm saffron — an evening signature.'],
+  ['amber-oud', 'Amber Oud Gold', 1299, 1599, 4.7, 47, 'Golden amber and luminous oud — warm, sophisticated luxury.'],
+  ['amber-oud', 'Amber Musk', 899, 1099, 4.6, 29, 'A velvety amber-musk blend — soft, warm and quietly alluring.'],
 ]
 
-const variantFor = (price, stock) => ({
+// Round a per-unit price to 2 decimals (numeric(10,2) style).
+const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100
+
+// Each product gets one default 3 ML variant: total_price = the amount the
+// customer pays for the 3 ML bottle; price_per_unit = ₹X per ML (display only).
+const variantFor = (price) => ({
   quantity_value: 3,
   quantity_unit: 'ML',
   display_label: '3 ML',
-  price,
-  stock,
+  total_price: price,
+  price_per_unit: round2(price / 3),
   is_default: true,
-  bulk_enabled: false,
-  bulk_price: null,
-  bulk_min_qty: null,
 })
 
 async function login() {
@@ -77,7 +79,7 @@ async function main() {
   let created = 0
   let skipped = 0
 
-  for (const [slug, name, price, compareAt, stock, rating, reviews, description] of PRODUCTS) {
+  for (const [slug, name, price, compareAt, rating, reviews, description] of PRODUCTS) {
     const brandId = BRAND_IDS[slug]
     if (!brandId) throw new Error(`Unknown brand slug: ${slug}`)
 
@@ -92,17 +94,13 @@ async function main() {
       description,
       price,
       compare_at_price: compareAt,
-      bulk_enabled: false,
-      bulk_price: null,
-      bulk_min_qty: null,
       rating,
       review_count: reviews,
       is_featured: false,
-      stock,
       category_id: CATEGORY_ATTAR,
       brand_id: brandId,
       image: IMAGES[slug],
-      variants: [variantFor(price, stock)],
+      variants: [variantFor(price)],
     }
 
     const res = await fetch(`${BASE}/api/admin/products`, {
@@ -115,7 +113,7 @@ async function main() {
       console.log(`ERROR   ${name}: ${data.error || JSON.stringify(data).slice(0, 180)}`)
       continue
     }
-    console.log(`created ${name} (${slug}) — ₹${price}, stock ${stock}`)
+    console.log(`created ${name} (${slug}) — ₹${price} (3 ML)`)
     created++
   }
 

@@ -1,21 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import {
-  formatINR,
-  showStruckUnitPrice,
-  hasLineSavings,
-  lineTotalDisplay,
-} from '../utils/cartDisplay'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
 export default function Cart() {
-  const { pricedItems, brandStatus, removeItem, total, itemCount } = useCart()
+  const { pricedItems, removeItem, total, itemCount } = useCart()
   const navigate = useNavigate()
 
   const handleCheckout = () => {
-    // The resolved snapshot (unit_price already includes any active brand
-    // bulk) travels to the checkout page — the server still recomputes
+    // The resolved snapshot (unit_price already includes the selected variant
+    // total price) travels to the checkout page — the server still recomputes
     // everything authoritatively from the database.
     navigate('/checkout', { state: { checkoutItems: pricedItems, total } })
   }
@@ -37,33 +31,6 @@ export default function Cart() {
     )
   }
 
-  // Brands with combined bulk pricing currently in the cart (derived live —
-  // only brands that actually have lines here appear, so banners never show
-  // for brands the customer isn't buying).
-  const brandBanners = Object.entries(brandStatus)
-    .map(([brandId, b]) => ({ brandId, ...b }))
-    .filter((b) => b.bulk_enabled && Number.isInteger(b.bulkMinQty) && b.bulkMinQty > 1)
-    // Per-brand savings shown inside the ACTIVE banner — real saved amount
-    // from the resolved line prices, never invented.
-    .map((b) => {
-      const saved = pricedItems.reduce((acc, it) => {
-        if (it.brand_bulk_applied && String(it.brand_id) === b.brandId) {
-          return acc + Math.max(0, it.normal_unit_price - it.unit_price) * it.quantity
-        }
-        return acc
-      }, 0)
-      return { ...b, saved }
-    })
-
-  // Order-level brand bulk savings for the summary promo box — derived from
-  // the resolved line prices (brand bulk is the only bulk discount).
-  const bulkSavingsTotal = pricedItems.reduce((acc, it) => {
-    if (it.brand_bulk_applied) {
-      return acc + Math.max(0, it.normal_unit_price - it.unit_price) * it.quantity
-    }
-    return acc
-  }, 0)
-
   return (
     <div className="container cart-page">
       <div className="cart-head">
@@ -78,52 +45,6 @@ export default function Cart() {
 
       <div className="cart-layout">
         <section className="cart-main" aria-label="Items in your cart">
-          {/* Brand bulk banners — green when active, warm progress when the
-              threshold is within reach. Only bulk-enabled brands render. */}
-          {brandBanners.length > 0 && (
-            <div className="cart-banners" aria-label="Brand bulk pricing">
-              {brandBanners.map((b) => {
-                const remaining = Math.max(0, b.bulkMinQty - b.totalQty)
-                const pct = Math.min(100, Math.round((b.totalQty / b.bulkMinQty) * 100))
-                return b.active ? (
-                  <div key={b.brandId} className="cart-banner is-active">
-                    <span className="cart-banner-check" aria-hidden="true">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="m5 12.5 4.5 4.5L19 7.5" />
-                      </svg>
-                    </span>
-                    <div className="cart-banner-text">
-                      <p className="cart-banner-title">
-                        <strong>{b.name}</strong> bulk pricing active – {b.totalQty} pieces at ₹
-                        {Number(b.bulkUnitPrice).toLocaleString('en-IN')} each
-                      </p>
-                      {b.saved > 0 && (
-                        <p className="cart-banner-saved">
-                          You saved ₹{b.saved.toLocaleString('en-IN')} with bulk pricing
-                        </p>
-                      )}
-                    </div>
-                    <span className="cart-banner-chevron" aria-hidden="true">›</span>
-                  </div>
-                ) : (
-                  <div key={b.brandId} className="cart-banner is-progress">
-                    <span className="cart-banner-flame" aria-hidden="true">🔥</span>
-                    <div className="cart-banner-text">
-                      <p className="cart-banner-title">
-                        Add <strong>{remaining} more {b.name}</strong> piece{remaining === 1 ? '' : 's'} to unlock ₹
-                        {Number(b.bulkUnitPrice).toLocaleString('en-IN')}/piece
-                      </p>
-                      <div className="cart-banner-track" aria-hidden="true">
-                        <div className="cart-banner-fill" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                    <span className="cart-banner-count">{b.totalQty} / {b.bulkMinQty} pieces</span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
           <div className="cart-items">
             {pricedItems.map((item) => {
               const key = item.variant_id != null
@@ -133,24 +54,13 @@ export default function Cart() {
                 || (item.quantity_value != null && item.quantity_unit
                     ? `${item.quantity_value} ${item.quantity_unit}`
                     : '')
-              // Resolved pricing — unit_price already includes any active
-              // brand-level combined bulk discount.
-              const effectivePrice = item.unit_price
-              const normalPrice = item.normal_unit_price
-              const subtotal = effectivePrice * item.quantity
-              const brandBulkSavings =
-                item.brand_bulk_applied && normalPrice > effectivePrice
-                  ? (normalPrice - effectivePrice) * item.quantity
-                  : 0
-              const lineSavings = brandBulkSavings
-              const bulkBadge = item.brand_bulk_applied
-                ? `${item.brand_name || 'Brand'} Bulk Applied`
-                : null
-              // Display gating (pure helpers in utils/cartDisplay.js — unit
-              // tested): what this row SHOWS, never what it charges.
-              const showCompareAt = showStruckUnitPrice(bulkBadge, normalPrice, effectivePrice)
-              const discountActive = hasLineSavings(lineSavings)
-              const totalLine = lineTotalDisplay(normalPrice, item.quantity, lineSavings)
+              const hasVariant = item.variant_id != null
+              // unit_price is the amount charged per ONE unit of this line:
+              // the selected variant's TOTAL price (e.g. ₹7500 for "1000
+              // Pieces"), or the product price for variant-less lines.
+              const unitPrice = item.unit_price
+              const subtotal = unitPrice * item.quantity
+              const perUnit = item.variant_price_per_unit
               return (
                 <article key={key} className="cart-item">
                   {/* Left — product image (square, cream stage, never cropped) */}
@@ -166,51 +76,37 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  {/* Center — brand / name / variant / price / savings / remove */}
+                  {/* Center — brand / name / variant / price / remove */}
                   <div className="cart-item-info">
                     {item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
                     <h3 className="cart-item-name">{item.name}</h3>
                     {label && <p className="cart-item-variant">{label}</p>}
                     <div className="cart-item-price-row">
                       <span className="cart-item-unit">
-                        ₹{effectivePrice.toLocaleString('en-IN')} / piece
+                        ₹{unitPrice.toLocaleString('en-IN')}
+                        {!hasVariant ? ' / piece' : ''}
                       </span>
-                      {/* Normal per-piece price struck through — only when a
-                          brand bulk discount is genuinely active on this line. */}
-                      {showCompareAt && (
-                        <span className="cart-item-unit-struck">
-                          ₹{formatINR(normalPrice)}/piece
+                      {hasVariant && perUnit != null && Number.isFinite(Number(perUnit)) && (
+                        <span className="cart-item-per-unit">
+                          ₹{Number(perUnit).toLocaleString('en-IN')} / {String(item.quantity_unit || '').toLowerCase()}
                         </span>
                       )}
-                      {bulkBadge && (
-                        <span className="cart-item-bulk-badge">✓ {bulkBadge}</span>
-                      )}
                     </div>
-                    {discountActive && (
-                      <p className="cart-item-saved">You saved ₹{formatINR(lineSavings)}</p>
-                    )}
                     <button className="cart-item-remove" onClick={() => removeItem(key)}>
                       <TrashIcon size={14} /> Remove
                     </button>
                   </div>
 
-                  {/* Right — line total (each line is one unit of the selected
-                      variant; same variant added twice merges into a static ×N) */}
+                  {/* Right — line total (variant total price × quantity) */}
                   <div className="cart-item-buybox">
                     {item.quantity > 1 && (
                       <p className="cart-item-qty-static">× {item.quantity}</p>
                     )}
                     <div className="cart-item-total-col">
                       <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
-                      {/* With a bulk discount the struck line is the plain
-                          normal TOTAL (price × qty) so the hierarchy reads
-                          bold bulk total → struck normal total → saving. */}
-                      <p className={`cart-item-sub${totalLine.struck ? ' is-struck' : ''}`}>
-                        {totalLine.text}
+                      <p className="cart-item-sub">
+                        ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
                       </p>
-                      {discountActive && (
-                        <p className="cart-item-saving">Saving ₹{formatINR(lineSavings)}</p>
-                      )}
                     </div>
                   </div>
                 </article>
@@ -264,17 +160,6 @@ export default function Cart() {
             <span>Total</span>
             <span>₹{Number(total).toLocaleString('en-IN')}</span>
           </div>
-
-          {bulkSavingsTotal > 0 && (
-            <div className="cart-summary-savings">
-              <span className="cart-summary-savings-check" aria-hidden="true">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m5 12.5 4.5 4.5L19 7.5" />
-                </svg>
-              </span>
-              <span>You Save ₹{bulkSavingsTotal.toLocaleString('en-IN')} with Bulk Pricing</span>
-            </div>
-          )}
 
           <button className="btn btn-primary cart-checkout-btn" onClick={handleCheckout}>
             <LockIcon size={15} /> Confirm Order
