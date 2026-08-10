@@ -6,6 +6,8 @@ import AdminStatusBadge from '../components/ui/AdminStatusBadge'
 import Modal from '../components/ui/Modal'
 import OrderInvoice from '../components/invoice/OrderInvoice'
 import { InvoiceDownloadButton, InvoicePrintButton } from '../components/invoice/InvoiceActions'
+import { PackingLabelDownloadButton, PackingLabelPrintButton } from '../components/packing/PackingActions'
+import { presetBounds, ordersInDateRange, packingLabelsFileName, formatDateKey } from '../utils/packing'
 import {
   formatINR,
   formatOrderDate,
@@ -19,6 +21,15 @@ import './Orders.css'
 // Canonical statuses — Title Case, matching the values the backend writes
 // and the live orders_order_status_check constraint accepts.
 const STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
+
+// Packing-label range presets — 'custom' reveals the From/To date pickers.
+const RANGE_PRESETS = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: '7d', label: 'Last 7 Days' },
+  { value: '30d', label: 'Last 30 Days' },
+  { value: 'custom', label: 'Custom Date Range' },
+]
 
 // Map whatever case the backend stored (legacy rows could differ) onto the
 // canonical option values so the controlled <select> always matches an option.
@@ -231,6 +242,17 @@ export default function Orders() {
   const [paymentFilter, setPaymentFilter] = useState('All')
   const [updatingPaymentId, setUpdatingPaymentId] = useState(null)
 
+  // --- Packing labels ---
+  const [selectedIds, setSelectedIds] = useState([])
+  const [rangePreset, setRangePreset] = useState('today')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+  const [rangeStatus, setRangeStatus] = useState('All')
+  const [packingPreview, setPackingPreview] = useState(null)
+  const [generating, setGenerating] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [progress, setProgress] = useState(null)
+
   useEffect(() => {
     getOrders().then((o) => {
       const sorted = [...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -280,6 +302,30 @@ export default function Orders() {
     return list
   }, [orders, statusFilter, paymentFilter, debouncedSearch])
 
+  // Packing-label helpers --------------------------------------------------
+  // Selection over the currently visible rows (checkboxes in table + cards).
+  const visibleIds = useMemo(() => visibleOrders.map((o) => o.id), [visibleOrders])
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
+
+  // Range resolved in LOCAL time from the existing created_at timestamp — no
+  // new date fields anywhere. 'custom' requires explicit From/To dates.
+  const rangeBounds = useMemo(() => {
+    if (rangePreset === 'custom') {
+      if (!customFrom || !customTo) return null
+      return { from: new Date(`${customFrom}T00:00:00`), to: new Date(`${customTo}T23:59:59.999`) }
+    }
+    return presetBounds(rangePreset)
+  }, [rangePreset, customFrom, customTo])
+
+  const rangeOrders = useMemo(() => {
+    if (!rangeBounds) return []
+    let list = ordersInDateRange(orders, rangeBounds)
+    if (rangeStatus !== 'All') list = list.filter((o) => canonicalStatus(o.status) === rangeStatus)
+    return list
+  }, [orders, rangeBounds, rangeStatus])
+
+  const rangeLabel = rangeBounds ? `${formatDateKey(rangeBounds.from)} → ${formatDateKey(rangeBounds.to)}` : ''
+
   const hasQuery = Boolean(search.trim())
 
   const notify = (type, message) => {
@@ -302,6 +348,71 @@ export default function Orders() {
     clearSearch()
     setStatusFilter('All')
     setPaymentFilter('All')
+  }
+
+  // --- Packing label handlers ---
+  const toggleSelect = (id) =>
+    setSelectedIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  const toggleSelectAll = () =>
+    setSelectedIds((cur) =>
+      allVisibleSelected ? cur.filter((id) => !visibleIds.includes(id)) : [...new Set([...cur, ...visibleIds])]
+    )
+  const clearSelection = () => setSelectedIds([])
+
+  // Bulk download of the checkbox-selected orders.
+  const handleBulkLabelDownload = async () => {
+    if (bulkBusy || selectedIds.length === 0) return
+    const selected = orders.filter((o) => selectedIds.includes(o.id))
+    if (selected.length === 0) return
+    setBulkBusy(true)
+    setProgress({ done: 0, total: selected.length })
+    try {
+      const { downloadPackingLabels } = await import('../components/packing/packingLabelPdf')
+      await downloadPackingLabels(selected, { onProgress: (done, total) => setProgress({ done, total }) })
+      notify('success', `Downloaded packing labels for ${selected.length} order${selected.length === 1 ? '' : 's'}.`)
+      setSelectedIds([])
+    } catch (err) {
+      console.error('[packing] bulk download failed:', err)
+      notify('error', 'Unable to generate packing labels. Please try again.')
+    } finally {
+      setBulkBusy(false)
+      setProgress(null)
+    }
+  }
+
+  // Range download — confirm BEFORE generating so large ranges are never
+  // triggered accidentally.
+  const openRangePreview = () => {
+    if (rangeOrders.length === 0) {
+      notify('error', 'No orders found for the selected range.')
+      return
+    }
+    setPackingPreview({
+      orders: rangeOrders,
+      count: rangeOrders.length,
+      filename: packingLabelsFileName(rangeBounds.from, rangeBounds.to),
+    })
+  }
+
+  const confirmRangeDownload = async () => {
+    if (!packingPreview || generating) return
+    setGenerating(true)
+    setProgress({ done: 0, total: packingPreview.orders.length })
+    try {
+      const { downloadPackingLabels } = await import('../components/packing/packingLabelPdf')
+      await downloadPackingLabels(packingPreview.orders, {
+        filename: packingPreview.filename,
+        onProgress: (done, total) => setProgress({ done, total }),
+      })
+      setPackingPreview(null)
+      notify('success', `Downloaded ${packingPreview.orders.length} packing labels.`)
+    } catch (err) {
+      console.error('[packing] range download failed:', err)
+      notify('error', 'Unable to generate packing labels. Please try again.')
+    } finally {
+      setGenerating(false)
+      setProgress(null)
+    }
   }
 
   // CSV export of the CURRENTLY VISIBLE orders — uses only already-loaded
@@ -496,6 +607,111 @@ export default function Orders() {
         </div>
       </div>
 
+      {/* Packing labels toolbar — date-range + status download */}
+      <div className="card orders-packing-toolbar">
+        <div className="orders-packing-head">
+          <h3>Packing Labels</h3>
+          <span className="orders-packing-hint">Print labels to paste on customer parcels</span>
+        </div>
+        <div className="orders-packing-controls">
+          <label className="orders-packing-field">
+            <span>Select Range</span>
+            <select value={rangePreset} onChange={(e) => setRangePreset(e.target.value)}>
+              {RANGE_PRESETS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </label>
+
+          {rangePreset === 'custom' && (
+            <>
+              <label className="orders-packing-field">
+                <span>From</span>
+                <input
+                  type="date"
+                  value={customFrom}
+                  max={customTo || undefined}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  aria-label="From date"
+                />
+              </label>
+              <label className="orders-packing-field">
+                <span>To</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  min={customFrom || undefined}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  aria-label="To date"
+                />
+              </label>
+            </>
+          )}
+
+          <label className="orders-packing-field">
+            <span>Status</span>
+            <select value={rangeStatus} onChange={(e) => setRangeStatus(e.target.value)}>
+              <option value="All">All Status</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="button"
+            className="btn btn-dark orders-packing-download"
+            onClick={openRangePreview}
+            disabled={generating || (rangePreset === 'custom' && (!customFrom || !customTo))}
+          >
+            Download Packing Labels
+          </button>
+        </div>
+
+        {rangeBounds && (
+          <p className="orders-packing-count" role="status">
+            {rangeOrders.length} {rangeOrders.length === 1 ? 'order' : 'orders'} in range
+            {rangeStatus !== 'All' ? ` · ${rangeStatus}` : ''}
+          </p>
+        )}
+      </div>
+
+      {/* Bulk selection bar — checkbox-selected orders */}
+      {selectedIds.length > 0 && (
+        <div className="orders-bulk-bar" role="status">
+          <span className="orders-bulk-count">{selectedIds.length} selected</span>
+          <button
+            type="button"
+            className="btn btn-dark btn-sm"
+            onClick={handleBulkLabelDownload}
+            disabled={bulkBusy}
+          >
+            {bulkBusy ? `Generating ${selectedIds.length} labels…` : `Download Packing Labels (${selectedIds.length})`}
+          </button>
+          <button type="button" className="btn btn-outline btn-sm" onClick={clearSelection} disabled={bulkBusy}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Generation progress */}
+      {(generating || bulkBusy) && progress && (
+        <div className="orders-progress" role="status" aria-live="polite">
+          <span className="orders-progress-label">
+            Generating {progress.total} packing label{progress.total === 1 ? '' : 's'}…
+          </span>
+          <div className="orders-progress-track" aria-hidden="true">
+            <div
+              className="orders-progress-fill"
+              style={{ width: `${progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%` }}
+            />
+          </div>
+          <span className="orders-progress-pct">
+            {progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%
+          </span>
+        </div>
+      )}
+
       {/* Result count — dynamic, correct singular/plural */}
       {!loading && (
         <p className="orders-count" role="status">
@@ -551,6 +767,15 @@ export default function Orders() {
                 <table>
                   <thead>
                     <tr>
+                      <th aria-label="Select all visible orders">
+                        <input
+                          type="checkbox"
+                          className="orders-select-all"
+                          checked={allVisibleSelected}
+                          onChange={toggleSelectAll}
+                          aria-label="Select all visible orders"
+                        />
+                      </th>
                       <th aria-label="Expand" />
                       <th>Order #</th>
                       <th>Customer</th>
@@ -565,6 +790,14 @@ export default function Orders() {
                     {visibleOrders.map((o) => (
                       <Fragment key={o.id}>
                         <tr id={`order-row-${o.id}`} className={`orders-row ${expanded === o.id ? 'is-expanded' : ''}`}>
+                          <td className="orders-select-cell">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(o.id)}
+                              onChange={() => toggleSelect(o.id)}
+                              aria-label={`Select order ${o.order_number}`}
+                            />
+                          </td>
                           <td className="orders-expand-cell">
                             <ExpandButton
                               expanded={expanded === o.id}
@@ -594,6 +827,8 @@ export default function Orders() {
                             <StatusSelect o={o} updatingId={updatingId} onUpdate={handleStatusChange} />
                           </td>
                           <td className="orders-actions-cell">
+                            <PackingLabelPrintButton order={o} compact />
+                            <PackingLabelDownloadButton order={o} compact />
                             {can('orders.delete') && (
                               <button
                                 className="orders-delete-btn"
@@ -610,7 +845,7 @@ export default function Orders() {
                         </tr>
                         {expanded === o.id && (
                           <tr className="orders-detail-row">
-                            <td colSpan={8}>
+                            <td colSpan={9}>
                               <div className="orders-panel">
                                 <section className="orders-panel-customer">
                                   <h4>Customer</h4>
@@ -675,6 +910,8 @@ export default function Orders() {
                                   </button>
                                   <InvoicePrintButton order={o} className="btn btn-outline btn-sm" />
                                   <InvoiceDownloadButton order={o} className="btn btn-dark btn-sm" />
+                                  <PackingLabelPrintButton order={o} className="btn btn-outline btn-sm" />
+                                  <PackingLabelDownloadButton order={o} className="btn btn-outline btn-sm" />
                                 </div>
                               </div>
                             </td>
@@ -693,6 +930,14 @@ export default function Orders() {
                 const isOpen = expanded === o.id
                 return (
                   <div id={`order-row-${o.id}`} className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
+                    <div className="order-card-select">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(o.id)}
+                        onChange={() => toggleSelect(o.id)}
+                        aria-label={`Select order ${o.order_number}`}
+                      />
+                    </div>
                     {/* Header — truncated order id + status badge; clickable */}
                     <div
                       className="order-card-head"
@@ -789,6 +1034,8 @@ export default function Orders() {
                           </button>
                           <InvoicePrintButton order={o} className="btn btn-outline btn-sm" />
                           <InvoiceDownloadButton order={o} className="btn btn-dark btn-sm" />
+                          <PackingLabelPrintButton order={o} className="btn btn-outline btn-sm" />
+                          <PackingLabelDownloadButton order={o} className="btn btn-outline btn-sm" />
                         </div>
 
                         {can('orders.delete') && (
@@ -840,6 +1087,34 @@ export default function Orders() {
           }
         >
           <OrderInvoice order={invoiceOrder} />
+        </Modal>
+      )}
+
+      {packingPreview && (
+        <Modal
+          title="Packing Labels"
+          onClose={() => { if (!generating) setPackingPreview(null) }}
+          footer={
+            <div className="orders-packing-modal-actions">
+              <button type="button" className="btn btn-outline" disabled={generating} onClick={() => setPackingPreview(null)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-dark" disabled={generating} onClick={confirmRangeDownload}>
+                {generating ? 'Generating…' : `Download ${packingPreview.count} Label${packingPreview.count === 1 ? '' : 's'}`}
+              </button>
+            </div>
+          }
+        >
+          <div className="packing-preview">
+            <p className="packing-preview-count">
+              <strong>{packingPreview.count}</strong> {packingPreview.count === 1 ? 'order' : 'orders'} found
+            </p>
+            {rangeBounds && <p className="packing-preview-range">Date: {rangeLabel}</p>}
+            {rangeStatus !== 'All' && <p className="packing-preview-status">Status: {rangeStatus}</p>}
+            <p className="packing-preview-note">
+              One packing label will be generated per order — each label starts on its own page.
+            </p>
+          </div>
         </Modal>
       )}
 

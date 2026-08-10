@@ -755,3 +755,167 @@
   .orders-invoice-actions .btn,
   .orders-invoice-modal-actions .btn { flex: 1 1 100%; }
 }
+
+/* ============================================================
+   Packing labels — toolbar, bulk selection, progress, preview
+   ============================================================ */
+.orders-packing-toolbar {
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.orders-packing-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.orders-packing-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.orders-packing-hint {
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-packing-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.orders-packing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.orders-packing-field > span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-packing-field select,
+.orders-packing-field input[type="date"] {
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+}
+.orders-packing-download {
+  height: 38px;
+  white-space: nowrap;
+}
+.orders-packing-count {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.6);
+}
+
+/* Bulk selection — checkbox column + selection bar */
+.orders-select-cell { width: 40px; text-align: center; }
+.orders-select-cell input,
+.orders-select-all { width: 15px; height: 15px; accent-color: var(--gold-deep); cursor: pointer; }
+
+.orders-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  background: var(--cream-deep);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.orders-bulk-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-right: auto;
+}
+
+/* Generation progress */
+.orders-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.orders-progress-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.orders-progress-track {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  background: var(--cream-deep);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.orders-progress-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+.orders-progress-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-deep);
+  min-width: 34px;
+  text-align: right;
+}
+
+/* Packing label preview modal */
+.packing-preview { display: flex; flex-direction: column; gap: 10px; }
+.packing-preview-count { margin: 0; font-size: 15px; }
+.packing-preview-count strong { color: var(--gold-deep); font-size: 18px; }
+.packing-preview-range,
+.packing-preview-status { margin: 0; font-size: 13px; color: rgba(20, 17, 13, 0.7); }
+.packing-preview-note {
+  margin: 6px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-packing-modal-actions { display: flex; gap: 10px; }
+
+/* Mobile card checkbox */
+.order-card-select {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 8px;
+}
+.order-card-select input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold-deep);
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .orders-packing-controls { align-items: stretch; }
+  .orders-packing-field { flex: 1 1 45%; min-width: 0; }
+  .orders-packing-field select,
+  .orders-packing-field input[type="date"] { width: 100%; }
+  .orders-packing-download { width: 100%; }
+  .orders-packing-head { flex-direction: column; gap: 4px; }
+  .orders-progress { flex-wrap: wrap; }
+  .orders-progress-track { flex-basis: 100%; order: 3; }
+}
