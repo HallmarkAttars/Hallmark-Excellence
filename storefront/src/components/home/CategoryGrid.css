@@ -3,9 +3,34 @@
    Image (4:3) on top · name + arrow footer · subtle motion
    ============================================================ */
 
-/* ---------- Section header ---------- */
+/* ---------- Section header (homepage) ----------
+   Heading stays perfectly centered; VIEW ALL is pinned to the top-right of
+   the header (aligned to the container's right content edge). On mobile the
+   heading is too wide for a side link, so VIEW ALL stacks below, centered. */
 .category-section .section-head {
-  align-items: center;          /* heading + VIEW ALL on one baseline */
+  position: relative;
+  display: block;
+  text-align: center;
+  margin-bottom: 32px;          /* header → cards */
+}
+.category-section .view-all {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+@media (max-width: 767px) {
+  .category-section .section-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;                  /* heading → VIEW ALL */
+    margin-bottom: 28px;
+  }
+  .category-section .view-all {
+    position: static;
+    transform: none;
+  }
 }
 
 /* Homepage-only: tighten the section's bottom padding so the "Our Brands"
@@ -13,7 +38,7 @@
    large empty band (the shared `.section` padding is overridden here; this
    class is only used on the homepage). */
 .category-section {
-  padding-bottom: 32px;
+  padding-bottom: 36px; /* +24px Our Brands top = 60px, matching every other section gap */
 }
 @media (min-width: 768px) {
   .category-section { padding-bottom: 40px; }
@@ -30,9 +55,6 @@
 @media (min-width: 1024px) {
   .category-section .section-title-upper { font-size: clamp(2.25rem, 3.2vw, 2.75rem); } /* 36–44px */
 }
-
-/* Cards sit inside a slightly wider canvas on very large monitors */
-.category-section .container { max-width: 1400px; }
 
 /* ---------- Grid: 2 / 3 / 4 columns ---------- */
 .category-scroll {

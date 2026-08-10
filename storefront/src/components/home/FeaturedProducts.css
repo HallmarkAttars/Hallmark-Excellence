@@ -7,28 +7,42 @@
   background: var(--cream);
 }
 
-/* ---------- Scoped container gutters (this section only) ---------- */
-.featured-section .container {
-  padding-inline: 16px; /* mobile */
-}
-@media (max-width: 360px) {
-  .featured-section .container { padding-inline: 12px; } /* small mobile */
-}
-@media (min-width: 768px) {
-  .featured-section .container { padding-inline: 24px; } /* tablet */
-}
-@media (min-width: 1024px) {
-  .featured-section .container { padding-inline: 40px; } /* desktop */
-}
+/* ---------- Scoped section rhythm ----------
+   Matches the shared homepage rhythm: ~48–64px gaps between sections on
+   mobile, ~80px on tablet, ~96px on desktop. Container gutters come from
+   the shared homepage container rule in index.css (20 / 32 / 48 / 60px). */
+.featured-section { padding: 28px 0 32px; } /* mobile */
+@media (min-width: 768px) { .featured-section { padding: 40px 0; } } /* tablet */
+@media (min-width: 1024px) { .featured-section { padding: 48px 0; } } /* desktop */
 
-/* ---------- Scoped section rhythm ---------- */
-.featured-section { padding: 40px 0; } /* mobile 36–44px */
-@media (min-width: 768px) { .featured-section { padding: 52px 0; } } /* tablet 48–56px */
-@media (min-width: 1024px) { .featured-section { padding: 64px 0; } } /* desktop 64–72px */
-
-/* ---------- Scoped header tuning ---------- */
-.featured-section .section-head { margin-bottom: 28px; }
-@media (min-width: 768px) { .featured-section .section-head { margin-bottom: 36px; } }
+/* ---------- Scoped header — centered heading, VIEW ALL top-right ----------
+   Same header treatment as Shop by Category: heading centered, VIEW ALL
+   pinned to the right content edge; stacked below the heading on mobile. */
+.featured-section .section-head {
+  position: relative;
+  display: block;
+  text-align: center;
+  margin-bottom: 32px;          /* header → cards */
+}
+.featured-section .view-all {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+@media (max-width: 767px) {
+  .featured-section .section-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;                  /* heading → VIEW ALL */
+    margin-bottom: 28px;
+  }
+  .featured-section .view-all {
+    position: static;
+    transform: none;
+  }
+}
 
 /* Tablet heading kept inside the 26–30px band (global clamp runs hot at ~34px) */
 @media (min-width: 768px) and (max-width: 1023px) {

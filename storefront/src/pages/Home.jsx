@@ -103,9 +103,6 @@ export default function Home() {
                 </div>
 
                 {/* FEATURED — the two large banners (image | content) */}
-                {featured.length > 0 && (
-                  <div className="brands-row-label">Featured Brands</div>
-                )}
                 <div className="collections-section">
                   {featured.map((brand, i) => (
                     <Reveal key={brand.id} delay={i * 120}>

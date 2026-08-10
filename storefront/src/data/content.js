@@ -75,7 +75,7 @@ export const BRAND_LINKS = [
 // HERO — homepage hero section
 // --------------------------------------------------------------------------
 export const HERO = {
-  title: ['The Art of', 'Significance', 'Attars'],
+  title: ['The Art of', 'Hallmark', 'Attars'],
   subtitle:
     'Alcohol-free oil perfumes, hand-blended in small batches from oud, rose, and amber — crafted to be worn, close to the heart and remembered long after.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
@@ -150,7 +150,7 @@ export const WHY_CHOOSE_US = {
   items: [
     { key: 'natural', title: 'Natural Ingredients', subtitle: 'Sustainably Sourced' },
     { key: 'authenticity', title: 'Authenticity Guaranteed', subtitle: 'Official Retailer' },
-    { key: 'delivery', title: 'Free Delivery', subtitle: 'On Orders Over ₹999' },
+    { key: 'delivery', title: 'Free Delivery', subtitle: 'On All Orders' },
     { key: 'craft', title: 'Master Crafted', subtitle: 'Award-Winning' },
   ],
 }

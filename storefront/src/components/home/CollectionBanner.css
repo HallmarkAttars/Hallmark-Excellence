@@ -8,15 +8,28 @@
 /* ---------- "Our Brands" section wrapper (heading + grid) ----------
    Sits directly below Shop by Category. The wrapper carries the section
    spacing so the old doubled padding (category section bottom + this
-   section top) no longer creates the large empty gap. */
+   section top) no longer creates the large empty gap. Rhythm matches the
+   shared homepage pattern (~56–64px mobile / 80px tablet / 96px desktop
+   gaps between sections). */
 .our-brands-section {
-  padding: 24px 0 48px;
+  padding: 24px 0 32px;
 }
 @media (min-width: 768px) {
-  .our-brands-section { padding: 40px 0 56px; }
+  .our-brands-section { padding: 40px 0; }
 }
 @media (min-width: 1024px) {
-  .our-brands-section { padding: 48px 0 64px; }
+  .our-brands-section { padding: 48px 0; }
+}
+
+/* Heading is centered (no View All link in this section), with a proper
+   24–32px gap before the brand cards. */
+.our-brands-section .section-head {
+  display: block;
+  text-align: center;
+  margin-bottom: 28px;
+}
+@media (max-width: 480px) {
+  .our-brands-section .section-head { margin-bottom: 24px; }
 }
 
 /* The brand cards grid — stacked on mobile, two-up on desktop.
@@ -43,17 +56,6 @@
 .collections-section .collection-banner {
   width: 100%;
   flex: 1;
-}
-
-/* ---------- "Featured Brands" row label ---------- */
-.brands-row-label {
-  margin: 0 0 14px;
-  font-family: var(--font-body);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--gold-deep);
 }
 
 /* ---------- Secondary brand cards (3-up desktop, stacked mobile) ----------

@@ -3,13 +3,15 @@
    ============================================================ */
 
 .social-section {
-  padding: 72px 0 80px;
+  padding: 28px 0 32px; /* mobile — shared homepage rhythm */
   background: var(--cream);
   border-top: 1px solid var(--line-soft);
 }
-
-@media (max-width: 767px) {
-  .social-section { padding: 56px 0 64px; }
+@media (min-width: 768px) {
+  .social-section { padding: 40px 0; } /* tablet */
+}
+@media (min-width: 1024px) {
+  .social-section { padding: 48px 0; } /* desktop */
 }
 
 .social-head {
@@ -26,12 +28,14 @@
   max-width: 46ch;
 }
 
-/* Mobile: horizontal strip */
+/* Mobile: horizontal strip — bleeds to the viewport edge through the
+   20px container gutter, so the strip is edge-to-edge with no page-level
+   horizontal scroll. */
 .social-grid {
   display: flex;
   gap: 12px;
-  margin: 0 -16px;
-  padding: 0 16px 8px;
+  margin: 0 -20px;
+  padding: 0 20px 8px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -58,8 +62,8 @@
 
 @media (max-width: 360px) {
   .social-grid {
-    margin: 0 -14px;
-    padding: 0 14px 8px;
+    margin: 0 -20px;
+    padding: 0 20px 8px;
   }
 }
 
