@@ -184,6 +184,13 @@ function containBox(w, h, size) {
   return { w: cw, h: ch, x: (size - cw) / 2, y: (size - ch) / 2 }
 }
 
+// Product thumbnail frame (mm) and the items table's vertical cell padding.
+// These drive the minimum row height: a row must always be tall enough to
+// contain its thumbnail frame, otherwise the image drawn centred in the cell
+// spills over the row edges into the rows above/below.
+const THUMB_FRAME = 13 // ~49px frame
+const THUMB_CELL_PAD = 2.6 // must match styles.cellPadding top/bottom
+
 // Trust row copy — mirrors the on-screen sheet.
 const TRUST_ITEMS = [
   { title: '100% Original', sub: 'Authentic attars from trusted sources' },
@@ -345,6 +352,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       ]
     }),
     theme: 'plain',
+    // A product row (with its thumbnail) must never be split across pages.
+    rowPageBreak: 'avoid',
+    // Repeat the column header on every page of a multi-page invoice.
+    showHead: 'everyPage',
     styles: {
       font: 'helvetica',
       fontSize: 8,
@@ -373,8 +384,15 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       const item = inv.items[data.row.index]
       if (data.column.index === 0) {
         data.cell.styles.fontStyle = 'bold'
-        // Reserve room for the 13mm thumbnail frame on the left of the name.
-        if (thumbs[data.row.index]) data.cell.styles.cellPadding.left = 17
+        // Reserve room for the thumbnail frame on the left of the name.
+        if (thumbs[data.row.index]) {
+          data.cell.styles.cellPadding.left = 17
+          // Force the row tall enough to fully contain the thumbnail frame
+          // (minCellHeight is measured including padding). Without this the
+          // frame is drawn centred over a shorter cell and overlaps the
+          // neighbouring product rows in the downloaded PDF.
+          data.cell.styles.minCellHeight = THUMB_FRAME + THUMB_CELL_PAD * 2
+        }
       }
       if (data.column.index === 1) {
         data.cell.styles.textColor = MUTED
@@ -389,7 +407,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       if (data.section !== 'body' || data.column.index !== 0) return
       const thumb = thumbs[data.row.index]
       if (!thumb) return
-      const size = 13 // ~49px frame
+      // Clamp the frame to the row height (rows are already forced to at
+      // least THUMB_FRAME tall via minCellHeight) so an image can NEVER
+      // overflow into an adjacent row, whatever the data.
+      const size = Math.min(THUMB_FRAME, Math.max(3, data.cell.height - THUMB_CELL_PAD * 2))
       const fx = data.cell.x + 1.8
       const fy = data.cell.y + (data.cell.height - size) / 2
       // Soft cream border frame
