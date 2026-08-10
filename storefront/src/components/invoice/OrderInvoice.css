@@ -381,6 +381,12 @@
   color: #c62828;
   border-color: rgba(198, 40, 40, 0.35);
 }
+/* Payment status — Paid (staff-confirmed) gets the same green as delivered */
+.invoice-status-pill--paid {
+  background: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+  border-color: rgba(46, 125, 50, 0.35);
+}
 
 /* ---------- Trust row ---------- */
 .invoice-trust {

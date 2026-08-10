@@ -52,6 +52,8 @@ const STATUS_COLORS = {
   shipped: [21, 101, 192],
   delivered: [46, 125, 50],
   cancelled: [198, 40, 40],
+  // Payment status — Paid turns green once staff confirm receipt (no gateway).
+  paid: [46, 125, 50],
 }
 function statusColor(status) {
   const key = String(status || '')
@@ -441,9 +443,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.text(inv.paymentMethod || '', M, ty + 4.5)
 
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text('ORDER STATUS', W / 2, ty)
-  // Status pill — colour derived from the REAL status text
-  const statusText = inv.status || ''
+  doc.text('PAYMENT STATUS', W / 2, ty)
+  // Status pill — colour derived from the REAL payment status text (always
+  // 'Pending' for new orders; green once staff mark it 'Paid').
+  const statusText = inv.paymentStatus || 'Pending'
   const statusC = statusColor(statusText)
   doc.setFont('helvetica', 'bold').setFontSize(9)
   const pillTextW = doc.getTextWidth(statusText)
@@ -602,7 +605,6 @@ function renderPrintHtml(inv, logo) {
   if (inv.status) orderInfo.push(`<li><span>Status</span><strong>${escapeHtml(inv.status)}</strong></li>`)
 
   const contactBits = [inv.company.phone, inv.company.email].filter(Boolean).join('   ·   ')
-  const statusCls = String(inv.status || 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'pending'
 
   const trust = `
     <div class="trust">
@@ -666,7 +668,7 @@ function renderPrintHtml(inv, logo) {
   .pay .label { font-size: 7.5px; letter-spacing: .18em; text-transform: uppercase; color: #b8862b; margin-bottom: 1.2mm; }
   .pay .value { font-size: 9.5px; font-weight: 700; color: #171512; }
   .pill { display: inline-block; padding: 1mm 2.5mm; border-radius: 999px; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(184,134,43,.12); color: #8a5f1e; border: 1px solid rgba(184,134,43,.35); }
-  .pill.confirmed, .pill.delivered { background: rgba(46,125,50,.1); color: #2e7d32; border-color: rgba(46,125,50,.35); }
+  .pill.paid, .pill.confirmed, .pill.delivered { background: rgba(46,125,50,.1); color: #2e7d32; border-color: rgba(46,125,50,.35); }
   .pill.processing, .pill.shipped { background: rgba(21,101,192,.1); color: #1565c0; border-color: rgba(21,101,192,.35); }
   .pill.cancelled { background: rgba(198,40,40,.1); color: #c62828; border-color: rgba(198,40,40,.35); }
   .trust { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4mm; margin-top: 7mm; padding-top: 5mm; border-top: 1px solid #ece7dc; }
@@ -740,7 +742,7 @@ function renderPrintHtml(inv, logo) {
         </div>
         <div class="pay">
           <div><p class="label">Payment Method</p><p class="value">${escapeHtml(inv.paymentMethod)}</p></div>
-          <div><p class="label">Order Status</p><p class="value"><span class="pill ${statusCls}">${escapeHtml(inv.status)}</span></p></div>
+          <div><p class="label">Payment Status</p><p class="value"><span class="pill ${String(inv.paymentStatus || 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-')}">${escapeHtml(inv.paymentStatus)}</span></p></div>
         </div>
       </div>
 

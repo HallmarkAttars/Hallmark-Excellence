@@ -35,9 +35,29 @@
   vertical-align: middle;
 }
 .product-detail-per-unit {
-  margin: 4px 0 0;
+  margin: 0;
   font-size: 0.95rem;
   color: var(--charcoal);
+}
+/* Selected-variant confirmation line (e.g. "100 Pieces selected") */
+.product-detail-selected-label {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--charcoal-soft);
+}
+/* Subtle fade-up when the price appears after variant selection — reuses the
+   existing fade-up keyframe; no new animation system added. */
+.price-reveal {
+  animation: fade-up 0.45s ease-out both;
+}
+/* "Please select a variant" validation hint (Add to Cart before selection) */
+.product-detail-variant-hint {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b26a00;
 }
 .product-detail-stock { font-size: 0.85rem; color: var(--charcoal-soft); }
 

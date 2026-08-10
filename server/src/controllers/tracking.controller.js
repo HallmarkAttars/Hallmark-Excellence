@@ -99,6 +99,7 @@ function toSafeTrackingOrder(row) {
     status: row.order_status || 'Pending',
     total: Number(row.total ?? row.total_amount ?? notesInfo.total_amount ?? 0),
     payment_method: row.payment_method || 'Cash On Delivery',
+    payment_status: row.payment_status || 'Pending',
     items,
     // BILL-TO fields so the customer's own invoice can be rendered from the
     // resolved order (tracking / view-order). Only the resolved order's own

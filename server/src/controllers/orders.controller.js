@@ -1,5 +1,9 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
+const {
+  resolvePaymentMethod,
+  resolvePaymentStatus,
+} = require('../utils/orderPayment')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -168,8 +172,8 @@ async function trackOrder(req, res) {
     }
 
     // Minimal customer-safe projection — never the full row. The additive
-    // fields below (brand_name / bulk flags) are invoice PRESENTATION data
-    // only — they never change a price, quantity or total.
+    // fields below (brand_name) are invoice PRESENTATION data only — they
+    // never change a price, quantity or total.
     const items = (data.items || notesInfo.items || []).map((it) => ({
       product_name: it.product_name || it.name || 'Product',
       image: it.image || null,
@@ -198,6 +202,7 @@ async function trackOrder(req, res) {
         created_at: data.created_at,
         customer_name: data.customer_name || notesInfo.customer_name || '',
         payment_method: data.payment_method || 'Cash On Delivery',
+        payment_status: data.payment_status || 'Pending',
         total: Number(data.total ?? data.total_amount ?? notesInfo.total_amount ?? 0),
         items,
       },
@@ -218,6 +223,13 @@ async function trackOrder(req, res) {
 async function createOrder(req, res) {
   try {
     const { customer_name, email, phone, address, pincode, message, items, idempotency_key } = req.body
+
+    // Resolve the customer's SELECTED payment method (cod | upi) into the
+    // canonical label stored on orders.payment_method. Unknown/missing values
+    // safely fall back to Cash on Delivery so legacy clients never break.
+    const { code: paymentCode, label: paymentMethodLabel } = resolvePaymentMethod(
+      req.body.paymentMethod ?? req.body.payment_method
+    )
 
     console.log('[createOrder] Received payload:', JSON.stringify({
       customer_name,
@@ -456,6 +468,9 @@ async function createOrder(req, res) {
       message: message ?? '',
       items: normalizedItems,
       total_amount: total,
+      // Canonical payment code (cod | upi) — the label lives on the
+      // payment_method column; the code rides in notes for exact matching.
+      payment_code: paymentCode,
       ...(idempotency_key ? { idempotency_key: String(idempotency_key) } : {}),
     }
 
@@ -467,17 +482,47 @@ async function createOrder(req, res) {
       shipping_charge: shippingCharge,
       discount,
       total,
-      payment_method: 'Cash On Delivery',
+      payment_method: paymentMethodLabel,
       payment_status: 'Pending',
       order_status: 'Pending',
       notes: JSON.stringify(notes),
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('orders')
       .insert(insertPayload)
       .select('*')
       .single()
+
+    // Pre-migration compatibility: the live orders table once had a
+    // orders_payment_method_check constraint that ONLY accepted the exact
+    // legacy string 'Cash On Delivery'. Until the payment-methods migration
+    // (server/db/migration_add_payment_methods.sql) is applied, the canonical
+    // 'Cash on Delivery' label is rejected by the check constraint — so a COD
+    // order retries with the legacy label the constraint still accepts.
+    // UPI orders cannot fall back (no legacy UPI value exists) and correctly
+    // fail with a clear message until the migration is applied.
+    if (error && paymentCode === 'cod' && /orders_payment_method_check/.test(error.message)) {
+      // The saved row keeps the legacy label, but the notes already carry the
+      // canonical code (payment_code: 'cod') so the admin chips still work.
+      console.warn('[createOrder] payment_method check constraint rejected the canonical label — retrying with legacy label (pre-migration DB).')
+      ;({ data, error } = await supabase
+        .from('orders')
+        .insert({ ...insertPayload, payment_method: 'Cash On Delivery' })
+        .select('*')
+        .single())
+    }
+
+    if (error && paymentCode !== 'cod' && /orders_payment_method_check/.test(error.message)) {
+      // UPI order on a pre-migration DB: the old orders_payment_method_check
+      // constraint has no UPI value at all, so there is no fallback label.
+      // The payment-methods migration (server/db/migration_add_payment_methods.sql)
+      // must be applied before UPI orders can be stored.
+      console.error('[createOrder] UPI order rejected by orders_payment_method_check — the payment-methods migration has not been applied.')
+      return res.status(503).json({
+        error: 'UPI orders are temporarily unavailable. Please choose Cash on Delivery or try again shortly.',
+      })
+    }
 
     if (error) {
       // Unique-violation on the idempotency index (notes->>idempotency_key):
@@ -563,6 +608,9 @@ async function getOrders(req, res) {
         items: o.items || notesInfo.items || [],
         total_amount: Number(o.total_amount || o.total || 0),
         status: o.order_status || 'Pending',
+        // Canonical payment code (cod | upi) for exact admin chip matching;
+        // falls back to the display label for legacy orders.
+        payment_code: notesInfo.payment_code || o.payment_method || '',
       }
     })
 
@@ -608,6 +656,7 @@ async function getOrderById(req, res) {
       items: data.items || notesInfo.items || [],
       total_amount: Number(data.total_amount || data.total || 0),
       status: data.order_status || 'Pending',
+      payment_code: notesInfo.payment_code || data.payment_method || '',
     }
 
     return res.json({ order: enriched })
@@ -677,11 +726,76 @@ async function updateOrderStatus(req, res) {
       items: data.items || notesInfo.items || [],
       total_amount: Number(data.total_amount || data.total || 0),
       status: data.order_status || 'Pending',
+      payment_code: notesInfo.payment_code || data.payment_method || '',
     }
 
     return res.json({ order: enriched })
   } catch (err) {
     console.error('updateOrderStatus error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// PATCH /api/admin/orders/:id/payment-status
+// Protected. Staff-only payment confirmation. There is NO payment gateway:
+// a staff member manually marks an order 'Paid' after actually receiving the
+// payment (UPI transfer confirmation, cash received at delivery, etc.).
+// Only Pending/Paid are accepted — nothing is ever auto-confirmed.
+async function updatePaymentStatus(req, res) {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+
+    // Canonical values accepted by the live orders_payment_status_check
+    // constraint (see utils/orderPayment.js). Case-insensitive; anything
+    // else is rejected with a 400.
+    const matched = resolvePaymentStatus(status)
+    if (!matched) {
+      return res.status(400).json({
+        error: 'Invalid payment status. Must be one of: Pending, Paid.',
+      })
+    }
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ payment_status: matched })
+      .eq('id', id)
+      .select('*')
+      .maybeSingle()
+
+    if (error) {
+      console.error('updatePaymentStatus error:', error.message || error)
+      console.error('updatePaymentStatus code:', error.code)
+      console.error('updatePaymentStatus hint:', error.hint)
+      return res.status(500).json({ error: 'Failed to update payment status.' })
+    }
+    if (!data) {
+      return res.status(404).json({ error: 'Order not found.' })
+    }
+
+    // Same enrichment as every other admin order endpoint (direct columns
+    // with fallback to notes parsing).
+    let notesInfo = {}
+    try { if (data.notes) notesInfo = JSON.parse(data.notes) } catch {}
+    const enriched = {
+      ...data,
+      customer_name: data.customer_name || notesInfo.customer_name || '',
+      phone: data.phone || notesInfo.phone || '',
+      email: notesInfo.email || '',
+      address: data.address || notesInfo.address || '',
+      locality: notesInfo.locality || '',
+      city: notesInfo.city || '',
+      state: notesInfo.state || '',
+      items: data.items || notesInfo.items || [],
+      total_amount: Number(data.total_amount || data.total || 0),
+      status: data.order_status || 'Pending',
+      payment_status: data.payment_status || 'Pending',
+      payment_code: notesInfo.payment_code || data.payment_method || '',
+    }
+
+    return res.json({ order: enriched })
+  } catch (err) {
+    console.error('updatePaymentStatus error:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -812,6 +926,7 @@ module.exports = {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  updatePaymentStatus,
   deleteOrder,
   getDashboardStats,
 }

@@ -63,9 +63,11 @@ export default function ProductCard({ product, onNavigate }) {
 
   const hasVariants = variants.length > 0
 
-  // Price is already resolved to the default variant's TOTAL price by the API.
-  const price = Number(product.price)
-  const hasPrice = Number.isFinite(price) && price > 0
+  // NOTE: Prices are deliberately NOT shown on product cards. Customers
+  // select a variant on the product details page, where the real price is
+  // revealed only after an explicit variant selection. The pricing data stays
+  // fully intact for the cart / checkout / bulk pricing — it is simply never
+  // rendered here.
 
   // Conditional rows — only render when real data exists. No invented values.
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
@@ -80,8 +82,6 @@ export default function ProductCard({ product, onNavigate }) {
     handleNavigate()
     navigate(`/product/${product.id}`)
   }
-
-  const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
 
   // Optional callback fired before the card navigates to the product page.
   // Lets embedding surfaces (e.g. the search overlay) close themselves on
@@ -162,12 +162,6 @@ export default function ProductCard({ product, onNavigate }) {
           <p className="product-card-meta">
             {[product.category_name, variantLabel].filter(Boolean).join('  |  ')}
           </p>
-        )}
-
-        {hasPrice && (
-          <div className="product-card-price-row">
-            <span className="product-card-price">{formatPrice(price)}</span>
-          </div>
         )}
 
         <button

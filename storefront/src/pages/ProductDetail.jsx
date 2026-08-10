@@ -21,7 +21,11 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
+  // Initial state: NO variant is selected and NO price is shown. The
+  // customer must explicitly click a variant before the real price appears.
   const [selectedVariant, setSelectedVariant] = useState(null)
+  // "Please select a variant" hint when Add to Cart is clicked too early.
+  const [variantHint, setVariantHint] = useState(false)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [adding, setAdding] = useState(false)
@@ -41,18 +45,16 @@ export default function ProductDetail() {
     setError(null)
     setActiveImage(0)
     setAdded(false)
+    // Deliberately NOT auto-selecting a variant: the customer must choose
+    // one explicitly before any price is revealed.
     setSelectedVariant(null)
+    setVariantHint(false)
     setQty(1)
     getProductById(id)
       .then((p) => {
         setProduct(p)
         setLoading(false)
         if (p) {
-          // Auto-select the default variant, or the first if none is flagged.
-          const variants = Array.isArray(p.variants) ? p.variants : []
-          if (variants.length > 0) {
-            setSelectedVariant(variants.find((v) => v.is_default) || variants[0])
-          }
           getRelatedProducts(p).then(setRelated).catch(() => {})
         }
       })
@@ -99,6 +101,12 @@ export default function ProductDetail() {
     : null
   const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
 
+  // A variant product shows its price ONLY after the customer explicitly
+  // selects a variant. The displayed total = selected variant TOTAL × qty
+  // (the exact same math the cart line uses — never per-unit × qty).
+  const variantSelected = hasVariants ? Boolean(selectedVariant) : true
+  const displayTotal = Number.isFinite(totalPrice) ? totalPrice * qty : 0
+
   const variantLabel = (v) =>
     v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
 
@@ -106,7 +114,13 @@ export default function ProductDetail() {
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
 
   const handleAdd = () => {
-    if (hasVariants && !selectedVariant) return
+    // A variant product can never be added without an explicit variant — show
+    // a small existing-style validation hint instead of silently returning.
+    if (hasVariants && !selectedVariant) {
+      setVariantHint(true)
+      return
+    }
+    setVariantHint(false)
     if (adding) return
 
     // Build the complete selected variant info for the cart item so the cart
@@ -173,19 +187,9 @@ export default function ProductDetail() {
       <div className="product-detail-info">
         <h1>{product.name}</h1>
 
-        {hasVariants ? (
-          <div className="product-detail-price-block">
-            <p className="product-detail-price">
-              ₹{Number(totalPrice).toLocaleString('en-IN')}{' '}
-              <span className="product-detail-price-total">total</span>
-            </p>
-            {perUnit != null && Number.isFinite(perUnit) && (
-              <p className="product-detail-per-unit">
-                ₹{perUnit.toLocaleString('en-IN')} / {unitDisplay(selectedUnit)}
-              </p>
-            )}
-          </div>
-        ) : (
+        {/* Variant-less products keep their simple price row (no variant to
+            select). Variant products show NO price until a variant is chosen. */}
+        {!hasVariants && (
           <p className="product-detail-price">₹{Number(totalPrice).toLocaleString('en-IN')}</p>
         )}
 
@@ -202,7 +206,10 @@ export default function ProductDetail() {
                     key={v.id}
                     type="button"
                     className={`variant-option ${active ? 'is-active' : ''}`}
-                    onClick={() => setSelectedVariant(v)}
+                    onClick={() => {
+                      setSelectedVariant(v)
+                      setVariantHint(false)
+                    }}
                     aria-pressed={active}
                   >
                     {variantLabel(v)}
@@ -213,7 +220,25 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Price appears ONLY after the customer explicitly selects a variant. */}
+        {hasVariants && variantSelected && (
+          <div className="product-detail-price-block price-reveal">
+            {perUnit != null && Number.isFinite(perUnit) && (
+              <p className="product-detail-per-unit">
+                ₹{perUnit.toLocaleString('en-IN')} / {unitDisplay(selectedUnit)}
+              </p>
+            )}
+            <p className="product-detail-selected-label">{variantLabel(selectedVariant)} selected</p>
+            <p className="product-detail-price">
+              ₹{displayTotal.toLocaleString('en-IN')}{' '}
+              <span className="product-detail-price-total">total</span>
+            </p>
+          </div>
+        )}
+
         <div className="product-detail-actions">
+          {/* Quantity control appears only after a variant is selected. */}
+          {variantSelected && (
           <div className="qty-selector" aria-label="Quantity">
             <button
               type="button"
@@ -231,6 +256,7 @@ export default function ProductDetail() {
               +
             </button>
           </div>
+          )}
 
           <button
             className="btn btn-primary"
@@ -240,6 +266,10 @@ export default function ProductDetail() {
             {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
           </button>
         </div>
+
+        {hasVariants && variantHint && (
+          <p className="product-detail-variant-hint" role="alert">Please select a variant</p>
+        )}
       </div>
 
       {related.length > 0 && (

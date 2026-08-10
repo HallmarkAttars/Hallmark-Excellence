@@ -149,6 +149,10 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null) // { orderNumber, order } | { sent: true }
   const [error, setError] = useState('')
+  // Selected payment method — customers only CHOOSE how they will pay (no
+  // payment gateway). Default: Cash on Delivery. Orders always start with
+  // payment status 'Pending' and staff confirm payment manually later.
+  const [paymentMethod, setPaymentMethod] = useState('cod') // 'cod' | 'upi'
   const [phoneTouched, setPhoneTouched] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({}) // per-field messages shown next to each input
   // PIN-code lookup state: idle | loading | found | error
@@ -403,6 +407,9 @@ export default function Contact() {
           message: form.message,
           items,
           total: checkout.total,
+          // Selected payment method (cod | upi) — stored on the order so
+          // staff can contact the customer about payment. No gateway.
+          paymentMethod,
           idempotencyKey: idempotencyKeyRef.current,
         }
         const res = await submitOrder(payload)
@@ -431,6 +438,7 @@ export default function Contact() {
     const items = checkout.checkoutItems
     const orderTotal = order?.total != null ? Number(order.total) : Number(checkout.total)
     const paymentMethod = order?.payment_method || 'Cash On Delivery'
+    const isUpi = String(paymentMethod).toLowerCase().includes('upi')
     const orderStatus = order?.order_status || 'Pending'
     const orderNumber = result.orderNumber
     // Real line count (sum of quantities) for the confirmation summary.
@@ -509,6 +517,11 @@ export default function Contact() {
               <span>Payment Method</span>
               <span>{paymentMethod}</span>
             </div>
+            {isUpi && (
+              <p className="order-success-payment-note">
+                Our team will contact you shortly with the payment instructions.
+              </p>
+            )}
             <div className="order-success-row">
               <span>Order Status</span>
               <span className="order-status-pill">{orderStatus}</span>
@@ -815,6 +828,47 @@ export default function Contact() {
                       value={form.message}
                       onChange={handleChange}
                     />
+                  </div>
+
+                  {/* Payment Method — customers only SELECT how they will pay.
+                      No payment gateway: no QR, no UPI ID screen, no card form.
+                      The order is created with payment_status 'Pending' and
+                      staff confirm payment manually. */}
+                  <div className="checkout-payment" role="radiogroup" aria-labelledby="checkout-payment-title">
+                    <p className="checkout-payment-title" id="checkout-payment-title">Payment Method</p>
+                    <div className="checkout-payment-options">
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={paymentMethod === 'cod'}
+                        className={`checkout-payment-option${paymentMethod === 'cod' ? ' is-selected' : ''}`}
+                        onClick={() => setPaymentMethod('cod')}
+                      >
+                        <span className="checkout-payment-radio" aria-hidden="true" />
+                        <span className="checkout-payment-option-body">
+                          <strong>Cash on Delivery</strong>
+                          <span>Pay when your order is delivered.</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={paymentMethod === 'upi'}
+                        className={`checkout-payment-option${paymentMethod === 'upi' ? ' is-selected' : ''}`}
+                        onClick={() => setPaymentMethod('upi')}
+                      >
+                        <span className="checkout-payment-radio" aria-hidden="true" />
+                        <span className="checkout-payment-option-body">
+                          <strong>UPI / Online Payment</strong>
+                          <span>Our team will contact you with payment instructions after ordering.</span>
+                        </span>
+                      </button>
+                    </div>
+                    {paymentMethod === 'upi' && (
+                      <p className="checkout-payment-note">
+                        No payment is taken now — we will share payment instructions after your order is placed.
+                      </p>
+                    )}
                   </div>
 
                   {error && <p className="contact-error">{error}</p>}

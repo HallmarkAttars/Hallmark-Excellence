@@ -145,6 +145,11 @@
   gap: 10px;
   margin-top: 2px;
 }
+/* Subtle fade-up when the price appears after variant selection — reuses the
+   existing fade-up keyframe; no new animation system added. */
+.quickview-price-row.price-reveal {
+  animation: fade-up 0.45s ease-out both;
+}
 .quickview-price {
   font-size: 1.7rem;
   font-weight: 700;

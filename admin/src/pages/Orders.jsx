@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { getOrders, updateOrderStatus, deleteOrder } from '../services/mockApi'
+import { getOrders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminStatusBadge from '../components/ui/AdminStatusBadge'
 import Modal from '../components/ui/Modal'
@@ -23,6 +23,32 @@ const STATUSES = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
 // canonical option values so the controlled <select> always matches an option.
 function canonicalStatus(value) {
   return STATUSES.find((s) => s.toLowerCase() === String(value ?? '').toLowerCase()) || value
+}
+
+// Compact payment-method label for tables/chips/CSV: 'Cash on Delivery' → COD,
+// 'UPI / Online Payment' → UPI. Unknown values fall back to the raw stored
+// value so nothing is ever hidden or mislabelled.
+function paymentShortLabel(value) {
+  const s = String(value ?? '').trim()
+  if (/cash/i.test(s)) return 'COD'
+  if (/upi/i.test(s)) return 'UPI / Online Payment'
+  return s || 'COD'
+}
+
+// True when the stored payment label/code refers to a UPI order. Both the
+// display label and the canonical code (notes.payment_code) are checked so
+// every order — new and legacy — is matched correctly.
+function isUpiOrder(o) {
+  const label = String(o.payment_method || '').toLowerCase()
+  const code = String(o.payment_code || o.payment_method || '').toLowerCase()
+  return label.includes('upi') || code === 'upi'
+}
+
+// Normalize the stored payment status onto a canonical value.
+function canonicalPaymentStatus(value) {
+  const s = String(value ?? '').toLowerCase()
+  if (s === 'paid') return 'Paid'
+  return 'Pending'
 }
 
 // Shared ORDER ITEMS block used by BOTH the desktop detail panel and the
@@ -196,6 +222,10 @@ export default function Orders() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [searching, setSearching] = useState(false)
   const [statusFilter, setStatusFilter] = useState('All')
+  // Payment-method chip filter: 'All' | 'upi' | 'cod' (no gateway — staff
+  // simply filters to see which orders need manual payment follow-up).
+  const [paymentFilter, setPaymentFilter] = useState('All')
+  const [updatingPaymentId, setUpdatingPaymentId] = useState(null)
 
   useEffect(() => {
     getOrders().then((o) => {
@@ -217,19 +247,24 @@ export default function Orders() {
     return () => window.clearTimeout(t)
   }, [search, debouncedSearch])
 
-  // The visible set = status filter AND search (auto-detected Order ID /
-  // mobile number). Pure function of state — the source of truth is the
-  // `orders` array loaded once from the API.
+  // The visible set = status filter AND payment chip AND search (auto-detected
+  // Order ID / mobile number). Pure function of state — the source of truth is
+  // the `orders` array loaded once from the API.
   const visibleOrders = useMemo(() => {
     let list = orders
     if (statusFilter !== 'All') {
       list = list.filter((o) => canonicalStatus(o.status) === statusFilter)
     }
+    if (paymentFilter !== 'All') {
+      list = list.filter((o) =>
+        paymentFilter === 'upi' ? isUpiOrder(o) : !isUpiOrder(o)
+      )
+    }
     if (debouncedSearch.trim()) {
       list = list.filter((o) => matchesOrderSearch(o, debouncedSearch))
     }
     return list
-  }, [orders, statusFilter, debouncedSearch])
+  }, [orders, statusFilter, paymentFilter, debouncedSearch])
 
   const hasQuery = Boolean(search.trim())
 
@@ -247,23 +282,27 @@ export default function Orders() {
     setSearching(false)
   }
 
-  // Clear search + reset the status filter (used by the empty-state button).
+  // Clear search + reset the status + payment filters (used by the
+  // empty-state button).
   const clearAll = () => {
     clearSearch()
     setStatusFilter('All')
+    setPaymentFilter('All')
   }
 
   // CSV export of the CURRENTLY VISIBLE orders — uses only already-loaded
   // real data; no backend call, no invented fields.
   const handleExport = () => {
     if (visibleOrders.length === 0) return
-    const header = ['Order #', 'Customer', 'Phone', 'Date', 'Amount', 'Status']
+    const header = ['Order #', 'Customer', 'Phone', 'Date', 'Amount', 'Payment', 'Payment Status', 'Status']
     const rows = visibleOrders.map((o) => [
       o.order_number,
       o.customer_name,
       o.phone,
       formatOrderDate(o.created_at),
       o.total_amount,
+      paymentShortLabel(o.payment_method),
+      canonicalPaymentStatus(o.payment_status),
       o.status,
     ])
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n')
@@ -299,6 +338,30 @@ export default function Orders() {
       notify('error', 'Unable to update order status.')
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  // Staff payment confirmation — marks an order Paid only after the payment
+  // was actually received (no gateway exists). Optimistic like the status
+  // select; rolled back if the backend rejects it.
+  const handlePaymentStatusChange = async (id, status) => {
+    const previous = orders.find((o) => o.id === id)
+    if (!previous || updatingPaymentId === id) return
+
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, payment_status: status } : o)))
+    setUpdatingPaymentId(id)
+    try {
+      const updated = await updateOrderPaymentStatus(id, status)
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...updated } : o)))
+      notify('success', `Payment for ${updated.order_number || id} marked ${status}.`)
+    } catch (err) {
+      console.error('Payment status update error:', err)
+      console.error('Code:', err?.code)
+      console.error('Message:', err?.message)
+      setOrders((prev) => prev.map((o) => (o.id === id ? previous : o)))
+      notify('error', 'Unable to update payment status.')
+    } finally {
+      setUpdatingPaymentId(null)
     }
   }
 
@@ -402,6 +465,21 @@ export default function Orders() {
             {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
+
+        {/* Payment chips — quick way to see orders needing manual follow-up */}
+        <div className="orders-payment-chips" role="group" aria-label="Filter by payment method">
+          {['All', 'upi', 'cod'].map((p) => (
+            <button
+              key={p}
+              type="button"
+              className={`orders-payment-chip${paymentFilter === p ? ' is-active' : ''}`}
+              onClick={() => setPaymentFilter(p)}
+              aria-pressed={paymentFilter === p}
+            >
+              {p === 'All' ? 'All' : p === 'upi' ? 'UPI' : 'COD'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Result count — dynamic, correct singular/plural */}
@@ -443,8 +521,8 @@ export default function Orders() {
               </>
             ) : (
               <>
-                <h3>No orders match this status</h3>
-                <p>Try a different status or clear the filter to see all orders.</p>
+                <h3>No orders match this filter</h3>
+                <p>Try a different status or payment method, or clear the filter to see all orders.</p>
                 <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
                   Clear Filter
                 </button>
@@ -464,6 +542,7 @@ export default function Orders() {
                       <th>Customer</th>
                       <th>Date</th>
                       <th>Amount</th>
+                      <th>Payment</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -489,6 +568,14 @@ export default function Orders() {
                             <span className="orders-time-line">{formatOrderTime(o.created_at)}</span>
                           </td>
                           <td className="orders-amount">{formatINR(o.total_amount)}</td>
+                          <td className="orders-payment-cell">
+                            <span className={`orders-payment-label${isUpiOrder(o) ? ' is-upi' : ''}`}>
+                              {paymentShortLabel(o.payment_method)}
+                            </span>
+                            <span className={`orders-payment-status${canonicalPaymentStatus(o.payment_status) === 'Paid' ? ' is-paid' : ''}`}>
+                              {canonicalPaymentStatus(o.payment_status)}
+                            </span>
+                          </td>
                           <td>
                             <StatusSelect o={o} updatingId={updatingId} onUpdate={handleStatusChange} />
                           </td>
@@ -509,7 +596,7 @@ export default function Orders() {
                         </tr>
                         {expanded === o.id && (
                           <tr className="orders-detail-row">
-                            <td colSpan={7}>
+                            <td colSpan={8}>
                               <div className="orders-panel">
                                 <section className="orders-panel-customer">
                                   <h4>Customer</h4>
@@ -526,6 +613,12 @@ export default function Orders() {
                                       <strong>{o.payment_method || 'Cash On Delivery'}</strong>
                                     </span>
                                     <span className="orders-panel-meta-item">
+                                      <span>Payment Status</span>
+                                      <strong className={`orders-payment-status-text${canonicalPaymentStatus(o.payment_status) === 'Paid' ? ' is-paid' : ''}`}>
+                                        {canonicalPaymentStatus(o.payment_status)}
+                                      </strong>
+                                    </span>
+                                    <span className="orders-panel-meta-item">
                                       <span>Delivery</span>
                                       <strong>{Number(o.shipping_charge) > 0 ? formatINR(o.shipping_charge) : 'To be confirmed'}</strong>
                                     </span>
@@ -534,6 +627,29 @@ export default function Orders() {
                                       <strong>{formatINR(o.total_amount)}</strong>
                                     </span>
                                   </div>
+                                  {can('orders.update_payment') && (
+                                    <div className="orders-payment-confirm">
+                                      {canonicalPaymentStatus(o.payment_status) === 'Paid' ? (
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline btn-sm"
+                                          onClick={() => handlePaymentStatusChange(o.id, 'Pending')}
+                                          disabled={updatingPaymentId === o.id}
+                                        >
+                                          {updatingPaymentId === o.id ? 'Updating…' : 'Mark Pending'}
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          className="btn btn-outline btn-sm orders-payment-mark-paid"
+                                          onClick={() => handlePaymentStatusChange(o.id, 'Paid')}
+                                          disabled={updatingPaymentId === o.id}
+                                        >
+                                          {updatingPaymentId === o.id ? 'Updating…' : 'Mark as Paid'}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
                                   <span className="orders-panel-placed">
                                     Order placed
                                     <strong>{formatOrderDateTime(o.created_at)}</strong>
@@ -591,6 +707,15 @@ export default function Orders() {
                       <span className="order-card-amount">{formatINR(o.total_amount)}</span>
                     </div>
 
+                    <div className="order-card-payment">
+                      <span className={`orders-payment-label${isUpiOrder(o) ? ' is-upi' : ''}`}>
+                        {paymentShortLabel(o.payment_method)}
+                      </span>
+                      <span className={`orders-payment-status${canonicalPaymentStatus(o.payment_status) === 'Paid' ? ' is-paid' : ''}`}>
+                        {canonicalPaymentStatus(o.payment_status)}
+                      </span>
+                    </div>
+
                     {isOpen && (
                       <div className="order-card-details">
                         <section className="order-card-detail-section">
@@ -606,8 +731,32 @@ export default function Orders() {
                         <section className="order-card-detail-section">
                           <h4>Payment &amp; Totals</h4>
                           <p className="orders-panel-labeled"><span>Payment</span><strong>{o.payment_method || 'Cash On Delivery'}</strong></p>
+                          <p className="orders-panel-labeled"><span>Payment Status</span><strong className={`orders-payment-status-text${canonicalPaymentStatus(o.payment_status) === 'Paid' ? ' is-paid' : ''}`}>{canonicalPaymentStatus(o.payment_status)}</strong></p>
                           <p className="orders-panel-labeled"><span>Delivery</span><strong>{Number(o.shipping_charge) > 0 ? formatINR(o.shipping_charge) : 'To be confirmed'}</strong></p>
                           <p className="orders-panel-labeled"><span>Total</span><strong>{formatINR(o.total_amount)}</strong></p>
+                          {can('orders.update_payment') && (
+                            <div className="orders-payment-confirm">
+                              {canonicalPaymentStatus(o.payment_status) === 'Paid' ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm"
+                                  onClick={() => handlePaymentStatusChange(o.id, 'Pending')}
+                                  disabled={updatingPaymentId === o.id}
+                                >
+                                  {updatingPaymentId === o.id ? 'Updating…' : 'Mark Pending'}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-sm orders-payment-mark-paid"
+                                  onClick={() => handlePaymentStatusChange(o.id, 'Paid')}
+                                  disabled={updatingPaymentId === o.id}
+                                >
+                                  {updatingPaymentId === o.id ? 'Updating…' : 'Mark as Paid'}
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </section>
 
                         <p className="order-card-placed">

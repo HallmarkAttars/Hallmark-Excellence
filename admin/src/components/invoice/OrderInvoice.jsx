@@ -76,11 +76,6 @@ export default function OrderInvoice({ order }) {
     inv.status && ['Status', inv.status],
   ].filter(Boolean)
 
-  // Normalized status for the pill colour — always derived from the REAL
-  // status text; unknown statuses fall back to the neutral gold pill.
-  const statusClass =
-    String(inv.status || 'Pending').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'pending'
-
   return (
     <div className="invoice-sheet" aria-label={`Invoice ${inv.orderId}`}>
       {/* Hairline gold page frame + corner accents */}
@@ -231,9 +226,9 @@ export default function OrderInvoice({ order }) {
             <div className="invoice-pay-block">
               <span className="invoice-pay-icon" aria-hidden="true">{icons.check}</span>
               <div>
-                <p className="invoice-pay-label">Order Status</p>
-                <p className={`invoice-status-pill invoice-status-pill--${statusClass}`}>
-                  {inv.status}
+                <p className="invoice-pay-label">Payment Status</p>
+                <p className={`invoice-status-pill invoice-status-pill--${String(inv.paymentStatus).toLowerCase()}`}>
+                  {inv.paymentStatus}
                 </p>
               </div>
             </div>

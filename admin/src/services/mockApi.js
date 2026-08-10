@@ -122,6 +122,13 @@ export async function updateOrderStatus(id, status) {
   return res.order ?? res ?? null
 }
 
+// Staff payment confirmation (no payment gateway): marks an order Paid after
+// the payment was actually received, or resets it back to Pending.
+export async function updateOrderPaymentStatus(id, status) {
+  const res = await adminApi.patch(`/api/admin/orders/${id}/payment-status`, { status }, readToken())
+  return res.order ?? res ?? null
+}
+
 export async function deleteOrder(id) {
   await adminApi.del(`/api/admin/orders/${id}`, readToken())
   return { success: true }

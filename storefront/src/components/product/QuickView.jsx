@@ -20,9 +20,9 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
   const variants = Array.isArray(product.variants) ? product.variants : []
   const hasVariants = variants.length > 0
-  const [selectedVariant, setSelectedVariant] = useState(() =>
-    hasVariants ? variants.find((v) => v.is_default) || variants[0] : null
-  )
+  // Initial state: NO variant selected, NO price shown — the customer must
+  // explicitly click a variant before the real price appears.
+  const [selectedVariant, setSelectedVariant] = useState(null)
 
   // The selected variant's TOTAL price is the authoritative amount paid for
   // ONE unit of it; price-per-unit is display only. Variant-less products
@@ -34,6 +34,9 @@ export default function QuickView({ product, onClose, onNavigate }) {
     ? Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0)
     : null
   const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
+  // A variant product shows its price ONLY after the customer explicitly
+  // selects a variant. Variant-less products show their price immediately.
+  const variantSelected = hasVariants ? Boolean(selectedVariant) : true
 
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
   const ratingDisplay = hasRating
@@ -66,7 +69,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
   }, [onClose])
 
   // Adding always happens on the product details page (variant + quantity are
-  // chosen there) — never directly from the quick view.
+  // chosen there) — never directly from the quick view. Behavior preserved
+  // exactly as before; only the price visibility changed.
   const handleAdd = () => {
     onClose()
     if (onNavigate) onNavigate()
@@ -116,14 +120,16 @@ export default function QuickView({ product, onClose, onNavigate }) {
             </p>
           )}
 
-          <div className="quickview-price-row">
-            <span className="quickview-price">{formatPrice(totalPrice)}</span>
-            {hasVariants && perUnit != null && Number.isFinite(perUnit) && (
-              <span className="quickview-per-unit">
-                {formatPrice(perUnit)} / {unitDisplay(selectedUnit)}
-              </span>
-            )}
-          </div>
+          {variantSelected && (
+            <div className="quickview-price-row price-reveal">
+              <span className="quickview-price">{formatPrice(totalPrice)}</span>
+              {hasVariants && perUnit != null && Number.isFinite(perUnit) && (
+                <span className="quickview-per-unit">
+                  {formatPrice(perUnit)} / {unitDisplay(selectedUnit)}
+                </span>
+              )}
+            </div>
+          )}
 
           {product.description && (
             <p className="quickview-desc">{product.description}</p>

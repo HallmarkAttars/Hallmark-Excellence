@@ -120,6 +120,89 @@
 }
 .orders-filter-select option { font-family: var(--font-body); font-size: 13px; }
 
+/* Payment-method chips — quick UPI/COD filtering (staff follow-up) */
+.orders-payment-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.orders-payment-chip {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+.orders-payment-chip:hover {
+  border-color: var(--gold);
+}
+.orders-payment-chip.is-active {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(198, 161, 91, 0.35);
+}
+
+/* Payment column (desktop table) + mobile card payment row */
+.orders-payment-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.orders-payment-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(20, 17, 13, 0.06);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.orders-payment-label.is-upi {
+  background: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+}
+.orders-payment-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+}
+.orders-payment-status.is-paid {
+  color: #2e7d32;
+  font-weight: 700;
+}
+.orders-payment-status-text.is-paid {
+  color: #2e7d32;
+}
+.order-card-payment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+/* Mark as Paid (staff payment confirmation — no gateway) */
+.orders-payment-confirm {
+  margin-top: 8px;
+}
+.orders-payment-mark-paid {
+  border-color: rgba(46, 125, 50, 0.5) !important;
+  color: #2e7d32 !important;
+}
+.orders-payment-mark-paid:hover {
+  background: rgba(46, 125, 50, 0.08) !important;
+}
+
 /* ---------- Result count ---------- */
 .orders-count {
   margin: 0 0 12px;

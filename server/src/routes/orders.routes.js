@@ -7,6 +7,7 @@ const {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  updatePaymentStatus,
   deleteOrder,
   getDashboardStats,
 } = require('../controllers/orders.controller')
@@ -29,6 +30,7 @@ router.get('/admin/stats', requireAuth, requirePermission('dashboard.view'), get
 router.get('/admin/orders', requireAuth, requirePermission('orders.view'), getOrders)
 router.get('/admin/orders/:id', requireAuth, requirePermission('orders.view'), getOrderById)
 router.patch('/admin/orders/:id/status', requireAuth, requirePermission('orders.update_status'), updateOrderStatus)
+router.patch('/admin/orders/:id/payment-status', requireAuth, requirePermission('orders.update_payment'), updatePaymentStatus)
 router.delete('/admin/orders/:id', requireAuth, requirePermission('orders.delete'), deleteOrder)
 
 module.exports = router

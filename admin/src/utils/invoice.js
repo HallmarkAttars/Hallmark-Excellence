@@ -68,6 +68,9 @@ export function formatOrderForInvoice(order) {
   const createdAt = pick(order.createdAt, order.created_at)
   const status = pick(order.status, order.order_status, notes.order_status) || 'Pending'
   const paymentMethod = pick(order.payment_method, notes.payment_method) || 'Cash On Delivery'
+  // Payment status always starts 'Pending' (there is no gateway); only staff
+  // can mark an order 'Paid' after manually receiving the payment.
+  const paymentStatus = pick(order.payment_status, notes.payment_status) || 'Pending'
   const total = Number(order.total ?? order.total_amount ?? notes.total_amount ?? 0)
 
   const customer = {
@@ -150,6 +153,7 @@ export function formatOrderForInvoice(order) {
     time: formatInvoiceTime(createdAt),
     status,
     paymentMethod,
+    paymentStatus,
     total: Number.isFinite(total) ? total : 0,
     subtotal,
     delivery, // number | null  (null => "To be confirmed")

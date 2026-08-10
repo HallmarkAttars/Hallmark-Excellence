@@ -228,32 +228,6 @@
   line-height: 1.5;
 }
 
-/* ---------- Price row ---------- */
-.product-card-price-row {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-.product-card-price {
-  font-size: 18px;              /* mobile 16–18px per reference */
-  font-weight: 700;
-  color: var(--charcoal);
-  line-height: 1.2;
-}
-.product-card-compare {
-  font-size: 13px;
-  font-weight: 500;
-  color: #9A9286;
-  text-decoration: line-through;
-}
-.product-card-discount {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #1E4A2E;               /* dark green, reference style */
-}
-
 /* ---------- Add to Cart / quantity control (pinned to bottom) ---------- */
 .product-card-btn {
   margin-top: auto;
@@ -312,7 +286,6 @@
 @media (min-width: 768px) {
   .product-card-body { padding: 14px 16px 16px; }   /* tablet */
   .product-card-name { font-size: 20px; }
-  .product-card-price { font-size: 22px; }
   .product-card-btn { height: 48px; }
   .product-card-qty { height: 48px; }
 }
@@ -320,7 +293,6 @@
 @media (min-width: 1024px) {
   .product-card-body { padding: 16px 18px 18px; }   /* desktop */
   .product-card-name { font-size: 22px; }
-  .product-card-price { font-size: 24px; }
   .product-card-btn { font-size: 15px; }
 }
 
@@ -328,9 +300,6 @@
 @media (max-width: 360px) {
   .product-card-body { padding: 10px; gap: 5px; }
   .product-card-name { font-size: 14.5px; }
-  .product-card-price { font-size: 16.5px; }
-  .product-card-compare { font-size: 12px; }
-  .product-card-discount { font-size: 11.5px; }
   .product-card-meta { font-size: 10px; }
   .product-card-brand { font-size: 10.5px; }
   .product-card-rating { font-size: 10.5px; }

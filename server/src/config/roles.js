@@ -23,6 +23,9 @@ const PERMISSION_MATRIX = {
   // Orders
   'orders.view': ['admin', 'manager', 'staff'],
   'orders.update_status': ['admin', 'manager', 'staff'],
+  // Payment confirmation — staff can mark an order Paid after manually
+  // receiving the payment (no payment gateway exists).
+  'orders.update_payment': ['admin', 'manager', 'staff'],
   'orders.delete': ['admin'],
 
   // Categories

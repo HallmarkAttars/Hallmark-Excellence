@@ -208,6 +208,10 @@ function OrderResultCard({ order }) {
           <span>Payment Method</span>
           <span>{order.payment_method || 'Cash On Delivery'}</span>
         </div>
+        <div className="track-row">
+          <span>Payment Status</span>
+          <span>{order.payment_status || 'Pending'}</span>
+        </div>
         <div className="track-row track-total">
           <span>Total</span>
           <span>₹{Number(order.total || 0).toLocaleString('en-IN')}</span>

@@ -103,6 +103,9 @@ export async function submitOrder(payload) {
     message: payload.message,
     items: payload.items,
     total_amount: payload.total,
+    // Selected payment method (cod | upi) — the server resolves it into the
+    // canonical label stored on orders.payment_method. No gateway involved.
+    payment_method: payload.paymentMethod,
     idempotency_key: payload.idempotencyKey,
   }
 

@@ -24,6 +24,7 @@ const PERMISSION_MATRIX = {
 
   'orders.view': ['admin', 'manager', 'staff'],
   'orders.update_status': ['admin', 'manager', 'staff'],
+  'orders.update_payment': ['admin', 'manager', 'staff'],
   'orders.delete': ['admin'],
 
   'categories.view': ['admin', 'manager'],
