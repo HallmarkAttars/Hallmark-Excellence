@@ -2,6 +2,25 @@
    Shop Page — luxury filter drawer (shared design system)
    ==================================================== */
 
+/* --- Shop page scoped spacing & padding ---
+   Scoped under .shop-page so the shared .page-heading and
+   .container classes are NOT affected on other pages. */
+.shop-page .page-heading .eyebrow {
+  margin: 0 0 14px; /* eyebrow → heading (12–16px) */
+}
+.shop-page .page-heading h1 {
+  margin-bottom: 18px; /* heading → description (16–20px) */
+}
+.shop-page .container {
+  padding-inline: 20px; /* mobile 16–20px */
+}
+@media (min-width: 768px) {
+  .shop-page .container { padding-inline: 32px; } /* tablet 24–32px */
+}
+@media (min-width: 1280px) {
+  .shop-page .container { padding-inline: 48px; } /* desktop 32–48px */
+}
+
 .shop-layout {
   display: grid;
   gap: 32px;
@@ -35,17 +54,6 @@
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 .shop-filter-btn:hover { background: var(--ink); border-color: var(--ink); }
-
-.shop-filter-btn.is-outline {
-  background: transparent;
-  color: var(--charcoal);
-  border-color: var(--line-strong);
-}
-.shop-filter-btn.is-outline:hover {
-  background: var(--charcoal);
-  border-color: var(--charcoal);
-  color: var(--cream);
-}
 
 /* --- Backdrop --- */
 .filter-backdrop {
@@ -198,7 +206,8 @@
   max-width: 100%;
   min-width: 0;
   display: grid;
-  gap: 24px;
+  column-gap: 24px;
+  row-gap: 32px; /* slightly taller vertical rhythm between rows */
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -236,7 +245,8 @@
 @media (max-width: 767px) {
   .shop-layout .grid-products {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    column-gap: 12px;
+    row-gap: 16px;
   }
 }
 

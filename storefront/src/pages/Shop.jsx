@@ -6,15 +6,6 @@ import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { SHOP_PAGE } from '../data/content'
 import './Shop.css'
 
-const SORT_OPTIONS = [
-  { value: 'default', label: 'Featured' },
-  { value: 'newest', label: 'Newest' },
-  { value: 'price-asc', label: 'Price Low to High' },
-  { value: 'price-desc', label: 'Price High to Low' },
-  { value: 'name-asc', label: 'A-Z' },
-  { value: 'name-desc', label: 'Z-A' },
-]
-
 export default function Shop() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -26,7 +17,6 @@ export default function Shop() {
 
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [brandFilter, setBrandFilter] = useState('all')
-  const [sort, setSort] = useState('default')
 
   // Shows the "waking up our servers" notice only after `loading` has stayed
   // true for 4s (i.e. a real cold start), never on a fast load.
@@ -69,17 +59,11 @@ export default function Shop() {
     let list = [...products]
     if (categoryFilter !== 'all') list = list.filter((p) => p.category_id === categoryFilter)
     if (brandFilter !== 'all') list = list.filter((p) => p.brand_id === brandFilter)
-    if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
-    if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
-    if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name))
-    if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
-    // 'default' and 'newest' keep original order
     return list
-  }, [products, categoryFilter, brandFilter, sort])
+  }, [products, categoryFilter, brandFilter])
 
   // Category and Brand are mutually exclusive.
   // Selecting a category clears the brand; selecting a brand clears the category.
-  // Sort is independent and always co-occurs with a category or brand.
   const toggleCategory = (id) => {
     // Clicking the active category removes it; otherwise select it and clear the brand.
     setCategoryFilter((cur) => {
@@ -98,10 +82,8 @@ export default function Shop() {
     })
   }
 
-  const toggleSort = (value) => setSort((cur) => (cur === value ? 'default' : value))
-
   return (
-    <div>
+    <div className="shop-page">
       <div className="page-heading">
         <p className="eyebrow">{SHOP_PAGE.eyebrow}</p>
         <h1>{SHOP_PAGE.title}</h1>
@@ -121,19 +103,6 @@ export default function Shop() {
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
             Filters
-          </button>
-          <button
-            type="button"
-            className="shop-filter-btn is-outline"
-            onClick={() => setFiltersOpen(true)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6h10M18 6h3M3 12h4M12 12h9M3 18h13M21 18h-2" />
-              <circle cx="16" cy="6" r="2" />
-              <circle cx="10" cy="12" r="2" />
-              <circle cx="19" cy="18" r="2" />
-            </svg>
-            Sort
           </button>
         </div>
 
@@ -207,22 +176,6 @@ export default function Shop() {
             </div>
           </div>
 
-          {/* Sort By */}
-          <div className="filter-card">
-            <h3 className="filter-card-title">Sort By</h3>
-            <div className="filter-rows">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  type="button"
-                  key={opt.value}
-                  className={`filter-row ${sort === opt.value ? 'is-active' : ''}`}
-                  onClick={() => toggleSort(opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </aside>
     </div>
