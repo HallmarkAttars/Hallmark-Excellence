@@ -321,7 +321,50 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.orders-actions-cell { white-space: nowrap; }
+/* ============================================================
+   Desktop orders table — FIXED layout so every column stays
+   inside the card. The Actions column is never pushed off the
+   right edge and Delete is never clipped.
+   ============================================================ */
+.orders-table { width: 100%; table-layout: fixed; min-width: 1000px; }
+
+/* Column proportions (sum = 100%) — checkbox / expand / order / customer /
+   date / amount / payment / status / actions. */
+.orders-table thead th:nth-child(1) { width: 3.5%; text-align: center; }
+.orders-table thead th:nth-child(2) { width: 5%; }
+.orders-table thead th:nth-child(3) { width: 11%; }
+.orders-table thead th:nth-child(4) { width: 16%; }
+.orders-table thead th:nth-child(5) { width: 11%; }
+.orders-table thead th:nth-child(6) { width: 9%; }
+.orders-table thead th:nth-child(7) { width: 12%; }
+.orders-table thead th:nth-child(8) { width: 13%; }
+.orders-table thead th:nth-child(9) { width: 19.5%; }
+
+/* Cell overflow discipline — long values stay inside their column */
+.orders-table .orders-order-number { max-width: none; }
+.orders-table .orders-customer { min-width: 0; }
+.orders-table .orders-payment-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  max-width: 100%;
+}
+.orders-table .orders-status-select { width: 100%; min-width: 0; }
+
+/* Actions — one line, consistent spacing, never clipped */
+.orders-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 12px 10px;
+}
+.orders-actions-cell .orders-delete-btn { padding: 0 12px; }
+
+/* When the available width cannot hold the full columns (tablet / smaller
+   laptops), the table keeps its comfortable widths and scrolls INSIDE the
+   card container — the webpage itself never scrolls horizontally. */
+.orders-desktop .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 /* ---------- Status: pill select with premium per-status colors ----------
    Pending = soft gold/beige · Processing = soft blue · Shipped = soft

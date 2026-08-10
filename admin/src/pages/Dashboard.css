@@ -123,7 +123,10 @@
   gap: 20px;
   align-items: stretch;
 }
-@media (min-width: 1024px) { .dash-row { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+/* Two-column rows: side-by-side only when there is room — below 1280px the
+   sections stack so the tables/charts never get cramped. */
+@media (min-width: 1024px) and (max-width: 1279px) { .dash-row { grid-template-columns: 1fr; } }
+@media (min-width: 1280px) { .dash-row { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); } }
 
 /* ---------- Revenue chart ---------- */
 .dash-period-tabs {
@@ -222,6 +225,31 @@
 
 /* ---------- Recent orders ---------- */
 .dash-recent-table td { vertical-align: middle; }
+
+/* Recent orders table — FIXED layout so it never overflows its grid
+   column (long payment labels wrap inside their pill, customer wraps,
+   order ids ellipsize). Column proportions sum to 100%. */
+.dash-recent-table table { table-layout: fixed; width: 100%; }
+.dash-recent-table thead th:nth-child(1) { width: 10%; }
+.dash-recent-table thead th:nth-child(2) { width: 17%; }
+.dash-recent-table thead th:nth-child(3) { width: 12%; }
+.dash-recent-table thead th:nth-child(4) { width: 8%; }
+.dash-recent-table thead th:nth-child(5) { width: 10%; }
+.dash-recent-table thead th:nth-child(6) { width: 14%; }
+.dash-recent-table thead th:nth-child(7) { width: 14%; }
+.dash-recent-table thead th:nth-child(8) { width: 15%; }
+.dash-recent-table .dash-recent-customer { min-width: 0; }
+.dash-recent-table .dash-recent-id,
+.dash-recent-table .dash-recent-items {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-recent-table .dash-recent-payment {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  max-width: 100%;
+}
 .dash-recent-table tbody tr { transition: background-color 0.15s ease; }
 .dash-recent-table tbody tr:hover { background: var(--cream); }
 .dash-recent-id { font-weight: 600; font-size: 13px; white-space: nowrap; }
@@ -385,7 +413,9 @@
   grid-template-columns: 1fr;
   gap: 20px;
 }
-@media (min-width: 1024px) { .dash-skeleton-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
+/* Keep the skeleton grid aligned with .dash-row — stack below 1280px. */
+@media (min-width: 1024px) and (max-width: 1279px) { .dash-skeleton-grid { grid-template-columns: 1fr; } }
+@media (min-width: 1280px) { .dash-skeleton-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); } }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1023px) {

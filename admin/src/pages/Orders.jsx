@@ -764,7 +764,7 @@ export default function Orders() {
             {/* Desktop table — kept as-is, shown at >= 768px */}
             <div className="orders-desktop">
               <div className="table-scroll">
-                <table>
+                <table className="orders-table">
                   <thead>
                     <tr>
                       <th aria-label="Select all visible orders">
