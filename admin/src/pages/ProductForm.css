@@ -267,3 +267,17 @@
   cursor: pointer;
 }
 
+/* -------- Hide native number spinners (▲▼) on variant inputs --------
+   Quantity / Price Per Unit / Variant Total Price keep type="number" and
+   ALL numeric validation — only the browser's visual spin controls are
+   removed. Scoped to the Product Variant section so other numeric inputs
+   (rating, review count) are untouched. */
+.variants-section input[type="number"]::-webkit-outer-spin-button,
+.variants-section input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.variants-section input[type="number"] {
+  -moz-appearance: textfield;
+}
+

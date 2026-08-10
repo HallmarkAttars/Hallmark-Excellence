@@ -60,17 +60,23 @@
   to { opacity: 1; }
 }
 
-/* --- Drawer --- */
+/* --- Drawer ---
+   Fixed to the mobile viewport (height: 100dvh), flex-column so the header
+   stays pinned while the body scrolls. overflow: hidden on the drawer itself
+   clips any spill; the SCROLLABLE part is .filter-drawer-body below. */
 .filter-drawer {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
+  height: 100dvh;
+  max-height: 100dvh;
   width: 320px;
   max-width: 85vw;
   z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--cream);
   box-shadow: 8px 0 40px rgba(29, 25, 20, 0.22);
   transform: translateX(-110%);
@@ -82,13 +88,14 @@
   visibility: visible;
 }
 
-/* --- Drawer header --- */
+/* --- Drawer header — never scrolls away with the filter content --- */
 .filter-drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 22px;
   background: var(--charcoal);
+  flex-shrink: 0;
 }
 .filter-drawer-title {
   font-family: var(--font-body); /* functional control — Manrope, not serif */
@@ -114,10 +121,18 @@
   transform: rotate(90deg);
 }
 
-/* --- Drawer body --- */
+/* --- Drawer body — the scrollable filter content ---
+   min-height: 0 is the key flex fix: without it the body refuses to shrink
+   below its content height, so overflow-y never engages and the drawer
+   content overflows the viewport. Touch scrolling is enabled explicitly. */
 .filter-drawer-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 24px 22px;
   display: flex;
   flex-direction: column;
