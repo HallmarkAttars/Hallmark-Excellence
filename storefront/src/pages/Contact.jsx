@@ -19,6 +19,8 @@ import {
   PhoneIcon,
   MailIcon,
   ClockIcon,
+  CashOnDeliveryIcon,
+  UpiIcon,
 } from '../components/icons'
 import { BUSINESS, CONTACT } from '../data/content'
 import './Contact.css'
@@ -203,6 +205,22 @@ export default function Contact() {
   }, [orderPlaced])
 
   const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
+
+  // Arrow-key navigation for the payment radio cards (WAI-ARIA radiogroup
+  // pattern). Only responds when focus is on one of the two option buttons;
+  // selection changes and focus moves so keyboard users see the new state.
+  const handlePaymentKeyDown = (e) => {
+    const dir = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]
+    if (dir === undefined) return
+    if (!e.target.closest || !e.target.closest('.checkout-payment-option')) return
+    e.preventDefault()
+    const options = ['cod', 'upi']
+    const idx = options.indexOf(paymentMethod)
+    const next = (idx + dir + options.length) % options.length
+    setPaymentMethod(options[next])
+    const nextBtn = document.querySelector(`.checkout-payment-option[data-method="${options[next]}"]`)
+    nextBtn?.focus()
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -834,33 +852,49 @@ export default function Contact() {
                       No payment gateway: no QR, no UPI ID screen, no card form.
                       The order is created with payment_status 'Pending' and
                       staff confirm payment manually. */}
-                  <div className="checkout-payment" role="radiogroup" aria-labelledby="checkout-payment-title">
-                    <p className="checkout-payment-title" id="checkout-payment-title">Payment Method</p>
+                  <div
+                    className="checkout-payment"
+                    role="radiogroup"
+                    aria-labelledby="checkout-payment-title"
+                    onKeyDown={handlePaymentKeyDown}
+                  >
+                    <div className="checkout-payment-head">
+                      <span className="checkout-section-num" aria-hidden="true">2</span>
+                      <h3 className="checkout-payment-title" id="checkout-payment-title">Payment Method</h3>
+                    </div>
                     <div className="checkout-payment-options">
                       <button
                         type="button"
                         role="radio"
                         aria-checked={paymentMethod === 'cod'}
+                        data-method="cod"
                         className={`checkout-payment-option${paymentMethod === 'cod' ? ' is-selected' : ''}`}
                         onClick={() => setPaymentMethod('cod')}
                       >
                         <span className="checkout-payment-radio" aria-hidden="true" />
+                        <span className="checkout-payment-icon" aria-hidden="true">
+                          <CashOnDeliveryIcon size={21} />
+                        </span>
                         <span className="checkout-payment-option-body">
                           <strong>Cash on Delivery</strong>
-                          <span>Pay when your order is delivered.</span>
+                          <span>Pay when your order arrives at your doorstep</span>
                         </span>
                       </button>
                       <button
                         type="button"
                         role="radio"
                         aria-checked={paymentMethod === 'upi'}
+                        data-method="upi"
                         className={`checkout-payment-option${paymentMethod === 'upi' ? ' is-selected' : ''}`}
                         onClick={() => setPaymentMethod('upi')}
                       >
                         <span className="checkout-payment-radio" aria-hidden="true" />
+                        <span className="checkout-payment-icon" aria-hidden="true">
+                          <UpiIcon size={21} />
+                        </span>
                         <span className="checkout-payment-option-body">
                           <strong>UPI / Online Payment</strong>
-                          <span>Our team will contact you with payment instructions after ordering.</span>
+                          <span>Pay securely using UPI, Cards, Net Banking etc.</span>
                         </span>
                       </button>
                     </div>
@@ -869,12 +903,18 @@ export default function Contact() {
                         No payment is taken now — we will share payment instructions after your order is placed.
                       </p>
                     )}
+                    {/* Informational only — there is NO payment gateway; the
+                        customer has only chosen how they will pay. */}
+                    <div className="checkout-payment-security">
+                      <SecureIcon size={19} />
+                      <span>Your payments are 100% secure and encrypted.</span>
+                    </div>
                   </div>
 
                   {error && <p className="contact-error">{error}</p>}
 
                   <button className="btn btn-primary checkout-submit" type="submit" disabled={submitting}>
-                    <LockIcon size={15} /> {submitting ? 'Sending…' : 'Send Order'}
+                    <LockIcon size={15} /> {submitting ? 'Placing Order…' : 'Place Order'}
                   </button>
                 </form>
               </div>

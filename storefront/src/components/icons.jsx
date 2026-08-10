@@ -168,3 +168,23 @@ export function ClockIcon({ size = 24 }) {
     </svg>
   )
 }
+
+export function CashOnDeliveryIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6 9.5h.01M18 14.5h.01" />
+    </svg>
+  )
+}
+
+export function UpiIcon({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M10 6h4" />
+      <text x="12" y="16.4" textAnchor="middle" fontSize="6" fontWeight="700" fontFamily="inherit" fill="currentColor" stroke="none">UPI</text>
+    </svg>
+  )
+}

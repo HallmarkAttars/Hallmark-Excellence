@@ -518,25 +518,57 @@
 .checkout-payment {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* Numbered gold section head: ② Payment Method */
+.checkout-payment-head {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-top: 4px;
+}
+.checkout-section-num {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .checkout-payment-title {
   margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-  color: var(--charcoal-soft);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
 }
+
+/* Two selectable cards — side by side on desktop, stacked on mobile */
 .checkout-payment-options {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
+@media (max-width: 639px) {
+  .checkout-payment-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Entire card is the clickable control (role=radio button) */
 .checkout-payment-option {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 15px;
+  gap: 11px;
+  width: 100%;
+  padding: 14px;
   border: 1px solid #ddd;
   border-radius: 10px;
   background: #fff;
@@ -548,9 +580,13 @@
 .checkout-payment-option:hover {
   border-color: rgba(184, 137, 56, 0.55);
 }
+.checkout-payment-option:focus-visible {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 2px;
+}
 .checkout-payment-option.is-selected {
   border-color: var(--gold);
-  background: rgba(184, 137, 56, 0.06);
+  background: rgba(184, 137, 56, 0.07);
   box-shadow: 0 0 0 3px rgba(184, 137, 56, 0.14);
 }
 .checkout-payment-radio {
@@ -570,10 +606,30 @@
   border-color: var(--gold-deep);
   box-shadow: inset 0 0 0 4px #fff, 0 0 0 1px var(--gold-deep);
 }
+
+/* Payment icon chip — gold-tinted, fills solid gold when selected */
+.checkout-payment-icon {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(184, 137, 56, 0.1);
+  color: #8a6a2f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.checkout-payment-option.is-selected .checkout-payment-icon {
+  background: var(--gold);
+  color: #fff;
+}
+
 .checkout-payment-option-body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 .checkout-payment-option-body strong {
   font-size: 0.9rem;
@@ -581,9 +637,29 @@
   color: var(--ink);
 }
 .checkout-payment-option-body span {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   line-height: 1.45;
   color: var(--charcoal-soft);
+}
+
+/* Informational security strip — no gateway, display only */
+.checkout-payment-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(184, 137, 56, 0.08);
+  border: 1px solid rgba(184, 137, 56, 0.3);
+  color: #8a6a2f;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+.checkout-payment-security svg {
+  flex-shrink: 0;
 }
 .checkout-payment-note {
   margin: 0;
