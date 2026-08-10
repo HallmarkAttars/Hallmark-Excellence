@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext'
 import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
+import StickyWhatsApp from './components/ui/StickyWhatsApp'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import Categories from './pages/Categories'
@@ -66,6 +67,10 @@ export default function App() {
             <Navbar />
           <PageContent />
           <Footer />
+          {/* Floating WhatsApp contact — rendered once at the storefront
+              root so it appears on every customer-facing page. The admin app
+              is a separate build, so it never appears there. */}
+          <StickyWhatsApp />
         </BrowserRouter>
       </ToastProvider>
     </CartProvider>

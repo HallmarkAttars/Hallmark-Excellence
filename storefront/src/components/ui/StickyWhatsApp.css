@@ -1,0 +1,70 @@
+/* ============================================================
+   Sticky WhatsApp button — storefront-wide floating contact
+   Fixed bottom-right, stays above page content/footer.
+   z-index 95: above all page content, below the fixed navbar
+   (100), drawers (130) and full-screen overlays (150+) so it
+   never hides behind sections and never sits over modals.
+   ============================================================ */
+.sticky-whatsapp {
+  position: fixed;
+  right: 24px;      /* desktop */
+  bottom: 24px;     /* desktop */
+  z-index: 95;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;      /* desktop */
+  height: 56px;     /* desktop */
+  border-radius: 50%;
+  background: #25d366;              /* WhatsApp brand green */
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(31, 120, 72, 0.35);
+  text-decoration: none;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+}
+
+.sticky-whatsapp svg {
+  display: block;
+}
+
+/* Desktop hover — slight scale-up + deeper shadow, smooth transition */
+@media (hover: hover) and (pointer: fine) {
+  .sticky-whatsapp:hover {
+    transform: scale(1.05);
+    background: #1fbd5d;
+    box-shadow: 0 10px 26px rgba(31, 120, 72, 0.45);
+  }
+}
+
+/* Keyboard focus — visible ring */
+.sticky-whatsapp:focus-visible {
+  outline: 2px solid #1fbd5d;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.25);
+}
+
+/* Mobile — tighter offsets, slightly smaller touch target */
+@media (max-width: 767px) {
+  .sticky-whatsapp {
+    right: 16px;
+    bottom: 16px;
+    width: 52px;
+    height: 52px;
+  }
+  .sticky-whatsapp svg {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Reduced motion — no scale animation */
+@media (prefers-reduced-motion: reduce) {
+  .sticky-whatsapp {
+    transition: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .sticky-whatsapp:hover {
+      transform: none;
+    }
+  }
+}
