@@ -7,48 +7,93 @@
    ============================================================ */
 .sticky-whatsapp {
   position: fixed;
-  right: 24px;      /* desktop */
-  bottom: 24px;     /* desktop */
+  right: calc(24px + env(safe-area-inset-right, 0px));   /* desktop */
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px)); /* desktop */
   z-index: 95;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;      /* desktop */
+  width: 56px;      /* desktop (52–58px) */
   height: 56px;     /* desktop */
   border-radius: 50%;
   background: #25d366;              /* WhatsApp brand green */
   color: #fff;
-  box-shadow: 0 6px 18px rgba(31, 120, 72, 0.35);
+  box-shadow: 0 6px 18px rgba(31, 120, 72, 0.3);
   text-decoration: none;
   transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
+  /* Subtle breathing pulse — barely noticeable, premium & calm. Scale
+     1 → 1.04 → 1 with a very soft shadow expansion, ~3.8s loop. */
+  animation: whatsapp-pulse 3.8s ease-in-out infinite;
 }
 
 .sticky-whatsapp svg {
   display: block;
 }
 
-/* Desktop hover — slight scale-up + deeper shadow, smooth transition */
+/* Very subtle pulse — no flashing, no bouncing, no rings. */
+@keyframes whatsapp-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 18px rgba(31, 120, 72, 0.3);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 9px 24px rgba(31, 120, 72, 0.42);
+  }
+}
+
+/* --- Hover tooltip (desktop only) --- */
+.sticky-whatsapp-tooltip {
+  position: absolute;
+  right: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+  padding: 8px 13px;
+  border-radius: 8px;
+  background: var(--charcoal);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(29, 25, 20, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+}
+
+/* Desktop hover — pause the pulse, scale to ~1.05, deeper shadow, tooltip */
 @media (hover: hover) and (pointer: fine) {
   .sticky-whatsapp:hover {
+    animation: none;               /* let the hover transform take over */
     transform: scale(1.05);
     background: #1fbd5d;
     box-shadow: 0 10px 26px rgba(31, 120, 72, 0.45);
   }
+  .sticky-whatsapp:hover .sticky-whatsapp-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+  }
 }
 
-/* Keyboard focus — visible ring */
+/* Keyboard focus — visible ring. The pulse animation is paused here too so
+   the animated box-shadow never overrides the focus glow. */
 .sticky-whatsapp:focus-visible {
+  animation: none;
   outline: 2px solid #1fbd5d;
   outline-offset: 3px;
   box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.25);
 }
 
-/* Mobile — tighter offsets, slightly smaller touch target */
+/* Mobile — tighter offsets + safe-area, slightly smaller touch target */
 @media (max-width: 767px) {
   .sticky-whatsapp {
-    right: 16px;
-    bottom: 16px;
-    width: 52px;
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: 52px;      /* mobile (50–54px) */
     height: 52px;
   }
   .sticky-whatsapp svg {
@@ -57,9 +102,13 @@
   }
 }
 
-/* Reduced motion — no scale animation */
+/* Reduced motion — completely static button (no pulse, no transition) */
 @media (prefers-reduced-motion: reduce) {
   .sticky-whatsapp {
+    animation: none;
+    transition: none;
+  }
+  .sticky-whatsapp-tooltip {
     transition: none;
   }
   @media (hover: hover) and (pointer: fine) {
