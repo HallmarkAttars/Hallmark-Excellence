@@ -11,9 +11,10 @@
 //   • Table   — dark header, white rows, subtle separators, aspect-preserved
 //               thumbnails, brand · size detail lines
 //   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount)
-//   • Payment + coloured status pill, trust row, thank-you card, dark footer
+//   • Payment + coloured status pill, trust row, thank-you card, subtle
+//     legal lines under the header contact bar
 //   • Multi-page: the table header repeats, totals stay together, and the
-//     gold frame + dark footer are redrawn on every page.
+//     gold frame + page number are redrawn on every page.
 //
 // DATA: every figure is the SAVED order's own value (utils/invoice.js feeds
 // all three surfaces — screen, print, PDF — so they always agree). Nothing is
@@ -307,32 +308,48 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   // stays perfectly centred whenever it fits.
   const centerRightBound = Math.min(rightBlockLeft, titleLeftEdge)
   const centerMax = Math.max(20, Math.min(W / 2 - brandX, centerRightBound - 2 - W / 2) * 2)
-  doc.setFont('times', 'bold').setFontSize(17).setTextColor(...INK)
-  fitTextToWidth(doc, inv.company.name, centerMax, { size: 17, minSize: 9 })
-  doc.text(inv.company.name, W / 2, 17.5, { align: 'center' })
-  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GOLD)
+  // Brand name (centre) — the most prominent text on the sheet (24pt serif,
+  // uppercase). Shrink-fit keeps it clear of the INVOICE title and the right
+  // meta block even when an order id is unusually long.
+  doc.setFont('times', 'bold').setFontSize(24).setTextColor(...INK)
+  const brandName = inv.company.name.toUpperCase()
+  fitTextToWidth(doc, brandName, centerMax, { size: 24, minSize: 12 })
+  doc.text(brandName, W / 2, 16.5, { align: 'center' })
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...GOLD)
   if (inv.company.tagline) {
-    doc.text(inv.company.tagline.toUpperCase(), W / 2, 23, { align: 'center', charSpace: 0.6 })
+    const tagline = inv.company.tagline.toUpperCase()
+    // Keep the tagline inside the SAME safe centre band as the brand name —
+    // when an unusually long order id crowds the right side it shrinks
+    // (letter-spacing first) instead of colliding with the meta block.
+    fitTextToWidth(doc, tagline, centerMax, { size: 9, minSize: 6, charSpace: 1.1 })
+    doc.text(tagline, W / 2, 21.5, { align: 'center', charSpace: 1.1 })
   }
 
   // Invoice # / Date / Time (right) — each line shrink-fits within the cap.
-  let ry = 26
+  let ry = 24.5
   for (const line of rightMeta) {
     const isOrderId = applyRightMetaFont(doc, line)
     doc.setTextColor(...(isOrderId ? TEXT : MUTED))
     fitTextToWidth(doc, line, MAX_RIGHT_BLOCK, { size: isOrderId ? 8 : 7.5, minSize: 5.5 })
     doc.text(line, W - M, ry, { align: 'right' })
-    ry += 4.4
+    ry += 4.2
   }
 
-  // Thin gold divider + centred contact bar (real config values only)
+  // Thin gold divider + centred contact bar (real config values only). The
+  // legal / copyright lines sit quietly underneath on the plain page — the
+  // old dark footer band has been removed.
   doc.setDrawColor(...GOLD).setLineWidth(0.7)
-  doc.line(M, 41, W - M, 41)
+  doc.line(M, 37, W - M, 37)
   const contactBits = [inv.company.phone, inv.company.email].filter(Boolean)
   if (contactBits.length > 0) {
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(contactBits.join('   ·   '), W / 2, 46, { align: 'center' })
+    doc.text(contactBits.join('   ·   '), W / 2, 42, { align: 'center' })
   }
+  doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(...MUTED)
+  if (inv.company.gstNote) {
+    doc.text(inv.company.gstNote, W / 2, 46, { align: 'center' })
+  }
+  doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, 49.5, { align: 'center' })
 
   // ========================= BILL TO / ORDER INFO ===========================
   const cardGap = 8
@@ -407,7 +424,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const tableStartY = y + cardH + 5
   autoTable(doc, {
     startY: tableStartY,
-    margin: { left: M, right: M },
+    // Explicit bottom margin keeps the last row clear of the per-page page
+    // number (drawn at H-15) on dense multi-page invoices — the default
+    // 10mm margin could let a full page of rows run underneath it.
+    margin: { left: M, right: M, bottom: 24 },
     head: [['PRODUCT', 'DETAILS', 'QTY', 'RATE', 'AMOUNT']],
     body: inv.items.map((it) => {
       const detailLines = []
@@ -519,7 +539,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   // ============================ PRICE SUMMARY ===============================
   const sumW = 78
   const sumX = W - M - sumW
-  if (ty > H - 58) {
+  if (ty > H - 50) {
     doc.addPage()
     ty = M
   }
@@ -545,7 +565,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   ty += 10
 
   // ======================= PAYMENT + STATUS (pill) ==========================
-  if (ty > H - 52) {
+  if (ty > H - 46) {
     doc.addPage()
     ty = M
   }
@@ -583,7 +603,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   ty += 13
 
   // ============================= TRUST ROW ==================================
-  if (ty > H - 68) {
+  if (ty > H - 58) {
     doc.addPage()
     ty = M
   }
@@ -609,7 +629,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   ty += trustH + 5
 
   // =========================== THANK-YOU CARD ===============================
-  if (ty > H - 62) {
+  if (ty > H - 52) {
     doc.addPage()
     ty = M
   }
@@ -641,18 +661,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.setLineWidth(0.15)
     doc.roundedRect(M - 1.7, M - 1.7, CW + 3.4, H - (M - 1.7) * 2, 1.5, 1.5, 'S')
 
-    // Dark footer band (bottom)
-    const bandY = H - M - 18
-    const bandH = 16
-    doc.setFillColor(...INK)
-    doc.roundedRect(M - 1, bandY, CW + 2, bandH, 2, 2, 'F')
-    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...CREAM)
-    if (inv.orderId) doc.text(`Invoice ${inv.orderId}`, M + 2, bandY + 5)
-    doc.text(`Page ${i} of ${pages}`, W - M - 2, bandY + 5, { align: 'right' })
-    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GOLD_LIGHT)
-    doc.text(inv.company.gstNote, W / 2, bandY + 10.5, { align: 'center' })
-    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...CREAM)
-    doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, bandY + 15, { align: 'center' })
+    // Subtle page number on the plain page — the old dark footer band is
+    // removed; legal/copyright lines now sit under the header contact bar.
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
+    doc.text(`Page ${i} of ${pages}`, W / 2, H - 15, { align: 'center' })
   }
 
   return doc
@@ -727,6 +739,7 @@ function renderPrintHtml(inv, logo) {
   if (inv.status) orderInfo.push(`<li><span>Status</span><strong>${escapeHtml(inv.status)}</strong></li>`)
 
   const contactBits = [inv.company.phone, inv.company.email].filter(Boolean).join('   ·   ')
+  const legalBits = [inv.company.gstNote, `© ${inv.company.name}. All rights reserved.`].filter(Boolean)
 
   const trust = `
     <div class="trust">
@@ -751,12 +764,12 @@ function renderPrintHtml(inv, logo) {
   .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
   .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
   .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
-  .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 3mm; border-bottom: 1.2px solid #b8862b; }
+  .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 2.5mm; border-bottom: 1.2px solid #b8862b; }
   .head > div { min-width: 0; }
   .brand img { height: 11mm; width: auto; object-fit: contain; }
   .brand-center { text-align: center; min-width: 0; }
-  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 700; color: #171512; overflow-wrap: anywhere; }
-  .brand-center .tagline { display: block; font-size: 7px; letter-spacing: .22em; text-transform: uppercase; color: #b8862b; margin-top: 1mm; }
+  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 30px; font-weight: 700; color: #171512; overflow-wrap: anywhere; }
+  .brand-center .tagline { display: block; font-size: 9.5px; letter-spacing: .28em; text-transform: uppercase; color: #b8862b; margin-top: 1.5mm; }
   .title { text-align: right; min-width: 0; }
   .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
   /* Long order ids wrap inside the right block instead of forcing the grid
@@ -764,7 +777,7 @@ function renderPrintHtml(inv, logo) {
   .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: normal; overflow-wrap: anywhere; }
   .title p strong { color: #171512; }
   .contact { display: flex; justify-content: center; gap: 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 7mm; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 5.5mm; }
   .card { background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; padding: 4.5mm 5mm; }
   .card h3 { font-size: 7.5px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(184,134,43,.25); }
   .card p { font-size: 9px; color: #1a1815; line-height: 1.5; }
@@ -814,9 +827,7 @@ function renderPrintHtml(inv, logo) {
   .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
   .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
   .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
-  .foot { margin-top: 6mm; padding: 4mm; background: #171512; border-radius: 5px; text-align: center; }
-  .foot p { font-size: 8px; color: rgba(247,242,232,.75); line-height: 1.7; }
-  .foot p:first-child { color: rgba(184,134,43,.9); }
+  .legal { text-align: center; font-size: 7px; color: #9a9488; margin-top: 1.5mm; letter-spacing: .05em; }
   /* The frame's own margin (6mm) + padding (12mm) provide the ~18mm safe
      page margin, so @page must NOT add more — a 210mm sheet inside 12mm
      @page margins would measure 234mm and clip the gold frame's right edge
@@ -833,7 +844,7 @@ function renderPrintHtml(inv, logo) {
       <div class="head">
         <div class="brand">${logo ? `<img src="${logo.dataUrl}" alt="" />` : ''}</div>
         <div class="brand-center">
-          <span class="company">${escapeHtml(inv.company.name)}</span>
+          <span class="company">${escapeHtml(inv.company.name.toUpperCase())}</span>
           ${inv.company.tagline ? `<span class="tagline">${escapeHtml(inv.company.tagline)}</span>` : ''}
         </div>
         <div class="title">
@@ -845,6 +856,7 @@ function renderPrintHtml(inv, logo) {
       </div>
 
       ${contactBits ? `<div class="contact"><span>${escapeHtml(contactBits)}</span></div>` : ''}
+      ${legalBits.length > 0 ? `<p class="legal">${escapeHtml(legalBits.join(' · '))}</p>` : ''}
 
       <div class="cards">
         <div class="card">
@@ -888,10 +900,6 @@ function renderPrintHtml(inv, logo) {
         <p class="sign">— Team ${escapeHtml(inv.company.name)}</p>
       </div>
 
-      <div class="foot">
-        <p>${escapeHtml(inv.company.gstNote)}</p>
-        <p>© ${escapeHtml(inv.company.name)}. All rights reserved.</p>
-      </div>
     </div>
   </div>
 </body>
