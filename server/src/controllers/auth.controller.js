@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
 const supabase = require('../config/supabase')
+const { signAdminToken } = require('../utils/authTokens')
 
 // POST /api/auth/login
 async function login(req, res) {
@@ -40,11 +40,7 @@ async function login(req, res) {
     const name = [admin.first_name, admin.last_name].filter(Boolean).join(' ') || admin.email
     const role = admin.role || 'staff'
 
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email, name, role },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    )
+    const token = signAdminToken({ id: admin.id, email: admin.email, name, role })
 
     // Record the login time (best-effort — never fails the login).
     supabase
@@ -64,11 +60,22 @@ async function login(req, res) {
   }
 }
 
-// POST /api/auth/verify
+// GET/POST /api/auth/verify — and POST /api/auth/refresh (same handler).
 // Protected by requireAuth — if we get here, the token was valid.
+//
+// SLIDING-SESSION RENEWAL: alongside the admin profile, a FRESH 7-day token
+// is re-issued on every successful verification. The admin client stores the
+// new token, so a session only ever expires after 7 continuous days without
+// any verification (load / periodic renewal / tab focus) — never from mere
+// idle time while the panel is in use. Because requireAuth sits in front,
+// renewal never resurrects an expired/revoked token: genuine expiry still
+// requires a real login.
 async function verify(req, res) {
   try {
-    return res.json({ admin: req.admin })
+    return res.json({
+      token: signAdminToken(req.admin),
+      admin: req.admin,
+    })
   } catch (err) {
     console.error('verify error:', err)
     return res.status(500).json({ error: 'Internal server error' })

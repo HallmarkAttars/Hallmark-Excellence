@@ -189,8 +189,10 @@ export async function login(email, password) {
 }
 
 // Confirms a stored token is still valid (called on app load/refresh).
+// The backend re-issues a FRESH token on every successful verification, so a
+// page load/refresh also rolls the sliding session window forward.
 // Returns a tagged result so the caller can distinguish:
-//   'valid'   → token accepted, session is good
+//   'valid'   → token accepted, session is good (a fresh `token` is included)
 //   'invalid' → token definitively rejected (expired/revoked) → real logout
 //   'error'   → transient failure (network blip, backend cold start, 5xx) →
 //               keep the stored session; a genuine 401 later still logs out
@@ -200,7 +202,23 @@ export async function verifyToken() {
   if (!token) return { status: 'none' }
   try {
     const res = await adminApi.get('/api/auth/verify', token)
-    return { status: 'valid', admin: res.admin ?? null }
+    return { status: 'valid', admin: res.admin ?? null, token: res.token ?? null }
+  } catch (err) {
+    return { status: err?.status === 401 ? 'invalid' : 'error' }
+  }
+}
+
+// SLIDING-SESSION RENEWAL — silently re-issues the admin's JWT while the
+// panel is open (periodic timer + on tab focus/visibility). Same tagged
+// result shape as verifyToken. A genuinely expired/revoked token comes back
+// 'invalid' and triggers the normal logout; transient backend failures
+// ('error') never log the admin out.
+export async function refreshSession() {
+  const token = readToken()
+  if (!token) return { status: 'none' }
+  try {
+    const res = await adminApi.post('/api/auth/refresh', {}, token)
+    return { status: 'valid', admin: res.admin ?? null, token: res.token ?? null }
   } catch (err) {
     return { status: err?.status === 401 ? 'invalid' : 'error' }
   }
