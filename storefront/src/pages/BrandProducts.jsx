@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
-import { useCart } from '../context/CartContext'
-import { pieceWord } from '../utils/brandBulk'
 import './BrandProducts.css'
 
 // Same client-side sort options as the Shop page — no backend, no extra reads.
@@ -34,9 +32,6 @@ const Chevron = () => (
 
 export default function BrandProducts() {
   const { slug } = useParams()
-  // Brand bulk context — the banner and card badges update live with the
-  // customer's cart (brand pages never combine brands).
-  const { brandBulk, brandPieces, bulkRules } = useCart()
   const [brand, setBrand] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -98,15 +93,6 @@ export default function BrandProducts() {
   const brandName = brand?.name || 'Brand'
   const activeSort = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Featured'
 
-  // Brand-level bulk state for the banner: the rule (if this brand has one)
-  // plus the pieces already in the cart, so the progress is always live.
-  const bulkRule = brand?.id != null ? bulkRules[String(brand.id)] || null : null
-  const cartBrandPieces = brand?.id != null ? brandPieces[String(brand.id)] || 0 : 0
-  const bulkMinQty = bulkRule ? Math.floor(Number(bulkRule.bulk_min_qty)) : 0
-  const bulkUnlocked = Boolean(bulkRule && cartBrandPieces >= bulkMinQty)
-  const bulkRemaining = bulkRule ? Math.max(0, bulkMinQty - cartBrandPieces) : 0
-  const bulkPct = bulkMinQty > 0 ? Math.min(100, (cartBrandPieces / bulkMinQty) * 100) : 0
-
   const toggleCategory = (id) => {
     setCategoryFilter((cur) => (cur === id ? 'all' : id))
     setOpenMenu(null)
@@ -132,36 +118,6 @@ export default function BrandProducts() {
       </header>
 
       <div className="container brand-body">
-        {/* Brand bulk banner — only when this brand has an active rule. */}
-        {bulkRule && (
-          <div className={`brand-bulk-banner ${bulkUnlocked ? 'is-unlocked' : ''}`} aria-live="polite">
-            <div className="brand-bulk-banner-main">
-              <span className="brand-bulk-banner-title">
-                {bulkUnlocked ? '✓ Bulk price unlocked' : 'Brand bulk pricing'}
-              </span>
-              <span className="brand-bulk-banner-price">
-                Bulk price ₹{Number(bulkRule.bulk_unit_price).toLocaleString('en-IN')} / piece
-                <span className="brand-bulk-banner-min">
-                  {' '}· from {bulkMinQty.toLocaleString('en-IN')} pieces
-                </span>
-              </span>
-            </div>
-            <div className="brand-bulk-banner-progress">
-              <div className="brand-bulk-banner-track">
-                <span className="brand-bulk-banner-fill" style={{ width: `${bulkPct}%` }} />
-              </div>
-              <span className="brand-bulk-banner-label">
-                {cartBrandPieces.toLocaleString('en-IN')} / {bulkMinQty.toLocaleString('en-IN')} pieces
-              </span>
-            </div>
-            {!bulkUnlocked && (
-              <p className="brand-bulk-banner-hint">
-                Add {bulkRemaining.toLocaleString('en-IN')} more {brandName} {pieceWord(bulkRemaining)} to unlock bulk pricing
-              </p>
-            )}
-          </div>
-        )}
-
         {/* Toolbar: real product count + client-side filter/sort */}
         <div className="brand-toolbar">
           <p className="brand-count">
@@ -248,7 +204,6 @@ export default function BrandProducts() {
             error={error}
             onRetry={() => setReloadKey((k) => k + 1)}
             emptyMessage="No products from this brand yet."
-            bulkUnlockedByBrand={brandBulk}
           />
         </div>
       </div>
