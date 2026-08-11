@@ -1,168 +1,356 @@
+/* ============================================================
+   Product Detail — premium luxury redesign
+   Warm cream canvas · serif title · gold accents · green ONLY
+   for success/bulk-active states. Mobile-first, 2-col ≥900px.
+   ============================================================ */
+
 .product-detail {
+  padding: 28px 16px 160px; /* bottom clears the sticky mobile bar */
+}
+.product-detail-layout {
   display: grid;
-  gap: 40px;
-  padding: 48px 24px 80px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
 }
 @media (min-width: 900px) {
-  .product-detail { grid-template-columns: 1fr 1fr; }
+  .product-detail {
+    padding: 56px 24px 96px;
+  }
+  .product-detail-layout {
+    /* Image visually dominant; purchase controls on the right. */
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 56px;
+  }
 }
 
+/* ---------- Gallery: large rounded image on a warm stage ---------- */
+.product-detail-gallery { min-width: 0; }
 .product-detail-main-image {
   aspect-ratio: 1;
-  border-radius: var(--radius);
+  border-radius: 20px;
   overflow: hidden;
-  background: var(--cream-deep);
+  background: var(--stage);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-soft);
 }
-.product-detail-main-image img { width: 100%; height: 100%; object-fit: cover; }
-
-.product-detail-thumbs { display: flex; gap: 10px; margin-top: 12px; }
+.product-detail-main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;   /* the full product is always visible — never cropped */
+}
+.product-detail-thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
 .product-detail-thumb {
-  width: 64px; height: 64px; padding: 0; border: 2px solid transparent;
-  border-radius: var(--radius); overflow: hidden; background: none;
+  width: 62px;
+  height: 62px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--stage);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
 }
 .product-detail-thumb.is-active { border-color: var(--gold); }
 .product-detail-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-.product-detail-price { font-size: 1.5rem; color: var(--gold-deep); font-weight: 700; }
-.product-detail-price-block { margin-top: 8px; }
-.product-detail-price-total {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--charcoal-soft);
-  vertical-align: middle;
+/* ---------- Information column ---------- */
+.product-detail-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-.product-detail-per-unit {
+
+.pd-eyebrow {
   margin: 0;
-  font-size: 0.95rem;
-  color: var(--charcoal);
-}
-/* Selected-variant confirmation line (e.g. "100 Pieces selected") */
-.product-detail-selected-label {
-  margin: 4px 0 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--charcoal-soft);
-}
-/* Subtle fade-up when the price appears after variant selection — reuses the
-   existing fade-up keyframe; no new animation system added. */
-.price-reveal {
-  animation: fade-up 0.45s ease-out both;
-}
-/* "Please select a variant" validation hint (Add to Cart before selection) */
-.product-detail-variant-hint {
-  margin: 10px 0 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #b26a00;
-}
-.product-detail-stock { font-size: 0.85rem; color: var(--charcoal-soft); }
-
-.product-detail-actions { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
-
-/* --- Variant selector ---------------------------------------------------- */
-.variant-selector { margin-top: 20px; }
-.variant-selector-title {
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--charcoal-soft);
-  font-weight: 500;
-  margin-bottom: 12px;
+  color: var(--gold);
 }
+.pd-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 5vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--charcoal);
+  margin: 6px 0 0;
+}
+
+/* Rating — gold star + value + muted review count */
+.pd-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+.pd-rating-star {
+  display: inline-flex;
+  color: var(--gold);
+}
+.pd-rating-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  font-variant-numeric: tabular-nums;
+}
+.pd-rating-count {
+  font-size: 0.78rem;
+  color: var(--charcoal-soft);
+}
+
+/* Price row — per-piece price; struck normal + GREEN while bulk is applied */
+.pd-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pd-price-per-piece {
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 700;
+  color: var(--gold-deep);
+  font-variant-numeric: tabular-nums;
+}
+.pd-price-per-piece.is-bulk { color: #1E7A34; }
+.pd-price-normal {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #9A9286;
+  text-decoration: line-through;
+  text-decoration-color: rgba(95, 88, 78, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+.pd-bulk-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #EAF5EC;
+  border: 1px solid rgba(30, 122, 52, 0.35);
+  color: #1E7A34;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Stock — only ever rendered from real API data */
+.product-detail-stock { margin: 8px 0 0; font-size: 0.84rem; font-weight: 600; }
+.product-detail-stock.in-stock { color: #2e7d32; }
+.product-detail-stock.low-stock { color: #b26a00; }
+.product-detail-stock.out-of-stock { color: #b71c1c; }
+
+/* Description + Read more */
+.pd-desc-block { margin-top: 14px; }
+.pd-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--charcoal-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pd-desc.is-open {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+.pd-desc-toggle {
+  margin-top: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.pd-desc-toggle:hover { color: var(--charcoal); }
+
+/* ---------- Shared section titles ("SELECT VARIANT" / "QUANTITY") ---------- */
+.pd-section-title {
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+/* ---------- Variant selector ---------- */
+.variant-selector { margin-top: 24px; }
 .variant-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 .variant-option {
-  padding: 10px 18px;
-  border: 1px solid rgba(36, 31, 25, 0.35);
-  border-radius: var(--radius);
+  min-width: 96px;
+  padding: 12px 18px;
+  border: 1px solid rgba(29, 25, 20, 0.28);
+  border-radius: 10px;
   background: var(--white);
-  color: #000;
-  font-size: 0.9rem;
-  font-weight: 500;
+  color: var(--charcoal);
+  font-size: 0.88rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 .variant-option:hover {
-  background: var(--cream-deep);
   border-color: var(--gold);
-  color: var(--charcoal);
+  background: var(--cream-soft);
 }
 .variant-option.is-active {
   background: var(--charcoal);
   border-color: var(--charcoal);
   color: var(--cream);
+  box-shadow: 0 4px 14px rgba(29, 25, 20, 0.2);
 }
 
-/* Stock status colors */
-.product-detail-stock.in-stock { color: #2e7d32; }
-.product-detail-stock.low-stock { color: #b26a00; }
-.product-detail-stock.out-of-stock { color: #b71c1c; }
-
+/* ---------- Quantity ---------- */
+.pd-quantity { margin-top: 24px; }
+.pd-quantity-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+}
 .qty-selector {
-  display: flex; align-items: center; gap: 16px;
-  border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  height: 50px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--white);
 }
-.qty-selector button { background: none; border: none; font-size: 1.1rem; color: var(--charcoal); }
+.qty-selector button {
+  flex: 0 0 46px;
+  height: 100%;
+  border: none;
+  background: none;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.qty-selector button:hover:not(:disabled) { background: var(--cream-deep); }
 .qty-selector button:disabled { opacity: 0.35; cursor: not-allowed; }
-.qty-control-wrap { display: flex; flex-direction: column; gap: 6px; }
-.qty-piece-hint {
+.qty-selector span {
+  flex: 1;
+  min-width: 44px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.qty-selector:focus-within { box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.5) inset; }
+
+.pd-qty-total {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pd-selected-label {
   margin: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-soft);
+}
+.pd-total {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.pd-total-word {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+}
+.qty-piece-hint {
+  margin: 8px 0 0;
   font-size: 0.72rem;
   color: var(--charcoal-soft);
   letter-spacing: 0.03em;
 }
 
-/* --- Brand bulk pricing panel (brand products only) ----------------------
-   White card · gold hairline · charcoal text — same system as the rest of
-   the page. Subtle states: locked (progress) / unlocked (gold ✓ line). */
-/* "· bulk price" note on the charged per-piece price — GREEN only while
-   the bulk rate is actually applied (never for a mere configured rule). */
-.product-detail-bulk-note {
-  font-weight: 600;
-  color: #1E7A34;
-}
-.brand-bulk-panel {
-  margin-top: 18px;
+/* ---------- Compact bulk-pricing card (brand products only) ----------
+   White card · GREEN information when unlocked (status pill, rate, fill,
+   savings) · neutral gold/cream when locked. Brand-level, one source of
+   truth — the numbers come from the same shared context the cart uses. */
+.pd-bulk-card {
+  margin-top: 22px;
   padding: 14px 16px;
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 14px;
   box-shadow: var(--shadow-soft);
 }
-.brand-bulk-panel-head {
+.pd-bulk-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
 }
-.brand-bulk-title {
-  font-size: 0.82rem;
-  font-weight: 700;
+.pd-bulk-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #F5ECD8;
+  border: 1px solid rgba(184, 137, 56, 0.35);
   color: var(--gold-deep);
-  letter-spacing: 0.04em;
-}
-.brand-bulk-min {
-  font-size: 0.74rem;
-  color: var(--charcoal-soft);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
-.brand-bulk-progress {
+.pd-bulk-status.is-unlocked {
+  background: #EAF5EC;
+  border-color: rgba(30, 122, 52, 0.35);
+  color: #1E7A34;
+}
+.pd-bulk-rate {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  font-variant-numeric: tabular-nums;
+}
+.pd-bulk-min {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--charcoal-soft);
+}
+.pd-bulk-progress {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 10px;
 }
-.brand-bulk-progress-track {
+.pd-bulk-track {
   flex: 1;
   height: 6px;
   min-width: 0;
@@ -170,17 +358,15 @@
   border-radius: 999px;
   overflow: hidden;
 }
-.brand-bulk-progress-fill {
+.pd-bulk-fill {
   display: block;
   height: 100%;
   background: var(--gold);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
-.brand-bulk-progress-fill.is-unlocked {
-  background: #2E7D32;
-}
-.brand-bulk-progress-label {
+.pd-bulk-fill.is-unlocked { background: #2E7D32; }
+.pd-bulk-count {
   margin: 0;
   font-size: 0.74rem;
   font-weight: 600;
@@ -188,20 +374,229 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.brand-bulk-locked {
+.pd-bulk-check { color: #1E7A34; }
+.pd-bulk-save {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1E7A34;
+}
+.pd-bulk-locked {
   margin: 10px 0 0;
   font-size: 0.8rem;
   color: var(--charcoal-soft);
 }
-.brand-bulk-unlocked {
-  margin: 10px 0 0;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #1E7A34;
+
+/* ---------- Primary action + wishlist ---------- */
+.product-detail-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+.pd-add-btn {
+  width: 100%;
+  height: 52px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+  gap: 9px;
+}
+.pd-wishlist {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  border: 1px solid rgba(29, 25, 20, 0.25);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--charcoal);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.pd-wishlist:hover { border-color: var(--gold); color: var(--gold-deep); }
+.pd-wishlist.is-saved {
+  color: var(--gold-deep);
+  border-color: rgba(184, 137, 56, 0.4);
+  background: rgba(184, 137, 56, 0.06);
 }
 
+/* "Please select a variant" validation hint */
+.product-detail-variant-hint {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b26a00;
+}
+
+/* Subtle fade-up when the price appears after variant selection */
+.price-reveal {
+  animation: fade-up 0.45s ease-out both;
+}
+
+/* ---------- Benefits strip ---------- */
+.pd-benefits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+}
+@media (min-width: 480px) {
+  .pd-benefits { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.pd-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+.pd-benefit svg {
+  color: var(--gold);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pd-benefit div {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+.pd-benefit strong {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  letter-spacing: 0.01em;
+}
+.pd-benefit span {
+  font-size: 0.68rem;
+  color: var(--charcoal-soft);
+}
+
+/* ---------- Related products ---------- */
 .product-detail-related {
   grid-column: 1 / -1;
-  margin-top: 40px;
+  margin-top: 48px;
 }
 .product-detail-related h2 { margin-bottom: 24px; }
+
+/* ============================================================
+   Sticky mobile cart bar (mobile only)
+   Shares the SAME quantity state / handlers / add guard as the
+   main controls — never a second independent state. The floating
+   WhatsApp button is lifted above the bar via body.has-cart-bar.
+   ============================================================ */
+.pd-mobile-bar { display: none; }
+
+@media (max-width: 767px) {
+  .pd-mobile-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    background: var(--white);
+    border-top: 1px solid rgba(80, 60, 30, 0.12);
+    box-shadow: 0 -8px 24px rgba(29, 25, 20, 0.08);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .pd-bar-info {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pd-bar-thumb {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: contain;
+    background: var(--stage);
+    border: 1px solid var(--line-soft);
+    flex-shrink: 0;
+  }
+  .pd-bar-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.3;
+  }
+  .pd-bar-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pd-bar-sub {
+    font-size: 0.68rem;
+    color: var(--charcoal-soft);
+  }
+  .pd-bar-price {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--gold-deep);
+    font-variant-numeric: tabular-nums;
+  }
+  .pd-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pd-bar-qty {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--white);
+  }
+  .pd-bar-qty button {
+    flex: 0 0 36px;
+    height: 100%;
+    border: none;
+    background: none;
+    font-size: 1.05rem;
+    line-height: 1;
+    color: var(--charcoal);
+  }
+  .pd-bar-qty button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pd-bar-qty span {
+    min-width: 36px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .pd-bar-add {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 10px;
+    min-width: 150px;
+  }
+  .pd-bar-hint {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #b26a00;
+  }
+
+  /* Keep WhatsApp reachable above the bar — never overlapped */
+  body.has-cart-bar .sticky-whatsapp {
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}

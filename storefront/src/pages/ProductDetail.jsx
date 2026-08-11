@@ -4,6 +4,7 @@ import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { lineNormalPerPiece, pieceBandRange, pieceWord, productPageBrandPieces } from '../utils/brandBulk'
+import { QualityIcon, SecureIcon, ShippingIcon, PhoneIcon } from '../components/icons'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -11,6 +12,44 @@ import './ProductDetail.css'
 // Display unit for the per-unit price (e.g. "₹10 / piece").
 function unitDisplay(unit) {
   return String(unit || '').toLowerCase()
+}
+
+// Frontend-only wishlist persistence (localStorage) — no backend, no cart
+// changes. Mirrors how the cart itself persists locally.
+const WISHLIST_KEY = 'ad_wishlist_v1'
+function readWishlist() {
+  try {
+    const raw = localStorage.getItem(WISHLIST_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list.map(String) : []
+  } catch {
+    return []
+  }
+}
+
+function StarIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+      <path d="M12 2.8 15 8.4l6.2.9-4.5 4.4 1 6.2L12 17.1 6.3 19.9l1-6.2L2.8 9.3 9 8.4l3-5.6Z" />
+    </svg>
+  )
+}
+
+function HeartIcon({ filled }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20.5 4.7 13.4a4.9 4.9 0 0 1 0-6.9 4.6 4.6 0 0 1 6.7 0l.6.6.6-.6a4.6 4.6 0 0 1 6.7 0 4.9 4.9 0 0 1 0 6.9L12 20.5Z" />
+    </svg>
+  )
+}
+
+function BagIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
+      <path d="M8.5 10V6.5a3.5 3.5 0 0 1 7 0V10" />
+    </svg>
+  )
 }
 
 export default function ProductDetail() {
@@ -38,13 +77,26 @@ export default function ProductDetail() {
   // NOT add them again (the double-counting bug). Reset on every selection
   // change; set after a successful add.
   const [selectionInCart, setSelectionInCart] = useState(false)
+  // Description "Read more" — purely visual (line clamp), no data change.
+  const [descOpen, setDescOpen] = useState(false)
+  // Frontend-only wishlist toggle (localStorage).
+  const [wishlistIds, setWishlistIds] = useState(readWishlist)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
   // Synchronous re-entry guard for handleAdd: React state (`adding`) cannot
   // block two clicks in the same frame, and a double-fire would add the
   // selected quantity twice (60 → 120). The ref is set before the first
-  // mutation and cleared when the add completes.
+  // mutation and cleared when the add completes. Also guards the sticky
+  // mobile bar button — the main CTA and the bar share this one guard.
   const addingRef = useRef(false)
+
+  // The sticky mobile cart bar needs the floating WhatsApp button lifted so
+  // the two never overlap. Purely visual: a body class scoped in CSS to
+  // mobile only, removed on unmount.
+  useEffect(() => {
+    document.body.classList.add('has-cart-bar')
+    return () => document.body.classList.remove('has-cart-bar')
+  }, [])
 
   // Clear feedback timers on unmount.
   useEffect(() => () => {
@@ -63,6 +115,7 @@ export default function ProductDetail() {
     setVariantHint(false)
     setQty(1)
     setSelectionInCart(false)
+    setDescOpen(false)
     addingRef.current = false
     getProductById(id)
       .then((p) => {
@@ -103,6 +156,7 @@ export default function ProductDetail() {
 
   const variants = Array.isArray(product.variants) ? product.variants : []
   const hasVariants = variants.length > 0
+  const inWishlist = wishlistIds.includes(String(product.id))
 
   // The selected variant's TOTAL price is the authoritative amount paid for
   // ONE unit of it (e.g. ₹7500 for "1000 Pieces"). Price-per-unit is display
@@ -250,12 +304,53 @@ export default function ProductDetail() {
   const chargedPerPiece = bulkApplied ? bulkPerPiece : normalPerPiece
   const brandDisplayTotal =
     pieceStylePrice && variantSelected ? chargedPerPiece * selectionPieces : 0
-  // Per-piece label: "piece" for Pieces variants and variant-less products,
-  // "unit" for ML/Gram variants (where one unit counts as one piece).
-  const bulkUnitLabel =
-    pieceStylePrice && hasVariants && !pieceMode
-      ? 'unit'
-      : 'piece'
+
+  // --- Presentation derived values (display only — same underlying math) ---
+  // The line total used by the quantity section and the sticky mobile bar:
+  // the same total the cart line will charge.
+  const lineTotal =
+    pieceStylePrice && variantSelected
+      ? brandDisplayTotal
+      : displayTotal
+  // Top price row: per-piece price (bulk-aware) once a variant is chosen.
+  const topPerPiece = pieceStylePrice
+    ? chargedPerPiece
+    : hasVariants
+      ? perUnit
+      : null
+  const topPriceSuffix = pieceStylePrice
+    ? (hasVariants && !pieceMode ? ' / unit' : ' / piece')
+    : hasVariants
+      ? ` / ${unitDisplay(selectedUnit)}`
+      : ''
+  // Stepper disable states (shared by the main control and the mobile bar).
+  // The + button stays enabled at a band's max when a NEXT band exists — the
+  // existing auto-advance (handleIncrease → nextVariant) must stay reachable;
+  // it is disabled only on the last band's max.
+  const canDecrease = pieceMode ? qty > pieceMin : qty > 1
+  const canIncrease =
+    pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true
+  // Bulk card progress + per-piece savings.
+  const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
+  const bulkSavingsPerPiece = bulkApplied
+    ? Math.max(0, Number(normalPerPiece) - bulkPerPiece)
+    : 0
+  // Stock status — the DB currently has no stock column, so this renders only
+  // when the API provides real stock data (defensive, never invented).
+  const stockClass =
+    product.stock == null
+      ? ''
+      : Number(product.stock) <= 0
+        ? 'out-of-stock'
+        : Number(product.stock) <= 10
+          ? 'low-stock'
+          : 'in-stock'
+  const stockLabel =
+    stockClass === 'out-of-stock'
+      ? 'Out of stock'
+      : stockClass === 'low-stock'
+        ? 'Low stock'
+        : 'In stock'
 
   // One-piece-at-a-time stepping within the selected band (bulk-brand Pieces
   // variants); the existing ±1 behaviour everywhere else.
@@ -282,6 +377,22 @@ export default function ProductDetail() {
     } else {
       setQty((q) => q + 1)
     }
+  }
+
+  // Frontend-only wishlist toggle — no backend, no cart changes.
+  const toggleWishlist = () => {
+    setWishlistIds((prev) => {
+      const pid = String(product.id)
+      const next = prev.includes(pid)
+        ? prev.filter((x) => x !== pid)
+        : [...prev, pid]
+      try {
+        localStorage.setItem(WISHLIST_KEY, JSON.stringify(next))
+      } catch {
+        // Storage unavailable — the in-memory toggle still works for the session.
+      }
+      return next
+    })
   }
 
   const handleAdd = () => {
@@ -348,183 +459,255 @@ export default function ProductDetail() {
 
   return (
     <div className="container product-detail">
-      <div className="product-detail-gallery">
-        <div className="product-detail-main-image">
-          <img src={product.image} alt={product.name} />
+      <div className="product-detail-layout">
+        {/* Gallery — large rounded image on a warm stage, thumb indicator below */}
+        <div className="product-detail-gallery">
+          <div className="product-detail-main-image">
+            <img src={product.image} alt={product.name} />
+          </div>
+          {product.image && (
+            <div className="product-detail-thumbs">
+              <button
+                className="product-detail-thumb is-active"
+                onClick={() => setActiveImage(0)}
+                aria-label="Show product image"
+              >
+                <img src={product.image} alt="" />
+              </button>
+            </div>
+          )}
         </div>
-        {product.image && (
-          <div className="product-detail-thumbs">
-            <button
-              className="product-detail-thumb is-active"
-              onClick={() => setActiveImage(0)}
-              aria-label="Show image"
-            >
-              <img src={product.image} alt="" />
-            </button>
-          </div>
-        )}
-      </div>
 
-      <div className="product-detail-info">
-        <h1>{product.name}</h1>
+        {/* Information — eyebrow · title · rating · price · description */}
+        <div className="product-detail-info">
+          {(product.brand_name || product.category_name) && (
+            <p className="pd-eyebrow">{product.brand_name || product.category_name}</p>
+          )}
+          <h1 className="pd-title">{product.name}</h1>
 
-        {/* Variant-less products keep their simple price row (no variant to
-            select). Brand products with a bulk rule show the per-piece price
-            + total so the bulk rate is visible live. Variant products show
-            NO price until a variant is chosen. */}
-        {!hasVariants && !pieceStylePrice && (
-          <p className="product-detail-price">₹{Number(totalPrice).toLocaleString('en-IN')}</p>
-        )}
-
-        {!hasVariants && pieceStylePrice && (
-          <div className="product-detail-price-block price-reveal">
-            <p className="product-detail-per-unit">
-              ₹{Number(chargedPerPiece).toLocaleString('en-IN')} / piece
-              {bulkApplied && <span className="product-detail-bulk-note"> · bulk price</span>}
-            </p>
-            <p className="product-detail-price">
-              ₹{brandDisplayTotal.toLocaleString('en-IN')}{' '}
-              <span className="product-detail-price-total">total</span>
-            </p>
-          </div>
-        )}
-
-        <p className="product-detail-description">{product.description}</p>
-
-        {hasVariants && (
-          <div className="variant-selector">
-            <p className="variant-selector-title">Select Quantity</p>
-            <div className="variant-options">
-              {variants.map((v) => {
-                const active = selectedVariant?.id === v.id
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    className={`variant-option ${active ? 'is-active' : ''}`}
-                    onClick={() => handleVariantSelect(v)}
-                    aria-pressed={active}
-                  >
-                    {variantLabel(v)}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Price appears ONLY after the customer explicitly selects a variant. */}
-        {hasVariants && variantSelected && !pieceStylePrice && (
-          <div className="product-detail-price-block price-reveal">
-            {perUnit != null && Number.isFinite(perUnit) && (
-              <p className="product-detail-per-unit">
-                ₹{perUnit.toLocaleString('en-IN')} / {unitDisplay(selectedUnit)}
-              </p>
-            )}
-            <p className="product-detail-selected-label">{variantLabel(selectedVariant)} selected</p>
-            <p className="product-detail-price">
-              ₹{displayTotal.toLocaleString('en-IN')}{' '}
-              <span className="product-detail-price-total">total</span>
-            </p>
-          </div>
-        )}
-
-        {/* Brand products: per-piece price + total (bulk-aware when active). */}
-        {hasVariants && variantSelected && pieceStylePrice && (
-          <div className="product-detail-price-block price-reveal">
-            <p className="product-detail-per-unit">
-              ₹{Number(chargedPerPiece).toLocaleString('en-IN')} / {bulkUnitLabel}
-              {bulkApplied && <span className="product-detail-bulk-note"> · bulk price</span>}
-            </p>
-            <p className="product-detail-selected-label">{variantLabel(selectedVariant)} selected</p>
-            <p className="product-detail-price">
-              ₹{brandDisplayTotal.toLocaleString('en-IN')}{' '}
-              <span className="product-detail-price-total">total</span>
-            </p>
-          </div>
-        )}
-
-        {/* Brand bulk panel — live progress toward the unlock + state. */}
-        {isBrandBulkProduct && variantSelected && (
-          <div className="brand-bulk-panel" aria-live="polite">
-            <div className="brand-bulk-panel-head">
-              <span className="brand-bulk-title">
-                Bulk Price: ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
-              </span>
-              <span className="brand-bulk-min">
-                from {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+          {product.rating != null && (
+            <div className="pd-rating">
+              <span className="pd-rating-star"><StarIcon /></span>
+              <span className="pd-rating-value">{product.rating}</span>
+              <span className="pd-rating-count">
+                ({Number(product.review_count ?? 0).toLocaleString('en-IN')} reviews)
               </span>
             </div>
-            <div className="brand-bulk-progress">
-              <div className="brand-bulk-progress-track">
-                <span
-                  className={`brand-bulk-progress-fill ${brandUnlocked ? 'is-unlocked' : ''}`}
-                  style={{
-                    width: `${bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0}%`,
-                  }}
-                />
-              </div>
-              <span className="brand-bulk-progress-label">
-                {totalBrandPieces.toLocaleString('en-IN')} / {bulkMinQty.toLocaleString('en-IN')} pieces
-              </span>
-            </div>
-            {brandUnlocked ? (
-              <p className="brand-bulk-unlocked">
-                ✓ Bulk price unlocked — ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece applied
-              </p>
-            ) : (
-              <p className="brand-bulk-locked">
-                Add {Number(brandRemaining).toLocaleString('en-IN')} more {product.brand_name || 'brand'} {pieceWord(brandRemaining)} to unlock bulk price
-              </p>
-            )}
-          </div>
-        )}
+          )}
 
-        <div className="product-detail-actions">
-          {/* Quantity control appears only after a variant is selected. */}
+          {/* Per-piece price — revealed only after a variant is selected
+              (existing behaviour). Green + struck normal while bulk is on. */}
           {variantSelected && (
-            <div className="qty-control-wrap">
-              <div className="qty-selector" aria-label="Quantity">
-                <button
-                  type="button"
-                  onClick={handleDecrease}
-                  disabled={pieceMode ? qty <= pieceMin : qty <= 1}
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <span aria-live="polite">{qty}</span>
-                <button
-                  type="button"
-                  onClick={handleIncrease}
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              {pieceMode && nextVariant && (
-                <p className="qty-piece-hint">
-                  {pieceMin}–{pieceMax} pieces of this size · next at {variantLabel(nextVariant)}
-                </p>
+            <div className="pd-price-row price-reveal">
+              {bulkApplied && (
+                <s className="pd-price-normal">₹{Number(normalPerPiece).toLocaleString('en-IN')}</s>
               )}
-              {pieceMode && !nextVariant && (
-                <p className="qty-piece-hint">{pieceMin}+ pieces per selection</p>
+              {topPerPiece != null ? (
+                <span className={`pd-price-per-piece ${bulkApplied ? 'is-bulk' : ''}`}>
+                  ₹{Number(topPerPiece).toLocaleString('en-IN')}{topPriceSuffix}
+                </span>
+              ) : (
+                <span className="pd-price-per-piece">
+                  ₹{Number(totalPrice).toLocaleString('en-IN')}
+                </span>
+              )}
+              {bulkApplied && <span className="pd-bulk-badge">✓ Bulk price</span>}
+            </div>
+          )}
+
+          {/* Stock — only when the API supplies real stock data */}
+          {product.stock != null && (
+            <p className={`product-detail-stock ${stockClass}`}>✓ {stockLabel}</p>
+          )}
+
+          {/* Description with a "Read more" toggle for longer copy */}
+          {product.description && (
+            <div className="pd-desc-block">
+              <p className={`pd-desc ${descOpen ? 'is-open' : ''}`}>{product.description}</p>
+              {product.description.length > 120 && (
+                <button
+                  type="button"
+                  className="pd-desc-toggle"
+                  onClick={() => setDescOpen((o) => !o)}
+                  aria-expanded={descOpen}
+                >
+                  {descOpen ? 'Read less' : 'Read more'}
+                </button>
               )}
             </div>
           )}
 
-          <button
-            className="btn btn-primary"
-            onClick={handleAdd}
-            disabled={adding}
-          >
-            {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
-          </button>
-        </div>
+          {/* Variant selection — strong dark active state */}
+          {hasVariants && (
+            <div className="variant-selector">
+              <p className="pd-section-title">Select Variant</p>
+              <div className="variant-options">
+                {variants.map((v) => {
+                  const active = selectedVariant?.id === v.id
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`variant-option ${active ? 'is-active' : ''}`}
+                      onClick={() => handleVariantSelect(v)}
+                      aria-pressed={active}
+                    >
+                      {variantLabel(v)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-        {hasVariants && variantHint && (
-          <p className="product-detail-variant-hint" role="alert">Please select a variant</p>
-        )}
+          {/* Quantity — stepper + selected label + TOTAL (same state as the
+              sticky mobile bar; the two can never diverge). */}
+          {variantSelected && (
+            <div className="pd-quantity">
+              <p className="pd-section-title">Quantity</p>
+              <div className="pd-quantity-row">
+                <div className="qty-selector" aria-label="Quantity">
+                  <button
+                    type="button"
+                    onClick={handleDecrease}
+                    disabled={!canDecrease}
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <span aria-live="polite">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={handleIncrease}
+                    disabled={!canIncrease}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="pd-qty-total">
+                  <p className="pd-selected-label">
+                    {hasVariants
+                      ? `${variantLabel(selectedVariant)} selected`
+                      : `${qty} selected`}
+                  </p>
+                  <p className="pd-total">
+                    ₹{Number(lineTotal).toLocaleString('en-IN')}{' '}
+                    <span className="pd-total-word">Total</span>
+                  </p>
+                </div>
+              </div>
+              {pieceMode && (
+                <p className="qty-piece-hint">
+                  {nextVariant
+                    ? `${pieceMin}–${pieceMax} pieces of this size · next at ${variantLabel(nextVariant)}`
+                    : `${pieceMin}+ pieces per selection`}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Compact bulk-pricing card — brand-level, live, one source of
+              truth. GREEN information while unlocked; neutral when locked. */}
+          {isBrandBulkProduct && variantSelected && (
+            <div className="pd-bulk-card" aria-live="polite">
+              <div className="pd-bulk-head">
+                <span className={`pd-bulk-status ${brandUnlocked ? 'is-unlocked' : ''}`}>
+                  {brandUnlocked ? '✓ Bulk Price Active' : '✓ Bulk Price'}
+                </span>
+                <span className="pd-bulk-rate">
+                  ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
+                </span>
+              </div>
+              {!brandUnlocked && (
+                <p className="pd-bulk-min">
+                  From {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+                </p>
+              )}
+              <div className="pd-bulk-progress">
+                <div className="pd-bulk-track">
+                  <span
+                    className={`pd-bulk-fill ${brandUnlocked ? 'is-unlocked' : ''}`}
+                    style={{ width: `${bulkPct}%` }}
+                  />
+                </div>
+                <span className="pd-bulk-count">
+                  {Number(totalBrandPieces).toLocaleString('en-IN')} /{' '}
+                  {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+                  {brandUnlocked && <span className="pd-bulk-check"> ✓</span>}
+                </span>
+              </div>
+              {brandUnlocked ? (
+                bulkSavingsPerPiece > 0 && (
+                  <p className="pd-bulk-save">
+                    You save ₹{Number(bulkSavingsPerPiece).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece
+                  </p>
+                )
+              ) : (
+                <p className="pd-bulk-locked">
+                  Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
+                  {product.brand_name || 'brand'} {pieceWord(brandRemaining)} to unlock bulk price
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Primary action + wishlist */}
+          <div className="product-detail-actions">
+            <button
+              className="btn btn-primary pd-add-btn"
+              onClick={handleAdd}
+              disabled={adding}
+            >
+              <BagIcon /> {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
+            </button>
+            <button
+              type="button"
+              className={`pd-wishlist ${inWishlist ? 'is-saved' : ''}`}
+              onClick={toggleWishlist}
+              aria-pressed={inWishlist}
+            >
+              <HeartIcon filled={inWishlist} />
+              {inWishlist ? 'Saved' : 'Wishlist'}
+            </button>
+          </div>
+
+          {hasVariants && variantHint && (
+            <p className="product-detail-variant-hint" role="alert">Please select a variant</p>
+          )}
+
+          {/* Benefits — gold icons, premium tone */}
+          <div className="pd-benefits" aria-label="Why shop with us">
+            <div className="pd-benefit">
+              <QualityIcon size={18} />
+              <div>
+                <strong>100% Original</strong>
+                <span>Authentic Products</span>
+              </div>
+            </div>
+            <div className="pd-benefit">
+              <SecureIcon size={18} />
+              <div>
+                <strong>Secure Packaging</strong>
+                <span>Carefully packed</span>
+              </div>
+            </div>
+            <div className="pd-benefit">
+              <ShippingIcon size={18} />
+              <div>
+                <strong>Fast Delivery</strong>
+                <span>Quick &amp; reliable</span>
+              </div>
+            </div>
+            <div className="pd-benefit">
+              <PhoneIcon size={18} />
+              <div>
+                <strong>Easy Support</strong>
+                <span>We're here to help</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {related.length > 0 && (
@@ -533,6 +716,61 @@ export default function ProductDetail() {
           <ProductGrid products={related} />
         </div>
       )}
+
+      {/* Sticky mobile cart bar — shares the SAME qty / handlers / add state
+          as the main controls (no second quantity state). Mobile-only. */}
+      <div className="pd-mobile-bar" role="region" aria-label="Quick add to cart">
+        <div className="pd-bar-info">
+          <img src={product.image} alt="" className="pd-bar-thumb" />
+          <div className="pd-bar-text">
+            <span className="pd-bar-name">{product.name}</span>
+            <span className="pd-bar-sub">
+              {hasVariants
+                ? (variantSelected ? variantLabel(selectedVariant) : 'Select a variant')
+                : `${qty} selected`}
+            </span>
+            {variantSelected && (
+              <span className="pd-bar-price">
+                ₹{Number(lineTotal).toLocaleString('en-IN')}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="pd-bar-actions">
+          {variantSelected && (
+            <div className="pd-bar-qty" aria-label="Quantity">
+              <button
+                type="button"
+                onClick={handleDecrease}
+                disabled={!canDecrease}
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span aria-live="polite">{qty}</span>
+              <button
+                type="button"
+                onClick={handleIncrease}
+                disabled={!canIncrease}
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            className="btn btn-primary pd-bar-add"
+            onClick={handleAdd}
+            disabled={adding}
+          >
+            <BagIcon /> {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
+          </button>
+        </div>
+        {hasVariants && variantHint && (
+          <p className="pd-bar-hint" role="alert">Please select a variant</p>
+        )}
+      </div>
     </div>
   )
 }

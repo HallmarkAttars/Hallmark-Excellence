@@ -11,11 +11,13 @@ export default function SkeletonProductDetail() {
       <div className="skeleton-detail-media" />
 
       <div className="skeleton-detail-info">
+        <span className="skeleton-block skeleton-detail-eyebrow" />
         <span className="skeleton-block skeleton-detail-title" />
+        <span className="skeleton-block skeleton-detail-rating" />
         <span className="skeleton-block skeleton-detail-price" />
         <span className="skeleton-block skeleton-detail-text" />
         <span className="skeleton-block skeleton-detail-text short" />
-        <span className="skeleton-block skeleton-detail-text short" />
+        <span className="skeleton-block skeleton-detail-variant" />
         <span className="skeleton-block skeleton-detail-btn" />
       </div>
     </div>

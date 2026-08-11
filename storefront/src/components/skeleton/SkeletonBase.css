@@ -187,13 +187,26 @@
   min-width: 0;
 }
 
+.skeleton-detail-eyebrow {
+  width: 34%;
+  height: 10px;
+}
 .skeleton-detail-title {
   width: 80%;
   height: 30px;
 }
+.skeleton-detail-rating {
+  width: 42%;
+  height: 14px;
+}
 .skeleton-detail-price {
   width: 40%;
   height: 26px;
+}
+.skeleton-detail-variant {
+  width: 70%;
+  height: 44px;
+  border-radius: 10px;
 }
 .skeleton-detail-text {
   width: 100%;
