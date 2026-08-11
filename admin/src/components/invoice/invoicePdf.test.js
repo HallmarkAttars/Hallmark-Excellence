@@ -16,7 +16,8 @@
 // ============================================================================
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildInvoicePdf } from './invoicePdf'
+import { jsPDF } from 'jspdf'
+import { buildInvoicePdf, fitTextToWidth } from './invoicePdf'
 
 // Intercept every jsPDF instance so the product-thumbnail frames (13×13mm
 // roundedRects drawn inside the PRODUCT cells) can be recorded. Only records
@@ -28,8 +29,9 @@ vi.mock('jspdf', async (importOriginal) => {
     constructor(...args) {
       super(...args)
       const origRoundedRect = this.roundedRect
-      // Re-assign as an own property (jsPDF 4.x API lives on the instance) so
-      // the wrapper actually intercepts calls.
+      const origText = this.text
+      // Re-assign as own properties (jsPDF 4.x API lives on the instance) so
+      // the wrappers actually intercept calls.
       this.roundedRect = (x, y, w, h, rx, ry, style) => {
         const frames = globalThis.__pdfFrames
         if (frames && w === 13 && h === 13) {
@@ -40,6 +42,35 @@ vi.mock('jspdf', async (importOriginal) => {
           })
         }
         return origRoundedRect.call(this, x, y, w, h, rx, ry, style)
+      }
+      // Record every text draw (with its measured left/right extent) when the
+      // test sets globalThis.__pdfTexts — the A4-containment tests rely on it.
+      this.text = (text, x, y, options = {}) => {
+        const recs = globalThis.__pdfTexts
+        if (recs) {
+          const align = options.align || 'left'
+          // jsPDF's getTextWidth ignores charSpace, so add it manually — the
+          // recorded extents then match the real glyph placement of
+          // letter-spaced header text (INVOICE title, tagline).
+          const charSpace = options.charSpace || 0
+          const arr = Array.isArray(text) ? text : [text]
+          const longest = arr.reduce((a, b) =>
+            String(b).length > String(a).length ? b : a
+          )
+          const s = String(longest)
+          const base = this.getTextWidth(s)
+          const w = charSpace > 0 ? base + charSpace * Math.max(0, s.length - 1) : base
+          const left = align === 'right' ? x - w : align === 'center' ? x - w / 2 : x
+          const right = align === 'right' ? x : align === 'center' ? x + w / 2 : x + w
+          recs.push({
+            page: this.internal.getCurrentPageInfo().pageNumber,
+            y,
+            left,
+            right,
+            text: s.slice(0, 32),
+          })
+        }
+        return origText.call(this, text, x, y, options)
       }
     }
   }
@@ -205,5 +236,111 @@ describe('product thumbnail containment (image-bearing invoices)', () => {
     expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(3)
     // All 30 rows got their thumbnail frame.
     expect(globalThis.__pdfFrames.length).toBe(30)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// fitTextToWidth — the shrink-fit helper behind every fixed-margin text on
+// the invoice (header right block, cards, INVOICE title).
+// ---------------------------------------------------------------------------
+describe('fitTextToWidth', () => {
+  it('shrinks long text to fit a target width and never below minSize', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+    doc.setFont('helvetica', 'bold')
+    const long = 'ORD-20260811143200-ABCDEFGHIJKLMNOPQRSTUVWXYZ-001'
+    const size = fitTextToWidth(doc, long, 62, { size: 8, minSize: 5.5 })
+    expect(size).toBeLessThan(8)
+    expect(size).toBeGreaterThanOrEqual(5.5)
+    doc.setFontSize(size)
+    expect(doc.getTextWidth(long)).toBeLessThanOrEqual(62)
+  })
+
+  it('leaves text that already fits at its requested size', () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+    doc.setFont('helvetica', 'bold')
+    const size = fitTextToWidth(doc, 'INVOICE', 62, { size: 21, minSize: 13, charSpace: 1 })
+    expect(size).toBe(21)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// A4 containment — the reported bug: content clipped on the right edge of
+// the downloaded PDF. Every text draw is recorded with its measured extent;
+// with pathological data (very long order id, long product names, big money
+// values, long payment status) nothing may cross the physical A4 width.
+// ---------------------------------------------------------------------------
+describe('A4 containment — no text beyond the page width', () => {
+  beforeEach(() => {
+    globalThis.__pdfTexts = []
+  })
+
+  afterEach(() => {
+    delete globalThis.__pdfTexts
+  })
+
+  const LONG_ORDER_ID = 'ORD-20260811143200-ABCDEFGHIJKLMNOPQRSTUVWXYZ-001'
+
+  it('keeps every text draw inside the A4 page with pathological data', async () => {
+    const doc = await buildInvoicePdf(
+      orderWithItems(
+        [
+          'The Most Extraordinary Royal Oud Attar Concentrated Perfume Oil 12ml Limited Edition',
+          'Pink Musk & Rose Blossom Attar For Women Long Lasting Fragrance 100ml',
+          'CR7 Platinum Edition Men Luxury Perfume Attar Extra Premium',
+        ].map((name, i) =>
+          item(name, 60, 47, { brand_name: 'AREES', variant_label: '100 Pieces' })
+        )
+      ),
+      {
+        order_number: LONG_ORDER_ID,
+        payment_status: 'Payment Pending Staff Verification Confirmation Required Immediately',
+        total_amount: 9999999,
+        customer_name: 'Sheikh Mohamed Fareeth Abdul Rahman Siddiqui Al Haddad',
+        phone: '+91 98765 43210',
+        email: 'a.very.long.email.address.that.keeps.going.forever@gmail.com',
+        address: 'No 95, Moore Street, First Floor, Near Kalaiyam School Opposite Building, George Town',
+        locality: 'Chennai 600001 Tamil Nadu',
+      }
+    )
+    expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(1)
+
+    const recs = globalThis.__pdfTexts
+    expect(recs.length).toBeGreaterThan(20)
+    for (const r of recs) {
+      expect(r.right).toBeLessThanOrEqual(210) // never past the physical A4 width
+      expect(r.left).toBeGreaterThanOrEqual(0) // never past the left edge
+      // Header text must stay inside the gold page frame (inner line ≈ 197.7mm)
+      // — this is exactly where the old charSpace'd INVOICE title clipped.
+      if (r.page === 1 && r.y < 50) {
+        expect(r.right).toBeLessThanOrEqual(197.5)
+      }
+    }
+  })
+
+  it('keeps the header right block clear of the centred brand name', async () => {
+    await buildInvoicePdf(
+      orderWithItems([item('Cold Water', 30, 42)], {
+        order_number: LONG_ORDER_ID,
+      })
+    )
+    // Header texts are the first draws on page 1 (y < 50) — before the cards
+    // (y ≈ 52) and the table.
+    const header = globalThis.__pdfTexts.filter((r) => r.page === 1 && r.y < 50)
+    // Pairs whose glyph bands overlap vertically must not overlap horizontally:
+    // brand name / INVOICE share the top band; the meta lines sit just below.
+    // 2.2mm approximates the tallest header glyphs (21pt ≈ 2.4mm ascent), so
+    // texts on neighbouring baselines (spaced 3–4.4mm apart) are compared but
+    // vertically separated lines are not.
+    for (let i = 0; i < header.length; i++) {
+      for (let j = i + 1; j < header.length; j++) {
+        const a = header[i]
+        const b = header[j]
+        if (a.y + 2.2 > b.y && b.y + 2.2 > a.y) {
+          expect(Math.min(a.right, b.right)).toBeLessThanOrEqual(
+            Math.max(a.left, b.left) + 0.01
+          )
+        }
+      }
+    }
   })
 })

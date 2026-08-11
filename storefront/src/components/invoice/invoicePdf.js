@@ -184,6 +184,45 @@ function containBox(w, h, size) {
   return { w: cw, h: ch, x: (size - cw) / 2, y: (size - ch) / 2 }
 }
 
+// Text width in mm at the CURRENT font family/style/size. charSpace is added
+// manually because jsPDF's getTextWidth ignores it, and its right-aligned
+// charSpace drawing can extend ~1 charSpace past the anchor (which previously
+// clipped the last letter of the INVOICE title against the gold frame).
+function textWidthMm(doc, text, { charSpace = 0 } = {}) {
+  const base = doc.getTextWidth(text)
+  return charSpace > 0 ? base + charSpace * Math.max(0, text.length - 1) : base
+}
+
+// Shrink the current font size until `text` fits `maxWidth` mm (never below
+// minSize). Returns the fitting size; the document is left with it applied.
+// Used everywhere fixed-right-margin text could otherwise overflow the A4
+// page or collide with its neighbours (header right block, cards, title).
+export function fitTextToWidth(
+  doc,
+  text,
+  maxWidth,
+  { size = 9, minSize = 5, charSpace = 0 } = {}
+) {
+  let s = size
+  doc.setFontSize(s)
+  while (s > minSize && textWidthMm(doc, text, { charSpace }) > maxWidth) {
+    s -= 0.5
+    doc.setFontSize(s)
+  }
+  return s
+}
+
+// Font for the header's right meta lines (Invoice # / Date / Time): bold for
+// the order id, normal for the rest. Returns whether it is the order-id line
+// so the caller can style it consistently. Shared by the measurement and draw
+// loops so the fit math always uses the same metrics as the draw.
+function applyRightMetaFont(doc, line) {
+  const isOrderId = line.startsWith('Invoice #')
+  doc.setFont('helvetica', isOrderId ? 'bold' : 'normal')
+  doc.setFontSize(isOrderId ? 8 : 7.5)
+  return isOrderId
+}
+
 // Product thumbnail frame (mm) and the items table's vertical cell padding.
 // These drive the minimum row height: a row must always be tall enough to
 // contain its thumbnail frame, otherwise the image drawn centred in the cell
@@ -217,8 +256,16 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const H = doc.internal.pageSize.getHeight() // 297
   const M = 14 // content margin
   const CW = W - M * 2 // content width 182
+  const r1 = (n) => Math.round(n * 10) / 10 // one-decimal rounding (exact 182mm column sum)
 
   // ============================= HEADER =====================================
+  // Layout: logo (left) · brand name + tagline (centre) · INVOICE + invoice #
+  // / date / time (right). The centred brand and the right block share the
+  // same vertical band, so each is shrink-fit to a MEASURED width: a very
+  // long order id can never shove the company name out of the page, and the
+  // right-aligned INVOICE title keeps a deliberate 0.75mm inset because
+  // jsPDF's charSpace extends right-aligned text ~1 charSpace past its
+  // anchor (that previously clipped the last letter against the gold frame).
   let brandX = M
   if (logo) {
     const logoW = 34
@@ -226,29 +273,57 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.addImage(logo.dataUrl, 'JPEG', M, 15.5, logoW, logoH)
     brandX = M + logoW + 7
   }
-  // Brand name + tagline (centre)
+
+  // Right header block: Invoice # / Date / Time — capped at a fixed width so
+  // its left edge can never collide with the centred brand name. The brand's
+  // centre budget uses the block's ACTUAL natural width (capped), so normal
+  // invoices keep the company name at full 17pt and only genuinely long ids
+  // / dates trigger shrink-fit.
+  const MAX_RIGHT_BLOCK = 62 // mm
+  const rightMeta = []
+  if (inv.orderId) rightMeta.push(`Invoice # ${inv.orderId}`)
+  if (inv.date) rightMeta.push(`Date: ${inv.date}`)
+  if (inv.time) rightMeta.push(`Time: ${inv.time}`)
+  let naturalRightW = 0
+  for (const line of rightMeta) {
+    applyRightMetaFont(doc, line)
+    naturalRightW = Math.max(naturalRightW, textWidthMm(doc, line))
+  }
+  const rightBlockW = Math.min(MAX_RIGHT_BLOCK, naturalRightW)
+  const rightBlockLeft = W - M - rightBlockW
+
+  // INVOICE title (right, gold) — modest charSpace + a 1mm inset (≥ the
+  // charSpace) keeps the last letter safely inside the gold page frame even
+  // with jsPDF's right-aligned charSpace quirk. titleLeftEdge is measured at
+  // whatever size fitTextToWidth left applied (always 21pt in practice, as
+  // 'INVOICE' fits its cap), so it self-consistently tracks any future shrink.
+  doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
+  fitTextToWidth(doc, 'INVOICE', MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 1 })
+  const titleLeftEdge = W - M - 1 - textWidthMm(doc, 'INVOICE', { charSpace: 1 })
+  doc.text('INVOICE', W - M - 1, 17.5, { align: 'right', charSpace: 1 })
+
+  // Brand name (centre) — shrink-fit inside the band bounded by the left edge
+  // and the tightest of the INVOICE title / right meta block (with a 2mm gap);
+  // stays perfectly centred whenever it fits.
+  const centerRightBound = Math.min(rightBlockLeft, titleLeftEdge)
+  const centerMax = Math.max(20, Math.min(W / 2 - brandX, centerRightBound - 2 - W / 2) * 2)
   doc.setFont('times', 'bold').setFontSize(17).setTextColor(...INK)
+  fitTextToWidth(doc, inv.company.name, centerMax, { size: 17, minSize: 9 })
   doc.text(inv.company.name, W / 2, 17.5, { align: 'center' })
   doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...GOLD)
   if (inv.company.tagline) {
-    doc.text(inv.company.tagline.toUpperCase(), W / 2, 23, { align: 'center', charSpace: 1.2 })
+    doc.text(inv.company.tagline.toUpperCase(), W / 2, 23, { align: 'center', charSpace: 0.6 })
   }
 
-  // INVOICE title (right, gold)
-  doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
-  doc.text('INVOICE', W - M, 17.5, { align: 'right', charSpace: 2.5 })
+  // Invoice # / Date / Time (right) — each line shrink-fits within the cap.
   let ry = 26
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...TEXT)
-  if (inv.orderId) {
-    doc.text(`Invoice # ${inv.orderId}`, W - M, ry, { align: 'right' })
+  for (const line of rightMeta) {
+    const isOrderId = applyRightMetaFont(doc, line)
+    doc.setTextColor(...(isOrderId ? TEXT : MUTED))
+    fitTextToWidth(doc, line, MAX_RIGHT_BLOCK, { size: isOrderId ? 8 : 7.5, minSize: 5.5 })
+    doc.text(line, W - M, ry, { align: 'right' })
     ry += 4.4
   }
-  doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-  if (inv.date) {
-    doc.text(`Date: ${inv.date}`, W - M, ry, { align: 'right' })
-    ry += 4.4
-  }
-  if (inv.time) doc.text(`Time: ${inv.time}`, W - M, ry, { align: 'right' })
 
   // Thin gold divider + centred contact bar (real config values only)
   doc.setDrawColor(...GOLD).setLineWidth(0.7)
@@ -304,6 +379,8 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   let by = y + padY + 8
   for (const l of billLines) {
     doc.setFont('helvetica', l.style).setFontSize(l.size).setTextColor(...l.color)
+    // Shrink-fit keeps a very long name/line inside the card's width.
+    fitTextToWidth(doc, l.text, cardW - padX * 2, { size: l.size, minSize: 6 })
     doc.text(l.text, M + padX, by)
     by += l.size * 0.5 + (l.style === 'bold' ? 1.7 : 0.9)
   }
@@ -316,7 +393,12 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   for (const [label, value] of orderRows) {
     doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
     doc.text(label, M + cardW + cardGap + padX, oy)
-    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(...TEXT)
+    // Shrink-fit the value so it never collides with its label or the
+    // card's right edge — important for very long order ids.
+    const labelW = doc.getTextWidth(label)
+    const maxValueW = infoRight - (M + cardW + cardGap + padX + labelW) - 3
+    doc.setFont('helvetica', 'bold').setTextColor(...TEXT)
+    fitTextToWidth(doc, value, maxValueW, { size: 8.5, minSize: 5.5 })
     doc.text(value, infoRight, oy, { align: 'right' })
     oy += 6.4
   }
@@ -362,6 +444,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       textColor: TEXT,
       lineColor: HAIRLINE,
       lineWidth: 0.15,
+      // Long names/details wrap inside their column instead of widening the
+      // table past the A4 margin (the old auto sizing let unbroken text push
+      // the right edge of the sheet).
+      overflow: 'linebreak',
       cellPadding: { top: 2.6, bottom: 2.6, left: 1.5, right: 1.5 },
     },
     headStyles: {
@@ -375,9 +461,14 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 },
     },
     columnStyles: {
-      2: { halign: 'right' },
-      3: { halign: 'right' },
-      4: { halign: 'right' },
+      // Fixed proportional widths — 30/30/10/15/15 of the 182mm content
+      // width (100%), so the table always fills exactly between the A4
+      // margins and money stays right-aligned and fully visible.
+      0: { cellWidth: r1(CW * 0.3) },
+      1: { cellWidth: r1(CW * 0.3) },
+      2: { cellWidth: r1(CW * 0.1), halign: 'right' },
+      3: { cellWidth: r1(CW * 0.15), halign: 'right' },
+      4: { cellWidth: r1(CW * 0.15), halign: 'right' },
     },
     didParseCell: (data) => {
       if (data.section === 'head') return
@@ -470,7 +561,17 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const statusText = inv.paymentStatus || 'Pending'
   const statusC = statusColor(statusText)
   doc.setFont('helvetica', 'bold').setFontSize(9)
-  const pillTextW = doc.getTextWidth(statusText)
+  // The pill must stay inside the page: shrink its font until it fits the
+  // space between the centre and the right margin (a long payment status
+  // used to grow past the page edge).
+  const maxPillW = W - M - W / 2 // 91mm
+  let pillTextW = doc.getTextWidth(statusText)
+  let pillSize = 9
+  while (pillSize > 6.5 && pillTextW + 8 > maxPillW) {
+    pillSize -= 0.5
+    doc.setFontSize(pillSize)
+    pillTextW = doc.getTextWidth(statusText)
+  }
   const pillW = pillTextW + 8
   const pillH = 6.5
   const pillX = W / 2
@@ -651,13 +752,16 @@ function renderPrintHtml(inv, logo) {
   .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
   .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
   .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 3mm; border-bottom: 1.2px solid #b8862b; }
+  .head > div { min-width: 0; }
   .brand img { height: 11mm; width: auto; object-fit: contain; }
-  .brand-center { text-align: center; }
-  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 700; color: #171512; }
+  .brand-center { text-align: center; min-width: 0; }
+  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 18px; font-weight: 700; color: #171512; overflow-wrap: anywhere; }
   .brand-center .tagline { display: block; font-size: 7px; letter-spacing: .22em; text-transform: uppercase; color: #b8862b; margin-top: 1mm; }
-  .title { text-align: right; }
+  .title { text-align: right; min-width: 0; }
   .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
-  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; white-space: nowrap; }
+  /* Long order ids wrap inside the right block instead of forcing the grid
+     wider than the A4 sheet. */
+  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: normal; overflow-wrap: anywhere; }
   .title p strong { color: #171512; }
   .contact { display: flex; justify-content: center; gap: 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 7mm; }
@@ -669,10 +773,17 @@ function renderPrintHtml(inv, logo) {
   .card ul li { display: flex; justify-content: space-between; gap: 12px; font-size: 8.5px; color: #6f6a63; padding: 1.3mm 0; border-bottom: 1px solid rgba(184,134,43,.16); }
   .card ul li:last-child { border-bottom: none; }
   .card ul li strong { color: #171512; font-weight: 700; text-align: right; }
-  table.items { width: 100%; border-collapse: collapse; margin-top: 7mm; }
-  table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; }
+  table.items { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 7mm; }
+  /* 30/30/10/15/15 column distribution — matches the PDF exactly, so the
+     table can never widen past the sheet (long names wrap in-cell). */
+  table.items col.c1 { width: 30%; }
+  table.items col.c2 { width: 30%; }
+  table.items col.c3 { width: 10%; }
+  table.items col.c4 { width: 15%; }
+  table.items col.c5 { width: 15%; }
+  table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; overflow-wrap: anywhere; }
   table.items th.num, table.items td.num { text-align: right; }
-  table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; }
+  table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; overflow-wrap: anywhere; }
   table.items tbody tr:nth-child(even) { background: #fbf9f4; }
   table.items td.name { font-weight: 700; color: #171512; }
   table.items td.name .thumb-frame { display: inline-flex; align-items: center; justify-content: center; width: 12mm; height: 12mm; background: #f7f2e8; border: 1px solid #e6dcc6; border-radius: 1.5mm; overflow: hidden; margin-right: 2.5mm; vertical-align: middle; }
@@ -680,7 +791,7 @@ function renderPrintHtml(inv, logo) {
   table.items td.detail { color: #6f6a63; }
   table.items td.detail .detail-main { display: block; }
   .lower { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 7mm; }
-  .summary { width: 78mm; }
+  .summary { width: 78mm; min-width: 0; }
   .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
   .row span:last-child { color: #1a1815; }
   .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 10.5px; font-weight: 700; color: #171512; }
@@ -747,6 +858,7 @@ function renderPrintHtml(inv, logo) {
       </div>
 
       <table class="items">
+        <colgroup><col class="c1" /><col class="c2" /><col class="c3" /><col class="c4" /><col class="c5" /></colgroup>
         <thead>
           <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr>
         </thead>

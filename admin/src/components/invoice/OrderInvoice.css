@@ -105,7 +105,11 @@
   margin: 4px 0 0;
   font-size: 11px;
   color: #6f6a63;
-  white-space: nowrap;
+  /* Long order ids wrap instead of forcing the header wider than the sheet. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 110mm;
+  margin-left: auto;
 }
 .invoice-meta-line strong {
   color: #171512;
@@ -197,9 +201,18 @@
 /* ---------- Items table: dark header, gold rule, real thumbnails ---------- */
 .invoice-table {
   width: 100%;
+  /* Fixed layout + proportional columns: the table always fits its
+     container — long names wrap in-cell instead of forcing the sheet wider
+     than A4 (the old auto layout could push the right edge off the page). */
+  table-layout: fixed;
   border-collapse: collapse;
   margin-top: 7mm;
 }
+.invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30%; }
+.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 30%; }
+.invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 10%; }
+.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 15%; }
+.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 15%; }
 .invoice-table th {
   background: #171512;
   color: #f7f2e8;
@@ -222,7 +235,9 @@
   font-size: 12px;
   vertical-align: top;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
+.invoice-table th { overflow-wrap: anywhere; }
 .invoice-table tbody tr:nth-child(even) { background: #fbf9f4; }
 .invoice-table tbody tr:last-child td { border-bottom: none; }
 
@@ -255,7 +270,7 @@
   display: block;
 }
 .invoice-item-name-text { min-width: 0; }
-.invoice-item-detail { color: #6f6a63; white-space: nowrap; }
+.invoice-item-detail { color: #6f6a63; white-space: normal; overflow-wrap: anywhere; }
 .invoice-item-detail-main { display: inline-block; }
 .invoice-pack-tag {
   display: inline-block;
