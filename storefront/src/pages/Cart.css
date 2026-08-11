@@ -1,7 +1,8 @@
 /* ============================================================
    Cart — premium luxury redesign (reference-matched)
    Warm cream page · white product cards · gold accents
-   Sticky order summary on desktop · stacked on mobile
+   Brand groups with compact collapsible headers · sticky summary
+   Green ONLY for active/success/bulk-price states
    ============================================================ */
 
 /* ---------- Empty state ---------- */
@@ -86,7 +87,8 @@
   white-space: nowrap;
 }
 
-/* ---------- Page layout: items | sticky summary ---------- */
+/* ---------- Page layout: items | sticky summary ----------
+   Desktop ≈ 70/30 (main flexible, 360px summary). */
 .cart-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -94,161 +96,183 @@
   align-items: start;
 }
 @media (min-width: 1024px) {
-  .cart-layout { grid-template-columns: minmax(0, 1fr) 380px; gap: 32px; }
+  .cart-layout { grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; }
 }
 
-.cart-banner-count {
-  flex-shrink: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--gold-deep);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.cart-banner-chevron {
-  flex-shrink: 0;
-  color: rgba(30, 74, 46, 0.55);
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-/* ---------- Brand bulk banners (above the items) ----------
-   One slim white card per eligible brand. Locked: progress bar + "Add N
-   more … pieces". Unlocked: gold ✓ line + bulk rate. Never between brands. */
-.cart-bulk-banners {
+/* ============================================================
+   Brand groups — one white card per brand: compact header (bulk
+   status / pieces / normal → bulk / savings / collapse chevron)
+   above flat, divided product rows.
+   ============================================================ */
+.cart-brand-groups {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.cart-bulk-banner {
-  padding: 14px 18px;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: var(--shadow-soft);
+  gap: 14px;
   min-width: 0;
 }
-/* GREEN = bulk pricing is actually unlocked (never just because a rule
-   exists). Active border + fill + price + status; everything else stays
-   on the existing gold/cream language. */
-.cart-bulk-banner.is-unlocked {
-  border-color: rgba(30, 122, 52, 0.4);
-  background: linear-gradient(180deg, var(--white), #F1F7F1);
+.cart-brand-group {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  min-width: 0;
 }
-.cart-bulk-banner-top {
+
+/* Header is one accessible button (expand/collapse = UI only). */
+.cart-brand-head {
+  width: 100%;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  transition: background 0.2s ease;
+}
+.cart-brand-head:hover { background: var(--cream-soft); }
+.cart-brand-head:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+  border-radius: 16px;
+}
+.cart-brand-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cart-brand-head-top {
+  display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-.cart-bulk-brand {
+.cart-brand-name {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 600;
   color: var(--charcoal);
+  line-height: 1.2;
 }
-.cart-bulk-status {
-  font-size: 0.72rem;
+/* Status pill — gold/cream when merely eligible, GREEN when unlocked. */
+.cart-brand-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #F5ECD8;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--charcoal-soft);
-  font-variant-numeric: tabular-nums;
-}
-.cart-bulk-status.is-unlocked {
-  color: #1E7A34;
-}
-/* Progress row: track (flex) + live "N / M pieces" count (always visible). */
-.cart-bulk-progress-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 0;
-}
-.cart-bulk-progress-row .cart-bulk-progress-track {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-.cart-bulk-count {
-  flex-shrink: 0;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--charcoal-soft);
-  font-variant-numeric: tabular-nums;
+  color: var(--gold-deep);
   white-space: nowrap;
 }
-.cart-bulk-progress-track {
-  height: 6px;
-  background: var(--cream-deep);
-  border-radius: 999px;
-  overflow: hidden;
+.cart-brand-status.is-unlocked {
+  background: #EAF5EC;
+  border-color: rgba(30, 122, 52, 0.35);
+  color: #1E7A34;
 }
-.cart-bulk-progress-fill {
-  display: block;
-  height: 100%;
-  background: var(--gold);
-  border-radius: 999px;
-  transition: width 0.3s ease;
+/* Meta line: pieces / threshold · normal → bulk · savings. */
+.cart-brand-head-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
 }
-.cart-bulk-banner.is-unlocked .cart-bulk-progress-fill {
-  background: #2E7D32;
+.cart-brand-count {
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  white-space: nowrap;
 }
-.cart-bulk-prices .is-bulk {
+.cart-brand-prices {
+  color: var(--charcoal-soft);
+  white-space: nowrap;
+}
+.cart-brand-prices .is-bulk {
   color: #1E7A34;
   font-weight: 700;
 }
-.cart-bulk-banner-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px 18px;
-  flex-wrap: wrap;
-}
-.cart-bulk-prices {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-  color: var(--charcoal-soft);
-  font-variant-numeric: tabular-nums;
-}
-.cart-bulk-prices .cart-bulk-arrow {
-  color: var(--gold-deep);
-}
-.cart-bulk-hint {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--gold-deep);
-}
-/* "You save ₹3 / piece · ₹210 off this order" — quiet green, small. */
-.cart-bulk-savings {
-  margin: 8px 0 0;
-  font-size: 0.78rem;
+/* Savings — quiet green, only ever shown when bulk is actually unlocked. */
+.cart-brand-savings {
   font-weight: 700;
   color: #1E4A2E;
+  white-space: nowrap;
+}
+.cart-brand-chevron {
+  flex-shrink: 0;
+  color: var(--gold-deep);
+  transition: transform 0.25s ease;
+}
+.cart-brand-chevron.is-collapsed { transform: rotate(180deg); }
+
+/* Products inside a brand group — flat rows divided by hairlines. */
+.cart-brand-items {
+  border-top: 1px solid var(--line-soft);
+  animation: cart-group-in 0.25s ease;
+}
+@keyframes cart-group-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 
-/* ---------- Items — white premium cards ---------- */
-.cart-items {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* ---------- Category products — separate section, no bulk UI ---------- */
+.cart-category {
+  margin-top: 26px;
   min-width: 0;
 }
+.cart-category-title {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin: 0 0 12px;
+}
+.cart-category-items {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ---------- Items — compact white rows ---------- */
 .cart-item {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr) minmax(150px, auto);
-  gap: 22px;
+  grid-template-columns: 112px minmax(0, 1fr) minmax(140px, auto);
+  gap: 20px;
   align-items: center;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px 18px;
   box-shadow: var(--shadow-soft);
   min-width: 0;
+}
+/* Flat rows inside a group/category card (the card provides the chrome). */
+.cart-brand-items .cart-item,
+.cart-category-items .cart-item {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 14px 18px;
+}
+.cart-brand-items .cart-item + .cart-item,
+.cart-category-items .cart-item + .cart-item {
+  border-top: 1px solid var(--line-soft);
 }
 
 /* ---------- Image: square cream stage, contain (never cropped) ----------
@@ -271,8 +295,8 @@
   border-radius: 12px;
 }
 .cart-item-image-wrap {
-  width: 120px;
-  height: 120px;
+  width: 112px;
+  height: 112px;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -290,7 +314,7 @@
   object-position: center;
 }
 
-/* ---------- Info: brand / name / variant / price / savings / remove ---------- */
+/* ---------- Info: name / size / per-piece price / remove ---------- */
 .cart-item-info {
   display: flex;
   flex-direction: column;
@@ -308,7 +332,7 @@
 }
 .cart-item-name {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--charcoal);
   margin: 2px 0 0;
@@ -330,25 +354,11 @@
 }
 .cart-item-variant {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--charcoal-soft);
-}
-.cart-item-pack {
-  margin: 4px 0 0;
-  font-size: 0.82rem;
-  color: var(--charcoal-soft);
-}
-.cart-item-pack strong {
-  color: var(--charcoal);
-  font-weight: 600;
-}
-.cart-item-pack em {
-  font-style: normal;
-  color: var(--gold-deep);
-  font-weight: 500;
 }
 
 .cart-item-price-row {
@@ -358,19 +368,12 @@
   gap: 8px;
   margin-top: 7px;
 }
-.cart-item-unit {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-/* Informational per-unit price next to a variant line's total (e.g. "₹10 / piece"
-   beside "₹7500" for a 1000-pieces variant) — same muted tone, never struck.
-   When the brand's bulk rate is ACTIVE the charged per-piece price turns
-   green (the unlocked state — never just because a rule exists). */
+/* Per-unit price — muted informational. When the brand's bulk rate is
+   ACTIVE the charged per-piece price turns green (the unlocked state —
+   never just because a rule exists). */
 .cart-item-per-unit {
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.84rem;
+  font-weight: 600;
   color: #9A9286;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -379,16 +382,18 @@
   color: #1E7A34;
   font-weight: 700;
 }
-/* Struck normal price on bulk-unlocked lines (charged price stays clean). */
-.cart-item-unit.is-struck {
-  font-size: 0.85rem;
+/* Struck normal per piece on bulk-unlocked piece lines (charged stays clean). */
+.cart-item-struck {
+  font-size: 0.8rem;
   font-weight: 500;
   color: #9A9286;
   text-decoration: line-through;
   text-decoration-color: rgba(95, 88, 78, 0.5);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-/* Small tag marking a bulk-priced line — gold when merely bulk-eligible,
-   GREEN when the bulk rate is actually applied to this line. */
+/* Small tag marking a bulk-priced line — GREEN only when the bulk rate is
+   actually applied to this line. */
 .cart-item-bulk-tag {
   display: inline-flex;
   align-items: center;
@@ -438,8 +443,8 @@
 .cart-item-qty {
   display: flex;
   align-items: center;
-  width: 132px;
-  height: 42px;
+  width: 128px;
+  height: 40px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   overflow: hidden;
@@ -481,7 +486,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Total block: main price, struck normal × qty */
+/* Total block: main price + rate × quantity explanation */
 .cart-item-total-col {
   display: flex;
   flex-direction: column;
@@ -491,29 +496,20 @@
 }
 .cart-item-subtotal {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .cart-item-sub {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--charcoal-soft);
   font-variant-numeric: tabular-nums;
 }
-.cart-item-sub.is-struck { text-decoration: line-through; text-decoration-color: rgba(95, 88, 78, 0.5); }
-.cart-item-saving {
-  margin: 2px 0 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #1E4A2E;
-}
 
 /* ---------- Trust badges under the items ----------
-   Three equal white cards — icon + title + subtitle. The cards add real
-   height to the left column so it visually balances the taller Order
-   Summary on the right (no artificial stretching). */
+   Three equal white cards — icon + title + subtitle. */
 .cart-trust {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -673,8 +669,7 @@
    Tablet (768–1023px) — two columns get compact
    ============================================================ */
 @media (min-width: 768px) and (max-width: 1023px) {
-  /* Single column — a 320px summary squeezed next to the items is cramped;
-     the summary stacks below the trust row instead (same as mobile). */
+  /* Single column — the summary stacks below the items (same as mobile). */
   .cart-item {
     grid-template-columns: 96px minmax(0, 1fr);
     gap: 18px;
@@ -700,6 +695,12 @@
   .cart-head { margin-bottom: 20px; }
   .cart-layout { gap: 20px; }
 
+  .cart-brand-groups { gap: 10px; }
+  .cart-brand-head { padding: 12px 14px; gap: 10px; }
+  .cart-brand-items .cart-item,
+  .cart-category-items .cart-item { padding: 12px 14px; }
+  .cart-category { margin-top: 20px; }
+
   .cart-item {
     grid-template-columns: 88px minmax(0, 1fr);
     grid-template-areas:
@@ -712,10 +713,9 @@
   .cart-item-media { grid-area: media; }
   .cart-item-info { grid-area: info; gap: 2px; }
   .cart-item-image-wrap { width: 88px; height: 88px; }
-  .cart-item-name { font-size: 1.05rem; }
+  .cart-item-name { font-size: 1.02rem; }
   .cart-item-brand { font-size: 0.62rem; }
-  .cart-item-variant { font-size: 0.72rem; }
-  .cart-item-unit { font-size: 0.88rem; }
+  .cart-item-variant { font-size: 0.7rem; }
 
   /* Buybox becomes a full-width row: qty left, totals right */
   .cart-item-buybox {
@@ -728,7 +728,7 @@
     padding-top: 12px;
     border-top: 1px solid var(--line-soft);
   }
-  .cart-item-qty { width: 118px; height: 40px; }
+  .cart-item-qty { width: 118px; height: 38px; }
   .cart-item-total-col { align-items: flex-end; }
 
   /* Trust cards stack into a single column on narrow screens */
@@ -750,7 +750,7 @@
     padding: 12px;
   }
   .cart-item-image-wrap { width: 76px; height: 76px; }
-  .cart-item-name { font-size: 1rem; }
+  .cart-item-name { font-size: 0.98rem; }
   .cart-item-qty { width: 108px; }
   .cart-item-subtotal { font-size: 1.05rem; }
   .cart-head-count { font-size: 0.68rem; padding: 0 11px; }

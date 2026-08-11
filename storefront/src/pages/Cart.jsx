@@ -1,82 +1,246 @@
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { cartLineKey } from '../utils/cartLines'
-import { brandSavings, pieceWord } from '../utils/brandBulk'
+import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
-// Brand-level bulk progress banner — one per brand with an active rule in
-// the cart. Unlocked state turns gold; locked shows the exact remaining
-// pieces. Reused for every eligible brand (never combined between brands).
-function BulkBanner({ state }) {
-  const pct =
-    state.bulkMinQty > 0 ? Math.min(100, (state.totalPieces / state.bulkMinQty) * 100) : 0
-  return (
-    <div className={`cart-bulk-banner ${state.unlocked ? 'is-unlocked' : ''}`}>
-      <div className="cart-bulk-banner-top">
-        <span className="cart-bulk-brand">{state.name}</span>
-        {state.unlocked ? (
-          <span className="cart-bulk-status is-unlocked">✓ Bulk price active</span>
-        ) : (
-          <span className="cart-bulk-status">Bulk pricing</span>
-        )}
-      </div>
-      <div className="cart-bulk-progress-row">
-        <div className="cart-bulk-progress-track">
-          <span className="cart-bulk-progress-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="cart-bulk-count">
-          {state.totalPieces.toLocaleString('en-IN')} / {state.bulkMinQty.toLocaleString('en-IN')} pieces
-        </span>
-      </div>
-      <div className="cart-bulk-banner-bottom">
-        <span className="cart-bulk-prices">
-          Normal ₹{state.standardPrice.toLocaleString('en-IN')} / piece
-          <span className="cart-bulk-arrow" aria-hidden="true">→</span>
-          {state.unlocked ? (
-            <span className="is-bulk">₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece</span>
-          ) : (
-            <span>Bulk ₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece</span>
-          )}
-        </span>
-        {!state.unlocked && (
-          <span className="cart-bulk-hint">
-            Add {state.remaining.toLocaleString('en-IN')} more {state.name} {pieceWord(state.remaining)} to unlock bulk price
-          </span>
-        )}
-      </div>
-      {state.unlocked && state.savings > 0 && (
-        <p className="cart-bulk-savings">
-          You save ₹{state.savingsPerPiece.toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece ·
-          ₹{state.savings.toLocaleString('en-IN')} off this order
-        </p>
-      )}
+// One cart line — compact card: image | info (name, size, per-piece price) |
+// quantity + totals. `inGroup` hides the brand name on the card because the
+// brand group header above it already shows the brand (no repetition).
+// All pricing/quantity behaviour is unchanged — this is presentation only.
+function CartLine({ item, inGroup }) {
+  const { removeItem, updateLinePieces } = useCart()
+  const key = cartLineKey(item)
+  const label = item.variant_label
+    || (item.quantity_value != null && item.quantity_unit
+        ? `${item.quantity_value} ${item.quantity_unit}`
+        : '')
+  const hasVariant = item.variant_id != null
+  // unit_price is the amount charged per ONE unit of this line: the selected
+  // variant's TOTAL price, or the product price for variant-less lines.
+  // Bulk lines carry the brand's bulk rate (never above normal).
+  const unitPrice = item.unit_price
+  const isBulkLine = item.bulk_active === true
+  // The resolved per-piece price: the brand's bulk rate when the line is
+  // bulk-unlocked, else the resolved normal per-piece price (the brand's
+  // standard price for piece-priced brand lines). Never the line's own stale
+  // stored per-piece figure.
+  const perUnit = isBulkLine
+    ? item.bulk_per_unit
+    : (item.normal_per_piece != null
+        ? item.normal_per_piece
+        : item.variant_price_per_unit)
+  const subtotal = unitPrice * item.quantity
+  const unitLower = String(item.quantity_unit || '').toLowerCase()
+  const isPiecesUnit = unitLower === 'pieces'
+  // The line's exact piece count (brand piece lines) or null.
+  const pieces = item.pieces ?? null
+  // Struck-through NORMAL per piece on bulk piece lines — derived from the
+  // resolved normal line total ÷ pieces (the brand's standard price). Never
+  // shown for ML/Gram lines or non-bulk lines.
+  const struckPerPiece =
+    isBulkLine && isPiecesUnit && pieces != null && pieces > 0 && item.normal_unit_price != null
+      ? Number(item.normal_unit_price) / pieces
+      : null
+  const showStruck =
+    struckPerPiece != null && Math.abs(Number(perUnit) - struckPerPiece) > 0.005
+  // Every cart line carries its product id — the exact product this line was
+  // added from. The image + name link to that product's details page (never
+  // the shop/brand page); the rest of the card stays non-navigating.
+  const productHref = item.product_id != null
+    ? `/product/${item.product_id}`
+    : null
+  const productImage = (
+    <div className="cart-item-image-wrap">
+      <img
+        src={item.image}
+        alt={item.name}
+        className="cart-item-image"
+        loading="lazy"
+        onError={(e) => { e.currentTarget.style.display = 'none' }}
+      />
     </div>
+  )
+
+  return (
+    <article key={key} className="cart-item">
+      {/* Image — square, cream stage, never cropped. Link to the product. */}
+      <div className="cart-item-media">
+        {productHref ? (
+          <Link
+            to={productHref}
+            className="cart-item-image-link"
+            aria-label={`View ${item.name} product details`}
+          >
+            {productImage}
+          </Link>
+        ) : (
+          productImage
+        )}
+      </div>
+
+      {/* Info — brand (grouped cards omit it) / name / size / per-piece price */}
+      <div className="cart-item-info">
+        {!inGroup && item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
+        <h3 className="cart-item-name">
+          {productHref ? (
+            <Link
+              to={productHref}
+              className="cart-item-name-link"
+              aria-label={`View ${item.name} product details`}
+            >
+              {item.name}
+            </Link>
+          ) : (
+            item.name
+          )}
+        </h3>
+        {label && <p className="cart-item-variant">{label}</p>}
+        <div className="cart-item-price-row">
+          {showStruck && struckPerPiece != null && (
+            <s className="cart-item-struck">₹{struckPerPiece.toLocaleString('en-IN')}</s>
+          )}
+          {hasVariant && perUnit != null && Number.isFinite(Number(perUnit)) && (
+            <span className={`cart-item-per-unit ${isBulkLine ? 'is-bulk' : ''}`}>
+              ₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
+              {isBulkLine
+                ? (isPiecesUnit ? 'piece' : 'unit')
+                : (isPiecesUnit ? 'piece' : unitLower)}
+            </span>
+          )}
+          {isBulkLine && (
+            <span className="cart-item-bulk-tag is-bulk">✓ Bulk price</span>
+          )}
+        </div>
+        <button className="cart-item-remove" onClick={() => removeItem(key)}>
+          <TrashIcon size={14} /> Remove
+        </button>
+      </div>
+
+      {/* Buybox — quantity stepper (brand PIECES lines only) + totals */}
+      <div className="cart-item-buybox">
+        {pieces != null && isPiecesUnit ? (
+          <div className="cart-item-qty" aria-label="Quantity">
+            <button
+              type="button"
+              className="qty-control-btn"
+              onClick={() => updateLinePieces(key, -1)}
+              disabled={item.pieces <= 1}
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="qty-control-input" aria-live="polite">
+              {item.pieces.toLocaleString('en-IN')}
+            </span>
+            <button
+              type="button"
+              className="qty-control-btn"
+              onClick={() => updateLinePieces(key, 1)}
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        ) : (
+          item.quantity > 1 && (
+            <p className="cart-item-qty-static">× {item.quantity}</p>
+          )
+        )}
+        <div className="cart-item-total-col">
+          <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
+          <p className="cart-item-sub">
+            {isPiecesUnit && pieces != null ? (
+              <>
+                ₹{Number(perUnit ?? unitPrice).toLocaleString('en-IN')} ×{' '}
+                {pieces.toLocaleString('en-IN')} pieces
+              </>
+            ) : (
+              <>
+                ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    </article>
   )
 }
 
 export default function Cart() {
-  const { pricedItems, removeItem, updateLinePieces, total, itemCount, brandBulk } = useCart()
+  const { pricedItems, total, itemCount, brandBulk, brands } = useCart()
   const navigate = useNavigate()
 
-  // Per-brand banners in the ADMIN-defined brand order — the same shared
-  // rule as the header dropdown (display_order, never alphabetical). Live
-  // derived state, no refresh. The savings come from the shared
-  // brandSavings helper (configured prices × total brand pieces), so the
-  // displayed ₹3 / piece · ₹480 are always the exact figures the customer
-  // saves.
-  const bulkBanners = sortBrandsByDisplayOrder(
-    Object.values(brandBulk).map((s) => s.brand)
-  ).map((b) => {
-    const state = brandBulk[String(b.id)]
-    return { ...state, ...brandSavings(state) }
-  })
+  // Collapsed brand groups — pure UI state, never touches cart data.
+  const [collapsed, setCollapsed] = useState(() => new Set())
+  const toggleBrand = (id) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Group cart lines by brand (brand items) with the ADMIN-defined brand
+  // order (display_order, never alphabetical — same rule as the header
+  // dropdown); category products (no brand) fall into their own section.
+  // Each group carries its live bulk state (one source of truth from the
+  // shared context) so the header, per-piece prices and savings can never
+  // disagree.
+  const { brandGroups, categoryItems } = useMemo(() => {
+    const byId = new Map()
+    const idOrder = []
+    const categoryItems = []
+    for (const i of pricedItems) {
+      if (i.brand_id == null) {
+        categoryItems.push(i)
+        continue
+      }
+      const id = String(i.brand_id)
+      if (!byId.has(id)) {
+        byId.set(id, [])
+        idOrder.push(id)
+      }
+      byId.get(id).push(i)
+    }
+    const rowById = new Map((brands || []).map((b) => [String(b.id), b]))
+    const rows = idOrder.map((id) => ({ id, row: rowById.get(id) || null }))
+    const known = rows.filter((r) => r.row)
+    const unknown = rows.filter((r) => !r.row)
+    // Defensive: the display-order sort only keeps active brands, so any
+    // known row it filters out is appended last (never orphaned).
+    const sortedKnown = sortBrandsByDisplayOrder(known.map((r) => r.row)).map((b) => ({
+      id: String(b.id),
+      row: b,
+    }))
+    const sortedIds = new Set(sortedKnown.map((r) => r.id))
+    const ordered = [
+      ...sortedKnown,
+      ...unknown,
+      ...known.filter((r) => !sortedIds.has(r.id)),
+    ]
+    const groups = ordered.map(({ id, row }) => {
+      const state = brandBulk[id] || null
+      const items = byId.get(id)
+      return {
+        id,
+        name: state?.name || row?.name || items[0]?.brand_name || 'Brand',
+        items,
+        // Live bulk state + the exact savings figures (configured prices ×
+        // total brand pieces — the shared helper, never re-derived here).
+        bulk: state ? { ...state, ...brandSavings(state) } : null,
+      }
+    })
+    return { brandGroups: groups, categoryItems }
+  }, [pricedItems, brandBulk, brands])
 
   const handleCheckout = () => {
-    // The resolved snapshot (unit_price already includes the selected variant
-    // total price) travels to the checkout page — the server still recomputes
-    // everything authoritatively from the database.
+    // The resolved snapshot travels to the checkout page — the server still
+    // recomputes everything authoritatively from the database.
     navigate('/checkout', { state: { checkoutItems: pricedItems, total } })
   }
 
@@ -109,187 +273,95 @@ export default function Cart() {
         </span>
       </div>
 
-      {/* Brand bulk pricing — live progress for every eligible brand. */}
-      {bulkBanners.length > 0 && (
-        <div className="cart-bulk-banners">
-          {bulkBanners.map((b) => (
-            <BulkBanner key={b.brandId} state={b} />
-          ))}
-        </div>
-      )}
-
       <div className="cart-layout">
         <section className="cart-main" aria-label="Items in your cart">
-          <div className="cart-items">
-            {pricedItems.map((item) => {
-              const key = cartLineKey(item)
-              const label = item.variant_label
-                || (item.quantity_value != null && item.quantity_unit
-                    ? `${item.quantity_value} ${item.quantity_unit}`
-                    : '')
-              const hasVariant = item.variant_id != null
-              // unit_price is the amount charged per ONE unit of this line:
-              // the selected variant's TOTAL price (e.g. ₹7500 for "1000
-              // Pieces"), or the product price for variant-less lines. Bulk
-              // lines carry the brand's bulk rate (never above normal).
-              const unitPrice = item.unit_price
-              const normalUnitPrice = Number(item.normal_unit_price ?? item.unit_price)
-              const isBulkLine = item.bulk_active === true
-              // The resolved per-piece price: the brand's bulk rate when the
-              // line is bulk-unlocked, else the resolved normal per-piece
-              // price (the brand's standard price for piece-priced brand
-              // lines). Never the line's own stale stored per-piece figure.
-              const perUnit = isBulkLine
-                ? item.bulk_per_unit
-                : (item.normal_per_piece != null
-                    ? item.normal_per_piece
-                    : item.variant_price_per_unit)
-              const subtotal = unitPrice * item.quantity
-              const unitLower = String(item.quantity_unit || '').toLowerCase()
-              const isPiecesUnit = unitLower === 'pieces'
-              // The line's exact piece count (brand bulk lines) or null.
-              const pieces = item.pieces ?? null
-              // Every cart line carries its product id — the exact product
-              // this line was added from. The image + name link to that
-              // product's details page (never the shop/brand page); the rest
-              // of the card (prices, Remove, summary) stays non-navigating.
-              const productHref = item.product_id != null
-                ? `/product/${item.product_id}`
-                : null
-              // The image markup is shared by both branches (link vs plain
-              // defensive fallback) so they can never drift apart.
-              const productImage = (
-                <div className="cart-item-image-wrap">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="cart-item-image"
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.style.display = 'none' }}
-                  />
-                </div>
-              )
+          {/* Brand groups — compact collapsible headers with the bulk status,
+              pieces/threshold, normal → bulk rate and savings. The products
+              sit flat inside one card per brand. */}
+          <div className="cart-brand-groups">
+            {brandGroups.map((g) => {
+              const isCollapsed = collapsed.has(g.id)
               return (
-                <article key={key} className="cart-item">
-                  {/* Left — product image (square, cream stage, never cropped).
-                      Clicking it opens the exact product's details page. */}
-                  <div className="cart-item-media">
-                    {productHref ? (
-                      <Link
-                        to={productHref}
-                        className="cart-item-image-link"
-                        aria-label={`View ${item.name} product details`}
-                      >
-                        {productImage}
-                      </Link>
-                    ) : (
-                      productImage
-                    )}
-                  </div>
-
-                  {/* Center — brand / name / variant / price / remove */}
-                  <div className="cart-item-info">
-                    {item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
-                    <h3 className="cart-item-name">
-                      {productHref ? (
-                        <Link
-                          to={productHref}
-                          className="cart-item-name-link"
-                          aria-label={`View ${item.name} product details`}
-                        >
-                          {item.name}
-                        </Link>
-                      ) : (
-                        item.name
-                      )}
-                    </h3>
-                    {label && <p className="cart-item-variant">{label}</p>}
-                    <div className="cart-item-price-row">
-                      <span className="cart-item-unit">
-                        ₹{unitPrice.toLocaleString('en-IN')}
-                        {!hasVariant && !isBulkLine ? ' / piece' : ''}
-                      </span>
-                      {isBulkLine && normalUnitPrice !== unitPrice && (
-                        <span className="cart-item-unit is-struck">
-                          ₹{normalUnitPrice.toLocaleString('en-IN')}
-                        </span>
-                      )}
-                      {hasVariant && perUnit != null && Number.isFinite(Number(perUnit)) && (
-                        <span
-                          className={`cart-item-per-unit ${isBulkLine ? 'is-bulk' : ''}`}
-                        >
-                          ₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
-                          {isBulkLine
-                            ? (isPiecesUnit ? 'piece' : 'unit')
-                            : (isPiecesUnit ? 'piece' : unitLower)}
-                        </span>
-                      )}
-                      {isBulkLine && (
-                        <span className="cart-item-bulk-tag is-bulk">✓ Bulk price</span>
-                      )}
-                    </div>
-                    <button className="cart-item-remove" onClick={() => removeItem(key)}>
-                      <TrashIcon size={14} /> Remove
-                    </button>
-                  </div>
-
-                  {/* Right — quantity stepper (brand PIECES lines only: the
-                      exact piece count the customer added. Brand ML/Gram and
-                      category lines keep their static display — never a dead
-                      stepper.) */}
-                  <div className="cart-item-buybox">
-                    {pieces != null && isPiecesUnit ? (
-                      <div className="cart-item-qty" aria-label="Quantity">
-                        <button
-                          type="button"
-                          className="qty-control-btn"
-                          onClick={() => updateLinePieces(key, -1)}
-                          disabled={item.pieces <= 1}
-                          aria-label="Decrease quantity"
-                        >
-                          −
-                        </button>
-                        <span className="qty-control-input" aria-live="polite">
-                          {item.pieces.toLocaleString('en-IN')}
-                        </span>
-                        <button
-                          type="button"
-                          className="qty-control-btn"
-                          onClick={() => updateLinePieces(key, 1)}
-                          aria-label="Increase quantity"
-                        >
-                          +
-                        </button>
+                <section key={g.id} className="cart-brand-group">
+                  <button
+                    type="button"
+                    className="cart-brand-head"
+                    onClick={() => toggleBrand(g.id)}
+                    aria-expanded={!isCollapsed}
+                    aria-controls={`cart-brand-${g.id}`}
+                  >
+                    <div className="cart-brand-head-text">
+                      <div className="cart-brand-head-top">
+                        <span className="cart-brand-name">{g.name}</span>
+                        {g.bulk && (
+                          g.bulk.unlocked ? (
+                            <span className="cart-brand-status is-unlocked">✓ Bulk price active</span>
+                          ) : (
+                            <span className="cart-brand-status">Bulk pricing</span>
+                          )
+                        )}
                       </div>
-                    ) : (
-                      item.quantity > 1 && (
-                        <p className="cart-item-qty-static">× {item.quantity}</p>
-                      )
-                    )}
-                    <div className="cart-item-total-col">
-                      <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
-                      <p className="cart-item-sub">
-                        {isPiecesUnit && pieces != null ? (
+                      <div className="cart-brand-head-meta">
+                        {g.bulk ? (
                           <>
-                            ₹{Number(perUnit ?? unitPrice).toLocaleString('en-IN')} ×{' '}
-                            {pieces.toLocaleString('en-IN')} pieces
+                            <span className="cart-brand-count">
+                              {Number(g.bulk.totalPieces).toLocaleString('en-IN')} /{' '}
+                              {Number(g.bulk.bulkMinQty).toLocaleString('en-IN')} pieces
+                            </span>
+                            <span className="cart-brand-prices">
+                              ₹{Number(g.bulk.standardPrice).toLocaleString('en-IN')} →{' '}
+                              <span className={g.bulk.unlocked ? 'is-bulk' : ''}>
+                                ₹{Number(g.bulk.bulkUnitPrice).toLocaleString('en-IN')}
+                              </span>{' '}
+                              / piece
+                            </span>
+                            {g.bulk.unlocked && g.bulk.savings > 0 && (
+                              <span className="cart-brand-savings">
+                                You save ₹{Number(g.bulk.savings).toLocaleString('en-IN')}
+                              </span>
+                            )}
                           </>
                         ) : (
-                          <>
-                            ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
-                          </>
+                          <span className="cart-brand-count">
+                            {g.items.length} {g.items.length === 1 ? 'product' : 'products'}
+                          </span>
                         )}
-                      </p>
+                      </div>
                     </div>
-                  </div>
-                </article>
+                    <svg
+                      className={`cart-brand-chevron ${isCollapsed ? 'is-collapsed' : ''}`}
+                      width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                  {!isCollapsed && (
+                    <div className="cart-brand-items" id={`cart-brand-${g.id}`}>
+                      {g.items.map((item) => (
+                        <CartLine key={cartLineKey(item)} item={item} inGroup />
+                      ))}
+                    </div>
+                  )}
+                </section>
               )
             })}
           </div>
 
-          {/* Trust cards — bottom of the items area. Headings are the same
-              claims as before; subtitles are descriptive copy already used
-              elsewhere on the site (e.g. the checkout trust strip). */}
+          {/* Category products — separate section, no brand bulk UI. */}
+          {categoryItems.length > 0 && (
+            <section className="cart-category" aria-label="Other category products">
+              <h2 className="cart-category-title">Other Category Products</h2>
+              <div className="cart-category-items">
+                {categoryItems.map((item) => (
+                  <CartLine key={cartLineKey(item)} item={item} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Trust cards — bottom of the items area. */}
           <div className="cart-trust" aria-label="Store promises">
             <span className="cart-trust-item">
               <SecureIcon size={18} />
