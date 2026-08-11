@@ -194,6 +194,24 @@ export function buildBrandPieces(items) {
   return map
 }
 
+// The brand's bulk SAVINGS exactly as the cart banner shows them, derived
+// from the CONFIGURED brand prices: per piece it is standard − bulk
+// (e.g. ₹45 − ₹42 = ₹3), and the total is the brand's total pieces × that
+// per-piece saving (160 × ₹3 = ₹480). Never derived from individual line
+// prices and never a made-up percentage — so the figure can't drift into
+// odd values like ₹1.13 / piece.
+export function brandSavings(brandState) {
+  const std = Number(brandState?.standardPrice)
+  const bulk = Number(brandState?.bulkUnitPrice)
+  const perPiece =
+    Number.isFinite(std) && Number.isFinite(bulk) && std > bulk ? std - bulk : 0
+  const piecesRaw = Number(brandState?.totalPieces)
+  const pieces = Number.isFinite(piecesRaw)
+    ? Math.max(0, Math.floor(piecesRaw || 0))
+    : 0
+  return { savingsPerPiece: perPiece, savings: pieces * perPiece }
+}
+
 // Brand total pieces shown on the PRODUCT DETAIL page.
 //
 // The page previews the brand total as cart pieces + the current selection

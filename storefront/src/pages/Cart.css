@@ -129,9 +129,12 @@
   box-shadow: var(--shadow-soft);
   min-width: 0;
 }
+/* GREEN = bulk pricing is actually unlocked (never just because a rule
+   exists). Active border + fill + price + status; everything else stays
+   on the existing gold/cream language. */
 .cart-bulk-banner.is-unlocked {
-  border-color: rgba(184, 137, 56, 0.45);
-  background: linear-gradient(180deg, var(--white), #FCF7EC);
+  border-color: rgba(30, 122, 52, 0.4);
+  background: linear-gradient(180deg, var(--white), #F1F7F1);
 }
 .cart-bulk-banner-top {
   display: flex;
@@ -155,11 +158,30 @@
   font-variant-numeric: tabular-nums;
 }
 .cart-bulk-status.is-unlocked {
-  color: var(--gold-deep);
+  color: #1E7A34;
+}
+/* Progress row: track (flex) + live "N / M pieces" count (always visible). */
+.cart-bulk-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+.cart-bulk-progress-row .cart-bulk-progress-track {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.cart-bulk-count {
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .cart-bulk-progress-track {
   height: 6px;
-  margin: 10px 0;
   background: var(--cream-deep);
   border-radius: 999px;
   overflow: hidden;
@@ -170,6 +192,13 @@
   background: var(--gold);
   border-radius: 999px;
   transition: width 0.3s ease;
+}
+.cart-bulk-banner.is-unlocked .cart-bulk-progress-fill {
+  background: #2E7D32;
+}
+.cart-bulk-prices .is-bulk {
+  color: #1E7A34;
+  font-weight: 700;
 }
 .cart-bulk-banner-bottom {
   display: flex;
@@ -336,13 +365,19 @@
   font-variant-numeric: tabular-nums;
 }
 /* Informational per-unit price next to a variant line's total (e.g. "₹10 / piece"
-   beside "₹7500" for a 1000-pieces variant) — same muted tone, never struck. */
+   beside "₹7500" for a 1000-pieces variant) — same muted tone, never struck.
+   When the brand's bulk rate is ACTIVE the charged per-piece price turns
+   green (the unlocked state — never just because a rule exists). */
 .cart-item-per-unit {
   font-size: 0.8rem;
   font-weight: 500;
   color: #9A9286;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+.cart-item-per-unit.is-bulk {
+  color: #1E7A34;
+  font-weight: 700;
 }
 /* Struck normal price on bulk-unlocked lines (charged price stays clean). */
 .cart-item-unit.is-struck {
@@ -352,7 +387,8 @@
   text-decoration: line-through;
   text-decoration-color: rgba(95, 88, 78, 0.5);
 }
-/* Small gold tag marking a bulk-priced line. */
+/* Small tag marking a bulk-priced line — gold when merely bulk-eligible,
+   GREEN when the bulk rate is actually applied to this line. */
 .cart-item-bulk-tag {
   display: inline-flex;
   align-items: center;
@@ -367,6 +403,11 @@
   text-transform: uppercase;
   color: var(--gold-deep);
   white-space: nowrap;
+}
+.cart-item-bulk-tag.is-bulk {
+  background: #EAF5EC;
+  border-color: rgba(30, 122, 52, 0.35);
+  color: #1E7A34;
 }
 .cart-item-remove {
   display: inline-flex;
@@ -393,7 +434,10 @@
   gap: 10px;
   min-width: 0;
 }
+/* Brand piece-line stepper: − 160 + (one piece per click, floor 1). */
 .cart-item-qty {
+  display: flex;
+  align-items: center;
   width: 132px;
   height: 42px;
   border: 1px solid var(--line-strong);
@@ -401,9 +445,30 @@
   overflow: hidden;
   background: var(--white);
 }
-.cart-item-qty .qty-control-btn { flex: 0 0 40px; font-size: 1.05rem; color: var(--charcoal); }
-.cart-item-qty .qty-control-btn:hover { background: var(--gold); color: var(--ink); }
-.cart-item-qty .qty-control-input { font-weight: 700; font-size: 15px; color: var(--ink); }
+.cart-item-qty .qty-control-btn {
+  flex: 0 0 40px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.cart-item-qty .qty-control-btn:hover:not(:disabled) { background: var(--gold); color: var(--ink); }
+.cart-item-qty .qty-control-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.cart-item-qty .qty-control-input {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .cart-item-qty:focus-within { box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.55) inset; }
 
 /* Static line quantity — informational only (no stepper). Shows only when

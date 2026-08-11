@@ -1,13 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { cartTotal, lineUnitPrice } from '../utils/variantPricing'
 import { getBrands } from '../services/mockApi'
+import { adjustLinePieces, cartLineKey, mergeCartLines } from '../utils/cartLines'
 import {
   buildBrandBulk,
   buildBrandPieces,
   isValidBulkRule,
   lineBulkPricing,
   lineNormalPerPiece,
-  linePieces,
 } from '../utils/brandBulk'
 
 const CartContext = createContext(null)
@@ -20,13 +20,6 @@ function readStoredCart() {
   } catch {
     return []
   }
-}
-
-// Build a stable unique line key. Variant items are keyed by product id +
-// variant id so different variants (100 Pieces vs 1000 Pieces) stay separate.
-// Legacy items (no variant) are keyed by product id alone.
-function lineKey(item) {
-  return item.variant_id != null ? `${item.product_id}-v${item.variant_id}` : `${item.product_id}-`
 }
 
 // Normalize a stored cart item into the canonical shape used everywhere.
@@ -69,7 +62,12 @@ function normalizeItem(raw) {
 }
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => readStoredCart().map(normalizeItem))
+  // Load + normalize in one step: a legacy cart that stored the same product
+  // as several rows (e.g. Pink Musk 60 Pieces + Pink Musk 100 Pieces) is
+  // merged into ONE row here, so no quantity is ever lost or double-counted.
+  const [items, setItems] = useState(() =>
+    mergeCartLines(readStoredCart().map(normalizeItem))
+  )
 
   // Brand rows (active brands only, from the public endpoint) — the single
   // source of truth for brand-level bulk pricing rules. Loaded once at app
@@ -171,69 +169,29 @@ export function CartProvider({ children }) {
           : {}),
       }
 
-      // Merge ONLY when product_id AND variant_id match.
-      const existingIndex = prev.findIndex((i) => lineKey(i) === lineKey(newItem))
-
-      if (existingIndex >= 0) {
-        const existing = prev[existingIndex]
-        const updated = [...prev]
-
-        if (existing.pieces != null || newItem.pieces != null) {
-          // Piece-based lines merge by adding piece counts (quantity stays 1;
-          // the same variant shares one normal per-piece price). A legacy
-          // pack-based line (no explicit pieces) still contributes its real
-          // piece tally (size × quantity) — never 0.
-          const existingPieces = existing.pieces != null
-            ? Number(existing.pieces) || 0
-            : linePieces(existing)
-          const combinedPieces = existingPieces + (Number(newItem.pieces ?? 0) || 0)
-          updated[existingIndex] = {
-            ...existing,
-            pieces: combinedPieces,
-            quantity: 1,
-            quantity_value: combinedPieces,
-            variant_label: `${combinedPieces} ${String(newItem.quantity_unit || 'Pieces')}`.trim(),
-            selected_price: Number(existing.selected_price ?? 0) + Number(newItem.selected_price ?? 0),
-            ...(hasVariant
-              ? {
-                  variant_total_price: Number(existing.variant_total_price ?? 0) + Number(newItem.variant_total_price ?? 0),
-                  variant_price_per_unit: newItem.variant_price_per_unit,
-                  variant_is_default: newItem.variant_is_default,
-                }
-              : {}),
-            brand_id: newItem.brand_id,
-            brand_name: newItem.brand_name,
-          }
-          return updated
-        }
-
-        const combined = Math.max(1, existing.quantity + newItem.quantity)
-        updated[existingIndex] = {
-          ...existing,
-          quantity: combined,
-          // Refresh the price and variant info on re-add — a line stored
-          // before the new pricing fields existed (legacy cart) must pick up
-          // the current variant total price.
-          selected_price: newItem.selected_price,
-          ...(hasVariant
-            ? {
-                variant_total_price: newItem.variant_total_price,
-                variant_price_per_unit: newItem.variant_price_per_unit,
-                variant_is_default: newItem.variant_is_default,
-              }
-            : {}),
-          brand_id: newItem.brand_id,
-          brand_name: newItem.brand_name,
-        }
-        return updated
-      }
-
-      return [...prev, newItem]
+      // Merge into the existing cart with the shared line-identity rules
+      // (brand lines merge by product id, category lines by product + variant)
+      // — the SAME logic that normalizes the cart on load, so add-time and
+      // load-time merging can never disagree. Adding the same product again
+      // never creates a second row.
+      return mergeCartLines([...prev, newItem])
     })
   }, [])
 
   const removeItem = useCallback((key) => {
-    setItems((prev) => prev.filter((i) => lineKey(i) !== key))
+    setItems((prev) => prev.filter((i) => cartLineKey(i) !== key))
+  }, [])
+
+  // One-piece-at-a-time cart quantity control for BRAND (piece-based) lines
+  // only: `delta` is +1 / −1 on the line's exact piece count. The mutation
+  // delegates to the shared adjustLinePieces util so the stepper's predicate
+  // and the update can never drift — brand ML/Gram lines and category lines
+  // are untouched. Every change flows through the same derived pricing, so
+  // brand totals, bulk status, prices, savings and subtotals update instantly.
+  const updateLinePieces = useCallback((key, delta) => {
+    setItems((prev) =>
+      prev.map((i) => (cartLineKey(i) !== key ? i : adjustLinePieces(i, delta) ?? i))
+    )
   }, [])
 
   // Clear BOTH layers in one atomic call: the in-memory state AND the
@@ -306,6 +264,7 @@ export function CartProvider({ children }) {
     pricedItems,
     addItem,
     removeItem,
+    updateLinePieces,
     clearCart,
     itemCount,
     total,

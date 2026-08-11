@@ -124,9 +124,11 @@
 /* --- Brand bulk pricing panel (brand products only) ----------------------
    White card · gold hairline · charcoal text — same system as the rest of
    the page. Subtle states: locked (progress) / unlocked (gold ✓ line). */
+/* "· bulk price" note on the charged per-piece price — GREEN only while
+   the bulk rate is actually applied (never for a mere configured rule). */
 .product-detail-bulk-note {
   font-weight: 600;
-  color: var(--gold-deep);
+  color: #1E7A34;
 }
 .brand-bulk-panel {
   margin-top: 18px;
@@ -175,6 +177,9 @@
   border-radius: 999px;
   transition: width 0.3s ease;
 }
+.brand-bulk-progress-fill.is-unlocked {
+  background: #2E7D32;
+}
 .brand-bulk-progress-label {
   margin: 0;
   font-size: 0.74rem;
@@ -192,7 +197,7 @@
   margin: 10px 0 0;
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--gold-deep);
+  color: #1E7A34;
 }
 
 .product-detail-related {

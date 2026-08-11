@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import { pieceWord } from '../utils/brandBulk'
+import { cartLineKey } from '../utils/cartLines'
+import { brandSavings, pieceWord } from '../utils/brandBulk'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
@@ -15,21 +16,28 @@ function BulkBanner({ state }) {
       <div className="cart-bulk-banner-top">
         <span className="cart-bulk-brand">{state.name}</span>
         {state.unlocked ? (
-          <span className="cart-bulk-status is-unlocked">✓ Bulk price unlocked</span>
+          <span className="cart-bulk-status is-unlocked">✓ Bulk price active</span>
         ) : (
-          <span className="cart-bulk-status">
-            {state.totalPieces.toLocaleString('en-IN')} / {state.bulkMinQty.toLocaleString('en-IN')} pieces
-          </span>
+          <span className="cart-bulk-status">Bulk pricing</span>
         )}
       </div>
-      <div className="cart-bulk-progress-track">
-        <span className="cart-bulk-progress-fill" style={{ width: `${pct}%` }} />
+      <div className="cart-bulk-progress-row">
+        <div className="cart-bulk-progress-track">
+          <span className="cart-bulk-progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+        <span className="cart-bulk-count">
+          {state.totalPieces.toLocaleString('en-IN')} / {state.bulkMinQty.toLocaleString('en-IN')} pieces
+        </span>
       </div>
       <div className="cart-bulk-banner-bottom">
         <span className="cart-bulk-prices">
           Normal ₹{state.standardPrice.toLocaleString('en-IN')} / piece
           <span className="cart-bulk-arrow" aria-hidden="true">→</span>
-          Bulk ₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece
+          {state.unlocked ? (
+            <span className="is-bulk">₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece</span>
+          ) : (
+            <span>Bulk ₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece</span>
+          )}
         </span>
         {!state.unlocked && (
           <span className="cart-bulk-hint">
@@ -48,30 +56,16 @@ function BulkBanner({ state }) {
 }
 
 export default function Cart() {
-  const { pricedItems, removeItem, total, itemCount, brandBulk } = useCart()
+  const { pricedItems, removeItem, updateLinePieces, total, itemCount, brandBulk } = useCart()
   const navigate = useNavigate()
 
-  // Per-brand banners, alphabetical — live derived state, no refresh. Each
-  // banner also carries the brand's REAL total savings (the actual difference
-  // between the normal and bulk-charged lines, never a made-up figure).
+  // Per-brand banners, alphabetical — live derived state, no refresh. The
+  // savings come from the shared brandSavings helper (configured prices ×
+  // total brand pieces), so the displayed ₹3 / piece · ₹480 are always the
+  // exact figures the customer saves.
   const bulkBanners = Object.values(brandBulk)
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((state) => {
-      // The brand's REAL savings: the actual difference between each line's
-      // normal and bulk-charged unit price × its quantity — never a made-up
-      // figure derived from the configured standard price alone.
-      let savings = 0
-      for (const it of pricedItems) {
-        if (it.brand_id != null && String(it.brand_id) === state.brandId) {
-          const normal = Number(it.normal_unit_price ?? it.unit_price)
-          savings += (normal - Number(it.unit_price)) * Number(it.quantity ?? 1)
-        }
-      }
-      savings = Math.max(0, savings)
-      const savingsPerPiece =
-        state.totalPieces > 0 ? savings / state.totalPieces : 0
-      return { ...state, savings, savingsPerPiece }
-    })
+    .map((state) => ({ ...state, ...brandSavings(state) }))
 
   const handleCheckout = () => {
     // The resolved snapshot (unit_price already includes the selected variant
@@ -122,9 +116,7 @@ export default function Cart() {
         <section className="cart-main" aria-label="Items in your cart">
           <div className="cart-items">
             {pricedItems.map((item) => {
-              const key = item.variant_id != null
-                ? `${item.product_id}-v${item.variant_id}`
-                : `${item.product_id}-`
+              const key = cartLineKey(item)
               const label = item.variant_label
                 || (item.quantity_value != null && item.quantity_unit
                     ? `${item.quantity_value} ${item.quantity_unit}`
@@ -209,13 +201,15 @@ export default function Cart() {
                         </span>
                       )}
                       {hasVariant && perUnit != null && Number.isFinite(Number(perUnit)) && (
-                        <span className="cart-item-per-unit">
+                        <span
+                          className={`cart-item-per-unit ${isBulkLine ? 'is-bulk' : ''}`}
+                        >
                           ₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
                           {isBulkLine ? (isPiecesUnit ? 'piece' : 'unit') : unitLower}
                         </span>
                       )}
                       {isBulkLine && (
-                        <span className="cart-item-bulk-tag">Bulk price</span>
+                        <span className="cart-item-bulk-tag is-bulk">✓ Bulk price</span>
                       )}
                     </div>
                     <button className="cart-item-remove" onClick={() => removeItem(key)}>
@@ -223,10 +217,38 @@ export default function Cart() {
                     </button>
                   </div>
 
-                  {/* Right — line total (variant total price × quantity) */}
+                  {/* Right — quantity stepper (brand PIECES lines only: the
+                      exact piece count the customer added. Brand ML/Gram and
+                      category lines keep their static display — never a dead
+                      stepper.) */}
                   <div className="cart-item-buybox">
-                    {item.quantity > 1 && !item.pieces && (
-                      <p className="cart-item-qty-static">× {item.quantity}</p>
+                    {pieces != null && isPiecesUnit ? (
+                      <div className="cart-item-qty" aria-label="Quantity">
+                        <button
+                          type="button"
+                          className="qty-control-btn"
+                          onClick={() => updateLinePieces(key, -1)}
+                          disabled={item.pieces <= 1}
+                          aria-label="Decrease quantity"
+                        >
+                          −
+                        </button>
+                        <span className="qty-control-input" aria-live="polite">
+                          {item.pieces.toLocaleString('en-IN')}
+                        </span>
+                        <button
+                          type="button"
+                          className="qty-control-btn"
+                          onClick={() => updateLinePieces(key, 1)}
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      item.quantity > 1 && (
+                        <p className="cart-item-qty-static">× {item.quantity}</p>
+                      )
                     )}
                     <div className="cart-item-total-col">
                       <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>

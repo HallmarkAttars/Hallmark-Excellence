@@ -13,6 +13,7 @@ import {
   lineBulkPricing,
   buildBrandBulk,
   buildBrandPieces,
+  brandSavings,
   pieceBandRange,
   pieceWord,
   productPageBrandPieces,
@@ -301,6 +302,39 @@ describe('pieceBandRange', () => {
   it('keeps the range valid even with degenerate (missing) quantity values', () => {
     const r = pieceBandRange([{ id: 'v0', quantity_unit: 'Pieces' }], 'v0')
     expect(r).toMatchObject({ min: 1, max: null, next: null })
+  })
+})
+
+describe('brandSavings (the exact figures the cart banner shows)', () => {
+  it('computes ₹3 / piece × 160 pieces = ₹480 from the configured prices', () => {
+    expect(
+      brandSavings({ standardPrice: 45, bulkUnitPrice: 42, totalPieces: 160 })
+    ).toEqual({ savingsPerPiece: 3, savings: 480 })
+  })
+
+  it('scales with the brand total, not any per-line figure', () => {
+    expect(
+      brandSavings({ standardPrice: 50, bulkUnitPrice: 47, totalPieces: 90 })
+    ).toEqual({ savingsPerPiece: 3, savings: 270 })
+  })
+
+  it('is zero for locked/partially unlocked quantities only when pieces are zero, otherwise still per-piece', () => {
+    // The banner only SHOWS savings when unlocked, but the helper itself is
+    // purely totalPieces × per-piece — 89 pieces would save ₹267 at ₹3/piece.
+    expect(
+      brandSavings({ standardPrice: 45, bulkUnitPrice: 42, totalPieces: 89 })
+    ).toEqual({ savingsPerPiece: 3, savings: 267 })
+  })
+
+  it('never goes negative with degenerate data', () => {
+    expect(
+      brandSavings({ standardPrice: 42, bulkUnitPrice: 45, totalPieces: 10 }).savingsPerPiece
+    ).toBe(0)
+    expect(brandSavings(null)).toEqual({ savingsPerPiece: 0, savings: 0 })
+    expect(brandSavings({ standardPrice: 45, bulkUnitPrice: 42 })).toEqual({
+      savingsPerPiece: 3,
+      savings: 0,
+    })
   })
 })
 

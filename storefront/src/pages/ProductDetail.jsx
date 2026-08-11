@@ -40,6 +40,11 @@ export default function ProductDetail() {
   const [selectionInCart, setSelectionInCart] = useState(false)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
+  // Synchronous re-entry guard for handleAdd: React state (`adding`) cannot
+  // block two clicks in the same frame, and a double-fire would add the
+  // selected quantity twice (60 → 120). The ref is set before the first
+  // mutation and cleared when the add completes.
+  const addingRef = useRef(false)
 
   // Clear feedback timers on unmount.
   useEffect(() => () => {
@@ -58,6 +63,7 @@ export default function ProductDetail() {
     setVariantHint(false)
     setQty(1)
     setSelectionInCart(false)
+    addingRef.current = false
     getProductById(id)
       .then((p) => {
         setProduct(p)
@@ -270,7 +276,7 @@ export default function ProductDetail() {
       return
     }
     setVariantHint(false)
-    if (adding) return
+    if (adding || addingRef.current) return
 
     // Build the complete selected variant info for the cart item so the cart
     // and checkout show the exact variant and price the customer picked.
@@ -287,6 +293,7 @@ export default function ProductDetail() {
       : null
 
     setAdding(true)
+    addingRef.current = true
     try {
       // `qty` units of the selected variant. The cart line is priced at
       // variant TOTAL price × qty.
@@ -310,12 +317,14 @@ export default function ProductDetail() {
       // updated cart alone, never selection + cart again.
       setSelectionInCart(true)
       addTimer.current = setTimeout(() => {
+        addingRef.current = false
         setAdding(false)
         setAdded(true)
         notifyAddSuccess(product)
         addedTimer.current = setTimeout(() => setAdded(false), 2000)
       }, 350)
     } catch {
+      addingRef.current = false
       setAdding(false)
       notifyAddError()
     }
@@ -433,7 +442,7 @@ export default function ProductDetail() {
             <div className="brand-bulk-progress">
               <div className="brand-bulk-progress-track">
                 <span
-                  className="brand-bulk-progress-fill"
+                  className={`brand-bulk-progress-fill ${brandUnlocked ? 'is-unlocked' : ''}`}
                   style={{
                     width: `${bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0}%`,
                   }}
