@@ -4,7 +4,7 @@ const {
   resolvePaymentMethod,
   resolvePaymentStatus,
 } = require('../utils/orderPayment')
-const { applyBrandBulk } = require('../utils/brandBulkPricing')
+const { applyBrandBulk, isValidBulkRule } = require('../utils/brandBulkPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -423,25 +423,40 @@ async function createOrder(req, res) {
             throw new Error(`Invalid piece quantity for ${product.name}.`)
           }
 
+          // The brand rule is the source of truth for the brand's
+          // piece-priced lines: for Pieces-unit variants the brand's standard
+          // price is the authoritative normal per-piece price (the product's
+          // own variant per-piece figure may be stale — e.g. ₹45 while the
+          // admin's brand rule says ₹50). Non-Pieces variants keep their own
+          // TOTAL per unit as the per-piece figure.
+          const brand =
+            product.brand_id != null ? brandRules[String(product.brand_id)] : null
+          const brandStdIsValid = isValidBulkRule(brand)
+
           // The line's own normal per-piece price (bulk only ever discounts
           // below this): a Pieces variant's price-per-unit, a non-Pieces
           // variant's TOTAL per unit (each unit counts as one piece), with
           // defensive fallbacks for legacy data.
           const lineNormalPerPiece = isPiecesUnit
-            ? (variantPerUnit > 0 && variantTotal > 0 && variantPerUnit < variantTotal
-                ? variantPerUnit
-                : round2(variantTotal / (sizePerUnit || 1)))
+            ? (brandStdIsValid
+                ? Number(brand.standard_price)
+                : (variantPerUnit > 0 && variantTotal > 0 && variantPerUnit < variantTotal
+                    ? variantPerUnit
+                    : round2(variantTotal / (sizePerUnit || 1))))
             : variantTotal
 
           if (explicitPieces != null) {
             unitPieces = Math.max(1, Math.round(explicitPieces / quantity))
             unitPrice = round2(lineNormalPerPiece * unitPieces)
           } else {
-            // Pack-based line: the variant total is the amount per ONE unit
-            // (unchanged behaviour); pieces are only counted for the brand
-            // tally and the bulk discount comparison.
+            // Pack-based line: a Pieces unit is charged at the brand's
+            // standard per-piece price × pack size (mirrors the cart); other
+            // units keep the variant total as the amount per ONE unit.
             unitPieces = isPiecesUnit ? sizePerUnit : 1
-            unitPrice = variantTotal
+            unitPrice =
+              isPiecesUnit && brandStdIsValid
+                ? round2(Number(brand.standard_price) * unitPieces)
+                : variantTotal
           }
           normalPerPiece = lineNormalPerPiece
           pieces = unitPieces * quantity

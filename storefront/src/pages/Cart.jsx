@@ -135,7 +135,15 @@ export default function Cart() {
               const unitPrice = item.unit_price
               const normalUnitPrice = Number(item.normal_unit_price ?? item.unit_price)
               const isBulkLine = item.bulk_active === true
-              const perUnit = isBulkLine ? item.bulk_per_unit : item.variant_price_per_unit
+              // The resolved per-piece price: the brand's bulk rate when the
+              // line is bulk-unlocked, else the resolved normal per-piece
+              // price (the brand's standard price for piece-priced brand
+              // lines). Never the line's own stale stored per-piece figure.
+              const perUnit = isBulkLine
+                ? item.bulk_per_unit
+                : (item.normal_per_piece != null
+                    ? item.normal_per_piece
+                    : item.variant_price_per_unit)
               const subtotal = unitPrice * item.quantity
               const unitLower = String(item.quantity_unit || '').toLowerCase()
               const isPiecesUnit = unitLower === 'pieces'
@@ -211,7 +219,9 @@ export default function Cart() {
                           className={`cart-item-per-unit ${isBulkLine ? 'is-bulk' : ''}`}
                         >
                           ₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
-                          {isBulkLine ? (isPiecesUnit ? 'piece' : 'unit') : unitLower}
+                          {isBulkLine
+                            ? (isPiecesUnit ? 'piece' : 'unit')
+                            : (isPiecesUnit ? 'piece' : unitLower)}
                         </span>
                       )}
                       {isBulkLine && (
@@ -261,7 +271,7 @@ export default function Cart() {
                       <p className="cart-item-sub">
                         {isPiecesUnit && pieces != null ? (
                           <>
-                            ₹{(isBulkLine ? Number(item.bulk_per_unit) : Number(perUnit ?? unitPrice)).toLocaleString('en-IN')} ×{' '}
+                            ₹{Number(perUnit ?? unitPrice).toLocaleString('en-IN')} ×{' '}
                             {pieces.toLocaleString('en-IN')} pieces
                           </>
                         ) : (

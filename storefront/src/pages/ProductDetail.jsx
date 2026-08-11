@@ -216,7 +216,9 @@ export default function ProductDetail() {
   // semantics as the cart util (a Pieces variant's price-per-unit; a
   // non-Pieces variant's total per unit; product price for variant-less
   // items).
-  const normalPerPiece =
+  // The line's own normal per-piece price (Pieces variant's price-per-unit,
+  // non-Pieces variant's total per unit, product price for variant-less).
+  const ownPerPiece =
     pieceStylePrice && variantSelected && hasVariants
       ? lineNormalPerPiece({
           variant_id: selectedVariant.id,
@@ -226,6 +228,20 @@ export default function ProductDetail() {
           variant_total_price: Number(selectedVariant?.total_price ?? selectedVariant?.price ?? 0),
         })
       : Number(product.price)
+  // The BRAND rule is the source of truth for the brand's PIECE-priced
+  // products: when a Pieces band is selected, the brand's standard price is
+  // the normal per-piece price (the product's own variant per-piece figure
+  // may be stale — e.g. ₹45 while the brand rule says ₹50). ML/Gram variants
+  // keep their own per-unit price.
+  const brandStandardPerPiece = isBrandBulkProduct
+    ? Number(brandRule?.standard_price ?? 0)
+    : 0
+  const useBrandStandard =
+    isBrandBulkProduct &&
+    pieceMode &&
+    Number.isFinite(brandStandardPerPiece) &&
+    brandStandardPerPiece > 0
+  const normalPerPiece = useBrandStandard ? brandStandardPerPiece : ownPerPiece
   const bulkApplied =
     isBrandBulkProduct &&
     brandUnlocked &&

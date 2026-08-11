@@ -22,9 +22,13 @@
 //   - "Pieces"-unit variants: quantity_value × quantity
 //   - variant-less products / other units: quantity (each unit counts as one)
 //
-// When a brand's total pieces reach bulk_min_qty, EVERY line of that brand is
-// charged per piece at the brand's bulk_unit_price — but only when that is
-// cheaper than the line's own normal per-piece price (a genuine discount).
+// When a brand's total pieces reach bulk_min_qty, EVERY piece-priced line of
+// that brand is charged per piece at the brand's bulk_unit_price. The brand's
+// standard_price is the authoritative normal per-piece price for those lines
+// (product/variant rows may carry stale figures) and bulk_unit_price the
+// discounted rate once unlocked — eligibility is brand-wide, never
+// per-product, and the resolved price is identical for every line of the
+// brand.
 
 // Round monetary values to 2 decimals (orders table stores numeric(10,2)).
 function round2(n) {
@@ -114,6 +118,17 @@ function lineNormalPerPiece(item) {
   return Number.isFinite(p) ? p : 0
 }
 
+// True when a normalized order line is PRICED PER PIECE against the brand's
+// configured prices: Pieces-unit variants and exact piece-count lines.
+// ML/Gram variant lines are pack-priced (their own total is the per-unit
+// price) and variant-less products keep their product price — the brand rule
+// never overrides those.
+function isPiecePricedItem(item) {
+  if (item == null) return false
+  if (item.variant_id == null) return false
+  return String(item.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
+}
+
 // Apply bulk pricing to an array of NORMALIZED order items (each already
 // carrying `quantity`, `unit_price`, `subtotal`, `normal_per_piece`,
 // `unit_pieces`, `pieces`, `brand_id`, variant fields).
@@ -122,6 +137,12 @@ function lineNormalPerPiece(item) {
 //   { items, brands }  — items with bulk pricing applied (new array of the
 //                         same item objects, mutated in place), and a summary
 //                         array of every eligible brand's state in this order.
+//
+// The BRAND rule is the source of truth for the brand's piece-priced lines:
+// the normal per-piece price is the brand's configured standard_price (never
+// the line's own stored figure, which may be stale) and, once the brand
+// unlocks, EVERY piece-priced line of that brand is charged per piece at the
+// brand's bulk_unit_price.
 function applyBrandBulk(normalizedItems, brandRules) {
   const rules = {}
   for (const brand of Object.values(brandRules || {})) {
@@ -147,11 +168,32 @@ function applyBrandBulk(normalizedItems, brandRules) {
     const totalPieces = totals[String(brand.id)] || 0
     const unlocked = totalPieces >= bulkMinQty
 
-    // Apply ONLY when unlocked and the bulk rate is a genuine discount below
-    // this line's own normal per-piece price. Otherwise the normal price
-    // stays — never a price increase.
-    const normalPerPiece = Number(item.normal_per_piece ?? lineNormalPerPiece(item))
-    const useBulk = unlocked && bulkPerPiece > 0 && bulkPerPiece < normalPerPiece
+    // The brand's standard price is the authoritative normal per-piece price
+    // for the brand's piece-priced lines; the line's own figure is only a
+    // defensive fallback (ML/Gram and variant-less lines keep their own).
+    const standardPerPiece = Number(brand.standard_price)
+    const brandStandardValid = Number.isFinite(standardPerPiece) && standardPerPiece > 0
+    const ownNormalPerPiece = Number(item.normal_per_piece ?? lineNormalPerPiece(item))
+    const normalPerPiece =
+      isPiecePricedItem(item) && brandStandardValid
+        ? standardPerPiece
+        : ownNormalPerPiece
+
+    // Keep the order snapshot on the brand-resolved normal price (locked or
+    // unlocked) so invoices show the exact strike-through the customer saw in
+    // the cart — including the per-unit field, so a stale product figure can
+    // never ride along in the persisted order.
+    if (normalPerPiece !== ownNormalPerPiece) {
+      item.normal_per_piece = round2(normalPerPiece)
+      item.normal_unit_price = round2(normalPerPiece * Number(item.unit_pieces ?? 1))
+      item.variant_price_per_unit = round2(normalPerPiece)
+    }
+
+    // Bulk applies ONLY when unlocked and the bulk rate is below the resolved
+    // normal per-piece price (for piece-priced lines the resolved normal is
+    // the brand standard, which is always above the bulk rate for a valid
+    // rule — so every piece-priced line of an unlocked brand gets the rate).
+    const useBulk = unlocked && bulkPerPiece > 0 && normalPerPiece > 0 && bulkPerPiece < normalPerPiece
 
     if (useBulk) {
       item.unit_price = round2(bulkPerPiece * Number(item.unit_pieces ?? 1))

@@ -138,7 +138,9 @@ describe('lineBulkPricing', () => {
     expect(out).toMatchObject({ unitPrice: 4500, chargedPerPiece: 45, useBulk: false, linePieces: 100 })
   })
 
-  it('never applies bulk when it is NOT below the line normal per-piece price', () => {
+  it('defensive fallback: without a brand standardPrice the line own per-piece price is the normal (and bulk above it is never applied)', () => {
+    // buildBrandBulk always supplies a valid standardPrice for rule-brands, so
+    // this only guards the defensive path where the brand state lacks one.
     const cheap = { ...pack100, variant_price_per_unit: 40, selected_price: 4000, variant_total_price: 4000 }
     const out = lineBulkPricing(cheap, { unlocked: true, bulkUnitPrice: 42 })
     expect(out).toMatchObject({ unitPrice: 4000, chargedPerPiece: 40, useBulk: false })
@@ -166,6 +168,53 @@ describe('lineBulkPricing', () => {
     const out = lineBulkPricing(ml, { unlocked: true, bulkUnitPrice: 42 })
     expect(out).toMatchObject({ unitPrice: 42, chargedPerPiece: 42, linePieces: 2 })
     expect(out.unitPrice * 2).toBe(84)
+  })
+
+  // --- The BRAND rule is the source of truth for piece-priced lines --------
+  // The product's own per-piece figure (₹45) is stale — the admin's brand
+  // rule (standard ₹50 / bulk ₹47) is authoritative for EVERY piece-priced
+  // line of that brand (the AREES cart bug).
+  const staleLine = {
+    ...pack100,
+    variant_price_per_unit: 45,
+    variant_total_price: 4500,
+    selected_price: 4500,
+  }
+
+  it('uses the BRAND standard as the normal price for piece-priced lines (never the stale line price)', () => {
+    const out = lineBulkPricing(staleLine, { unlocked: false, bulkUnitPrice: 47, standardPrice: 50 })
+    expect(out).toMatchObject({
+      unitPrice: 5000,
+      normalUnitPrice: 5000,
+      chargedPerPiece: 50,
+      useBulk: false,
+      linePieces: 100,
+      isPiecePriced: true,
+    })
+  })
+
+  it('applies the brand bulk rate to every piece-priced line once the brand unlocks, even above the line own price', () => {
+    const out = lineBulkPricing(staleLine, { unlocked: true, bulkUnitPrice: 47, standardPrice: 50 })
+    expect(out).toMatchObject({
+      unitPrice: 4700,
+      normalUnitPrice: 5000,
+      chargedPerPiece: 47,
+      useBulk: true,
+      linePieces: 100,
+      isPiecePriced: true,
+    })
+  })
+
+  it('keeps ML/Gram lines on their own per-unit price even when the brand rule is present', () => {
+    const ml = { variant_id: 'v1', quantity_value: 10, quantity_unit: 'ML', quantity: 2, variant_total_price: 50, selected_price: 50 }
+    const out = lineBulkPricing(ml, { unlocked: false, bulkUnitPrice: 47, standardPrice: 50 })
+    expect(out).toMatchObject({ unitPrice: 50, chargedPerPiece: 50, useBulk: false, isPiecePriced: false })
+  })
+
+  it('keeps variant-less lines on their own product price (brand rule never reprices packs)', () => {
+    const plain = { quantity: 5, price: 45, selected_price: 45 }
+    const out = lineBulkPricing(plain, { unlocked: true, bulkUnitPrice: 47, standardPrice: 50 })
+    expect(out).toMatchObject({ unitPrice: 45, chargedPerPiece: 45, useBulk: false, isPiecePriced: false })
   })
 })
 

@@ -257,6 +257,11 @@ export function CartProvider({ children }) {
         normal_unit_price: pricing ? pricing.normalUnitPrice : baseUnit,
         bulk_active: pricing ? pricing.useBulk : false,
         bulk_per_unit: pricing && pricing.useBulk ? pricing.chargedPerPiece : null,
+        // The RESOLVED per-piece price for piece-priced lines of a brand with
+        // a rule: the brand's standard price when locked, its bulk price when
+        // unlocked. Never the line's own stored (possibly stale) per-piece
+        // figure — the cart/checkout per-unit displays must all show this.
+        normal_per_piece: pricing && pricing.isPiecePriced ? pricing.chargedPerPiece : null,
         bulk_min_qty: bulk ? bulk.bulkMinQty : null,
         brand_total_pieces: bulk ? bulk.totalPieces : null,
         brand_name: (i.brand_id != null ? brandNameById.get(String(i.brand_id)) : undefined) ?? i.brand_name ?? null,

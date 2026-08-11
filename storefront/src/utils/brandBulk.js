@@ -22,9 +22,13 @@
 //   - "Pieces"-unit variants: quantity_value × quantity
 //   - variant-less products / other units: quantity (each unit counts as one)
 //
-// When a brand's total pieces reach bulk_min_qty, EVERY line of that brand is
-// charged per piece at the brand's bulk_unit_price — but only when that is
-// cheaper than the line's own normal per-piece price.
+// When a brand's total pieces reach bulk_min_qty, EVERY piece-priced line of
+// that brand is charged per piece at the brand's bulk_unit_price. The brand's
+// standard_price is the authoritative normal per-piece price for those lines
+// (product/variant rows may carry stale figures) and bulk_unit_price the
+// discounted rate once unlocked — so eligibility is brand-wide, never
+// per-product, and the resolved price is identical for every line of the
+// brand.
 
 // Round monetary values to 2 decimals (matches the orders table numeric(10,2)).
 export function round2(n) {
@@ -112,20 +116,50 @@ export function lineNormalPerPiece(item) {
   return Number.isFinite(p) ? p : 0
 }
 
+// True when a line is PRICED PER PIECE against the brand's configured
+// prices: Pieces-unit variants and exact piece-count lines. ML/Gram variant
+// lines are pack-priced (their own total is the per-unit price) and
+// variant-less products keep their product price — the brand rule never
+// overrides those, so a 150 ML bottle can never be repriced at the brand's
+// per-piece rate.
+function isPiecePricedLine(item) {
+  if (item == null) return false
+  if (item.variant_id == null) return false
+  return String(item.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
+}
+
 // Effective per-line pricing for one item given its brand's bulk state.
+//
+// The BRAND rule is the source of truth for the brand's piece-priced lines:
+// the normal per-piece price is the brand's configured standard_price (never
+// the line's own stored figure, which can be stale — e.g. product variants
+// still priced at ₹45 while the admin's brand rule says ₹50), and once the
+// brand unlocks, EVERY piece-priced line of that brand is charged per piece
+// at the brand's bulk_unit_price. ML/Gram and variant-less lines keep their
+// own pricing.
+//
 // Returns:
 //   {
 //     unitPrice,        // amount per ONE unit of the line (bulk-aware) —
 //                       // line total stays unit_price × quantity
-//     normalUnitPrice,  // the same figure without bulk
+//     normalUnitPrice,  // the same figure without bulk (strike-through)
 //     chargedPerPiece,  // per-piece price actually charged
 //     useBulk,          // bulk rate applied to this line
 //     linePieces,       // total pieces this line represents
+//     isPiecePriced,    // line priced per piece from the brand rule
 //   }
 export function lineBulkPricing(item, bulkState) {
   const quantity = Math.max(1, Math.floor(Number(item?.quantity ?? item?.qty ?? 1)))
   const pieces = linePieces(item)
-  const normalPerPiece = lineNormalPerPiece(item)
+  const isPiecePriced = isPiecePricedLine(item)
+  const ownNormalPerPiece = lineNormalPerPiece(item)
+  // The brand's standard price is authoritative for piece-priced lines of a
+  // brand that has a valid rule. Without a standard (defensive fallback) the
+  // line's own per-piece price is used.
+  const standardPerPiece = Number(bulkState?.standardPrice)
+  const brandStandardIsValid = Number.isFinite(standardPerPiece) && standardPerPiece > 0
+  const normalPerPiece =
+    isPiecePriced && brandStandardIsValid ? standardPerPiece : ownNormalPerPiece
   const bulkPerPiece = Number(bulkState?.bulkUnitPrice)
   const useBulk = Boolean(
     bulkState?.unlocked === true &&
@@ -140,6 +174,7 @@ export function lineBulkPricing(item, bulkState) {
     chargedPerPiece,
     useBulk,
     linePieces: pieces,
+    isPiecePriced,
   }
 }
 

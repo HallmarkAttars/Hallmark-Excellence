@@ -223,13 +223,63 @@ describe('applyBrandBulk', () => {
     expect(out[1].bulk_active).toBeUndefined()
   })
 
-  it('does not apply bulk when the bulk rate is NOT below the line normal per-piece price', () => {
-    // Bulk ₹42/piece but this line's normal per-piece is only ₹40 — the
-    // bulk rate is not a genuine discount, so the normal price stays.
+  it('applies the brand bulk rate once unlocked even when the line own per-piece price is below it (brand rule is authoritative)', () => {
+    // The line's own normal_per_piece (₹40) is stale — the brand's standard
+    // (₹45) is the authoritative normal for piece-priced lines, so the ₹42
+    // bulk rate applies on unlock.
     const items = [makeItem({ quantity: 1, unit_pieces: 70, pieces: 70, normal_per_piece: 40, unit_price: 2800, subtotal: 2800 })]
     const { items: out } = applyBrandBulk(items, { 'brand-arees': AREES })
 
-    expect(out[0]).toMatchObject({ unit_price: 2800, subtotal: 2800 })
+    expect(out[0]).toMatchObject({
+      unit_price: 2940,
+      subtotal: 2940,
+      bulk_active: true,
+      bulk_per_unit: 42,
+      normal_per_piece: 45,
+      normal_unit_price: 3150,
+    })
+  })
+
+  it('resolves the BRAND standard into the snapshot for locked piece-priced lines (never the stale line price)', () => {
+    // 60 < 70 → locked. The snapshot normal per piece must be the brand's
+    // standard (₹45), not the line's own ₹40.
+    const items = [makeItem({ quantity: 1, unit_pieces: 60, pieces: 60, normal_per_piece: 40, unit_price: 2400, subtotal: 2400 })]
+    const { items: out } = applyBrandBulk(items, { 'brand-arees': AREES })
+
+    expect(out[0]).toMatchObject({ unit_price: 2400, subtotal: 2400, normal_per_piece: 45, normal_unit_price: 2700 })
+    expect(out[0].bulk_active).toBeUndefined()
+  })
+
+  it('writes the brand-resolved per-piece price into variant_price_per_unit so snapshots never carry a stale figure', () => {
+    const highStd = { ...AREES, standard_price: 50, bulk_unit_price: 47 }
+    const items = [makeItem({ quantity: 1, unit_pieces: 70, pieces: 70, normal_per_piece: 45, unit_price: 3150, subtotal: 3150, variant_price_per_unit: 45 })]
+    const { items: out } = applyBrandBulk(items, { 'brand-arees': highStd })
+
+    expect(out[0]).toMatchObject({
+      unit_price: 3290,
+      subtotal: 3290,
+      bulk_active: true,
+      normal_per_piece: 50,
+      variant_price_per_unit: 50,
+    })
+  })
+
+  it('never re-prices ML/Gram or variant-less lines from the brand rule', () => {
+    const ml = makeItem({
+      quantity: 1,
+      quantity_value: 150,
+      quantity_unit: 'ML',
+      unit_pieces: 1,
+      pieces: 1,
+      normal_per_piece: 6300,
+      unit_price: 6300,
+      subtotal: 6300,
+      normal_unit_price: 6300,
+    })
+    const { items: out } = applyBrandBulk([ml], { 'brand-arees': AREES })
+    // 1 piece < 70 → locked, and even the normal reference must stay the
+    // line's own price (₹6,300), never the brand standard.
+    expect(out[0]).toMatchObject({ unit_price: 6300, subtotal: 6300, normal_per_piece: 6300 })
     expect(out[0].bulk_active).toBeUndefined()
   })
 

@@ -82,9 +82,15 @@ function OrderSummaryItem({ item }) {
     (item.quantity_value != null && item.quantity_unit
       ? `${item.quantity_value} ${item.quantity_unit}`
       : '')
-  // Bulk-unlocked lines display the brand's bulk per-piece rate.
+  // Bulk-unlocked lines display the brand's bulk per-piece rate; other
+  // piece-priced brand lines show the RESOLVED normal per-piece price (the
+  // brand's standard price), never the line's own stale stored figure.
   const isBulkLine = item.bulk_active === true
-  const perUnit = isBulkLine ? item.bulk_per_unit : item.variant_price_per_unit
+  const perUnit = isBulkLine
+    ? item.bulk_per_unit
+    : (item.normal_per_piece != null
+        ? item.normal_per_piece
+        : item.variant_price_per_unit)
   const image = itemImage(item)
 
   return (
@@ -112,11 +118,9 @@ function OrderSummaryItem({ item }) {
           {perUnit != null && Number.isFinite(Number(perUnit)) && (
             <span className={`order-summary-per-unit${isBulkLine ? ' is-bulk' : ''}`}>
               {' '}₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
-              {isBulkLine
-                ? String(item.quantity_unit || '').toLowerCase() === 'pieces'
-                  ? 'piece'
-                  : 'unit'
-                : String(item.quantity_unit || '').toLowerCase()}
+              {String(item.quantity_unit || '').toLowerCase() === 'pieces'
+                ? 'piece'
+                : isBulkLine ? 'unit' : String(item.quantity_unit || '').toLowerCase()}
               {isBulkLine ? ' · bulk' : ''}
             </span>
           )}
