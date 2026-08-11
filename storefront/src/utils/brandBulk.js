@@ -194,6 +194,20 @@ export function buildBrandPieces(items) {
   return map
 }
 
+// Brand total pieces shown on the PRODUCT DETAIL page.
+//
+// The page previews the brand total as cart pieces + the current selection
+// (so the unlock state updates live as the customer changes quantity), BUT
+// once the selection has actually been ADDED to the cart the cart already
+// includes those pieces — adding them again would double-count.
+// `selectionAlreadyInCart` must be true exactly when the current selection is
+// already in the cart; then the cart total is the single source of truth.
+export function productPageBrandPieces(cartPieces, selectionPieces, selectionAlreadyInCart) {
+  const cart = Math.max(0, Math.floor(Number(cartPieces) || 0))
+  const selection = Math.max(0, Math.floor(Number(selectionPieces) || 0))
+  return selectionAlreadyInCart === true ? cart : cart + selection
+}
+
 // "1 piece" / "5 pieces" — the singular/plural label used by the bulk
 // messages ("Add 1 more AREES piece to unlock bulk pricing").
 export function pieceWord(n) {

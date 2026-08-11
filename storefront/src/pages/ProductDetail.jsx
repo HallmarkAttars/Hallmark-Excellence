@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { lineNormalPerPiece, pieceBandRange, pieceWord } from '../utils/brandBulk'
+import { lineNormalPerPiece, pieceBandRange, pieceWord, productPageBrandPieces } from '../utils/brandBulk'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -32,6 +32,12 @@ export default function ProductDetail() {
   const [adding, setAdding] = useState(false)
   // How many units/packs of the SELECTED VARIANT the customer wants.
   const [qty, setQty] = useState(1)
+  // True once the CURRENT selection (variant + quantity) has actually been
+  // added to the cart. While false, the bulk preview shows cart + selection;
+  // once true, the cart already contains those pieces and the preview must
+  // NOT add them again (the double-counting bug). Reset on every selection
+  // change; set after a successful add.
+  const [selectionInCart, setSelectionInCart] = useState(false)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
 
@@ -51,6 +57,7 @@ export default function ProductDetail() {
     setSelectedVariant(null)
     setVariantHint(false)
     setQty(1)
+    setSelectionInCart(false)
     getProductById(id)
       .then((p) => {
         setProduct(p)
@@ -155,6 +162,8 @@ export default function ProductDetail() {
   const handleVariantSelect = (v) => {
     setSelectedVariant(v)
     setVariantHint(false)
+    // A new variant is a NEW selection — it has not been added to the cart.
+    setSelectionInCart(false)
     if (
       isBrandProduct &&
       String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
@@ -177,7 +186,13 @@ export default function ProductDetail() {
             ? Math.floor(Number(selectedVariant.quantity_value) || 0) * qty
             : qty
           : qty
-  const totalBrandPieces = isBrandBulkProduct ? cartBrandPieces + selectionPieces : 0
+  // The brand total shown on the page: the cart's REAL brand pieces plus the
+  // current selection — but ONLY while that selection has not yet been added
+  // to the cart (once added, the cart total already includes it; adding it
+  // again would double-count, e.g. 60/90 becoming 120/90 after Add to Cart).
+  const totalBrandPieces = isBrandBulkProduct
+    ? productPageBrandPieces(cartBrandPieces, selectionPieces, selectionInCart)
+    : 0
   const bulkMinQty = isBrandBulkProduct ? Math.floor(Number(brandRule.bulk_min_qty)) : 0
   const brandUnlocked = isBrandBulkProduct && totalBrandPieces >= bulkMinQty
   const brandRemaining = isBrandBulkProduct ? Math.max(0, bulkMinQty - totalBrandPieces) : 0
@@ -222,7 +237,11 @@ export default function ProductDetail() {
 
   // One-piece-at-a-time stepping within the selected band (bulk-brand Pieces
   // variants); the existing ±1 behaviour everywhere else.
+  // Changing the quantity changes the selection — it is no longer the exact
+  // line already in the cart, so the preview must count it again.
+  const markSelectionChanged = () => setSelectionInCart(false)
   const handleDecrease = () => {
+    markSelectionChanged()
     if (pieceMode) {
       setQty((q) => Math.max(pieceMin, q - 1))
     } else {
@@ -230,6 +249,7 @@ export default function ProductDetail() {
     }
   }
   const handleIncrease = () => {
+    markSelectionChanged()
     if (pieceMode) {
       if (pieceMax != null && qty >= pieceMax) {
         // The band's max is reached — the customer must select the next band.
@@ -286,6 +306,9 @@ export default function ProductDetail() {
         variantInfo,
         pieces
       )
+      // The selection is now IN the cart — the brand total must come from the
+      // updated cart alone, never selection + cart again.
+      setSelectionInCart(true)
       addTimer.current = setTimeout(() => {
         setAdding(false)
         setAdded(true)

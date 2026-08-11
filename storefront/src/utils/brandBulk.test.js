@@ -15,6 +15,7 @@ import {
   buildBrandPieces,
   pieceBandRange,
   pieceWord,
+  productPageBrandPieces,
 } from './brandBulk'
 
 const AREES = {
@@ -223,6 +224,38 @@ describe('buildBrandPieces', () => {
       { brand_id: 'brand-dahab', quantity: 10 },
     ]
     expect(buildBrandPieces(items)).toEqual({ 'brand-arees': 70, 'brand-dahab': 10 })
+  })
+})
+
+describe('productPageBrandPieces (no double-counting)', () => {
+  it('previews cart + selection while the selection is NOT yet in the cart', () => {
+    expect(productPageBrandPieces(0, 60, false)).toBe(60) // TEST 1 before add
+    expect(productPageBrandPieces(30, 60, false)).toBe(90) // TEST 2 before add
+    expect(productPageBrandPieces(50, 20, false)).toBe(70) // TEST 3 before add
+    expect(productPageBrandPieces(90, 60, false)).toBe(150) // TEST 5 preview
+  })
+
+  it('uses ONLY the cart total once the selection is in the cart (never adds it again)', () => {
+    expect(productPageBrandPieces(60, 60, true)).toBe(60) // TEST 1 after add — NOT 120
+    expect(productPageBrandPieces(90, 60, true)).toBe(90) // TEST 2 after add — NOT 150
+    expect(productPageBrandPieces(70, 20, true)).toBe(70) // TEST 3 after add — NOT 90
+    expect(productPageBrandPieces(90, 30, true)).toBe(90) // TEST 4 after add — bulk active
+    expect(productPageBrandPieces(150, 60, true)).toBe(150) // TEST 5 after add — NOT 210
+  })
+
+  it('uses ONLY the cart total once the selection is in the cart (never adds it again)', () => {
+    expect(productPageBrandPieces(60, 60, true)).toBe(60) // TEST 1 after add — NOT 120
+    expect(productPageBrandPieces(90, 60, true)).toBe(90) // TEST 2 after add — NOT 150
+    expect(productPageBrandPieces(70, 20, true)).toBe(70) // TEST 3 after add — NOT 90
+    expect(productPageBrandPieces(90, 30, true)).toBe(90) // TEST 4 after add — bulk active
+    expect(productPageBrandPieces(150, 60, true)).toBe(150) // TEST 5 after add — NOT 210
+  })
+
+  it('defends against missing/garbage input', () => {
+    expect(productPageBrandPieces(undefined, undefined, false)).toBe(0)
+    expect(productPageBrandPieces(null, 'abc', false)).toBe(0)
+    expect(productPageBrandPieces('30', '60', false)).toBe(90)
+    expect(productPageBrandPieces(-5, 60, false)).toBe(60)
   })
 })
 
