@@ -110,3 +110,175 @@
   /* Compact card container instead of the oversized white table card */
   .products-page .card { padding: 12px; }
 }
+
+/* ============================================================
+   Products — search + category filter toolbar (mirrors Orders)
+   ============================================================ */
+.products-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.products-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.products-search-icon {
+  position: absolute;
+  left: 14px;
+  display: inline-flex;
+  color: rgba(20, 17, 13, 0.4);
+  pointer-events: none;
+}
+.products-search-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 44px 0 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  font-family: var(--font-body);
+  font-size: var(--admin-text-base);
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.products-search-input::placeholder { color: rgba(20, 17, 13, 0.4); }
+.products-search-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.16);
+  background: var(--white);
+}
+.products-search-clear {
+  position: absolute;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(20, 17, 13, 0.45);
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.products-search-clear:hover { background: var(--cream-deep); color: var(--ink); }
+
+.products-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.products-filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+}
+.products-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 46px;
+  min-width: 160px;
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--cream);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23504a3f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.products-filter-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.16);
+}
+.products-filter-select option { font-family: var(--font-body); font-size: 13px; }
+
+/* Result count + Clear Filters shortcut */
+.products-count {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(20, 17, 13, 0.5);
+}
+.products-count::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: 1px;
+}
+.products-clear-filters {
+  margin-left: 14px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.18s ease;
+}
+.products-clear-filters:hover { color: var(--ink); }
+
+/* Filtered empty state */
+.products-empty {
+  text-align: center;
+  padding: 56px 24px;
+}
+.products-empty h3 {
+  font-size: 21px;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.products-empty p {
+  margin: 0 auto 18px;
+  max-width: 420px;
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.55);
+}
+
+/* Responsive — stack the toolbar controls on small screens */
+@media (max-width: 767px) {
+  .products-toolbar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+  .products-filter {
+    justify-content: space-between;
+  }
+  .products-filter-select {
+    flex: 1;
+    min-width: 0;
+  }
+  .products-count {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .products-clear-filters { margin-left: 0; }
+}
