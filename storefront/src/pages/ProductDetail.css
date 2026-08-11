@@ -24,40 +24,242 @@
   }
 }
 
-/* ---------- Gallery: large rounded image on a warm stage ---------- */
-.product-detail-gallery { min-width: 0; }
+/* ============================================================
+   PRODUCT DETAIL — IMAGE / GALLERY
+   Full product image · portrait layout · no cropping
+   ============================================================ */
+
+.product-detail-gallery {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Main product image container */
 .product-detail-main-image {
-  aspect-ratio: 1;
+  width: 100%;
+  aspect-ratio: 4 / 5;
   border-radius: 20px;
   overflow: hidden;
   background: var(--stage);
   border: 1px solid var(--line-soft);
   box-shadow: var(--shadow-soft);
+
+  /* Keep the image visually centered */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Main product image */
 .product-detail-main-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* the full product is always visible — never cropped */
+  display: block;
+
+  /*
+   * IMPORTANT:
+   * contain = show the complete product image
+   * without cropping or stretching.
+   */
+  object-fit: contain;
+  object-position: center center;
 }
+
+/* Product thumbnails */
 .product-detail-thumbs {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-top: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.product-detail-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thumbnail */
 .product-detail-thumb {
   width: 62px;
   height: 62px;
+  min-width: 62px;
   padding: 0;
+
   border: 2px solid transparent;
   border-radius: 12px;
+
   overflow: hidden;
   background: var(--stage);
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-.product-detail-thumb.is-active { border-color: var(--gold); }
-.product-detail-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Thumbnail hover */
+.product-detail-thumb:hover {
+  transform: translateY(-2px);
+}
+
+/* Active thumbnail */
+.product-detail-thumb.is-active {
+  border-color: var(--gold);
+  box-shadow: 0 3px 10px rgba(184, 137, 56, 0.18);
+}
+
+/* Thumbnail image */
+.product-detail-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+
+  object-fit: cover;
+  object-position: center;
+}
+
+
+/* ============================================================
+   DESKTOP
+   ============================================================ */
+
+@media (min-width: 900px) {
+
+  .product-detail-main-image {
+    /*
+     * Portrait ratio gives the product image more vertical space
+     * instead of forcing it into a square.
+     */
+    aspect-ratio: 4 / 5;
+
+    min-height: 560px;
+    max-height: 760px;
+
+    border-radius: 20px;
+  }
+
+  .product-detail-main-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .product-detail-thumbs {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .product-detail-thumb {
+    width: 68px;
+    height: 68px;
+    min-width: 68px;
+  }
+}
+
+
+/* ============================================================
+   LARGE DESKTOP
+   ============================================================ */
+
+@media (min-width: 1200px) {
+
+  .product-detail-main-image {
+    aspect-ratio: 4 / 5;
+    min-height: 620px;
+    max-height: 800px;
+  }
+
+  .product-detail-thumb {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+  }
+}
+
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (min-width: 768px) and (max-width: 899px) {
+
+  .product-detail-main-image {
+    aspect-ratio: 4 / 5;
+    border-radius: 18px;
+  }
+
+  .product-detail-thumb {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+  }
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 767px) {
+
+  .product-detail-gallery {
+    width: 100%;
+  }
+
+  .product-detail-main-image {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+
+    min-height: 0;
+    max-height: none;
+
+    border-radius: 14px;
+  }
+
+  .product-detail-main-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .product-detail-thumbs {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .product-detail-thumb {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    border-radius: 10px;
+  }
+}
+
+
+/* ============================================================
+   VERY SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 400px) {
+
+  .product-detail-main-image {
+    aspect-ratio: 4 / 5;
+    border-radius: 12px;
+  }
+
+  .product-detail-thumb {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+  }
+}
 /* ---------- Information column ---------- */
 .product-detail-info {
   display: flex;
