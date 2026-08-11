@@ -45,9 +45,10 @@ export const INVOICE = {
 // --------------------------------------------------------------------------
 // NAVIGATION — header nav (desktop + mobile drawer) and footer "Company".
 // `end: true` keeps the Home link highlighted only on the exact "/" route.
-// Brand links are NOT listed here — they live in BRAND_LINKS below and are
-// grouped under a single "Brands" dropdown in the header to keep the nav
-// line clean.
+// Brand links are NOT listed here — the header "Brands" dropdown (desktop
+// and mobile) and the footer Shop column render the LIVE brand list fetched
+// from GET /api/brands (name, slug, active state, display position all come
+// from the database), so an Admin edit shows up everywhere instantly.
 // --------------------------------------------------------------------------
 export const NAV_LINKS = [
   { to: '/', label: 'Home', end: true },
@@ -56,19 +57,6 @@ export const NAV_LINKS = [
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
   { to: '/track-order', label: 'Track Order' },
-]
-
-// --------------------------------------------------------------------------
-// BRAND LINKS — the five storefront brands, grouped under "Brands" in the
-// header dropdown (desktop) and the expandable Brands section (mobile).
-// Order here drives the dropdown/menu order.
-// --------------------------------------------------------------------------
-export const BRAND_LINKS = [
-  { to: '/brand/arees', label: 'Arees' },
-  { to: '/brand/dahab', label: 'Dahab' },
-  { to: '/brand/misk-al-arab', label: 'Misk Al Arab' },
-  { to: '/brand/oud-al-haramain', label: 'Oud Al Haramain' },
-  { to: '/brand/amber-oud', label: 'Amber Oud' },
 ]
 
 // --------------------------------------------------------------------------
@@ -243,14 +231,11 @@ export const FOOTER = {
   columns: [
     {
       heading: 'Shop',
+      // Brand links are appended dynamically by Footer.jsx from the live
+      // brand list (see Navbar comment above) — nothing hard-coded here.
       links: [
         { label: 'All Attars', to: '/shop' },
         { label: 'Categories', to: '/categories' },
-        { label: 'Arees', to: '/brand/arees' },
-        { label: 'Dahab', to: '/brand/dahab' },
-        { label: 'Misk Al Arab', to: '/brand/misk-al-arab' },
-        { label: 'Oud Al Haramain', to: '/brand/oud-al-haramain' },
-        { label: 'Amber Oud', to: '/brand/amber-oud' },
       ],
     },
     {

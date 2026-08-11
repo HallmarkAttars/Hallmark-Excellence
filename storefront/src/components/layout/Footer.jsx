@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import { useCart } from '../../context/CartContext'
 import { FOOTER, BUSINESS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
+import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import Reveal from '../../animations/Reveal'
 import './Footer.css'
 
@@ -45,6 +47,13 @@ const SOCIAL_ICONS = {
 }
 
 export default function Footer() {
+  // Live brand list for the Shop column — shared from the CartContext fetch
+  // of /api/brands (same state as the header dropdown), so Admin renames and
+  // positions show up here too. A failure simply leaves the column with its
+  // static links (All Attars / Categories).
+  const { brands } = useCart()
+  const brandLinks = sortBrandsByDisplayOrder(brands)
+
   return (
     <footer className="footer">
       <div className="footer-inner">
@@ -71,6 +80,14 @@ export default function Footer() {
                   {link.label}
                 </Link>
               ))}
+              {/* Shop column — the brand links come from the LIVE brand list
+                  (active brands, admin-ordered), never hard-coded copy. */}
+              {column.heading === 'Shop' &&
+                brandLinks.map((brand) => (
+                  <Link key={brand.slug} to={`/brand/${brand.slug}`}>
+                    {brand.name}
+                  </Link>
+                ))}
             </nav>
           ))}
 

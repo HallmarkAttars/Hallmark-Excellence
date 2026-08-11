@@ -1,8 +1,9 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
-import { NAV_LINKS, BRAND_LINKS } from '../../data/content'
+import { NAV_LINKS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
+import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import SearchOverlay from './SearchOverlay'
 import './Navbar.css'
 
@@ -50,7 +51,12 @@ export default function Navbar() {
   const [dropOpen, setDropOpen] = useState(false)
   const [mobileBrandsOpen, setMobileBrandsOpen] = useState(false)
   const dropRef = useRef(null)
-  const { itemCount } = useCart()
+  // The live brand list comes from the shared CartContext fetch of
+  // /api/brands (active brands, admin-controlled position) — the same state
+  // that drives the footer, cart and bulk pricing, so an Admin rename shows
+  // up everywhere and no brand name is ever hard-coded in the header.
+  const { itemCount, brands, brandsLoaded } = useCart()
+  const sortedBrands = useMemo(() => sortBrandsByDisplayOrder(brands), [brands])
   const location = useLocation()
 
   // Any brand page highlights the "Brands" dropdown trigger.
@@ -150,16 +156,22 @@ export default function Navbar() {
                       <span className="navbar-drop-caret"><ChevronIcon /></span>
                     </button>
                     <div className={`navbar-drop-menu ${dropOpen ? 'is-open' : ''}`}>
-                      {BRAND_LINKS.map((brand) => (
+                      {sortedBrands.map((brand) => (
                         <NavLink
-                          key={brand.to}
-                          to={brand.to}
+                          key={brand.slug}
+                          to={`/brand/${brand.slug}`}
                           className={({ isActive }) => `navbar-drop-link ${isActive ? 'is-active' : ''}`}
                           onClick={() => setDropOpen(false)}
                         >
-                          {brand.label}
+                          {brand.name}
                         </NavLink>
                       ))}
+                      {!brandsLoaded && sortedBrands.length === 0 && (
+                        <span className="navbar-drop-empty">Loading brands…</span>
+                      )}
+                      {brandsLoaded && sortedBrands.length === 0 && (
+                        <span className="navbar-drop-empty">No brands yet</span>
+                      )}
                     </div>
                   </div>
                 )}
@@ -246,16 +258,22 @@ export default function Navbar() {
                     <span className="navbar-drawer-caret"><ChevronIcon /></span>
                   </button>
                   <div className={`navbar-drawer-sublinks ${mobileBrandsOpen ? 'is-open' : ''}`}>
-                    {BRAND_LINKS.map((brand) => (
+                    {sortedBrands.map((brand) => (
                       <NavLink
-                        key={brand.to}
-                        to={brand.to}
+                        key={brand.slug}
+                        to={`/brand/${brand.slug}`}
                         className={({ isActive }) => `navbar-drawer-sublink ${isActive ? 'is-active' : ''}`}
                         onClick={() => setMenuOpen(false)}
                       >
-                        {brand.label}
+                        {brand.name}
                       </NavLink>
                     ))}
+                    {!brandsLoaded && sortedBrands.length === 0 && (
+                      <span className="navbar-drawer-sublink navbar-drawer-empty">Loading brands…</span>
+                    )}
+                    {brandsLoaded && sortedBrands.length === 0 && (
+                      <span className="navbar-drawer-sublink navbar-drawer-empty">No brands yet</span>
+                    )}
                   </div>
                 </div>
               )}

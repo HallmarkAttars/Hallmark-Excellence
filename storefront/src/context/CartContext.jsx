@@ -70,17 +70,24 @@ export function CartProvider({ children }) {
   )
 
   // Brand rows (active brands only, from the public endpoint) — the single
-  // source of truth for brand-level bulk pricing rules. Loaded once at app
-  // start; a fetch failure simply leaves bulk pricing off.
+  // source of truth for brand-level bulk pricing rules AND the live brand
+  // names shown in the header dropdown, footer and cart. Loaded once at app
+  // start; a fetch failure simply leaves bulk pricing off and the brand UI
+  // empty until the next load.
   const [brands, setBrands] = useState([])
+  const [brandsLoaded, setBrandsLoaded] = useState(false)
   useEffect(() => {
     let alive = true
     getBrands()
       .then((list) => {
-        if (alive) setBrands(Array.isArray(list) ? list : [])
+        if (alive) {
+          setBrands(Array.isArray(list) ? list : [])
+          setBrandsLoaded(true)
+        }
       })
       .catch(() => {
         // No bulk pricing without brand data — the rest of the cart works.
+        if (alive) setBrandsLoaded(true)
       })
     return () => {
       alive = false
@@ -235,6 +242,11 @@ export function CartProvider({ children }) {
   // piece instead of their own normal rate (bulk never raises a price) — the
   // same math the server applies at checkout.
   const { pricedItems, total } = useMemo(() => {
+    // Live brand names by id (from the same /api/brands fetch that drives the
+    // bulk rules) — the cart/checkout show the CURRENT database name even for
+    // lines added before an Admin rename. Display-only: stored lines keep
+    // their snapshot; only the derived view is resolved.
+    const brandNameById = new Map((brands || []).map((b) => [String(b.id), b.name]))
     const resolved = items.map((i) => {
       const baseUnit = lineUnitPrice(i)
       const bulk = i.brand_id != null ? brandBulk[String(i.brand_id)] || null : null
@@ -247,14 +259,14 @@ export function CartProvider({ children }) {
         bulk_per_unit: pricing && pricing.useBulk ? pricing.chargedPerPiece : null,
         bulk_min_qty: bulk ? bulk.bulkMinQty : null,
         brand_total_pieces: bulk ? bulk.totalPieces : null,
-        brand_name: i.brand_name ?? null,
+        brand_name: (i.brand_id != null ? brandNameById.get(String(i.brand_id)) : undefined) ?? i.brand_name ?? null,
         // Exact piece count — explicit for piece-based lines, derived for
         // pack-based brand lines (size × quantity).
         ...(pricing ? { pieces: pricing.linePieces } : {}),
       }
     })
     return { pricedItems: resolved, total: cartTotal(resolved) }
-  }, [items, brandBulk])
+  }, [items, brandBulk, brands])
 
   const value = {
     items,
@@ -268,8 +280,11 @@ export function CartProvider({ children }) {
     clearCart,
     itemCount,
     total,
-    // Brand bulk context for the cart, shop, brand and product pages.
+    // Brand bulk context for the cart, shop, brand and product pages — plus
+    // the shared live brand list used by the header/footer (one fetch, one
+    // source of truth for names, active state and display position).
     brands,
+    brandsLoaded,
     bulkRules,
     brandBulk,
     brandPieces,

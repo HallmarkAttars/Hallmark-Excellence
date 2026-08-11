@@ -15,11 +15,7 @@ import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
 import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getCategories, getBrands, getProducts } from '../services/mockApi'
 import { HOME_BRANDS } from '../data/content'
-
-// Admin-controlled brand order (brands.display_order, lowest first). Brands
-// without a position sort last — fallback slug order keeps Arees/Dahab first
-// until the database is fully configured.
-const FALLBACK_ORDER = ['arees', 'dahab', 'misk-al-arab', 'oud-al-haramain', 'amber-oud']
+import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -43,20 +39,12 @@ export default function Home() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  // Active brands only, sorted by the admin's display position. Featured
+  // Active brands only, sorted by the admin's display position (shared rule
+  // with the header dropdown / footer — see utils/brandOrder.js). Featured
   // (large cards) come first, the rest render as compact cards below. If no
   // brand has a display_type yet, the first two act as featured so the section
   // keeps its premium look pre-configuration.
-  const orderedBrands = brands
-    .filter((b) => b.is_active !== false)
-    .sort((a, b) => {
-      const ao = a.display_order ?? Number.MAX_SAFE_INTEGER
-      const bo = b.display_order ?? Number.MAX_SAFE_INTEGER
-      if (ao !== bo) return ao - bo
-      const ia = FALLBACK_ORDER.indexOf(a.slug)
-      const ib = FALLBACK_ORDER.indexOf(b.slug)
-      return (ia === -1 ? FALLBACK_ORDER.length : ia) - (ib === -1 ? FALLBACK_ORDER.length : ib)
-    })
+  const orderedBrands = sortBrandsByDisplayOrder(brands)
   const featuredBrands = orderedBrands.filter((b) => b.display_type === 'featured')
   const secondaryBrands = orderedBrands.filter((b) => b.display_type !== 'featured')
   const featured =

@@ -130,11 +130,24 @@
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--charcoal-soft);
-    white-space: nowrap;
+    /* Long (renamed) brand names wrap inside the panel instead of stretching
+       it or overflowing the viewport. */
+    white-space: normal;
+    overflow-wrap: anywhere;
     transition: background-color 0.18s ease, color 0.18s ease;
   }
   .navbar-drop-link:hover,
   .navbar-drop-link.is-active { background: var(--cream-deep); color: var(--gold-deep); }
+
+  /* Placeholder shown while the live brand list is empty (load failed). */
+  .navbar-drop-empty {
+    display: block;
+    padding: 11px 14px;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    color: rgba(20, 17, 13, 0.45);
+  }
 }
 
 /* Mobile header is compact (64–72px), desktop uses --header-h (76–88px) */
@@ -333,3 +346,9 @@
 }
 .navbar-drawer-sublink:hover,
 .navbar-drawer-sublink.is-active { color: var(--gold-deep); }
+
+/* Placeholder shown while the live brand list is empty (load failed). */
+.navbar-drawer-empty {
+  color: rgba(20, 17, 13, 0.45);
+  pointer-events: none;
+}
