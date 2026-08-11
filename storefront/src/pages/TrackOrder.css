@@ -9,6 +9,9 @@
   padding: 0 16px 88px;
   box-sizing: border-box;
   min-width: 0;
+  /* Success green for the completed/active "Order Placed" timeline step —
+     page-scoped token (no global design-system green exists). */
+  --success-green: #2E7D32;
 }
 @media (min-width: 768px) {
   .track-layout { padding: 0 24px 104px; }
@@ -307,6 +310,34 @@
   }
   .track-step:last-child::after { display: none; }
   .track-step-label { white-space: normal; }
+}
+
+/* ---------- Completed/active "Order Placed" step is GREEN ----------
+   When the Order Placed step is the current step (Pending order) or already
+   completed (Processing / Shipped / Delivered orders), the circle, the inner
+   filled dot and the connector leading into the next step read as a success
+   green (var(--success-green)). ONLY the first step is affected —
+   Processing, Shipped and Delivered keep their existing gold/neutral states,
+   and the Pending status pill is untouched. Applies on every breakpoint
+   (mobile / tablet / desktop). */
+.track-step:first-child.is-current .track-step-icon,
+.track-step:first-child.is-done .track-step-icon {
+  border-color: var(--success-green);
+}
+.track-step:first-child.is-current .track-step-icon {
+  background: var(--white);
+  box-shadow: 0 0 0 1px var(--success-green);
+}
+.track-step:first-child.is-current .track-step-icon::before {
+  background: var(--success-green);
+}
+.track-step:first-child.is-done .track-step-icon {
+  background: var(--success-green);
+  color: var(--white);
+}
+.track-step:first-child.is-current::after,
+.track-step:first-child.is-done::after {
+  background: var(--success-green);
 }
 
 /* ---------- Order summary items ---------- */
@@ -617,3 +648,59 @@
 .track-result-item { animation: fade-up 0.5s ease-out both; }
 
 /* Reduced motion for the shared checkmark lives in AnimatedCheck.css. */
+
+/* ============================================================
+   Track Order — compact mobile density (spacing ONLY)
+   ------------------------------------------------------------
+   Mobile-first vertical rhythm for the order-details card: tighter section
+   gaps, compact timeline steps, denser product/payment rows and a smaller
+   gap before the full-width action buttons. Purely spacing — no layout
+   redesign, no color/typography changes. Desktop (>= 768px) is untouched.
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Card — closer internal padding, smaller section gap */
+  .track-card {
+    padding: 16px 14px;
+    margin-bottom: 16px;
+  }
+
+  /* Card header — order number / placed date / status badge grouped tighter */
+  .track-card-head {
+    gap: 4px 14px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  /* Section titles (Order Progress / Order Summary) */
+  .track-card-title { margin-bottom: 12px; }
+
+  /* Timeline — compact 38–42px steps, tight connector */
+  .track-steps { margin-bottom: 16px; }
+  .track-step {
+    min-height: 40px;
+    gap: 12px;
+  }
+  .track-step::after { top: 36px; bottom: -6px; }
+
+  /* Order summary rows — smaller image, tighter vertical rhythm */
+  .track-item { padding: 12px 0; }
+  .track-item-img { width: 64px; height: 64px; }
+
+  /* Payment rows — compact 34–38px rows */
+  .track-row { padding: 6px 0; }
+
+  /* Total — modest separation, no large blank gap before it */
+  .track-total {
+    margin-top: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  /* Actions — tighter button group, full-width 44px tap targets */
+  .track-card-actions {
+    margin-top: 14px;
+    padding-top: 12px;
+    gap: 8px;
+  }
+  .track-card-actions .btn { min-height: 44px; }
+}
