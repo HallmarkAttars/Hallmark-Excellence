@@ -112,6 +112,89 @@
   line-height: 1;
 }
 
+/* ---------- Brand bulk banners (above the items) ----------
+   One slim white card per eligible brand. Locked: progress bar + "Add N
+   more … pieces". Unlocked: gold ✓ line + bulk rate. Never between brands. */
+.cart-bulk-banners {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.cart-bulk-banner {
+  padding: 14px 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+}
+.cart-bulk-banner.is-unlocked {
+  border-color: rgba(184, 137, 56, 0.45);
+  background: linear-gradient(180deg, var(--white), #FCF7EC);
+}
+.cart-bulk-banner-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cart-bulk-brand {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+.cart-bulk-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cart-bulk-status.is-unlocked {
+  color: var(--gold-deep);
+}
+.cart-bulk-progress-track {
+  height: 6px;
+  margin: 10px 0;
+  background: var(--cream-deep);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cart-bulk-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.cart-bulk-banner-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+}
+.cart-bulk-prices {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cart-bulk-prices .cart-bulk-arrow {
+  color: var(--gold-deep);
+}
+.cart-bulk-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+}
+
 /* ---------- Items — white premium cards ---------- */
 .cart-items {
   display: flex;
@@ -221,6 +304,30 @@
   font-weight: 500;
   color: #9A9286;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* Struck normal price on bulk-unlocked lines (charged price stays clean). */
+.cart-item-unit.is-struck {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #9A9286;
+  text-decoration: line-through;
+  text-decoration-color: rgba(95, 88, 78, 0.5);
+}
+/* Small gold tag marking a bulk-priced line. */
+.cart-item-bulk-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #F5ECD8;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
   white-space: nowrap;
 }
 .cart-item-remove {

@@ -60,6 +60,9 @@ export default function Brands() {
     <div className="brands-page">
       <div className="page-header">
         <h1>Brands</h1>
+        <Link to="/admin/brands/bulk-pricing" className="btn btn-outline btn-sm">
+          Bulk Pricing
+        </Link>
       </div>
 
       <p className="brands-intro">

@@ -12,6 +12,7 @@ import Categories from './pages/Categories'
 import Brands from './pages/Brands'
 import BrandProductsPage from './pages/BrandProductsPage'
 import BrandForm from './pages/BrandForm'
+import BulkPricing from './pages/BulkPricing'
 import Employees from './pages/Employees'
 
 export default function App() {
@@ -52,6 +53,16 @@ export default function App() {
                 element={
                   <RequirePermission permission="brands.edit">
                     <BrandForm />
+                  </RequirePermission>
+                }
+              />
+              {/* Brand-level bulk pricing — one rule per brand. Placed under
+                  Brands per the admin IA (static segment wins over :slug). */}
+              <Route
+                path="/admin/brands/bulk-pricing"
+                element={
+                  <RequirePermission permission="brands.view">
+                    <BulkPricing />
                   </RequirePermission>
                 }
               />

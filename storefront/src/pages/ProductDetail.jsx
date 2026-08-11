@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
+import { lineNormalPerPiece } from '../utils/brandBulk'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -14,7 +15,7 @@ function unitDisplay(unit) {
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const { addItem } = useCart()
+  const { addItem, brandPieces, bulkRules } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
@@ -113,6 +114,125 @@ export default function ProductDetail() {
   // The default variant marks cart lines (is_default flag).
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
 
+  // --- Brand-level bulk pricing (brand products only) ----------------------
+  // `brandRule` is the brand's valid bulk rule when this product belongs to a
+  // brand that has one configured. Category products and brands without a
+  // rule are completely untouched. `cartBrandPieces` is the pieces of that
+  // brand already in the cart; the current selection adds on top so the
+  // unlock state updates live as the customer changes quantity.
+  const brandRule =
+    product.brand_id != null ? bulkRules[String(product.brand_id)] || null : null
+  const isBrandBulkProduct = Boolean(brandRule)
+  const cartBrandPieces =
+    product.brand_id != null ? brandPieces[String(product.brand_id)] || 0 : 0
+
+  // "Pieces"-unit variants of a bulk brand get a one-piece-at-a-time stepper:
+  // min = the selected band's quantity_value, max = one below the next band;
+  // at the max edge the selection auto-advances to the next band.
+  const pieceVariants = isBrandBulkProduct
+    ? variants.filter((v) => String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces')
+    : []
+  const pieceMode =
+    hasVariants &&
+    selectedVariant &&
+    pieceVariants.some((v) => String(v.id) === String(selectedVariant.id))
+  const pieceMin = pieceMode
+    ? Math.max(1, Math.floor(Number(selectedVariant.quantity_value) || 1))
+    : 1
+  const pieceIndex = pieceMode
+    ? pieceVariants.findIndex((v) => String(v.id) === String(selectedVariant.id))
+    : -1
+  const nextVariant =
+    pieceMode && pieceIndex >= 0 ? pieceVariants[pieceIndex + 1] || null : null
+  const pieceMax =
+    pieceMode && nextVariant ? Math.floor(Number(nextVariant.quantity_value)) - 1 : null
+
+  const handleVariantSelect = (v) => {
+    setSelectedVariant(v)
+    setVariantHint(false)
+    // Selecting a Pieces band of a bulk brand starts the piece count at the
+    // band's minimum (never below it). Every OTHER product keeps its current
+    // quantity when switching variants — exactly as before, so category
+    // products and non-bulk brands behave unchanged.
+    if (
+      isBrandBulkProduct &&
+      String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
+      v.quantity_value != null
+    ) {
+      setQty(Math.max(1, Math.floor(Number(v.quantity_value))))
+    }
+  }
+
+  // Pieces the CURRENT selection would add to the brand tally.
+  const selectionPieces =
+    !variantSelected
+      ? 0
+      : pieceMode
+        ? qty
+        : hasVariants
+          ? String(selectedVariant.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
+            ? Math.floor(Number(selectedVariant.quantity_value) || 0) * qty
+            : qty
+          : qty
+  const totalBrandPieces = isBrandBulkProduct ? cartBrandPieces + selectionPieces : 0
+  const bulkMinQty = isBrandBulkProduct ? Math.floor(Number(brandRule.bulk_min_qty)) : 0
+  const brandUnlocked = isBrandBulkProduct && totalBrandPieces >= bulkMinQty
+  const brandRemaining = isBrandBulkProduct ? Math.max(0, bulkMinQty - totalBrandPieces) : 0
+  const bulkPerPiece = isBrandBulkProduct ? Number(brandRule.bulk_unit_price) : 0
+
+  // Per-piece pricing for bulk-brand products: the brand's bulk rate when the
+  // brand is unlocked AND it is a genuine discount below the product's own
+  // per-piece price; otherwise the product's normal per-piece price. Uses the
+  // SAME per-piece semantics as the cart util (a Pieces variant's
+  // price-per-unit; a non-Pieces variant's total per unit; product price for
+  // variant-less items).
+  const normalPerPiece =
+    isBrandBulkProduct && variantSelected && hasVariants
+      ? lineNormalPerPiece({
+          variant_id: selectedVariant.id,
+          quantity_unit: selectedVariant.quantity_unit,
+          quantity_value: selectedVariant.quantity_value,
+          variant_price_per_unit: Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0),
+          variant_total_price: Number(selectedVariant?.total_price ?? selectedVariant?.price ?? 0),
+        })
+      : Number(product.price)
+  const bulkApplied =
+    isBrandBulkProduct &&
+    brandUnlocked &&
+    bulkPerPiece > 0 &&
+    bulkPerPiece < normalPerPiece
+  const chargedPerPiece = bulkApplied ? bulkPerPiece : normalPerPiece
+  const brandDisplayTotal =
+    isBrandBulkProduct && variantSelected ? chargedPerPiece * selectionPieces : 0
+  // Per-piece label: "piece" for Pieces variants and variant-less products,
+  // "unit" for ML/Gram variants (where one unit counts as one piece).
+  const bulkUnitLabel =
+    isBrandBulkProduct && hasVariants && !pieceMode
+      ? 'unit'
+      : 'piece'
+
+  // One-piece-at-a-time stepping within the selected band (bulk-brand Pieces
+  // variants); the existing ±1 behaviour everywhere else.
+  const handleDecrease = () => {
+    if (pieceMode) {
+      setQty((q) => Math.max(pieceMin, q - 1))
+    } else {
+      setQty((q) => Math.max(1, q - 1))
+    }
+  }
+  const handleIncrease = () => {
+    if (pieceMode) {
+      if (pieceMax != null && qty >= pieceMax) {
+        // The band's max is reached — the customer must select the next band.
+        if (nextVariant) handleVariantSelect(nextVariant)
+        return
+      }
+      setQty((q) => q + 1)
+    } else {
+      setQty((q) => q + 1)
+    }
+  }
+
   const handleAdd = () => {
     // A variant product can never be added without an explicit variant — show
     // a small existing-style validation hint instead of silently returning.
@@ -141,6 +261,9 @@ export default function ProductDetail() {
     try {
       // `qty` units of the selected variant. The cart line is priced at
       // variant TOTAL price × qty.
+      // Bulk-brand products with a Pieces variant add an EXACT piece count
+      // (quantity 1, priced per piece); everything else adds packs as before.
+      const pieces = pieceMode ? qty : null
       addItem(
         {
           id: product.id,
@@ -150,8 +273,9 @@ export default function ProductDetail() {
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
         },
-        qty,
-        variantInfo
+        pieceMode ? 1 : qty,
+        variantInfo,
+        pieces
       )
       addTimer.current = setTimeout(() => {
         setAdding(false)
@@ -188,9 +312,24 @@ export default function ProductDetail() {
         <h1>{product.name}</h1>
 
         {/* Variant-less products keep their simple price row (no variant to
-            select). Variant products show NO price until a variant is chosen. */}
-        {!hasVariants && (
+            select). Bulk-brand products show the per-piece price + total so
+            the bulk rate is visible live. Variant products show NO price
+            until a variant is chosen. */}
+        {!hasVariants && !isBrandBulkProduct && (
           <p className="product-detail-price">₹{Number(totalPrice).toLocaleString('en-IN')}</p>
+        )}
+
+        {!hasVariants && isBrandBulkProduct && (
+          <div className="product-detail-price-block price-reveal">
+            <p className="product-detail-per-unit">
+              ₹{Number(chargedPerPiece).toLocaleString('en-IN')} / piece
+              {bulkApplied && <span className="product-detail-bulk-note"> · bulk price</span>}
+            </p>
+            <p className="product-detail-price">
+              ₹{brandDisplayTotal.toLocaleString('en-IN')}{' '}
+              <span className="product-detail-price-total">total</span>
+            </p>
+          </div>
         )}
 
         <p className="product-detail-description">{product.description}</p>
@@ -206,10 +345,7 @@ export default function ProductDetail() {
                     key={v.id}
                     type="button"
                     className={`variant-option ${active ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setSelectedVariant(v)
-                      setVariantHint(false)
-                    }}
+                    onClick={() => handleVariantSelect(v)}
                     aria-pressed={active}
                   >
                     {variantLabel(v)}
@@ -221,7 +357,7 @@ export default function ProductDetail() {
         )}
 
         {/* Price appears ONLY after the customer explicitly selects a variant. */}
-        {hasVariants && variantSelected && (
+        {hasVariants && variantSelected && !isBrandBulkProduct && (
           <div className="product-detail-price-block price-reveal">
             {perUnit != null && Number.isFinite(perUnit) && (
               <p className="product-detail-per-unit">
@@ -236,26 +372,88 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Bulk-brand products: bulk-aware per-piece price + total. */}
+        {hasVariants && variantSelected && isBrandBulkProduct && (
+          <div className="product-detail-price-block price-reveal">
+            <p className="product-detail-per-unit">
+              ₹{Number(chargedPerPiece).toLocaleString('en-IN')} / {bulkUnitLabel}
+              {bulkApplied && <span className="product-detail-bulk-note"> · bulk price</span>}
+            </p>
+            <p className="product-detail-selected-label">{variantLabel(selectedVariant)} selected</p>
+            <p className="product-detail-price">
+              ₹{brandDisplayTotal.toLocaleString('en-IN')}{' '}
+              <span className="product-detail-price-total">total</span>
+            </p>
+          </div>
+        )}
+
+        {/* Brand bulk panel — live progress toward the unlock + state. */}
+        {isBrandBulkProduct && variantSelected && (
+          <div className="brand-bulk-panel" aria-live="polite">
+            <div className="brand-bulk-panel-head">
+              <span className="brand-bulk-title">
+                Bulk Price: ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
+              </span>
+              <span className="brand-bulk-min">
+                from {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+              </span>
+            </div>
+            <div className="brand-bulk-progress">
+              <div className="brand-bulk-progress-track">
+                <span
+                  className="brand-bulk-progress-fill"
+                  style={{
+                    width: `${bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0}%`,
+                  }}
+                />
+              </div>
+              <span className="brand-bulk-progress-label">
+                {totalBrandPieces.toLocaleString('en-IN')} / {bulkMinQty.toLocaleString('en-IN')} pieces
+              </span>
+            </div>
+            {brandUnlocked ? (
+              <p className="brand-bulk-unlocked">
+                ✓ Bulk price unlocked — ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece applied
+              </p>
+            ) : (
+              <p className="brand-bulk-locked">
+                Add {Number(brandRemaining).toLocaleString('en-IN')} more {product.brand_name || 'brand'} pieces to unlock bulk price
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="product-detail-actions">
           {/* Quantity control appears only after a variant is selected. */}
           {variantSelected && (
-          <div className="qty-selector" aria-label="Quantity">
-            <button
-              type="button"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <span aria-live="polite">{qty}</span>
-            <button
-              type="button"
-              onClick={() => setQty((q) => q + 1)}
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
-          </div>
+            <div className="qty-control-wrap">
+              <div className="qty-selector" aria-label="Quantity">
+                <button
+                  type="button"
+                  onClick={handleDecrease}
+                  disabled={pieceMode ? qty <= pieceMin : qty <= 1}
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span aria-live="polite">{qty}</span>
+                <button
+                  type="button"
+                  onClick={handleIncrease}
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+              {pieceMode && nextVariant && (
+                <p className="qty-piece-hint">
+                  {pieceMin}–{pieceMax} pieces of this size · next at {variantLabel(nextVariant)}
+                </p>
+              )}
+              {pieceMode && !nextVariant && (
+                <p className="qty-piece-hint">{pieceMin}+ pieces per selection</p>
+              )}
+            </div>
           )}
 
           <button

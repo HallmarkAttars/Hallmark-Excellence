@@ -82,7 +82,9 @@ function OrderSummaryItem({ item }) {
     (item.quantity_value != null && item.quantity_unit
       ? `${item.quantity_value} ${item.quantity_unit}`
       : '')
-  const perUnit = item.variant_price_per_unit
+  // Bulk-unlocked lines display the brand's bulk per-piece rate.
+  const isBulkLine = item.bulk_active === true
+  const perUnit = isBulkLine ? item.bulk_per_unit : item.variant_price_per_unit
   const image = itemImage(item)
 
   return (
@@ -108,8 +110,14 @@ function OrderSummaryItem({ item }) {
         <span className="order-summary-qty">
           ₹{unitPrice.toLocaleString('en-IN')} × {quantity}
           {perUnit != null && Number.isFinite(Number(perUnit)) && (
-            <span className="order-summary-per-unit">
-              {' '}₹{Number(perUnit).toLocaleString('en-IN')} / {String(item.quantity_unit || '').toLowerCase()}
+            <span className={`order-summary-per-unit${isBulkLine ? ' is-bulk' : ''}`}>
+              {' '}₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
+              {isBulkLine
+                ? String(item.quantity_unit || '').toLowerCase() === 'pieces'
+                  ? 'piece'
+                  : 'unit'
+                : String(item.quantity_unit || '').toLowerCase()}
+              {isBulkLine ? ' · bulk' : ''}
             </span>
           )}
         </span>
@@ -384,6 +392,9 @@ export default function Contact() {
             product_name: item.name,
             image: item.image,
             quantity,
+            // Exact piece count for brand bulk lines — the server charges
+            // per piece using this (quantity stays 1).
+            ...(item.pieces != null ? { pieces: item.pieces } : {}),
             unit_price,
             subtotal: unit_price * quantity,
             ...(hasVariant

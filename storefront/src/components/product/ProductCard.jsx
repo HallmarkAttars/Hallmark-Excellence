@@ -47,7 +47,7 @@ function EyeIcon() {
   )
 }
 
-export default function ProductCard({ product, onNavigate }) {
+export default function ProductCard({ product, onNavigate, bulkUnlocked = false }) {
   const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
 
@@ -112,11 +112,18 @@ export default function ProductCard({ product, onNavigate }) {
           />
         </Link>
 
-        {/* Status badges only (Featured). Driven by real product data
-            (is_featured); nothing is ever invented. */}
-        {product.is_featured === true && (
+        {/* Status badges only (Featured + bulk-unlocked brand). Driven by
+            real product/brand data; nothing is ever invented. The bulk badge
+            appears only while the brand's bulk pricing is ACTIVE in the
+            customer's cart. */}
+        {(product.is_featured === true || bulkUnlocked) && (
           <div className="product-card-badges">
-            <span className="product-card-badge is-featured">Featured</span>
+            {product.is_featured === true && (
+              <span className="product-card-badge is-featured">Featured</span>
+            )}
+            {bulkUnlocked && (
+              <span className="product-card-badge is-bulk">Bulk Unlocked</span>
+            )}
           </div>
         )}
 

@@ -2,7 +2,15 @@ import Reveal from '../../animations/Reveal'
 import ProductCard from './ProductCard'
 import SkeletonProductGrid from '../skeleton/SkeletonProductGrid'
 
-export default function ProductGrid({ products, loading, error, onRetry, emptyMessage = 'No products found.' }) {
+export default function ProductGrid({
+  products,
+  loading,
+  error,
+  onRetry,
+  emptyMessage = 'No products found.',
+  // brand_id → { unlocked } — drives the optional "Bulk Unlocked" card badge.
+  bulkUnlockedByBrand = {},
+}) {
   if (error) {
     return (
       <div className="error-state" role="alert">
@@ -25,7 +33,11 @@ export default function ProductGrid({ products, loading, error, onRetry, emptyMe
     <Reveal className="product-grid-reveal">
       <div className="grid-products stagger-fade">
         {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <ProductCard
+            key={p.id}
+            product={p}
+            bulkUnlocked={bulkUnlockedByBrand[p.brand_id]?.unlocked === true}
+          />
         ))}
       </div>
     </Reveal>

@@ -3,9 +3,49 @@ import { useCart } from '../context/CartContext'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
+// Brand-level bulk progress banner — one per brand with an active rule in
+// the cart. Unlocked state turns gold; locked shows the exact remaining
+// pieces. Reused for every eligible brand (never combined between brands).
+function BulkBanner({ state }) {
+  const pct =
+    state.bulkMinQty > 0 ? Math.min(100, (state.totalPieces / state.bulkMinQty) * 100) : 0
+  return (
+    <div className={`cart-bulk-banner ${state.unlocked ? 'is-unlocked' : ''}`}>
+      <div className="cart-bulk-banner-top">
+        <span className="cart-bulk-brand">{state.name}</span>
+        {state.unlocked ? (
+          <span className="cart-bulk-status is-unlocked">✓ Bulk price unlocked</span>
+        ) : (
+          <span className="cart-bulk-status">
+            {state.totalPieces.toLocaleString('en-IN')} / {state.bulkMinQty.toLocaleString('en-IN')} pieces
+          </span>
+        )}
+      </div>
+      <div className="cart-bulk-progress-track">
+        <span className="cart-bulk-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="cart-bulk-banner-bottom">
+        <span className="cart-bulk-prices">
+          Normal ₹{state.standardPrice.toLocaleString('en-IN')} / piece
+          <span className="cart-bulk-arrow" aria-hidden="true">→</span>
+          Bulk ₹{state.bulkUnitPrice.toLocaleString('en-IN')} / piece
+        </span>
+        {!state.unlocked && (
+          <span className="cart-bulk-hint">
+            Add {state.remaining.toLocaleString('en-IN')} more {state.name} pieces to unlock bulk price
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Cart() {
-  const { pricedItems, removeItem, total, itemCount } = useCart()
+  const { pricedItems, removeItem, total, itemCount, brandBulk } = useCart()
   const navigate = useNavigate()
+
+  // Per-brand banners, alphabetical — live derived state, no refresh.
+  const bulkBanners = Object.values(brandBulk).sort((a, b) => a.name.localeCompare(b.name))
 
   const handleCheckout = () => {
     // The resolved snapshot (unit_price already includes the selected variant
@@ -43,6 +83,15 @@ export default function Cart() {
         </span>
       </div>
 
+      {/* Brand bulk pricing — live progress for every eligible brand. */}
+      {bulkBanners.length > 0 && (
+        <div className="cart-bulk-banners">
+          {bulkBanners.map((b) => (
+            <BulkBanner key={b.brandId} state={b} />
+          ))}
+        </div>
+      )}
+
       <div className="cart-layout">
         <section className="cart-main" aria-label="Items in your cart">
           <div className="cart-items">
@@ -57,10 +106,17 @@ export default function Cart() {
               const hasVariant = item.variant_id != null
               // unit_price is the amount charged per ONE unit of this line:
               // the selected variant's TOTAL price (e.g. ₹7500 for "1000
-              // Pieces"), or the product price for variant-less lines.
+              // Pieces"), or the product price for variant-less lines. Bulk
+              // lines carry the brand's bulk rate (never above normal).
               const unitPrice = item.unit_price
+              const normalUnitPrice = Number(item.normal_unit_price ?? item.unit_price)
+              const isBulkLine = item.bulk_active === true
+              const perUnit = isBulkLine ? item.bulk_per_unit : item.variant_price_per_unit
               const subtotal = unitPrice * item.quantity
-              const perUnit = item.variant_price_per_unit
+              const unitLower = String(item.quantity_unit || '').toLowerCase()
+              const isPiecesUnit = unitLower === 'pieces'
+              // The line's exact piece count (brand bulk lines) or null.
+              const pieces = item.pieces ?? null
               return (
                 <article key={key} className="cart-item">
                   {/* Left — product image (square, cream stage, never cropped) */}
@@ -84,12 +140,21 @@ export default function Cart() {
                     <div className="cart-item-price-row">
                       <span className="cart-item-unit">
                         ₹{unitPrice.toLocaleString('en-IN')}
-                        {!hasVariant ? ' / piece' : ''}
+                        {!hasVariant && !isBulkLine ? ' / piece' : ''}
                       </span>
+                      {isBulkLine && normalUnitPrice !== unitPrice && (
+                        <span className="cart-item-unit is-struck">
+                          ₹{normalUnitPrice.toLocaleString('en-IN')}
+                        </span>
+                      )}
                       {hasVariant && perUnit != null && Number.isFinite(Number(perUnit)) && (
                         <span className="cart-item-per-unit">
-                          ₹{Number(perUnit).toLocaleString('en-IN')} / {String(item.quantity_unit || '').toLowerCase()}
+                          ₹{Number(perUnit).toLocaleString('en-IN')} /{' '}
+                          {isBulkLine ? (isPiecesUnit ? 'piece' : 'unit') : unitLower}
                         </span>
+                      )}
+                      {isBulkLine && (
+                        <span className="cart-item-bulk-tag">Bulk price</span>
                       )}
                     </div>
                     <button className="cart-item-remove" onClick={() => removeItem(key)}>
@@ -99,13 +164,22 @@ export default function Cart() {
 
                   {/* Right — line total (variant total price × quantity) */}
                   <div className="cart-item-buybox">
-                    {item.quantity > 1 && (
+                    {item.quantity > 1 && !item.pieces && (
                       <p className="cart-item-qty-static">× {item.quantity}</p>
                     )}
                     <div className="cart-item-total-col">
                       <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
                       <p className="cart-item-sub">
-                        ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
+                        {isPiecesUnit && pieces != null ? (
+                          <>
+                            ₹{(isBulkLine ? Number(item.bulk_per_unit) : Number(perUnit ?? unitPrice)).toLocaleString('en-IN')} ×{' '}
+                            {pieces.toLocaleString('en-IN')} pieces
+                          </>
+                        ) : (
+                          <>
+                            ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>

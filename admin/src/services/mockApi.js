@@ -106,6 +106,13 @@ export async function updateBrandDetails(id, data) {
   return res.brand ?? res ?? null
 }
 
+// Updates the BRAND-LEVEL BULK PRICING config (bulk_enabled /
+// standard_price / bulk_unit_price / bulk_min_qty). One rule per brand.
+export async function updateBrandBulkPricing(id, data) {
+  const res = await adminApi.patch(`/api/admin/brands/${id}/bulk-pricing`, data, readToken())
+  return res.brand ?? res ?? null
+}
+
 // --- Orders ------------------------------------------------------------------
 export async function getOrders() {
   const data = await adminApi.get('/api/admin/orders', readToken())

@@ -3,10 +3,13 @@ import ProductGrid from '../components/product/ProductGrid'
 import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
 import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
+import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
 import './Shop.css'
 
 export default function Shop() {
+  // Brand bulk state — drives the "Bulk Unlocked" card badges live.
+  const { brandBulk } = useCart()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -113,6 +116,7 @@ export default function Shop() {
             loading={loading}
             error={error}
             onRetry={() => setReloadKey((k) => k + 1)}
+            bulkUnlockedByBrand={brandBulk}
           />
         </div>
       </div>

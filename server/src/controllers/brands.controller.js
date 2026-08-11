@@ -210,4 +210,90 @@ async function updateBrandDetails(req, res) {
   }
 }
 
-module.exports = { getBrands, getAdminBrands, getBrandProducts, updateBrandDetails }
+// PATCH /api/admin/brands/:id/bulk-pricing
+// Protected (requirePermission 'brands.edit'). The ONLY writer of the
+// brand-level bulk-pricing columns (bulk_enabled / standard_price /
+// bulk_unit_price / bulk_min_qty). The storefront-management PUT above
+// deliberately never touches these — the two concerns stay independent.
+//
+// One rule belongs to ONE brand (the brands row IS the rule), so duplicate
+// active rules are structurally impossible — the admin add-form simply
+// hides brands that already have a rule.
+//
+// Request body:
+//   bulk_enabled     boolean (required) — master on/off switch
+//   When enabling, all three values are required and validated:
+//   standard_price   number > 0           — reference normal per-piece price
+//   bulk_unit_price  number, 0 < x < standard_price — discounted per-piece
+//   bulk_min_qty     whole number > 0     — combined pieces to unlock
+//   When disabling, values are optional; explicit nulls clear the row.
+async function updateBrandBulkPricing(req, res) {
+  try {
+    const { id } = req.params
+    const body = req.body || {}
+
+    if (body.bulk_enabled === undefined) {
+      return res.status(400).json({ error: 'bulk_enabled is required.' })
+    }
+
+    const enabled = Boolean(body.bulk_enabled)
+    const updates = { bulk_enabled: enabled }
+
+    if (enabled) {
+      const std = Number(body.standard_price)
+      const bulk = Number(body.bulk_unit_price)
+      const min = Number(body.bulk_min_qty)
+
+      if (body.standard_price === '' || body.standard_price == null || !Number.isFinite(std) || std <= 0) {
+        return res.status(400).json({ error: 'Normal price must be a number greater than 0.' })
+      }
+      if (body.bulk_unit_price === '' || body.bulk_unit_price == null || !Number.isFinite(bulk) || bulk <= 0) {
+        return res.status(400).json({ error: 'Bulk price must be a number greater than 0.' })
+      }
+      if (bulk >= std) {
+        return res.status(400).json({ error: 'Bulk price must be less than the normal price.' })
+      }
+      if (body.bulk_min_qty === '' || body.bulk_min_qty == null || !Number.isInteger(min) || min < 1) {
+        return res.status(400).json({ error: 'Bulk unlock quantity must be a whole number greater than 0.' })
+      }
+
+      updates.standard_price = std
+      updates.bulk_unit_price = bulk
+      updates.bulk_min_qty = min
+    } else if (body.standard_price !== undefined) {
+      // Disabling: accept explicit clears (Remove / reset), otherwise leave
+      // the stored values alone so re-enabling is one click.
+      updates.standard_price = body.standard_price == null ? null : Number(body.standard_price)
+      updates.bulk_unit_price = body.bulk_unit_price == null ? null : Number(body.bulk_unit_price)
+      updates.bulk_min_qty = body.bulk_min_qty == null ? null : Number(body.bulk_min_qty)
+    }
+
+    const { data, error } = await supabase
+      .from('brands')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .maybeSingle()
+
+    if (error) {
+      // Pre-migration DB — the bulk columns do not exist yet.
+      if (/does not exist|could not find/i.test(error.message)) {
+        return res.status(400).json({
+          error: 'Brand bulk pricing is not available yet. Run migration_add_brand_bulk_pricing.sql in the Supabase SQL editor first.',
+        })
+      }
+      console.error('updateBrandBulkPricing error:', error)
+      return res.status(500).json({ error: 'Failed to update bulk pricing.' })
+    }
+    if (!data) {
+      return res.status(404).json({ error: 'Brand not found.' })
+    }
+
+    return res.json({ brand: data })
+  } catch (err) {
+    console.error('updateBrandBulkPricing error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+module.exports = { getBrands, getAdminBrands, getBrandProducts, updateBrandDetails, updateBrandBulkPricing }

@@ -1,0 +1,66 @@
+/* Brand Bulk Pricing dashboard — same design system as the rest of the
+   admin (cream page, white cards, gold accents, dark buttons). */
+
+.bulk-pricing-intro {
+  max-width: 640px;
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.6);
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+.bulk-pricing-intro strong { color: var(--ink); font-weight: 600; }
+
+.bulk-pricing-table-wrap {
+  overflow-x: auto;
+  padding: 8px 16px 16px;
+}
+.bulk-pricing-table { min-width: 720px; }
+
+.bulk-pricing-brand { display: table-cell; }
+.bulk-pricing-brand-name { font-weight: 600; color: var(--ink); }
+.bulk-pricing-brand-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgba(20, 17, 13, 0.45);
+}
+
+.bulk-pricing-qty { font-weight: 600; white-space: nowrap; }
+.bulk-pricing-rate {
+  font-weight: 600;
+  color: var(--gold-deep);
+  white-space: nowrap;
+}
+.bulk-pricing-empty { color: rgba(20, 17, 13, 0.35); }
+
+.bulk-pricing-actions { white-space: nowrap; }
+.bulk-pricing-actions .btn { margin-right: 6px; }
+.bulk-pricing-actions .btn:last-child { margin-right: 0; }
+.bulk-pricing-actions-col { width: 1%; }
+
+.bulk-pricing-locked {
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.45);
+  font-style: italic;
+}
+
+/* Status pills — match the admin status-pill system */
+.bulk-status-active {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.bulk-status-inactive {
+  background: var(--cream-deep);
+  color: #6b6457;
+}
+.bulk-status-none {
+  background: var(--cream-deep);
+  color: rgba(20, 17, 13, 0.4);
+}
+
+.field-example {
+  display: block;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(20, 17, 13, 0.5);
+}

@@ -1,0 +1,195 @@
+// Brand-level bulk pricing math for the storefront (unit-tested in
+// brandBulk.test.js).
+//
+// Mirrors the server util (server/src/utils/brandBulkPricing.js) so the
+// price the customer sees in the cart is EXACTLY what the server charges.
+//
+// Model — one rule per brand (the brands table is the source of truth):
+//   bulk_enabled    boolean   — master on/off
+//   standard_price  numeric   — reference normal per-piece price (display)
+//   bulk_unit_price numeric   — discounted per-piece price once unlocked
+//   bulk_min_qty    int       — pieces needed ACROSS THE WHOLE BRAND in one
+//                               cart (any mix of the brand's products) to
+//                               unlock the bulk rate
+//
+// A rule is VALID only when bulk_enabled = true AND
+// standard_price > bulk_unit_price > 0 AND bulk_min_qty is a whole number
+// >= 1. Partially configured rules are treated as absent.
+//
+// Pieces contributed by one cart line:
+//   - piece-based lines (exact piece count picked on the product page):
+//     line.pieces
+//   - "Pieces"-unit variants: quantity_value × quantity
+//   - variant-less products / other units: quantity (each unit counts as one)
+//
+// When a brand's total pieces reach bulk_min_qty, EVERY line of that brand is
+// charged per piece at the brand's bulk_unit_price — but only when that is
+// cheaper than the line's own normal per-piece price.
+
+// Round monetary values to 2 decimals (matches the orders table numeric(10,2)).
+export function round2(n) {
+  return Math.round((Number(n) + Number.EPSILON) * 100) / 100
+}
+
+// True when a brand row carries a complete, usable bulk-pricing rule.
+export function isValidBulkRule(brand) {
+  if (!brand) return false
+  const std = Number(brand.standard_price)
+  const bulk = Number(brand.bulk_unit_price)
+  const min = Number(brand.bulk_min_qty)
+  return (
+    brand.bulk_enabled === true &&
+    Number.isFinite(std) && std > 0 &&
+    Number.isFinite(bulk) && bulk > 0 && bulk < std &&
+    Number.isInteger(min) && min >= 1
+  )
+}
+
+// Total pieces one cart line contributes to its brand's tally.
+export function linePieces(item) {
+  if (item == null) return 0
+
+  // Explicit piece-based line (exact piece count chosen on the product page).
+  if (item.pieces != null) {
+    const p = Math.floor(Number(item.pieces))
+    if (Number.isFinite(p) && p >= 1) return p
+  }
+
+  const qty = Math.max(1, Math.floor(Number(item.quantity ?? item.qty ?? 1)))
+
+  if (item.variant_id != null) {
+    const unit = String(item.quantity_unit ?? '').trim().toLowerCase()
+    if (unit === 'pieces') {
+      const val = Math.floor(Number(item.quantity_value))
+      if (Number.isFinite(val) && val >= 1) return val * qty
+    }
+    // Non-piece units (ML / Gram): each unit counts as one piece so the
+    // brand tally is never silently zero.
+    return qty
+  }
+
+  // Variant-less products: one unit = one piece.
+  return qty
+}
+
+// Pieces represented by ONE unit of the line (keeps the existing invariant:
+// line total = unit_price × quantity).
+export function lineUnitPieces(item) {
+  if (item == null) return 1
+  if (item.pieces != null && Number.isFinite(Number(item.pieces))) return 1
+  const qty = Math.max(1, Math.floor(Number(item.quantity ?? item.qty ?? 1)))
+  const total = linePieces(item)
+  return Math.max(1, Math.round(total / qty))
+}
+
+// The line's own normal per-piece price (what one piece costs without bulk):
+//   - "Pieces"-unit variant: price_per_unit (fallback total ÷ size)
+//   - non-piece variants: the variant TOTAL per unit (each unit = one piece)
+//   - variant-less products: the product price
+export function lineNormalPerPiece(item) {
+  if (item == null) return 0
+  if (item.variant_id != null) {
+    const unit = String(item.quantity_unit ?? '').trim().toLowerCase()
+    const total = Number(item.variant_total_price ?? item.selected_price ?? item.price ?? 0)
+    if (unit === 'pieces') {
+      const ppu = Number(item.variant_price_per_unit)
+      const val = Math.floor(Number(item.quantity_value))
+      const ppuIsValid = Number.isFinite(ppu) && ppu > 0
+      // Trust price_per_unit when it is a genuine per-piece figure (below the
+      // line total) or when the line has no total at all (ppu is all we
+      // have). Otherwise derive total ÷ size so legacy lines that stored the
+      // total as "per unit" never inflate pricing.
+      if (ppuIsValid && (total <= 0 || ppu < total)) return ppu
+      if (Number.isFinite(val) && val > 0 && Number.isFinite(total) && total > 0) {
+        return round2(total / val)
+      }
+      if (ppuIsValid) return ppu
+      return Number.isFinite(total) ? total : 0
+    }
+    return Number.isFinite(total) ? total : 0
+  }
+  const p = Number(item.selected_price ?? item.price ?? 0)
+  return Number.isFinite(p) ? p : 0
+}
+
+// Effective per-line pricing for one item given its brand's bulk state.
+// Returns:
+//   {
+//     unitPrice,        // amount per ONE unit of the line (bulk-aware) —
+//                       // line total stays unit_price × quantity
+//     normalUnitPrice,  // the same figure without bulk
+//     chargedPerPiece,  // per-piece price actually charged
+//     useBulk,          // bulk rate applied to this line
+//     linePieces,       // total pieces this line represents
+//   }
+export function lineBulkPricing(item, bulkState) {
+  const quantity = Math.max(1, Math.floor(Number(item?.quantity ?? item?.qty ?? 1)))
+  const pieces = linePieces(item)
+  const normalPerPiece = lineNormalPerPiece(item)
+  const bulkPerPiece = Number(bulkState?.bulkUnitPrice)
+  const useBulk = Boolean(
+    bulkState?.unlocked === true &&
+    Number.isFinite(bulkPerPiece) && bulkPerPiece > 0 &&
+    normalPerPiece > 0 && bulkPerPiece < normalPerPiece
+  )
+  const chargedPerPiece = useBulk ? bulkPerPiece : normalPerPiece
+  const perLineUnit = quantity >= 1 ? pieces / quantity : pieces
+  return {
+    unitPrice: round2(chargedPerPiece * perLineUnit),
+    normalUnitPrice: round2(normalPerPiece * perLineUnit),
+    chargedPerPiece,
+    useBulk,
+    linePieces: pieces,
+  }
+}
+
+// Build the per-brand bulk state for a cart: brand_id → {
+//   brandId, brand, name, totalPieces, bulkMinQty, unlocked, remaining,
+//   standardPrice, bulkUnitPrice
+// }. Only brands that (a) have a valid rule AND (b) have at least one line
+// in the cart appear — brands are never combined with each other.
+export function buildBrandBulk(items, brands) {
+  const rules = {}
+  for (const b of brands || []) {
+    if (isValidBulkRule(b)) rules[String(b.id)] = b
+  }
+
+  const totals = {}
+  for (const it of items || []) {
+    if (it.brand_id == null) continue
+    const id = String(it.brand_id)
+    if (!rules[id]) continue
+    totals[id] = totals[id] || { brand: rules[id], totalPieces: 0 }
+    totals[id].totalPieces += linePieces(it)
+  }
+
+  const map = {}
+  for (const id of Object.keys(totals)) {
+    const { brand, totalPieces } = totals[id]
+    const bulkMinQty = Math.floor(Number(brand.bulk_min_qty))
+    map[id] = {
+      brandId: id,
+      brand,
+      name: brand.name || 'Brand',
+      totalPieces,
+      bulkMinQty,
+      unlocked: totalPieces >= bulkMinQty,
+      remaining: Math.max(0, bulkMinQty - totalPieces),
+      standardPrice: Number(brand.standard_price),
+      bulkUnitPrice: Number(brand.bulk_unit_price),
+    }
+  }
+  return map
+}
+
+// brand_id → total pieces in the cart (every brand, not only bulk-eligible
+// ones) — used by the brand page / product page progress displays.
+export function buildBrandPieces(items) {
+  const map = {}
+  for (const it of items || []) {
+    if (it.brand_id == null) continue
+    const id = String(it.brand_id)
+    map[id] = (map[id] || 0) + linePieces(it)
+  }
+  return map
+}

@@ -112,6 +112,88 @@
   padding: 8px 16px;
 }
 .qty-selector button { background: none; border: none; font-size: 1.1rem; color: var(--charcoal); }
+.qty-selector button:disabled { opacity: 0.35; cursor: not-allowed; }
+.qty-control-wrap { display: flex; flex-direction: column; gap: 6px; }
+.qty-piece-hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--charcoal-soft);
+  letter-spacing: 0.03em;
+}
+
+/* --- Brand bulk pricing panel (brand products only) ----------------------
+   White card · gold hairline · charcoal text — same system as the rest of
+   the page. Subtle states: locked (progress) / unlocked (gold ✓ line). */
+.product-detail-bulk-note {
+  font-weight: 600;
+  color: var(--gold-deep);
+}
+.brand-bulk-panel {
+  margin-top: 18px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft);
+}
+.brand-bulk-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.brand-bulk-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-deep);
+  letter-spacing: 0.04em;
+}
+.brand-bulk-min {
+  font-size: 0.74rem;
+  color: var(--charcoal-soft);
+  white-space: nowrap;
+}
+.brand-bulk-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-bulk-progress-track {
+  flex: 1;
+  height: 6px;
+  min-width: 0;
+  background: var(--cream-deep);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.brand-bulk-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.brand-bulk-progress-label {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.brand-bulk-locked {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: var(--charcoal-soft);
+}
+.brand-bulk-unlocked {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-deep);
+}
 
 .product-detail-related {
   grid-column: 1 / -1;

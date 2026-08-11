@@ -980,6 +980,11 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+/* Bulk-unlocked line: the brand's bulk per-piece rate, gold. */
+.order-summary-per-unit.is-bulk {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
 /* Right side = LINE TOTAL (unit price × quantity) */
 .order-summary-price {
   font-family: var(--font-body);

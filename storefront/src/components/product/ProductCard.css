@@ -84,6 +84,11 @@
   background: linear-gradient(135deg, #C69A4B 0%, #9A7026 100%); /* gold */
   box-shadow: 0 3px 10px rgba(154, 112, 38, 0.35);
 }
+.product-card-badge.is-bulk {
+  background: #1D1914;              /* dark · quiet, never loud */
+  border: 1px solid rgba(198, 154, 75, 0.55);
+  color: #F0E7D8;
+}
 
 /* ---------- Quick View (bottom-right over the image) ---------- */
 .product-card-quickview {

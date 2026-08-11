@@ -4,6 +4,7 @@ const {
   resolvePaymentMethod,
   resolvePaymentStatus,
 } = require('../utils/orderPayment')
+const { applyBrandBulk } = require('../utils/brandBulkPricing')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -329,18 +330,34 @@ async function createOrder(req, res) {
     const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
     const variantMap = new Map(dbVariants.map((v) => [String(v.id), v]))
 
-    // Brand display names for the order snapshot (id → name). Presentation
-    // only — prices NEVER come from the brands table; they come exclusively
-    // from the product / variant rows below.
+    // Brand display names + brand-level bulk rules for the order snapshot.
+    // Prices NEVER come from the brands table — product/variant rows are the
+    // only authority; the brand bulk columns only carry the optional
+    // per-piece discount applied AFTER normal prices are computed.
     const brandIds = [...new Set((dbProducts || []).map((p) => p.brand_id).filter((v) => v != null).map(String))]
     const brandNames = {}
+    let brandRules = {}
     if (brandIds.length > 0) {
-      const { data: dbBrands } = await supabase
+      let dbBrands = []
+      let { data, error } = await supabase
         .from('brands')
-        .select('id, name')
+        .select('id, name, bulk_enabled, standard_price, bulk_unit_price, bulk_min_qty')
         .in('id', brandIds)
-      for (const b of dbBrands || []) {
+      // Pre-migration DB (no brand bulk columns yet) — fall back to names
+      // only so checkout keeps working without brand bulk pricing.
+      if (error && /does not exist|could not find/i.test(error.message)) {
+        console.warn('[createOrder] Brand bulk columns missing — running without brand bulk pricing. Run migration_add_brand_bulk_pricing.sql in Supabase to enable it.')
+        ;({ data, error } = await supabase
+          .from('brands')
+          .select('id, name')
+          .in('id', brandIds))
+      }
+      if (error) {
+        console.error('[createOrder] brands fetch error:', error.message)
+      }
+      for (const b of data || []) {
         brandNames[String(b.id)] = b.name
+        brandRules[String(b.id)] = b
       }
     }
 
@@ -359,7 +376,17 @@ async function createOrder(req, res) {
           throw new Error(`Invalid quantity for ${product.name}.`)
         }
 
+        // Brand bulk bookkeeping. `pieces` = the pieces this line contributes
+        // to its brand's combined tally; `unit_pieces` = the pieces inside ONE
+        // unit of the line so the existing invariant holds (line total =
+        // unit_price × quantity); `normal_per_piece` = the line's own normal
+        // per-piece price (bulk applies only when it is a genuine discount
+        // below this). All normal-price math — the brand bulk discount is
+        // applied in a second pass (applyBrandBulk) below.
         let unitPrice
+        let unitPieces = 1
+        let pieces
+        let normalPerPiece
         let variantFields = {}
         if (item.variant_id != null) {
           const variant = variantMap.get(String(item.variant_id))
@@ -382,17 +409,61 @@ async function createOrder(req, res) {
           if (!validUnits.includes(String(variant.quantity_unit ?? '').trim())) {
             throw new Error(`Invalid variant unit for ${product.name}.`)
           }
-          unitPrice = variantTotal
+
+          const isPiecesUnit = String(variant.quantity_unit ?? '').trim() === 'Pieces'
+          const sizePerUnit = Math.floor(Number(variant.quantity_value))
+
+          // `pieces` is the TOTAL pieces of the line — either an exact piece
+          // count picked on the product page (quantity 1) or a legacy pack
+          // line's derived tally (size × quantity). It mirrors the storefront
+          // linePieces. unitPieces = pieces per ONE unit of the line, so the
+          // existing invariant holds: line total = unit_price × quantity.
+          const explicitPieces = item.pieces != null ? Math.floor(Number(item.pieces)) : null
+          if (explicitPieces != null && (!Number.isFinite(explicitPieces) || explicitPieces < 1)) {
+            throw new Error(`Invalid piece quantity for ${product.name}.`)
+          }
+
+          // The line's own normal per-piece price (bulk only ever discounts
+          // below this): a Pieces variant's price-per-unit, a non-Pieces
+          // variant's TOTAL per unit (each unit counts as one piece), with
+          // defensive fallbacks for legacy data.
+          const lineNormalPerPiece = isPiecesUnit
+            ? (variantPerUnit > 0 && variantTotal > 0 && variantPerUnit < variantTotal
+                ? variantPerUnit
+                : round2(variantTotal / (sizePerUnit || 1)))
+            : variantTotal
+
+          if (explicitPieces != null) {
+            unitPieces = Math.max(1, Math.round(explicitPieces / quantity))
+            unitPrice = round2(lineNormalPerPiece * unitPieces)
+          } else {
+            // Pack-based line: the variant total is the amount per ONE unit
+            // (unchanged behaviour); pieces are only counted for the brand
+            // tally and the bulk discount comparison.
+            unitPieces = isPiecesUnit ? sizePerUnit : 1
+            unitPrice = variantTotal
+          }
+          normalPerPiece = lineNormalPerPiece
+          pieces = unitPieces * quantity
+
           variantFields = {
             variant_id: variant.id,
-            variant_label: variant.display_label,
-            quantity_value: variant.quantity_value,
+            // Piece-based lines store the EXACT pieces ordered (mirrors the
+            // cart line the customer saw); pack-based lines keep the DB label.
+            variant_label:
+              explicitPieces != null
+                ? `${explicitPieces} ${String(variant.quantity_unit ?? '').trim()}`
+                : variant.display_label,
+            quantity_value: explicitPieces != null ? explicitPieces : variant.quantity_value,
             quantity_unit: variant.quantity_unit,
             variant_total_price: round2(variantTotal),
             variant_price_per_unit: round2(variantPerUnit),
           }
         } else {
           unitPrice = Number(product.price)
+          normalPerPiece = unitPrice
+          unitPieces = 1
+          pieces = quantity
         }
 
         if (!Number.isFinite(unitPrice) || unitPrice < 0) {
@@ -407,12 +478,15 @@ async function createOrder(req, res) {
           // unit_price is the amount charged per ONE unit of this line: the
           // selected variant's total price (variant products) or the product
           // price (variant-less products). Line total = unit_price × quantity.
+          // normal_unit_price is the same figure BEFORE any brand bulk
+          // discount (bulk never raises a price).
           unit_price: round2(unitPrice),
           subtotal: round2(unitPrice * quantity),
-          // Reference display value — no discounts exist in the current
-          // system, so it equals the charged unit price. Kept for legacy
-          // invoice display code that reads it.
           normal_unit_price: round2(unitPrice),
+          // Brand bulk bookkeeping (consumed by applyBrandBulk below).
+          unit_pieces: unitPieces,
+          pieces,
+          normal_per_piece: round2(normalPerPiece),
           // Brand context for order-history display (never affects pricing).
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_id != null ? (brandNames[String(product.brand_id)] ?? null) : null,
@@ -422,6 +496,15 @@ async function createOrder(req, res) {
     } catch (err) {
       return res.status(400).json({ error: err.message })
     }
+
+    // --- Brand-level bulk pricing ------------------------------------------
+    // Once a brand's combined pieces (across ANY mix of that brand's items in
+    // this order) reach its bulk_min_qty, every line of that brand is charged
+    // per piece at the brand's bulk_unit_price — but only when cheaper than
+    // the line's own normal per-piece price. Applied on the DB-computed
+    // normal prices above; the totals below reflect it.
+    const { items: bulkItems, brands: bulkSummary } = applyBrandBulk(normalizedItems, brandRules)
+    normalizedItems = bulkItems
 
     // Authoritative totals. The current system has no discount/shipping/tax
     // logic — the columns exist on the live table and stay 0 (free shipping).
@@ -471,6 +554,9 @@ async function createOrder(req, res) {
       // Canonical payment code (cod | upi) — the label lives on the
       // payment_method column; the code rides in notes for exact matching.
       payment_code: paymentCode,
+      // Per-brand bulk state (present only when an eligible brand was in the
+      // order) — why the prices are what they are, for the admin/invoice.
+      ...(bulkSummary.length > 0 ? { brand_bulk: bulkSummary } : {}),
       ...(idempotency_key ? { idempotency_key: String(idempotency_key) } : {}),
     }
 
