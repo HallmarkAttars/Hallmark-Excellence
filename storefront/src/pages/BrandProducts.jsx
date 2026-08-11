@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
+import { pieceWord } from '../utils/brandBulk'
 import './BrandProducts.css'
 
 // Same client-side sort options as the Shop page — no backend, no extra reads.
@@ -155,7 +156,7 @@ export default function BrandProducts() {
             </div>
             {!bulkUnlocked && (
               <p className="brand-bulk-banner-hint">
-                Add {bulkRemaining.toLocaleString('en-IN')} more {brandName} pieces to unlock bulk pricing
+                Add {bulkRemaining.toLocaleString('en-IN')} more {brandName} {pieceWord(bulkRemaining)} to unlock bulk pricing
               </p>
             )}
           </div>

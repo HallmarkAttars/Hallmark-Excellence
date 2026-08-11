@@ -13,6 +13,8 @@ import {
   lineBulkPricing,
   buildBrandBulk,
   buildBrandPieces,
+  pieceBandRange,
+  pieceWord,
 } from './brandBulk'
 
 const AREES = {
@@ -221,5 +223,61 @@ describe('buildBrandPieces', () => {
       { brand_id: 'brand-dahab', quantity: 10 },
     ]
     expect(buildBrandPieces(items)).toEqual({ 'brand-arees': 70, 'brand-dahab': 10 })
+  })
+})
+
+describe('pieceBandRange', () => {
+  // 60 / 100 / 150 Pieces bands — the spec's canonical example.
+  const variants = [
+    { id: 'v60', quantity_value: 60, quantity_unit: 'Pieces' },
+    { id: 'v100', quantity_value: 100, quantity_unit: 'Pieces' },
+    { id: 'v150', quantity_value: 150, quantity_unit: 'Pieces' },
+    { id: 'v10ml', quantity_value: 10, quantity_unit: 'ML' },
+  ]
+
+  it('starts a band at its own minimum (60 → min 60, next at 100)', () => {
+    const r = pieceBandRange(variants, 'v60')
+    expect(r).toMatchObject({ min: 60, max: 99 })
+    expect(r.next.id).toBe('v100')
+  })
+
+  it('second band: min 100, max 149, next at 150', () => {
+    const r = pieceBandRange(variants, 'v100')
+    expect(r).toMatchObject({ min: 100, max: 149 })
+    expect(r.next.id).toBe('v150')
+  })
+
+  it('last band has no upper bound and no next', () => {
+    const r = pieceBandRange(variants, 'v150')
+    expect(r).toMatchObject({ min: 150, max: null, next: null })
+  })
+
+  it('non-Pieces bands (ML/Gram) and unknown ids return null', () => {
+    expect(pieceBandRange(variants, 'v10ml')).toBe(null)
+    expect(pieceBandRange(variants, 'nope')).toBe(null)
+    expect(pieceBandRange([], 'x')).toBe(null)
+  })
+
+  it('sorts bands ascending regardless of input order', () => {
+    const shuffled = [variants[2], variants[0], variants[1]]
+    const r = pieceBandRange(shuffled, 'v60')
+    expect(r).toMatchObject({ min: 60, max: 99 })
+    expect(r.next.id).toBe('v100')
+  })
+
+  it('keeps the range valid even with degenerate (missing) quantity values', () => {
+    const r = pieceBandRange([{ id: 'v0', quantity_unit: 'Pieces' }], 'v0')
+    expect(r).toMatchObject({ min: 1, max: null, next: null })
+  })
+})
+
+describe('pieceWord', () => {
+  it('singular for exactly one', () => {
+    expect(pieceWord(1)).toBe('piece')
+  })
+  it('plural otherwise', () => {
+    expect(pieceWord(0)).toBe('pieces')
+    expect(pieceWord(2)).toBe('pieces')
+    expect(pieceWord(70)).toBe('pieces')
   })
 })

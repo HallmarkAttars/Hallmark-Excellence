@@ -194,6 +194,13 @@
   font-weight: 600;
   color: var(--gold-deep);
 }
+/* "You save ₹3 / piece · ₹210 off this order" — quiet green, small. */
+.cart-bulk-savings {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1E4A2E;
+}
 
 /* ---------- Items — white premium cards ---------- */
 .cart-items {

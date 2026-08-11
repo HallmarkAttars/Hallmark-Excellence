@@ -193,3 +193,36 @@ export function buildBrandPieces(items) {
   }
   return map
 }
+
+// "1 piece" / "5 pieces" — the singular/plural label used by the bulk
+// messages ("Add 1 more AREES piece to unlock bulk pricing").
+export function pieceWord(n) {
+  return Number(n) === 1 ? 'piece' : 'pieces'
+}
+
+// The allowed piece-count range for a selected "Pieces" band among a
+// product's variants (sorted by quantity_value ascending). Selecting a band
+// ALWAYS starts the quantity at its minimum — the previous quantity, cart
+// quantities, brand totals and bulk thresholds never influence it.
+//
+// Returns null when the selected variant is not a Pieces band (ML/Gram or
+// category products keep their pack-based control):
+//   { min, next, max }
+//   min  — the band's own quantity_value (never below 1)
+//   max  — one below the NEXT band's quantity_value (null for the last band)
+//   next — the following band (or null) — selected automatically at the edge
+export function pieceBandRange(variants, selectedVariantId) {
+  const bands = (Array.isArray(variants) ? variants : [])
+    .filter((v) => String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces')
+    .sort((a, b) => Number(a.quantity_value) - Number(b.quantity_value))
+  const idx = bands.findIndex((v) => String(v.id) === String(selectedVariantId))
+  if (idx === -1) return null
+  const band = bands[idx]
+  const next = bands[idx + 1] || null
+  const min = Math.max(1, Math.floor(Number(band.quantity_value) || 1))
+  return {
+    min,
+    next,
+    max: next ? Math.max(min, Math.floor(Number(next.quantity_value)) - 1) : null,
+  }
+}

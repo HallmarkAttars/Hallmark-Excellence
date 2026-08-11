@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { pieceWord } from '../utils/brandBulk'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
@@ -32,10 +33,16 @@ function BulkBanner({ state }) {
         </span>
         {!state.unlocked && (
           <span className="cart-bulk-hint">
-            Add {state.remaining.toLocaleString('en-IN')} more {state.name} pieces to unlock bulk price
+            Add {state.remaining.toLocaleString('en-IN')} more {state.name} {pieceWord(state.remaining)} to unlock bulk price
           </span>
         )}
       </div>
+      {state.unlocked && state.savings > 0 && (
+        <p className="cart-bulk-savings">
+          You save ₹{state.savingsPerPiece.toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece ·
+          ₹{state.savings.toLocaleString('en-IN')} off this order
+        </p>
+      )}
     </div>
   )
 }
@@ -44,8 +51,27 @@ export default function Cart() {
   const { pricedItems, removeItem, total, itemCount, brandBulk } = useCart()
   const navigate = useNavigate()
 
-  // Per-brand banners, alphabetical — live derived state, no refresh.
-  const bulkBanners = Object.values(brandBulk).sort((a, b) => a.name.localeCompare(b.name))
+  // Per-brand banners, alphabetical — live derived state, no refresh. Each
+  // banner also carries the brand's REAL total savings (the actual difference
+  // between the normal and bulk-charged lines, never a made-up figure).
+  const bulkBanners = Object.values(brandBulk)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((state) => {
+      // The brand's REAL savings: the actual difference between each line's
+      // normal and bulk-charged unit price × its quantity — never a made-up
+      // figure derived from the configured standard price alone.
+      let savings = 0
+      for (const it of pricedItems) {
+        if (it.brand_id != null && String(it.brand_id) === state.brandId) {
+          const normal = Number(it.normal_unit_price ?? it.unit_price)
+          savings += (normal - Number(it.unit_price)) * Number(it.quantity ?? 1)
+        }
+      }
+      savings = Math.max(0, savings)
+      const savingsPerPiece =
+        state.totalPieces > 0 ? savings / state.totalPieces : 0
+      return { ...state, savings, savingsPerPiece }
+    })
 
   const handleCheckout = () => {
     // The resolved snapshot (unit_price already includes the selected variant

@@ -6,6 +6,7 @@ import {
   buildBrandPieces,
   isValidBulkRule,
   lineBulkPricing,
+  lineNormalPerPiece,
   linePieces,
 } from '../utils/brandBulk'
 
@@ -115,15 +116,26 @@ export function CartProvider({ children }) {
       // price (never its price-per-unit), or the product price for
       // variant-less products. Piece-based lines are priced per piece
       // (normalPerPiece × pieces) — the brand bulk discount is applied later
-      // in the derived pricing, never stored.
+      // in the derived pricing, never stored. normalPerPiece uses the SAME
+      // guarded derivation as the pricing util (only a genuine per-piece
+      // figure below the line total is trusted; otherwise total ÷ size) so a
+      // missing price_per_unit can never inflate a piece line to
+      // total × pieces.
+      const normalPerPiece = hasVariant
+        ? lineNormalPerPiece({
+            variant_id: variant.variant_id,
+            quantity_unit: variant.quantity_unit,
+            quantity_value: variant.quantity_value,
+            variant_price_per_unit: Number(variant.price_per_unit ?? variant.total_price ?? 0),
+            variant_total_price: Number(variant.total_price ?? variant.price ?? 0),
+          })
+        : Number(product.price)
       let selected_price
       if (explicitPieces != null) {
-        const normalPerPiece = hasVariant
-          ? Number(variant.price_per_unit ?? variant.total_price ?? 0)
-          : Number(product.price)
-        selected_price = Number.isFinite(normalPerPiece) && normalPerPiece > 0
-          ? normalPerPiece * explicitPieces
-          : Number(variant?.total_price ?? product.price ?? 0)
+        selected_price =
+          Number.isFinite(normalPerPiece) && normalPerPiece > 0
+            ? normalPerPiece * explicitPieces
+            : Number(variant?.total_price ?? product.price ?? 0)
       } else {
         selected_price = hasVariant
           ? Number(variant.total_price ?? variant.price)
@@ -151,7 +163,9 @@ export function CartProvider({ children }) {
               quantity_value: explicitPieces != null ? explicitPieces : variant.quantity_value,
               quantity_unit: variant.quantity_unit,
               variant_total_price: selected_price,
-              variant_price_per_unit: Number(variant.price_per_unit ?? variant.total_price ?? variant.price),
+              variant_price_per_unit: Number.isFinite(normalPerPiece) && normalPerPiece > 0
+                ? normalPerPiece
+                : Number(variant.price_per_unit ?? variant.total_price ?? variant.price),
               variant_is_default: variant.is_default === true,
             }
           : {}),
