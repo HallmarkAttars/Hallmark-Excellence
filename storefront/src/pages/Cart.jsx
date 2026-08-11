@@ -143,25 +143,60 @@ export default function Cart() {
               const isPiecesUnit = unitLower === 'pieces'
               // The line's exact piece count (brand bulk lines) or null.
               const pieces = item.pieces ?? null
+              // Every cart line carries its product id — the exact product
+              // this line was added from. The image + name link to that
+              // product's details page (never the shop/brand page); the rest
+              // of the card (prices, Remove, summary) stays non-navigating.
+              const productHref = item.product_id != null
+                ? `/product/${item.product_id}`
+                : null
+              // The image markup is shared by both branches (link vs plain
+              // defensive fallback) so they can never drift apart.
+              const productImage = (
+                <div className="cart-item-image-wrap">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="cart-item-image"
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
+                </div>
+              )
               return (
                 <article key={key} className="cart-item">
-                  {/* Left — product image (square, cream stage, never cropped) */}
+                  {/* Left — product image (square, cream stage, never cropped).
+                      Clicking it opens the exact product's details page. */}
                   <div className="cart-item-media">
-                    <div className="cart-item-image-wrap">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="cart-item-image"
-                        loading="lazy"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
-                      />
-                    </div>
+                    {productHref ? (
+                      <Link
+                        to={productHref}
+                        className="cart-item-image-link"
+                        aria-label={`View ${item.name} product details`}
+                      >
+                        {productImage}
+                      </Link>
+                    ) : (
+                      productImage
+                    )}
                   </div>
 
                   {/* Center — brand / name / variant / price / remove */}
                   <div className="cart-item-info">
                     {item.brand_name && <p className="cart-item-brand">{item.brand_name}</p>}
-                    <h3 className="cart-item-name">{item.name}</h3>
+                    <h3 className="cart-item-name">
+                      {productHref ? (
+                        <Link
+                          to={productHref}
+                          className="cart-item-name-link"
+                          aria-label={`View ${item.name} product details`}
+                        >
+                          {item.name}
+                        </Link>
+                      ) : (
+                        item.name
+                      )}
+                    </h3>
                     {label && <p className="cart-item-variant">{label}</p>}
                     <div className="cart-item-price-row">
                       <span className="cart-item-unit">
