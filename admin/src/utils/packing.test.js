@@ -5,8 +5,10 @@ import {
   ordersInDateRange,
   buildAddressLines,
   packingLabelData,
+  packingItemLabel,
   packingLabelFileName,
   packingLabelsFileName,
+  paymentShortLabel,
 } from './packing'
 import { buildPackingLabelsPdf } from '../components/packing/packingLabelPdf'
 
@@ -66,6 +68,34 @@ describe('packing', () => {
     expect(buildAddressLines(null)).toEqual([])
   })
 
+  it('paymentShortLabel maps cash/upi to COD/UPI', () => {
+    expect(paymentShortLabel('Cash on Delivery')).toBe('COD')
+    expect(paymentShortLabel('COD')).toBe('COD')
+    expect(paymentShortLabel('UPI / Online Payment')).toBe('UPI')
+    expect(paymentShortLabel('upi')).toBe('UPI')
+    expect(paymentShortLabel('')).toBe('COD')
+    expect(paymentShortLabel(undefined)).toBe('COD')
+  })
+
+  it('packingItemLabel reduces an item to name/quantity/size', () => {
+    expect(
+      packingItemLabel({
+        product_name: 'CR7',
+        name: 'ignored',
+        quantity: 1,
+        variant_label: '60 Pieces',
+        unit_price: 42,
+      })
+    ).toEqual({ name: 'CR7', quantity: 1, size: '60 Pieces' })
+
+    expect(
+      packingItemLabel({ name: 'Pink Musk', qty: 2, quantity_value: 100, quantity_unit: 'Pieces' })
+    ).toEqual({ name: 'Pink Musk', quantity: 2, size: '100 Pieces' })
+
+    // No size known — carried as an empty string, never "undefined".
+    expect(packingItemLabel({ name: 'X' })).toEqual({ name: 'X', quantity: 1, size: '' })
+  })
+
   it('packingLabelData carries only packing-safe fields', () => {
     const data = packingLabelData({
       id: 'u1',
@@ -76,14 +106,25 @@ describe('packing', () => {
       city: 'Thanjavur',
       pincode: '614701',
       total_amount: 99999,
-      payment_method: 'upi',
+      payment_method: 'Cash on Delivery',
+      items: [
+        { product_name: 'CR7', quantity: 1, variant_label: '60 Pieces' },
+        { product_name: 'Pink Musk', quantity: 2, variant_label: '100 Pieces', unit_price: 999 },
+      ],
     })
     expect(data.orderId).toBe('ORD-519550')
     expect(data.customerName).toBe('Mohamed Suhail')
     expect(data.phone).toBe('+91 90805 01144')
     expect(data.addressLines.join(' ')).toContain('Thanjavur')
+    expect(data.payment).toBe('COD')
+    expect(data.items).toEqual([
+      { name: 'CR7', quantity: 1, size: '60 Pieces' },
+      { name: 'Pink Musk', quantity: 2, size: '100 Pieces' },
+    ])
+    // Prices, totals and raw payment strings never travel onto a label.
     expect(data).not.toHaveProperty('total_amount')
     expect(data).not.toHaveProperty('payment_method')
+    expect(JSON.stringify(data)).not.toContain('999')
   })
 
   it('generates the required filenames', () => {

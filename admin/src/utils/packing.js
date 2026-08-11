@@ -76,13 +76,42 @@ export function buildAddressLines(order) {
   return lines.filter(Boolean)
 }
 
-// The ONLY data a packing label carries: order id, customer, mobile, address.
+// Compact payment-method label for the packing label: 'Cash on Delivery' →
+// 'COD', 'UPI / Online Payment' → 'UPI'. Unknown values fall back to the raw
+// stored value so nothing is ever hidden or mislabelled.
+export function paymentShortLabel(value) {
+  const s = String(value ?? '').trim()
+  if (/cash/i.test(s)) return 'COD'
+  if (/upi/i.test(s)) return 'UPI'
+  return s || 'COD'
+}
+
+// One order item, reduced to the ONLY packing-relevant fields: name, quantity
+// and size label ("60 Pieces"). No prices, no internal info.
+export function packingItemLabel(item) {
+  const size =
+    item?.variant_label ||
+    (item?.quantity_value != null && item?.quantity_unit
+      ? `${item.quantity_value} ${item.quantity_unit}`
+      : '')
+  return {
+    name: item?.product_name || item?.name || 'Item',
+    quantity: Number(item?.quantity ?? item?.qty ?? 1),
+    size,
+  }
+}
+
+// The ONLY data a packing label carries: order id, customer, mobile, address,
+// payment method (short) and a compact item list. No prices, no email, no
+// internal info.
 export function packingLabelData(order) {
   return {
     orderId: order?.order_number || order?.id || '—',
     customerName: order?.customer_name || '—',
     phone: order?.phone || '—',
     addressLines: buildAddressLines(order),
+    payment: paymentShortLabel(order?.payment_method),
+    items: (Array.isArray(order?.items) ? order.items : []).map(packingItemLabel),
   }
 }
 
