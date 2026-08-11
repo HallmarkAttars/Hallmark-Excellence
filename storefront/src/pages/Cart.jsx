@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { cartLineKey } from '../utils/cartLines'
 import { brandSavings, pieceWord } from '../utils/brandBulk'
+import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
@@ -59,13 +60,18 @@ export default function Cart() {
   const { pricedItems, removeItem, updateLinePieces, total, itemCount, brandBulk } = useCart()
   const navigate = useNavigate()
 
-  // Per-brand banners, alphabetical — live derived state, no refresh. The
-  // savings come from the shared brandSavings helper (configured prices ×
-  // total brand pieces), so the displayed ₹3 / piece · ₹480 are always the
-  // exact figures the customer saves.
-  const bulkBanners = Object.values(brandBulk)
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((state) => ({ ...state, ...brandSavings(state) }))
+  // Per-brand banners in the ADMIN-defined brand order — the same shared
+  // rule as the header dropdown (display_order, never alphabetical). Live
+  // derived state, no refresh. The savings come from the shared
+  // brandSavings helper (configured prices × total brand pieces), so the
+  // displayed ₹3 / piece · ₹480 are always the exact figures the customer
+  // saves.
+  const bulkBanners = sortBrandsByDisplayOrder(
+    Object.values(brandBulk).map((s) => s.brand)
+  ).map((b) => {
+    const state = brandBulk[String(b.id)]
+    return { ...state, ...brandSavings(state) }
+  })
 
   const handleCheckout = () => {
     // The resolved snapshot (unit_price already includes the selected variant

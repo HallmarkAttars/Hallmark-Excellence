@@ -21,3 +21,130 @@
 .image-preview img { width: 100px; height: 100px; object-fit: cover; border-radius: var(--radius); }
 
 .confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+
+/* ============================================================
+   Display Order — manual reorder list (drag + arrows + position)
+   ============================================================ */
+.categories-order-card {
+  margin-bottom: 20px;
+  padding: 18px;
+}
+.categories-order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.categories-order-head h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.2;
+}
+.categories-order-head .btn { white-space: nowrap; }
+.categories-order-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.55);
+  max-width: 620px;
+}
+.categories-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.categories-order-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  cursor: grab;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.categories-order-row:hover {
+  border-color: rgba(198, 161, 91, 0.55);
+  background: #fffdf7;
+}
+.categories-order-row:active { cursor: grabbing; }
+.categories-order-row.is-dragging {
+  border-color: var(--gold);
+  box-shadow: 0 6px 18px rgba(60, 45, 20, 0.14);
+  background: var(--white);
+  opacity: 0.9;
+}
+.categories-order-drag {
+  color: rgba(20, 17, 13, 0.35);
+  font-size: 15px;
+  letter-spacing: -2px;
+  user-select: none;
+}
+.categories-order-pos {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(198, 161, 91, 0.18);
+  color: #8a6a2f;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.categories-order-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.categories-order-count {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.5);
+  white-space: nowrap;
+}
+.categories-order-arrows {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.order-arrow {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.order-arrow:hover:not(:disabled) {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--white);
+}
+.order-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Mobile — compact rows, no overflow */
+@media (max-width: 480px) {
+  .categories-order-card { padding: 14px; }
+  .categories-order-row { gap: 8px; padding: 9px 10px; }
+  .categories-order-count { display: none; }
+}

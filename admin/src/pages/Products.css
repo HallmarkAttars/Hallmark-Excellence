@@ -19,6 +19,15 @@
   color: var(--charcoal);
 }
 
+/* Pos column — the manual display-order value (1 = first). */
+.products-pos {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.5);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* Price cell = Default variant's Price Per Unit + its unit ("₹45 / piece"). */
 .products-price-cell {
   font-variant-numeric: tabular-nums;

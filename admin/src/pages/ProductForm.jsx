@@ -9,6 +9,7 @@ const EMPTY = {
   rating: '', review_count: '',
   is_featured: false,
   category_id: '', brand_id: '',
+  display_order: '',
 }
 
 // Variant validation rules + unit canonicalization live in
@@ -61,6 +62,7 @@ export default function ProductForm() {
             rating: p.rating ?? '',
             review_count: p.review_count ?? '',
             is_featured: Boolean(p.is_featured),
+            display_order: p.display_order ?? '',
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
@@ -241,6 +243,9 @@ export default function ProductForm() {
         brand_id: form.brand_id || null,
         image,
         variants: variantsPayload,
+        // Optional explicit position; empty = new products go to the end,
+        // existing products keep their current position.
+        display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
 
       if (isEdit) {
@@ -452,6 +457,24 @@ export default function ProductForm() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="display_order">Display Position (optional)</label>
+          <input
+            id="display_order"
+            name="display_order"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="End of list"
+            value={form.display_order}
+            onChange={handleChange}
+          />
+          <small className="field-example">
+            Products appear on the storefront in this exact order (1 = first,
+            never alphabetical). Leave empty for new products to be added at the end.
+          </small>
         </div>
 
         <div className="form-row form-row-2">

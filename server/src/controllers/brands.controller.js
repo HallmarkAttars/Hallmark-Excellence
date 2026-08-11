@@ -3,6 +3,10 @@ const {
   attachVariants,
   fetchVariantsByProducts,
 } = require('./products.controller')
+const {
+  applyProductOrder,
+  isMissingOrderColumnError,
+} = require('../utils/displayOrder')
 
 // GET /api/brands
 // Public — returns ONLY active brands (inactive brands are hidden from the
@@ -82,23 +86,35 @@ async function getBrandProducts(req, res) {
       if (attarCat) attarCategoryId = attarCat.id
     }
 
-    let query = supabase
-      .from('products')
-      .select(`
-        id, name, description, price, compare_at_price,
-        rating, review_count, is_featured, image,
-        category_id, brand_id, is_active, created_at,
-        categories ( id, name, slug )
-      `)
-      .eq('brand_id', brand.id)
-      .eq('is_active', true)
-
-    if (attarCategoryId) {
-      query = query.eq('category_id', attarCategoryId)
+    // NOTE: PostgREST builders are MUTATED by .order(), so every attempt
+    // must build a fresh query — never reuse a builder that already had an
+    // order applied to it.
+    const buildBrandProducts = (useOrder) => {
+      let q = supabase
+        .from('products')
+        .select(`
+          id, name, description, price, compare_at_price,
+          rating, review_count, is_featured, image,
+          category_id, brand_id, is_active, created_at,
+          categories ( id, name, slug )
+        `)
+        .eq('brand_id', brand.id)
+        .eq('is_active', true)
+      if (attarCategoryId) {
+        q = q.eq('category_id', attarCategoryId)
+      }
+      return applyProductOrder(q, useOrder)
     }
 
-    const { data: products, error: prodError } = await query
-      .order('created_at', { ascending: false })
+    // Manual display order (admin-controlled), then newest first. Falls back
+    // to newest-first ordering when the display_order migration hasn't been
+    // applied yet. Never alphabetical.
+    let orderRes = await buildBrandProducts(true)
+    if (isMissingOrderColumnError(orderRes.error)) {
+      console.warn('[brands] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
+      orderRes = await buildBrandProducts(false)
+    }
+    const { data: products, error: prodError } = orderRes
 
     if (prodError) {
       console.error('getBrandProducts products error:', prodError)

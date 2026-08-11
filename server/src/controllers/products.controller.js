@@ -1,4 +1,8 @@
 const supabase = require('../config/supabase')
+const {
+  applyProductOrder,
+  isMissingOrderColumnError,
+} = require('../utils/displayOrder')
 
 // Base product select WITHOUT the embedded variants relationship. Variants
 // are fetched separately (see fetchVariantsForProducts) so the code works
@@ -23,12 +27,29 @@ const PRODUCT_SELECT_BASE = `
   brands ( id, name, slug )
 `
 
+// Admin-facing select: also includes the manual display_order column (added
+// by migration_add_display_order.sql) so the admin list can show a position
+// column and the edit form can display/set the current position.
+const PRODUCT_SELECT_ADMIN = `
+  id, name, description, price, compare_at_price, rating, review_count, is_featured,
+  category_id, brand_id, image, is_active, created_at, display_order,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
+
 // True when a PostgREST error means a column does not exist in the DB yet
 // (the pricing migration hasn't been applied). SELECTs report
 // "...does not exist", UPDATEs/INSERTs report "Could not find ... in the
 // schema cache".
 function isMissingColumnError(error) {
   return Boolean(error && /does not exist|could not find/i.test(error.message))
+}
+
+// True when a PostgREST error is caused by the display_order column not
+// existing yet (migration_add_display_order.sql not applied).
+function isDisplayOrderError(error) {
+  return Boolean(error && /display_order/i.test(error.message))
 }
 
 // Runs a product query, retrying against the base select when the pricing
@@ -41,6 +62,72 @@ async function selectProducts(build) {
     res = await build(PRODUCT_SELECT_BASE)
   }
   return res
+}
+
+// Runs a PUBLIC product list query ordered by the admin-defined display
+// order (then newest). Degrades gracefully at each migration boundary:
+// display_order missing -> newest-first ordering; pricing columns missing
+// -> base select. NEVER alphabetical.
+async function selectPublicProducts(build) {
+  let res = await build(PRODUCT_SELECT, true)
+  if (isMissingOrderColumnError(res.error)) {
+    console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
+    res = await build(PRODUCT_SELECT, false)
+  }
+  if (isMissingColumnError(res.error)) {
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
+    res = await build(PRODUCT_SELECT_BASE, false)
+  }
+  return res
+}
+
+// Runs an ADMIN product list query with display_order in the response and
+// ordered by it, with the same migration fallbacks as selectPublicProducts.
+async function selectAdminProducts(build) {
+  let res = await build(PRODUCT_SELECT_ADMIN, true)
+  if (isDisplayOrderError(res.error) || isMissingOrderColumnError(res.error)) {
+    console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
+    res = await build(PRODUCT_SELECT, false)
+  }
+  if (isMissingColumnError(res.error)) {
+    console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
+    res = await build(PRODUCT_SELECT_BASE, false)
+  }
+  return res
+}
+
+// Runs a product insert/update, retrying WITHOUT display_order when that
+// column is missing (migration not applied yet), then without the optional
+// pricing columns. Keeps admin saves working before AND after the migration.
+//
+// `fetchRow` is optional: when display_order is the ONLY field being written
+// and the column is missing, the stripped payload would be empty (which
+// PostgREST rejects) — instead the current row is returned so the save stays
+// successful and the caller can surface the migration hint.
+async function withProductWriteRetry(operation, payload, select, baseSelect, fetchRow) {
+  let res = await withOptionalFieldRetry(operation, payload, select, baseSelect)
+  if (isDisplayOrderError(res.error)) {
+    console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
+    const { display_order, ...rest } = payload
+    if (Object.keys(rest).length === 0 && typeof fetchRow === 'function') {
+      return fetchRow()
+    }
+    res = await withOptionalFieldRetry(operation, rest, select, baseSelect)
+  }
+  return res
+}
+
+// End-of-list position for a newly created product: max display_order + 1,
+// so new items land at the END of the manual order — never inserted
+// alphabetically. Returns null on a pre-migration database (column missing).
+async function nextProductDisplayOrder() {
+  const { data, error } = await supabase
+    .from('products')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+  if (error || isDisplayOrderError(error)) return null
+  return (data?.[0]?.display_order ?? -1) + 1
 }
 
 const VARIANT_SELECT = `
@@ -190,7 +277,7 @@ async function getProducts(req, res) {
   try {
     const { category_id, brand_id, search, sort } = req.query
 
-    const { data, error } = await selectProducts((select) => {
+    const { data, error } = await selectPublicProducts((select, useDisplayOrder) => {
       let q = supabase
         .from('products')
         .select(select)
@@ -205,7 +292,10 @@ async function getProducts(req, res) {
       } else if (sort === 'price_desc') {
         q = q.order('price', { ascending: false })
       } else {
-        q = q.order('created_at', { ascending: false })
+        // Default: admin-defined display order (then newest). Never
+        // alphabetical. Falls back to newest-first when the display_order
+        // migration hasn't been applied yet.
+        q = applyProductOrder(q, useDisplayOrder)
       }
 
       return q
@@ -310,15 +400,17 @@ async function getRelatedProducts(req, res) {
 
     async function fetchRelated(column, value) {
       if (!value) return []
-      const { data, error } = await selectProducts((select) =>
-        supabase
-          .from('products')
-          .select(select)
-          .eq(column, value)
-          .eq('is_active', true)
-          .neq('id', id)
-          .order('created_at', { ascending: false })
-          .limit(limit)
+      const { data, error } = await selectPublicProducts((select, useDisplayOrder) =>
+        applyProductOrder(
+          supabase
+            .from('products')
+            .select(select)
+            .eq(column, value)
+            .eq('is_active', true)
+            .neq('id', id)
+            .limit(limit),
+          useDisplayOrder
+        )
       )
       if (error) throw error
       return data
@@ -331,14 +423,16 @@ async function getRelatedProducts(req, res) {
     }
 
     if (related.length === 0) {
-      const { data, error } = await selectProducts((select) =>
-        supabase
-          .from('products')
-          .select(select)
-          .eq('is_active', true)
-          .neq('id', id)
-          .order('created_at', { ascending: false })
-          .limit(limit)
+      const { data, error } = await selectPublicProducts((select, useDisplayOrder) =>
+        applyProductOrder(
+          supabase
+            .from('products')
+            .select(select)
+            .eq('is_active', true)
+            .neq('id', id)
+            .limit(limit),
+          useDisplayOrder
+        )
       )
       if (error) throw error
       related = data
@@ -366,7 +460,7 @@ async function getAdminProductById(req, res) {
   try {
     const { id } = req.params
 
-    const { data, error } = await selectProducts((select) =>
+    const { data, error } = await selectAdminProducts((select) =>
       supabase
         .from('products')
         .select(select)
@@ -414,11 +508,11 @@ async function getAdminProductById(req, res) {
 // Protected. ALL products (active + inactive), newest first.
 async function getAdminProducts(req, res) {
   try {
-    const { data, error } = await selectProducts((select) =>
-      supabase
-        .from('products')
-        .select(select)
-        .order('created_at', { ascending: false })
+    const { data, error } = await selectAdminProducts((select, useDisplayOrder) =>
+      applyProductOrder(
+        supabase.from('products').select(select),
+        useDisplayOrder
+      )
     )
 
     if (error) {
@@ -546,7 +640,8 @@ async function createProduct(req, res) {
   try {
     const {
       name, description, price, compare_at_price,
-      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants
+      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
+      display_order
     } = req.body
 
     // Only the name is strictly required. The purchasable price now comes
@@ -570,6 +665,18 @@ async function createProduct(req, res) {
       }
     }
 
+    // Optional explicit position. When omitted, the new product is placed
+    // at the END (max display_order + 1) — never inserted alphabetically.
+    let order = display_order
+    if (order !== undefined) {
+      order = Number(order)
+      if (!Number.isInteger(order) || order < 0) {
+        return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
+      }
+    } else {
+      order = await nextProductDisplayOrder()
+    }
+
     const payload = {
       name,
       slug: slugify(name),
@@ -583,9 +690,10 @@ async function createProduct(req, res) {
       image: image ?? null,
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
+      display_order: order,
     }
 
-    const { data, error } = await withOptionalFieldRetry(
+    const { data, error } = await withProductWriteRetry(
       (pl, select) => supabase.from('products').insert(pl).select(select).single(),
       payload,
       PRODUCT_SELECT,
@@ -630,7 +738,8 @@ async function updateProduct(req, res) {
     const { id } = req.params
     const {
       name, description, price, compare_at_price,
-      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants
+      rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
+      display_order
     } = req.body
 
     // If the category is being updated to "Attar", brand is required
@@ -660,6 +769,13 @@ async function updateProduct(req, res) {
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
     if (is_featured !== undefined) updates.is_featured = is_featured
+    if (display_order !== undefined) {
+      const order = Number(display_order)
+      if (!Number.isInteger(order) || order < 0) {
+        return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
+      }
+      updates.display_order = order
+    }
 
     // A PATCH that only changes variants (no scalar columns) would send
     // PostgREST an empty update object, which it rejects — so fetch the row
@@ -671,11 +787,16 @@ async function updateProduct(req, res) {
         supabase.from('products').select(select).eq('id', id).maybeSingle()
       ))
     } else {
-      ;({ data, error } = await withOptionalFieldRetry(
+      ;({ data, error } = await withProductWriteRetry(
         (pl, select) => supabase.from('products').update(pl).eq('id', id).select(select).maybeSingle(),
         updates,
         PRODUCT_SELECT,
-        PRODUCT_SELECT_BASE
+        PRODUCT_SELECT_BASE,
+        // display_order-only save on a pre-migration DB: return the row so
+        // the save stays successful instead of failing on an empty UPDATE.
+        () => selectProducts((select) =>
+          supabase.from('products').select(select).eq('id', id).maybeSingle()
+        )
       ))
     }
 

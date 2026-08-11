@@ -1,4 +1,9 @@
 const supabase = require('../config/supabase')
+const {
+  applyCategoryOrder,
+  applyProductOrder,
+  isMissingOrderColumnError,
+} = require('../utils/displayOrder')
 
 // Builds { category_id: count } from the products table.
 // `activeOnly` controls whether inactive products count toward the total.
@@ -18,13 +23,21 @@ async function buildProductCounts(activeOnly) {
 }
 
 // GET /api/categories
-// Public. Ordered by name, includes product_count (active products only).
+// Public. Admin-defined display order, includes product_count (active only).
 async function getCategories(req, res) {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true })
+    // Manual display order; falls back to insertion order (created_at asc)
+    // when the display_order migration hasn't been applied yet. Never
+    // alphabetical.
+    let catRes = await applyCategoryOrder(supabase.from('categories').select('*'))
+    if (isMissingOrderColumnError(catRes.error)) {
+      console.warn('[categories] display_order column missing — run server/db/migration_add_display_order.sql to enable manual ordering.')
+      catRes = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true })
+    }
+    const { data, error } = catRes
 
     if (error) {
       console.error('getCategories error:', error)
@@ -65,17 +78,30 @@ async function getCategoryProducts(req, res) {
       return res.status(404).json({ error: 'Category not found.' })
     }
 
-    const { data: products, error: prodError } = await supabase
-      .from('products')
-      .select(`
-        id, name, description, price, compare_at_price,
-        rating, review_count, is_featured, image,
-        category_id, brand_id, is_active, created_at,
-        brands ( id, name, slug )
-      `)
-      .eq('category_id', category.id)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+    const categoryProductSelect = `
+      id, name, description, price, compare_at_price,
+      rating, review_count, is_featured, image,
+      category_id, brand_id, is_active, created_at,
+      brands ( id, name, slug )
+    `
+    const buildCategoryProducts = (useOrder) =>
+      applyProductOrder(
+        supabase
+          .from('products')
+          .select(categoryProductSelect)
+          .eq('category_id', category.id)
+          .eq('is_active', true),
+        useOrder
+      )
+
+    // Manual display order first (admin-controlled), then newest first for
+    // products without a configured position. Never alphabetical. Falls back
+    // to newest-first ordering when the display_order migration hasn't been
+    // applied to the database yet.
+    let { data: products, error: prodError } = await buildCategoryProducts(true)
+    if (prodError && isMissingOrderColumnError(prodError)) {
+      ;({ data: products, error: prodError } = await buildCategoryProducts(false))
+    }
 
     if (prodError) {
       console.error('getCategoryProducts products error:', prodError)
@@ -96,13 +122,21 @@ async function getCategoryProducts(req, res) {
 }
 
 // GET /api/admin/categories
-// Protected. All categories with product count (all products, active + inactive).
+// Protected. All categories with product count (all products, active + inactive),
+// in the same manual display order as the public endpoint.
 async function getAdminCategories(req, res) {
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true })
+    // Same manual display order as the public endpoint (with the same
+    // pre-migration fallback to insertion order).
+    let catRes = await applyCategoryOrder(supabase.from('categories').select('*'))
+    if (isMissingOrderColumnError(catRes.error)) {
+      console.warn('[categories] display_order column missing — run server/db/migration_add_display_order.sql to enable manual ordering.')
+      catRes = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true })
+    }
+    const { data, error } = catRes
 
     if (error) {
       console.error('getAdminCategories error:', error)
@@ -129,6 +163,29 @@ async function createCategory(req, res) {
       return res.status(400).json({ error: 'name and slug are required.' })
     }
 
+    // Optional explicit position. When omitted, the new category is placed at
+    // the END (max display_order + 1) — never inserted alphabetically.
+    let order = display_order
+    if (order !== undefined) {
+      order = Number(order)
+      if (!Number.isInteger(order) || order < 0) {
+        return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
+      }
+    } else {
+      // End-of-list position: max display_order + 1. Falls back to null
+      // (column not written) when the migration hasn't been applied yet.
+      const { data: maxRow, error: maxErr } = await supabase
+        .from('categories')
+        .select('display_order')
+        .order('display_order', { ascending: false })
+        .limit(1)
+      if (maxErr && isMissingOrderColumnError(maxErr)) {
+        order = null
+      } else {
+        order = (maxRow?.[0]?.display_order ?? 0) + 1
+      }
+    }
+
     const { data: existing, error: findError } = await supabase
       .from('categories')
       .select('id')
@@ -143,9 +200,14 @@ async function createCategory(req, res) {
       return res.status(409).json({ error: `A category with slug "${slug}" already exists.` })
     }
 
+    // display_order is omitted entirely when the column is missing
+    // (pre-migration), so category creation never breaks mid-deploy.
+    const insertPayload = { name, slug, image: image ?? null }
+    if (order != null) insertPayload.display_order = order
+
     const { data, error } = await supabase
       .from('categories')
-      .insert({ name, slug, image: image ?? null })
+      .insert(insertPayload)
       .select('*')
       .single()
 
@@ -166,7 +228,7 @@ async function createCategory(req, res) {
 async function updateCategory(req, res) {
   try {
     const { id } = req.params
-    const { name, slug, image } = req.body
+    const { name, slug, image, display_order } = req.body
 
     const { data: existing, error: findError } = await supabase
       .from('categories')
@@ -203,13 +265,47 @@ async function updateCategory(req, res) {
     if (name !== undefined) updates.name = name
     if (slug !== undefined) updates.slug = slug
     if (image !== undefined) updates.image = image
+    if (display_order !== undefined) {
+      const order = Number(display_order)
+      if (!Number.isInteger(order) || order < 0) {
+        return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
+      }
+      updates.display_order = order
+    }
 
-    const { data, error } = await supabase
+    let result = await supabase
       .from('categories')
       .update(updates)
       .eq('id', id)
       .select('*')
       .single()
+
+    // Pre-migration fallback: retry without display_order when that column
+    // doesn't exist yet, so the reorder save on the admin page never 500s.
+    if (result.error && updates.display_order !== undefined && isMissingOrderColumnError(result.error)) {
+      console.warn('[categories] display_order column missing — run server/db/migration_add_display_order.sql to enable manual ordering.')
+      if (Object.keys(updates).length === 1) {
+        // display_order is the ONLY field being saved — there is nothing
+        // else to persist (an empty UPDATE is rejected by PostgREST).
+        // Return the current row, which simply has no display_order yet, so
+        // the admin page can show the migration hint instead of a hard error.
+        const { data: row, error: rowErr } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle()
+        result = { data: row, error: rowErr }
+      } else {
+        const { display_order, ...rest } = updates
+        result = await supabase
+          .from('categories')
+          .update(rest)
+          .eq('id', id)
+          .select('*')
+          .single()
+      }
+    }
+    const { data, error } = result
 
     if (error) {
       console.error('updateCategory error:', error)

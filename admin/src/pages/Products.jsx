@@ -170,13 +170,14 @@ export default function Products() {
             <table>
               <thead>
                 <tr>
-                  <th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th>
+                  <th></th><th>Pos</th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((p) => (
                   <tr key={p.id}>
                     <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
+                    <td className="products-pos">{p.display_order ?? '—'}</td>
                     <td className="products-name">
                       {p.name}
                       {p.is_featured && <span className="featured-badge">Featured</span>}
