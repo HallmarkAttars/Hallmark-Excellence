@@ -539,6 +539,58 @@ export default function ProductDetail() {
             </div>
           )}
 
+          {/* Bulk-pricing card — brand-level, live, one source of truth.
+              Positioned directly under the description so the offer is
+              visible before any variant is picked (progress shows the
+              cart's brand pieces + the current selection). GREEN
+              information while unlocked; neutral when locked. */}
+          {isBrandBulkProduct && (
+            <div className="pd-bulk-card" aria-live="polite">
+              <div className="pd-bulk-head">
+                <span className={`pd-bulk-status ${brandUnlocked ? 'is-unlocked' : ''}`}>
+                  {brandUnlocked ? '✓ Bulk Price Active' : '✓ Bulk Price'}
+                </span>
+                <span className="pd-bulk-rate">
+                  ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
+                </span>
+              </div>
+              {!brandUnlocked ? (
+                <p className="pd-bulk-min">
+                  From {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+                </p>
+              ) : (
+                <p className="pd-bulk-min">
+                  Bulk rate from {Number(applicableTier.minQuantity).toLocaleString('en-IN')} pieces
+                </p>
+              )}
+              <div className="pd-bulk-progress">
+                <div className="pd-bulk-track">
+                  <span
+                    className={`pd-bulk-fill ${brandUnlocked ? 'is-unlocked' : ''}`}
+                    style={{ width: `${bulkPct}%` }}
+                  />
+                </div>
+                <span className="pd-bulk-count">
+                  {Number(totalBrandPieces).toLocaleString('en-IN')} /{' '}
+                  {Number(bulkThresholdShown).toLocaleString('en-IN')} pieces
+                  {brandUnlocked && <span className="pd-bulk-check"> ✓</span>}
+                </span>
+              </div>
+              {brandUnlocked ? (
+                bulkSavingsPerPiece > 0 && (
+                  <p className="pd-bulk-save">
+                    You save ₹{Number(bulkSavingsPerPiece).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece
+                  </p>
+                )
+              ) : (
+                <p className="pd-bulk-locked">
+                  Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
+                  {product.brand_name || 'brand'} {pieceWord(brandRemaining)} to unlock bulk price
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Variant selection — strong dark active state */}
           {hasVariants && (
             <div className="variant-selector">
@@ -604,55 +656,6 @@ export default function ProductDetail() {
                   {nextVariant
                     ? `${pieceMin}–${pieceMax} pieces of this size · next at ${variantLabel(nextVariant)}`
                     : `${pieceMin}+ pieces per selection`}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Compact bulk-pricing card — brand-level, live, one source of
-              truth. GREEN information while unlocked; neutral when locked. */}
-          {isBrandBulkProduct && variantSelected && (
-            <div className="pd-bulk-card" aria-live="polite">
-              <div className="pd-bulk-head">
-                <span className={`pd-bulk-status ${brandUnlocked ? 'is-unlocked' : ''}`}>
-                  {brandUnlocked ? '✓ Bulk Price Active' : '✓ Bulk Price'}
-                </span>
-                <span className="pd-bulk-rate">
-                  ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
-                </span>
-              </div>
-              {!brandUnlocked ? (
-                <p className="pd-bulk-min">
-                  From {Number(bulkMinQty).toLocaleString('en-IN')} pieces
-                </p>
-              ) : (
-                <p className="pd-bulk-min">
-                  Bulk rate from {Number(applicableTier.minQuantity).toLocaleString('en-IN')} pieces
-                </p>
-              )}
-              <div className="pd-bulk-progress">
-                <div className="pd-bulk-track">
-                  <span
-                    className={`pd-bulk-fill ${brandUnlocked ? 'is-unlocked' : ''}`}
-                    style={{ width: `${bulkPct}%` }}
-                  />
-                </div>
-                <span className="pd-bulk-count">
-                  {Number(totalBrandPieces).toLocaleString('en-IN')} /{' '}
-                  {Number(bulkThresholdShown).toLocaleString('en-IN')} pieces
-                  {brandUnlocked && <span className="pd-bulk-check"> ✓</span>}
-                </span>
-              </div>
-              {brandUnlocked ? (
-                bulkSavingsPerPiece > 0 && (
-                  <p className="pd-bulk-save">
-                    You save ₹{Number(bulkSavingsPerPiece).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece
-                  </p>
-                )
-              ) : (
-                <p className="pd-bulk-locked">
-                  Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
-                  {product.brand_name || 'brand'} {pieceWord(brandRemaining)} to unlock bulk price
                 </p>
               )}
             </div>

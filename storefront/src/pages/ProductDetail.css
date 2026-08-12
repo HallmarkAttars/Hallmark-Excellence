@@ -410,8 +410,12 @@
    White card · GREEN information when unlocked (status pill, rate, fill,
    savings) · neutral gold/cream when locked. Brand-level, one source of
    truth — the numbers come from the same shared context the cart uses. */
+/* Card sits between the description and SELECT VARIANT: 26px below the
+   description/Read-more, and (flex column — no margin collapse) 10px +
+   the selector's 24px top margin = ~34px above "SELECT VARIANT". */
 .pd-bulk-card {
-  margin-top: 22px;
+  margin-top: 26px;
+  margin-bottom: 10px;
   padding: 14px 16px;
   background: var(--white);
   border: 1px solid var(--line);
