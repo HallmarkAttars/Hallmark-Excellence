@@ -90,6 +90,7 @@ export const HOME_FEATURED = {
 // --------------------------------------------------------------------------
 export const HOME_BRANDS = {
   title: 'Our Brands',
+  subtitle: 'Timeless fragrances crafted with heritage and excellence.',
 }
 
 // --------------------------------------------------------------------------

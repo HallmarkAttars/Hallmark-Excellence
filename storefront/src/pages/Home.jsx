@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import Hero from '../components/home/Hero'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
-import CollectionBanner from '../components/home/CollectionBanner'
-import BrandCard from '../components/home/BrandCard'
+import BrandShowcaseCard from '../components/home/BrandShowcaseCard'
 import FeaturedProducts from '../components/home/FeaturedProducts'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import SocialStrip from '../components/home/SocialStrip'
@@ -88,23 +87,26 @@ export default function Home() {
               <div className="container">
                 <div className="section-head">
                   <h2 className="section-title-upper">{HOME_BRANDS.title}</h2>
+                  {HOME_BRANDS.subtitle && (
+                    <p className="section-subtitle">{HOME_BRANDS.subtitle}</p>
+                  )}
                 </div>
 
-                {/* FEATURED — the two large banners (image | content) */}
-                <div className="collections-section">
+                {/* FEATURED — the first two brands as large full-image cards */}
+                <div className="brands-showcase brands-showcase--featured">
                   {featured.map((brand, i) => (
                     <Reveal key={brand.id} delay={i * 120}>
-                      <CollectionBanner brand={brand} />
+                      <BrandShowcaseCard brand={brand} variant="featured" />
                     </Reveal>
                   ))}
                 </div>
 
                 {/* SECONDARY — the remaining brands, three-up on desktop */}
                 {secondary.length > 0 && (
-                  <div className="brands-secondary">
+                  <div className="brands-showcase brands-showcase--standard">
                     {secondary.map((brand, i) => (
                       <Reveal key={brand.id} delay={i * 100}>
-                        <BrandCard brand={brand} />
+                        <BrandShowcaseCard brand={brand} variant="standard" />
                       </Reveal>
                     ))}
                   </div>

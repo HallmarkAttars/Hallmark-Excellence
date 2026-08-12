@@ -1,0 +1,207 @@
+/* ============================================================
+   BrandShowcaseCard — homepage "Our Brands" full-image luxury
+   cards. The entire card IS the photograph: absolute image layer
+   (object-fit: cover) + dark bottom gradient overlay, text sits
+   bottom-left ON the image. No split, no cream content panel.
+
+   Featured row: 2-up large cards (1:1.35 on desktop).
+   Standard row: 3-up cards (4:5 on desktop).
+   Mobile: one full-width 4:5 card per row, equal sizes.
+   ============================================================ */
+
+/* ---------- Section heading — centered "Our Brands" ---------- */
+.our-brands-section .section-head {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+.our-brands-section .section-subtitle {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--charcoal-soft);
+}
+
+/* ---------- Showcase grids ---------- */
+.brands-showcase {
+  display: grid;
+  gap: 16px;
+}
+.brands-showcase > * {
+  height: 100%;
+}
+.brands-showcase--standard {
+  margin-top: 20px;
+}
+
+/* ---------- The card — full background image ---------- */
+.brand-showcase-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  /* No-image stage (also the pre-image backdrop) */
+  background:
+    radial-gradient(240px 140px at 80% 0%, rgba(198, 154, 75, 0.22), transparent 65%),
+    linear-gradient(140deg, #1B1814 0%, #2a241c 100%);
+  box-shadow: 0 10px 30px rgba(23, 20, 17, 0.16);
+  color: #fff;
+  isolation: isolate;
+}
+
+/* Image layer — absolute, covers the whole card, never cropped by layout */
+.brand-showcase-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: -2;
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+/* No-image fallback — centered monogram on the dark stage */
+.brand-showcase-monogram {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 72px;
+  color: var(--gold-light);
+}
+
+/* Dark gradient overlay — transparent top → strong dark bottom */
+.brand-showcase-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(23, 20, 17, 0) 22%,
+    rgba(23, 20, 17, 0.22) 46%,
+    rgba(23, 20, 17, 0.78) 80%,
+    rgba(23, 20, 17, 0.92) 100%
+  );
+}
+
+/* ---------- Content — bottom-left, ON the image ---------- */
+.brand-showcase-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px;
+  min-width: 0;
+}
+.brand-showcase-label {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+.brand-showcase-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.2vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.12;
+  color: #fff;
+  text-wrap: balance;
+}
+.brand-showcase-line { display: block; }
+.brand-showcase-desc {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+}
+.brand-showcase-cta {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid rgba(198, 154, 75, 0.9);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.brand-showcase-cta span {
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+/* ---------- Hover (desktop pointers) — subtle zoom + slide ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .brand-showcase-card:hover .brand-showcase-img {
+    transform: scale(1.045);
+    filter: brightness(0.88);
+  }
+  .brand-showcase-card:hover .brand-showcase-cta {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--ink);
+  }
+  .brand-showcase-card:hover .brand-showcase-cta span {
+    transform: translateX(4px);
+  }
+}
+
+/* ---------- Featured vs standard sizing ---------- */
+.brand-showcase-card--featured,
+.brand-showcase-card--standard {
+  aspect-ratio: 4 / 5;
+  min-height: 360px;
+}
+.brand-showcase-card--featured .brand-showcase-content { padding: 28px; }
+.brand-showcase-card--featured .brand-showcase-title {
+  font-size: clamp(1.7rem, 3.6vw, 2.3rem);
+}
+.brand-showcase-card--featured .brand-showcase-desc { font-size: 0.9rem; }
+.brand-showcase-card--featured .brand-showcase-cta {
+  padding: 12px 24px;
+  font-size: 0.72rem;
+}
+
+/* ---------- Tablet (768–1023px) — two-up, equal heights ---------- */
+@media (min-width: 768px) {
+  .brands-showcase { gap: 20px; }
+  .brands-showcase--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brands-showcase--standard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 32px;
+  }
+}
+
+/* ---------- Desktop (1024px+) — featured 2-up tall, standard 3-up ---------- */
+@media (min-width: 1024px) {
+  .brands-showcase { gap: 24px; }
+  .brands-showcase--standard { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .brand-showcase-card--featured { aspect-ratio: 1 / 1.35; }
+}
+
+/* ---------- Mobile (<768px) — one full-width card per row ---------- */
+@media (max-width: 767px) {
+  .brand-showcase-card { border-radius: 14px; }
+  .brand-showcase-content { padding: 20px; }
+}

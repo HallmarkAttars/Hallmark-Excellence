@@ -1,8 +1,8 @@
 /* ============================================================
-   "Our Brands" skeleton — mirrors CollectionBanner layout
-   Reuses the shared shimmer system from SkeletonBase.css
-   (no new animation keyframes). Layout mirrors the real
-   `.our-brands-section` > `.collections-section` > banner grid.
+   "Our Brands" skeleton — mirrors the full-image BrandShowcaseCard
+   layout (section head + featured 2-up + standard 3-up grids of
+   full-bleed cards). Reuses the shared shimmer system from
+   SkeletonBase.css — no new animation keyframes.
    ============================================================ */
 
 .skeleton-brands-section {
@@ -15,62 +15,59 @@
   .skeleton-brands-section { padding: 48px 0 64px; }
 }
 
+/* Same container as the real .our-brands-section (1400px, warm padding) */
 .skeleton-brands-section .container {
-  max-width: var(--container);
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* The two card grid — stacked mobile, two-up desktop (matches
-   `.collections-section`). */
-.skeleton-collections-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+  max-width: 1400px;
+  padding-inline: 20px;
 }
 @media (min-width: 768px) {
-  .skeleton-collections-grid { gap: 16px; }
+  .skeleton-brands-section .container { padding-inline: 32px; }
 }
 @media (min-width: 1024px) {
-  .skeleton-collections-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .skeleton-brands-section .container { padding-inline: 48px; }
 }
 
 /* --- Section heading block --- */
 .skeleton-brands-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 36px;
 }
 .skeleton-brands-head .skeleton-block {
-  width: 220px;
+  width: 200px;
   height: 32px;
 }
 
-/* --- Individual banner card --- */
-.skeleton-collection-banner {
+/* --- Showcase grids (mirror .brands-showcase) --- */
+.skeleton-showcase {
+  display: grid;
+  gap: 16px;
+}
+.skeleton-showcase--standard {
+  margin-top: 20px;
+}
+
+/* --- Full-image card placeholder --- */
+.skeleton-showcase-card {
+  position: relative;
   width: 100%;
-  min-height: 220px;
-  border-radius: 4px;
+  aspect-ratio: 4 / 5;
+  min-height: 360px;
+  border-radius: 16px;
   overflow: hidden;
   background: var(--cream-deep);
   border: 1px solid var(--line);
   box-sizing: border-box;
 }
-/* Grid: IMAGE left | CONTENT right — same 42/58 split as real banner */
-.skeleton-collection-inner {
-  display: grid;
-  grid-template-columns: 42% 58%;
-  height: 100%;
-  min-height: 220px;
-}
-.skeleton-collection-media {
-  position: relative;
-  order: 1;
-  height: 100%;
-  min-height: 220px;
+.skeleton-showcase-media {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  /* Sweep overlay, same as .skeleton-media */
   background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
 }
-.skeleton-collection-media::after {
+.skeleton-showcase-media::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -83,162 +80,26 @@
   transform: translateX(-100%);
   animation: skeleton-sweep 1.4s ease-in-out infinite;
 }
-.skeleton-collection-content {
-  order: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 10px;
-  padding: 16px 18px;
-  min-width: 0;
-}
-.skeleton-collection-eyebrow {
-  width: 38%;
-  height: 10px;
-}
-.skeleton-collection-title {
-  width: 78%;
-  height: 18px;
-}
-.skeleton-collection-title.short {
-  width: 58%;
-}
-.skeleton-collection-tagline {
-  width: 88%;
-  height: 11px;
-  margin-top: 2px;
-}
-.skeleton-collection-btn {
-  width: 132px;
-  height: 38px;
-  margin-top: 6px;
-  border-radius: 2px;
-  background: linear-gradient(
-    100deg,
-    var(--cream-deep) 40%,
-    #e3d7c0 50%,
-    var(--cream-deep) 60%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
 
-/* Reuse shared shimmer blocks for text lines */
-.skeleton-collection-content .skeleton-block {
-  background: linear-gradient(
-    100deg,
-    var(--cream-deep) 40%,
-    #e3d7c0 50%,
-    var(--cream-deep) 60%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
-
-/* ---------- Tablet (768–1023px) — 45/55 split, roomier ---------- */
+/* ---------- Tablet (768–1023px) — two-up ---------- */
 @media (min-width: 768px) {
-  .skeleton-collection-banner,
-  .skeleton-collection-inner,
-  .skeleton-collection-media { min-height: 240px; }
-  .skeleton-collection-inner { grid-template-columns: 45% 55%; }
-  .skeleton-collection-content { padding: 24px 28px; }
-  .skeleton-collection-title { height: 22px; }
-}
-
-/* ---------- Desktop (1024px+) ---------- */
-@media (min-width: 1024px) {
-  .skeleton-collection-banner,
-  .skeleton-collection-inner,
-  .skeleton-collection-media { min-height: 300px; }
-  .skeleton-collection-content { padding: 28px 32px; }
-  .skeleton-collection-btn { height: 40px; width: 144px; }
-}
-
-/* ---------- Secondary brand cards skeleton (3-up desktop) ---------- */
-.skeleton-secondary-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  margin-top: 32px;
-}
-@media (min-width: 768px) {
-  .skeleton-secondary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-}
-@media (min-width: 900px) {
-  .skeleton-secondary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
-}
-@media (min-width: 1024px) {
-  .skeleton-secondary-grid { gap: 24px; }
-}
-
-.skeleton-brand-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-.skeleton-brand-media {
-  aspect-ratio: 16 / 10;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(165deg, #FBF6EC 0%, #F2E8D8 58%, #E9DCC4 100%);
-}
-.skeleton-brand-media::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.55) 50%,
-    transparent 70%
-  );
-  transform: translateX(-100%);
-  animation: skeleton-sweep 1.4s ease-in-out infinite;
-}
-.skeleton-brand-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 18px 20px 20px;
-  flex: 1;
-}
-.skeleton-brand-eyebrow { width: 45%; height: 9px; }
-.skeleton-brand-title { width: 70%; height: 16px; }
-.skeleton-brand-title.short { width: 52%; }
-.skeleton-brand-tagline { width: 88%; height: 10px; }
-
-.skeleton-brand-body .skeleton-block {
-  background: linear-gradient(
-    100deg,
-    var(--cream-deep) 40%,
-    #e3d7c0 50%,
-    var(--cream-deep) 60%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
-
-/* ---------- Reduced motion: static blocks, no sweep/shimmer ---------- */
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-collection-media,
-  .skeleton-collection-content .skeleton-block,
-  .skeleton-collection-btn,
-  .skeleton-brand-media,
-  .skeleton-brand-body .skeleton-block {
-    animation: none !important;
+  .skeleton-showcase { gap: 20px; }
+  .skeleton-showcase--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .skeleton-showcase--standard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 32px;
   }
-  .skeleton-collection-media { background: var(--cream-deep); }
-  .skeleton-collection-media::after { display: none; }
-  .skeleton-brand-media { background: var(--cream-deep); }
-  .skeleton-brand-media::after { display: none; }
-  .skeleton-collection-content .skeleton-block,
-  .skeleton-collection-btn,
-  .skeleton-brand-body .skeleton-block { background: var(--cream-deep); }
 }
 
+/* ---------- Desktop (1024px+) — featured 2-up tall, standard 3-up ---------- */
+@media (min-width: 1024px) {
+  .skeleton-showcase { gap: 24px; }
+  .skeleton-showcase--standard { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .skeleton-showcase--featured .skeleton-showcase-card { aspect-ratio: 1 / 1.35; }
+}
+
+/* ---------- Reduced motion: static blocks, no sweep ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-showcase-media { background: var(--cream-deep); }
+  .skeleton-showcase-media::after { display: none; }
+}
