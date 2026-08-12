@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import ProductGrid from '../components/product/ProductGrid'
-import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
-import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
@@ -20,10 +18,6 @@ export default function Shop() {
 
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [brandFilter, setBrandFilter] = useState('all')
-
-  // Shows the "waking up our servers" notice only after `loading` has stayed
-  // true for 4s (i.e. a real cold start), never on a fast load.
-  const showSlowNotice = useSlowLoadNotice(loading)
 
   useEffect(() => {
     setLoading(true)
@@ -110,7 +104,6 @@ export default function Shop() {
         </div>
 
         <div className="shop-results">
-          {showSlowNotice && <SlowLoadNotice />}
           <ProductGrid
             products={visibleProducts}
             loading={loading}
