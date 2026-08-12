@@ -907,12 +907,11 @@ export default function Contact() {
                       <button
                         type="button"
                         role="radio"
-                        aria-checked={paymentMethod === 'upi'}
+                        aria-checked={false}
                         data-method="upi"
                         disabled
                         tabIndex={-1}
                         className="checkout-payment-option is-disabled"
-                        onClick={() => setPaymentMethod('upi')}
                       >
                         <span className="checkout-payment-radio" aria-hidden="true" />
                         <span className="checkout-payment-icon" aria-hidden="true">

@@ -1,0 +1,85 @@
+/* ============================================================
+   Category products page — premium "All Categories" collection
+   Hero header → combined FILTER & SORT → product grid
+   The FILTER & SORT control itself (button / bottom sheet /
+   desktop popover) lives in the shared FilterSortControl.css.
+   ============================================================ */
+
+/* ---------- Premium hero header ---------- */
+.category-hero {
+  text-align: center;
+  padding: 56px 24px 34px;
+  border-bottom: 1px solid var(--line);
+}
+
+.category-hero-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.72rem; /* ~11.5px */
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold-deep);
+  text-decoration: none;
+  margin-bottom: 14px;
+  transition: color 0.18s ease;
+}
+.category-hero-back:hover { color: var(--gold); }
+.category-hero-back-arrow { font-size: 1rem; line-height: 1; }
+
+.category-hero h1 {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 3.4rem); /* 38–54px luxury serif */
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+/* Thin gold divider under the title — subtle, not loud */
+.category-hero-rule {
+  display: block;
+  width: 72px;
+  height: 2px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, rgba(184, 137, 56, 0), #b88938, rgba(184, 137, 56, 0));
+  border-radius: 2px;
+}
+
+@media (max-width: 767px) {
+  .category-hero { padding: 40px 16px 26px; }
+  .category-hero h1 { font-size: clamp(1.9rem, 8vw, 2.5rem); }
+}
+
+/* ---------- Body ---------- */
+.category-body {
+  max-width: 1440px;
+  padding-inline: 40px;
+  padding-top: 28px;
+  padding-bottom: 80px;
+}
+@media (max-width: 1023px) {
+  .category-body { padding-inline: 24px; padding-top: 24px; }
+}
+@media (max-width: 767px) {
+  .category-body { padding-inline: 16px; padding-top: 20px; padding-bottom: 56px; }
+}
+@media (max-width: 360px) {
+  .category-body { padding-inline: 12px; }
+}
+
+/* ---------- Toolbar wrapper ----------
+   Only spacing lives here — the control (button/sheet/popover) and its
+   alignment are provided by the shared FilterSortControl component. */
+.category-toolbar {
+  margin-bottom: 26px;
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------- Grid rhythm ----------
+   The shared .grid-products already gives 2-up mobile / 3-up tablet /
+   4-up desktop / 5-up large desktop, with minmax(0, 1fr) tracks so cards
+   never overflow their track at any width. */
