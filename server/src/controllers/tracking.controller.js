@@ -71,6 +71,14 @@ function toSafeTrackingOrder(row) {
     ...(it.quantity_value != null && it.quantity_unit
       ? { quantity_value: it.quantity_value, quantity_unit: it.quantity_unit }
       : {}),
+    // Per-piece pricing snapshot — preserved so the customer's invoice can
+    // show the applied RATE/pcs. (bulk or normal per-piece price) and the
+    // exact piece count from the SAVED order, never a live recalculation.
+    ...(it.pieces != null ? { pieces: Number(it.pieces) } : {}),
+    ...(it.unit_pieces != null ? { unit_pieces: Number(it.unit_pieces) } : {}),
+    ...(it.bulk_per_unit != null ? { bulk_per_unit: Number(it.bulk_per_unit) } : {}),
+    ...(it.variant_price_per_unit != null ? { variant_price_per_unit: Number(it.variant_price_per_unit) } : {}),
+    ...(it.normal_per_piece != null ? { normal_per_piece: Number(it.normal_per_piece) } : {}),
     // Pack purchase metadata — preserved for the customer's own invoice.
     ...(it.pack_id ? { pack_id: it.pack_id, pack_name: it.pack_name } : {}),
     ...(it.pack_size != null

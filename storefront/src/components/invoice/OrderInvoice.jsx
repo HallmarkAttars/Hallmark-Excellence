@@ -160,7 +160,7 @@ export default function OrderInvoice({ order, documentType }) {
               <th>Product</th>
               <th>Details</th>
               <th className="invoice-num">Qty</th>
-              <th className="invoice-num">Rate</th>
+              <th className="invoice-num">Rate/pcs.</th>
               <th className="invoice-num">Amount</th>
             </tr>
           </thead>
@@ -192,7 +192,7 @@ export default function OrderInvoice({ order, documentType }) {
                   )}
                 </td>
                 <td className="invoice-num">{it.pack ? (it.pack.pieces ?? it.qty) : it.qty}</td>
-                <td className="invoice-num">{formatINR(it.rate)}</td>
+                <td className="invoice-num">{formatINR(it.rate)}{it.ratePerPiece ? '/pcs.' : ''}</td>
                 <td className="invoice-num invoice-amount">{formatINR(it.amount)}</td>
               </tr>
             ))}

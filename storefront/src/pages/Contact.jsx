@@ -7,6 +7,7 @@ import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
 import { lineUnitPrice } from '../utils/variantPricing'
 import { submitContactForm } from '../utils/contactForm'
+import { paymentMethodLabel } from '../utils/invoice'
 import {
   UserIcon,
   HomeIcon,
@@ -163,10 +164,12 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null) // { orderNumber, order } | { sent: true }
   const [error, setError] = useState('')
-  // Selected payment method — customers only CHOOSE how they will pay (no
-  // payment gateway). Default: Cash on Delivery. Orders always start with
-  // payment status 'Pending' and staff confirm payment manually later.
-  const [paymentMethod, setPaymentMethod] = useState('cod') // 'cod' | 'upi'
+  // Selected payment method — an advance payment is REQUIRED to confirm the
+  // order (no payment gateway; staff share instructions after placement and
+  // confirm payment manually). UPI is the payment method used to make that
+  // advance payment, but online payment is currently unavailable in the UI,
+  // so 'cod' (displayed as 'Advance Payment') is the only selectable option.
+  const [paymentMethod, setPaymentMethod] = useState('cod') // 'cod' (only enabled option)
   const [phoneTouched, setPhoneTouched] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({}) // per-field messages shown next to each input
   // PIN-code lookup state: idle | loading | found | error
@@ -226,7 +229,9 @@ export default function Contact() {
     if (dir === undefined) return
     if (!e.target.closest || !e.target.closest('.checkout-payment-option')) return
     e.preventDefault()
-    const options = ['cod', 'upi']
+    // Only ENABLED options participate in arrow navigation — UPI is
+    // currently unavailable (disabled), so 'cod' is the only option.
+    const options = ['cod']
     const idx = options.indexOf(paymentMethod)
     const next = (idx + dir + options.length) % options.length
     setPaymentMethod(options[next])
@@ -470,8 +475,9 @@ export default function Contact() {
     const order = result.order
     const items = checkout.checkoutItems
     const orderTotal = order?.total != null ? Number(order.total) : Number(checkout.total)
-    const paymentMethod = order?.payment_method || 'Cash On Delivery'
-    const isUpi = String(paymentMethod).toLowerCase().includes('upi')
+    // Customer-facing label — the business now takes only advance payments,
+    // so the stored legacy method always displays as 'Advance Payment'.
+    const paymentMethod = paymentMethodLabel(order?.payment_method || 'Cash On Delivery')
     const orderStatus = order?.order_status || 'Pending'
     const orderNumber = result.orderNumber
     // Real line count (sum of quantities) for the confirmation summary.
@@ -550,11 +556,10 @@ export default function Contact() {
               <span>Payment Method</span>
               <span>{paymentMethod}</span>
             </div>
-            {isUpi && (
-              <p className="order-success-payment-note">
-                Our team will contact you shortly with the payment instructions.
-              </p>
-            )}
+            <p className="order-success-payment-note">
+              An advance payment is required to confirm your order. Payment
+              instructions will be provided after you place the order.
+            </p>
             <div className="order-success-row">
               <span>Order Status</span>
               <span className="order-status-pill">{orderStatus}</span>
@@ -863,10 +868,14 @@ export default function Contact() {
                     />
                   </div>
 
-                  {/* Payment Method — customers only SELECT how they will pay.
-                      No payment gateway: no QR, no UPI ID screen, no card form.
-                      The order is created with payment_status 'Pending' and
-                      staff confirm payment manually. */}
+                  {/* Payment Method — an advance payment is REQUIRED to confirm
+                      the order. There is no payment gateway: no QR, no UPI ID
+                      screen, no card form. The order is created with
+                      payment_status 'Pending' and staff confirm payment after
+                      sharing instructions. UPI (the method for the advance
+                      payment) is shown but currently unavailable — the
+                      'Advance Payment' requirement is the only selectable
+                      option. */}
                   <div
                     className="checkout-payment"
                     role="radiogroup"
@@ -891,8 +900,8 @@ export default function Contact() {
                           <CashOnDeliveryIcon size={21} />
                         </span>
                         <span className="checkout-payment-option-body">
-                          <strong>Cash on Delivery</strong>
-                          <span>Pay when your order arrives at your doorstep</span>
+                          <strong>Advance Payment</strong>
+                          <span>Pay the required amount in advance to confirm your order</span>
                         </span>
                       </button>
                       <button
@@ -900,7 +909,9 @@ export default function Contact() {
                         role="radio"
                         aria-checked={paymentMethod === 'upi'}
                         data-method="upi"
-                        className={`checkout-payment-option${paymentMethod === 'upi' ? ' is-selected' : ''}`}
+                        disabled
+                        tabIndex={-1}
+                        className="checkout-payment-option is-disabled"
                         onClick={() => setPaymentMethod('upi')}
                       >
                         <span className="checkout-payment-radio" aria-hidden="true" />
@@ -908,16 +919,18 @@ export default function Contact() {
                           <UpiIcon size={21} />
                         </span>
                         <span className="checkout-payment-option-body">
-                          <strong>UPI / Online Payment</strong>
+                          <strong>
+                            UPI / Online Payment
+                            <span className="checkout-payment-unavailable">Currently unavailable</span>
+                          </strong>
                           <span>Pay securely using UPI, Cards, Net Banking etc.</span>
                         </span>
                       </button>
                     </div>
-                    {paymentMethod === 'upi' && (
-                      <p className="checkout-payment-note">
-                        No payment is taken now — we will share payment instructions after your order is placed.
-                      </p>
-                    )}
+                    <p className="checkout-payment-note">
+                      An advance payment is required to confirm your order.
+                      Payment instructions will be provided after you place the order.
+                    </p>
                     {/* Informational only — there is NO payment gateway; the
                         customer has only chosen how they will pay. */}
                     <div className="checkout-payment-security">

@@ -428,7 +428,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     // number (drawn at H-15) on dense multi-page invoices — the default
     // 10mm margin could let a full page of rows run underneath it.
     margin: { left: M, right: M, bottom: 24 },
-    head: [['PRODUCT', 'DETAILS', 'QTY', 'RATE', 'AMOUNT']],
+    head: [['PRODUCT', 'DETAILS', 'QTY', 'RATE/pcs.', 'AMOUNT']],
     body: inv.items.map((it) => {
       const detailLines = []
       if (it.detail) detailLines.push(it.detail)
@@ -449,7 +449,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
         detailLines.join('\n'),
         // Qty column: actual pieces for a pack line, plain qty otherwise.
         it.pack ? String(it.pack.pieces ?? it.qty) : String(it.qty),
-        rupee ? money(it.rate) : pdfMoney(it.rate),
+        // RATE column: per-piece lines append "/pcs." (reference design).
+        rupee
+          ? money(it.rate) + (it.ratePerPiece ? '/pcs.' : '')
+          : pdfMoney(it.rate) + (it.ratePerPiece ? '/pcs.' : ''),
         rupee ? money(it.amount) : pdfMoney(it.amount),
       ]
     }),
@@ -691,7 +694,7 @@ function renderPrintHtml(inv, logo) {
         <td class="name">${thumb}<span>${escapeHtml(it.name)}</span></td>
         <td class="detail">${details.join('')}</td>
         <td class="num">${it.pack ? (it.pack.pieces ?? it.qty) : it.qty}</td>
-        <td class="num">${formatINR(it.rate)}</td>
+        <td class="num">${formatINR(it.rate)}${it.ratePerPiece ? '/pcs.' : ''}</td>
         <td class="num">${formatINR(it.amount)}</td>
       </tr>`
     })
@@ -850,7 +853,7 @@ function renderPrintHtml(inv, logo) {
       <table class="items">
         <colgroup><col class="c1" /><col class="c2" /><col class="c3" /><col class="c4" /><col class="c5" /></colgroup>
         <thead>
-          <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th></tr>
+          <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate/pcs.</th><th class="num">Amount</th></tr>
         </thead>
         <tbody>
           ${rows || '<tr><td colspan="5">No items recorded for this order.</td></tr>'}

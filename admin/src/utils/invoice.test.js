@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { formatOrderForInvoice } from './invoice'
+import { formatOrderForInvoice, paymentMethodLabel } from './invoice'
 
 // Flat enriched order shape (admin / tracking API).
 const baseOrder = (items, over = {}) => ({
@@ -90,6 +90,85 @@ describe('detail line — BRAND · SIZE (real values only)', () => {
   })
 })
 
+describe('per-piece RATE/QTY display (reference design)', () => {
+  it('piece-count line shows QTY = pieces and RATE = bulk per-unit price', () => {
+    // 126 Pieces @ ₹42 — the whole line IS one piece selection.
+    const inv = formatOrderForInvoice(
+      baseOrder([{
+        product_name: 'Own Man Show',
+        brand_name: 'AREES',
+        quantity_unit: 'Pieces',
+        quantity_value: 126,
+        unit_pieces: 126,
+        pieces: 126,
+        unit_price: 5292,
+        quantity: 1,
+        bulk_per_unit: 42,
+        normal_per_piece: 50,
+      }])
+    )
+    const it = inv.items[0]
+    expect(it.qty).toBe(126)
+    expect(it.rate).toBe(42)
+    expect(it.ratePerPiece).toBe(true)
+    // AMOUNT is the SAVED line total (42 × 126), never re-derived from RATE.
+    expect(it.amount).toBe(5292)
+  })
+
+  it('variant bought N× keeps the customer quantity with per-unit RATE', () => {
+    // 2 × "100 Pieces" variant — QTY stays 2, RATE = the per-unit price.
+    const inv = formatOrderForInvoice(
+      baseOrder([{
+        product_name: 'Musk',
+        variant_label: '100 Pieces',
+        quantity_unit: 'Pieces',
+        quantity_value: 100,
+        unit_pieces: 100,
+        pieces: 200,
+        unit_price: 1000,
+        quantity: 2,
+        variant_price_per_unit: 10,
+      }])
+    )
+    const it = inv.items[0]
+    expect(it.qty).toBe(2)
+    expect(it.rate).toBe(10)
+    expect(it.ratePerPiece).toBe(true)
+    expect(it.amount).toBe(2000)
+  })
+
+  it('pack purchases keep their pack price/QTY and no /pcs. suffix', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([{
+        product_name: 'Oud',
+        pack_id: 'p1',
+        pack_name: 'Pack of 10',
+        pack_size: 10,
+        number_of_packs: 3,
+        actual_piece_quantity: 30,
+        pack_price: 500,
+        unit_price: 500,
+        quantity: 3,
+      }])
+    )
+    const it = inv.items[0]
+    expect(it.qty).toBe(3)
+    expect(it.rate).toBe(500)
+    expect(it.ratePerPiece).toBe(false)
+    expect(it.amount).toBe(1500)
+  })
+
+  it('non-piece lines keep plain rate without /pcs.', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([{ product_name: 'Black Oud', unit_price: 200, quantity: 90 }])
+    )
+    const it = inv.items[0]
+    expect(it.qty).toBe(90)
+    expect(it.rate).toBe(200)
+    expect(it.ratePerPiece).toBe(false)
+  })
+})
+
 describe('money math is untouched (regression guard)', () => {
   it('line amounts stay rate × quantity and subtotal sums them', () => {
     const inv = formatOrderForInvoice(
@@ -136,7 +215,19 @@ describe('order metadata + notes-shaped orders', () => {
     expect(inv.date).toBe('09 Aug 2026')
     expect(inv.time).toBe('12:03 PM')
     expect(inv.status).toBe('Pending')
-    expect(inv.paymentMethod).toBe('Cash On Delivery')
+    // The business now takes only advance payments — the legacy stored
+    // 'Cash On Delivery' value DISPLAYS as 'Advance Payment'.
+    expect(inv.paymentMethod).toBe('Advance Payment')
+  })
+
+  it('maps the stored payment method to the customer-facing label', () => {
+    // Legacy COD value → Advance Payment (stored data never rewritten).
+    expect(paymentMethodLabel('Cash On Delivery')).toBe('Advance Payment')
+    expect(paymentMethodLabel('cod')).toBe('Advance Payment')
+    expect(paymentMethodLabel(undefined)).toBe('Advance Payment')
+    // UPI keeps its own label.
+    expect(paymentMethodLabel('UPI / Online Payment')).toBe('UPI / Online Payment')
+    expect(paymentMethodLabel('upi')).toBe('UPI / Online Payment')
   })
 
   it('flows the same item fields through a raw row whose data lives in the notes JSON string', () => {

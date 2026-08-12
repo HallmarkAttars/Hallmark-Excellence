@@ -589,6 +589,34 @@
   background: rgba(184, 137, 56, 0.07);
   box-shadow: 0 0 0 3px rgba(184, 137, 56, 0.14);
 }
+
+/* Disabled option (UPI currently unavailable) — greyed out, not clickable */
+.checkout-payment-option.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background: #f6f4ef;
+  border-color: #ddd6c9;
+  box-shadow: none;
+}
+.checkout-payment-option.is-disabled:hover {
+  border-color: #ddd6c9;
+}
+.checkout-payment-option.is-disabled .checkout-payment-icon {
+  background: rgba(111, 106, 99, 0.12);
+  color: #6f6a63;
+}
+.checkout-payment-option.is-disabled .checkout-payment-radio {
+  border-color: rgba(36, 31, 25, 0.18);
+  background: #efece5;
+}
+.checkout-payment-unavailable {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #8a8577;
+}
 .checkout-payment-radio {
   flex: 0 0 18px;
   width: 18px;

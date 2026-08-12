@@ -153,8 +153,14 @@ function buildOrderEmailParams(order) {
     total: formatINR(total),
     totalRaw: total,
 
-    // Payment
-    paymentMethod: order?.payment_method || 'Cash On Delivery',
+    // Payment — customer-facing label. The business now takes only advance
+    // payments, so the legacy stored 'cod'/'Cash On Delivery' value always
+    // displays as 'Advance Payment' (stored data is never rewritten); UPI
+    // keeps its own label. Mirrors the storefront utils/invoice mapping.
+    paymentMethod:
+      String(order?.payment_method || '').toLowerCase().includes('upi')
+        ? 'UPI / Online Payment'
+        : 'Advance Payment',
     paymentStatus: order?.payment_status || 'Pending',
 
     // Delivery

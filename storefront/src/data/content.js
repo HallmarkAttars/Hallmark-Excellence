@@ -14,10 +14,10 @@
 export const BUSINESS = {
   name: 'Arees & Dahab',
   tagline: 'The Art of Significance Attars',
-  phoneDisplay: '+91 98765 43210',
-  phoneTel: '+919876543210', // digits only — used for tel: links
-  email: 'hello@areesdahab.com',
-  address: '83 Moore Street, Mannady, Chennai, Tamil Nadu 600001',
+  phoneDisplay: '+91 98407 50467',
+  phoneTel: '+919840750467', // digits only — used for tel: links
+  email: 'hikmaexports@gmail.com',
+  address: '83 & 84, Moore St, Mannadi, George Town, Chennai, Greater Chennai, Tamil Nadu 600001',
   mapEmbedUrl:
     'https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed',
   mapDirectionsUrl:

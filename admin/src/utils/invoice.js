@@ -82,13 +82,25 @@ function pick(...values) {
   return ''
 }
 
+// Customer-facing label for the STORED payment method. The business now
+// takes only advance payments — the legacy 'cod' / 'Cash on Delivery'
+// values DISPLAY as 'Advance Payment' (stored data is never rewritten).
+// UPI keeps its own label. Shared by the checkout UI, success page, order
+// tracking and the invoice so every surface agrees.
+export function paymentMethodLabel(value) {
+  const v = String(value ?? '').trim().toLowerCase()
+  return v.includes('upi') ? 'UPI / Online Payment' : 'Advance Payment'
+}
+
 export function formatOrderForInvoice(order) {
   const notes = parseNotes(order)
 
   const orderId = pick(order.orderId, order.order_number, order.orderNumber)
   const createdAt = pick(order.createdAt, order.created_at)
   const status = pick(order.status, order.order_status, notes.order_status) || 'Pending'
-  const paymentMethod = pick(order.payment_method, notes.payment_method) || 'Cash On Delivery'
+  const paymentMethod = paymentMethodLabel(
+    pick(order.payment_method, notes.payment_method) || 'Cash On Delivery'
+  )
   // Payment status always starts 'Pending' (there is no gateway); only staff
   // can mark an order 'Paid' after manually receiving the payment.
   const paymentStatus = pick(order.payment_status, notes.payment_status) || 'Pending'
@@ -117,21 +129,32 @@ export function formatOrderForInvoice(order) {
   // authoritative figure on the invoice.
   const rawItems = Array.isArray(order.items) ? order.items : notes.items
   const items = (Array.isArray(rawItems) ? rawItems : []).map((it) => {
-    const rate = Number(it.unit_price ?? it.price ?? it.selected_price ?? 0)
-    const qty = Number(it.quantity ?? it.qty ?? 1)
+    // Stored line figures — the ONLY authoritative values. The displayed
+    // RATE/QTY columns below are derived presentation fields built from
+    // these stored numbers (never recalculated, never invented).
+    const unitPrice = Number(it.unit_price ?? it.price ?? it.selected_price ?? 0)
+    const quantity = Number(it.quantity ?? it.qty ?? 1)
+    // Line total stays exactly the stored unit_price × quantity — the RATE
+    // column may show a per-piece price, but AMOUNT is never re-derived
+    // from it (a 126-piece bulk line shows RATE ₹42/pcs + AMOUNT ₹5,292).
+    const amount = Number.isFinite(unitPrice) && Number.isFinite(quantity)
+      ? unitPrice * quantity
+      : 0
     const size =
       it.variant_label ||
       (it.quantity_value != null && it.quantity_unit
         ? `${it.quantity_value} ${it.quantity_unit}`
         : '')
-    // PACK purchase metadata — preserved from the order snapshot.
+    // PACK purchase metadata — preserved from the order snapshot so invoices
+    // show "Pack of 10 · 3 packs · 30 pieces" (never ambiguous pack/piece
+    // counts).
     const pack = it.pack_id != null
       ? {
           id: it.pack_id,
           name: it.pack_name || (it.pack_size != null ? `Pack of ${it.pack_size}` : ''),
           size: it.pack_size != null ? Number(it.pack_size) : null,
           packs: it.number_of_packs != null ? Number(it.number_of_packs) : null,
-          pieces: it.actual_piece_quantity != null ? Number(it.actual_piece_quantity) : qty,
+          pieces: it.actual_piece_quantity != null ? Number(it.actual_piece_quantity) : quantity,
           price: it.pack_price != null ? Number(it.pack_price) : null,
         }
       : null
@@ -139,6 +162,44 @@ export function formatOrderForInvoice(order) {
     // carries those values. Nothing is invented.
     const brand = it.brand_name || ''
     const detail = [brand, size].filter(Boolean).join(' · ')
+
+    // RATE/QTY display for piece-based lines (the reference design):
+    //   • a piece-count line (brand bulk — e.g. 126 Pieces @ ₹42) shows
+    //     QTY = pieces and RATE = per-piece price (bulk_per_unit wins, then
+    //     the variant's per-unit price)
+    //   • a Pieces variant bought N× (e.g. 2 × "100 Pieces" variant) keeps
+    //     QTY = the customer's quantity with RATE = per-unit price
+    //   • pack purchases keep their pack price/QTY (existing behaviour)
+    // All values come from the SAVED SNAPSHOT — never live prices, never
+    // a recalculation.
+    const isPack = it.pack_id != null
+    const isPiecesUnit = String(it.quantity_unit ?? '').trim() === 'Pieces'
+    const pieces =
+      it.pieces != null ? Number(it.pieces)
+      : it.unit_pieces != null ? Number(it.unit_pieces)
+      : null
+    const unitPieces = it.unit_pieces != null ? Number(it.unit_pieces) : null
+    // Applied per-unit price from the stored snapshot (bulk price wins).
+    const perPiece =
+      it.bulk_per_unit != null ? Number(it.bulk_per_unit)
+      : it.variant_price_per_unit != null ? Number(it.variant_price_per_unit)
+      : it.normal_per_piece != null ? Number(it.normal_per_piece)
+      : isPiecesUnit && pieces != null && pieces > 0 ? unitPrice / pieces
+      : null
+    // A piece-count line = the whole line IS one piece selection (126 Pieces
+    // with unit_pieces 126). A variant bought N× has pieces = size × N, so
+    // pieces !== unit_pieces and QTY stays the customer's quantity.
+    const isPieceCountLine =
+      isPiecesUnit &&
+      pieces != null &&
+      pieces > 0 &&
+      (unitPieces == null || unitPieces === pieces)
+    const displayQty = isPieceCountLine ? pieces : quantity
+    const displayRate =
+      !isPack && isPiecesUnit && perPiece != null && perPiece > 0
+        ? perPiece
+        : unitPrice
+
     return {
       name: it.product_name || it.name || 'Product',
       // Thumbnail from the saved snapshot — best-effort; empty string simply
@@ -148,9 +209,12 @@ export function formatOrderForInvoice(order) {
       brand,
       size,
       pack,
-      qty: Number.isFinite(qty) ? qty : 1,
-      rate: Number.isFinite(rate) ? rate : 0,
-      amount: Number.isFinite(rate) && Number.isFinite(qty) ? rate * qty : 0,
+      qty: Number.isFinite(displayQty) ? displayQty : 1,
+      rate: Number.isFinite(displayRate) ? displayRate : 0,
+      // Per-piece RATE cells append "/pcs." (reference design); pack and
+      // non-piece lines keep a plain figure.
+      ratePerPiece: !isPack && isPiecesUnit && displayRate > 0,
+      amount,
     }
   })
 

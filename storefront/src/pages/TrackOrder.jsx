@@ -8,6 +8,7 @@ import {
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { TRACK_ORDER_PAGE } from '../data/content'
+import { paymentMethodLabel } from '../utils/invoice'
 import './TrackOrder.css'
 
 // Canonical admin workflow — the tracker only ever reflects the EXISTING
@@ -388,7 +389,7 @@ function OrderResultCard({ order }) {
           </span>
           <span className="track-pay-label">Payment Method</span>
           <span className="track-pay-value">
-            {order.payment_method || 'Cash On Delivery'}
+            {paymentMethodLabel(order.payment_method || 'Cash On Delivery')}
           </span>
         </div>
         <div className="track-pay-row">
