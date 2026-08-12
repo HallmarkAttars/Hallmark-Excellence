@@ -109,6 +109,29 @@
   text-transform: uppercase;
   color: #b8862b;
 }
+/* Gold decorative divider + diamond under the subtitle */
+.invoice-brand-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 3.5px;
+}
+.invoice-divider-rule {
+  width: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(184, 134, 43, 0), #b8862b);
+}
+.invoice-divider-rule:last-child {
+  background: linear-gradient(90deg, #b8862b, rgba(184, 134, 43, 0));
+}
+.invoice-divider-diamond {
+  width: 5px;
+  height: 5px;
+  background: #b8862b;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
 .invoice-title-block {
   text-align: right;
   flex-shrink: 0;
@@ -152,9 +175,19 @@
 }
 .invoice-contact-item {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10.5px;
   color: #6f6a63;
   letter-spacing: 0.03em;
+}
+.invoice-contact-icon {
+  width: 11px;
+  height: 11px;
+  color: #b8862b;
+  flex-shrink: 0;
+  stroke-width: 1.8;
 }
 .invoice-contact-item + .invoice-contact-item::before {
   content: '';
@@ -252,10 +285,10 @@
   margin-top: 7mm;
 }
 .invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30%; }
-.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 30%; }
+.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 28%; }
 .invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 10%; }
-.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 15%; }
-.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 15%; }
+.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 16%; }
+.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 16%; }
 .invoice-table th {
   background: #171512;
   color: #f7f2e8;

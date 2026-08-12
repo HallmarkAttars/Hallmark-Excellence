@@ -11,7 +11,14 @@
 // ============================================================================
 
 export const INVOICE_COMPANY = {
+  // Legal name — printed in the footer copyright line (© … All rights
+  // reserved) exactly as before.
   name: 'Hallmark of Excellence',
+  // The premium header brand title (reference design) — stacked centred on
+  // the invoice and used for the thank-you sign-off ("— Team Arees
+  // Perfumes"). Kept separate from `name` so the copyright stays the legal
+  // company name.
+  brandTitle: 'Arees Perfumes',
   tagline: 'The Art of Significance Attars',
   phone: '+91 98765 43210',
   email: 'hello@areesdahab.com',

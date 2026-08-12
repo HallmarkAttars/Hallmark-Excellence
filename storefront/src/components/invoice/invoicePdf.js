@@ -253,6 +253,9 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   // jsPDF's charSpace extends right-aligned text ~1 charSpace past its anchor
   // (that previously clipped the last letter against the gold frame).
   const docTitle = inv.documentType || 'INVOICE'
+  // The premium header brand title (AREES / PERFUMES) — falls back to the
+  // legal company name when no brand title is configured.
+  const brandTitle = inv.company.brandTitle || inv.company.name
   let brandX = M
   if (logo) {
     const logoW = 34
@@ -287,11 +290,11 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const titleLeftEdge = W - M - 1 - textWidthMm(doc, docTitle, { charSpace: 1 })
   doc.text(docTitle, W - M - 1, 17.5, { align: 'right', charSpace: 1 })
 
-  // Brand name (centre) — two stacked serif lines (HALLMARK OF / EXCELLENCE),
+  // Brand name (centre) — two stacked serif lines (AREES / PERFUMES),
   // shrink-fit to the LONGEST line inside the band bounded by the left edge
   // and the tightest of the title / right meta block (with a 2mm gap); stays
   // perfectly centred whenever it fits.
-  const brandLines = invoiceBrandLines(inv.company.name)
+  const brandLines = invoiceBrandLines(brandTitle)
   const brandLongest = brandLines.reduce((a, b) => (b.length > a.length ? b : a), '')
   const centerRightBound = Math.min(rightBlockLeft, titleLeftEdge)
   const centerMax = Math.max(20, Math.min(W / 2 - brandX, centerRightBound - 2 - W / 2) * 2)
@@ -310,6 +313,15 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     fitTextToWidth(doc, tagline, centerMax, { size: 9, minSize: 6, charSpace: 1.1 })
     doc.text(tagline, W / 2, 24.6, { align: 'center', charSpace: 1.1 })
   }
+
+  // Gold decorative divider + diamond under the subtitle. Drawn as GRAPHICS
+  // (never text) so it stays clear of the header text-containment checks and
+  // can never be mistaken for a label; centred, well inside the right meta
+  // block's left edge (x ≥ 174), so nothing can collide.
+  doc.setDrawColor(...GOLD).setLineWidth(0.3)
+  doc.line(W / 2 - 10, 27.2, W / 2 - 3.2, 27.2)
+  doc.line(W / 2 + 3.2, 27.2, W / 2 + 10, 27.2)
+  drawDiamond(doc, W / 2, 27.2, 1.1)
 
   // #order / Date / Time (right) — each line shrink-fits within the cap.
   let ry = 28.0
@@ -467,14 +479,14 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 },
     },
     columnStyles: {
-      // Fixed proportional widths — 30/30/10/15/15 of the 182mm content
+      // Fixed proportional widths — 30/28/10/16/16 of the 182mm content
       // width (100%), so the table always fills exactly between the A4
       // margins and money stays right-aligned and fully visible.
       0: { cellWidth: r1(CW * 0.3) },
-      1: { cellWidth: r1(CW * 0.3) },
+      1: { cellWidth: r1(CW * 0.28) },
       2: { cellWidth: r1(CW * 0.1), halign: 'right' },
-      3: { cellWidth: r1(CW * 0.15), halign: 'right' },
-      4: { cellWidth: r1(CW * 0.15), halign: 'right' },
+      3: { cellWidth: r1(CW * 0.16), halign: 'right' },
+      4: { cellWidth: r1(CW * 0.16), halign: 'right' },
     },
     didParseCell: (data) => {
       if (data.section === 'head') return
@@ -567,7 +579,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
   doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 19.5, { align: 'center' })
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text(`— Team ${inv.company.name}`, W / 2, ty + 24, { align: 'center' })
+  doc.text(`— Team ${brandTitle}`, W / 2, ty + 24, { align: 'center' })
 
   // ============== PAGE FRAME + CORNER DETAILS + FOOTER (every page) ========
   const pages = doc.getNumberOfPages()
@@ -592,7 +604,8 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     drawDiamond(doc, fL, fB, 1.6)
     drawDiamond(doc, fR, fB, 1.6)
 
-    // Page footer — "Page i of n" flanked by gold rules with end dots
+    // Page footer — "Page i of n" flanked by gold rules with gold diamonds
+    // (the ◆ accents of the reference design).
     const label = `Page ${i} of ${pages}`
     const py = H - 12
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
@@ -604,9 +617,8 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.setDrawColor(...GOLD).setLineWidth(0.3)
     doc.line(lx, py - 0.8, lx + ruleLen, py - 0.8)
     doc.line(rx, py - 0.8, rx + ruleLen, py - 0.8)
-    doc.setFillColor(...GOLD)
-    doc.circle(lx, py - 0.8, 0.45, 'F')
-    doc.circle(rx + ruleLen, py - 0.8, 0.45, 'F')
+    drawDiamond(doc, lx, py - 0.8, 0.9)
+    drawDiamond(doc, rx + ruleLen, py - 0.8, 0.9)
     doc.text(label, W / 2, py, { align: 'center' })
   }
 
@@ -641,8 +653,20 @@ export async function printInvoice(order, { logoUrl, win } = {}) {
 
 // Standalone A4 HTML document for the print window — mirrors the PDF layout
 // exactly (browser fonts render the real ₹ glyph).
+// Small inline contact icons for the print window (screen + print support
+// icons; the jsPDF document keeps clean text because it has no icon assets).
+const CONTACT_ICONS = {
+  phone:
+    '<svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c1 .3 2 .5 3 .6a2 2 0 0 1 1.5 2z"/></svg>',
+  email:
+    '<svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+  website:
+    '<svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>',
+}
+
 function renderPrintHtml(inv, logo) {
-  const brandLines = invoiceBrandLines(inv.company.name)
+  const brandTitle = inv.company.brandTitle || inv.company.name
+  const brandLines = invoiceBrandLines(brandTitle)
   const docTitle = inv.documentType || 'INVOICE'
 
   const rows = inv.items
@@ -684,7 +708,11 @@ function renderPrintHtml(inv, logo) {
   if (inv.paymentMethod) orderInfo.push(`<li><span>Payment</span><strong>${escapeHtml(inv.paymentMethod)}</strong></li>`)
   if (inv.status) orderInfo.push(`<li><span>Status</span><strong>${escapeHtml(inv.status)}</strong></li>`)
 
-  const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
+  const contactBits = [
+    inv.company.phone && { key: 'phone', icon: CONTACT_ICONS.phone, text: inv.company.phone },
+    inv.company.email && { key: 'email', icon: CONTACT_ICONS.email, text: inv.company.email },
+    inv.company.website && { key: 'website', icon: CONTACT_ICONS.website, text: inv.company.website },
+  ].filter(Boolean)
   const legalBits = [inv.company.gstNote, `© ${inv.company.name}. All rights reserved.`].filter(Boolean)
 
   return `<!doctype html>
@@ -712,8 +740,12 @@ function renderPrintHtml(inv, logo) {
   .brand img { height: 11mm; width: auto; object-fit: contain; }
   .brand-center { text-align: center; min-width: 0; }
   .brand-center .company { display: block; font-family: Georgia, serif; font-weight: 700; color: #171512; text-align: center; overflow-wrap: anywhere; }
-  .brand-center .company span { display: block; font-size: 30px; letter-spacing: .06em; line-height: 1.2; white-space: nowrap; }
+  .brand-center .company span { display: block; font-size: 30px; letter-spacing: .06em; line-height: 1.2; white-space: nowrap; overflow-wrap: anywhere; }
   .brand-center .tagline { display: block; font-size: 9.5px; letter-spacing: .28em; text-transform: uppercase; color: #b8862b; margin-top: 1.5mm; }
+  .brand-center .divider { display: flex; align-items: center; justify-content: center; gap: 2mm; margin-top: 1.2mm; }
+  .brand-center .divider .rule { width: 6mm; height: .3mm; background: linear-gradient(90deg, rgba(184,134,43,0), #b8862b); }
+  .brand-center .divider .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
+  .brand-center .divider .diamond { width: 1.5mm; height: 1.5mm; background: #b8862b; transform: rotate(45deg); border-radius: .3mm; }
   .title { text-align: right; min-width: 0; }
   .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
   /* Long order ids wrap inside the right block instead of forcing the grid
@@ -721,7 +753,9 @@ function renderPrintHtml(inv, logo) {
   .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: normal; overflow-wrap: anywhere; }
   .title p strong { color: #171512; }
   .contact { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5mm 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
-  .contact span + span::before { content: ''; display: inline-block; width: 1.2mm; height: 1.2mm; background: #b8862b; border-radius: 50%; margin-right: 7mm; vertical-align: middle; }
+  .contact .citem { display: inline-flex; align-items: center; gap: 1.2mm; }
+  .contact .cicon { width: 3.2mm; height: 3.2mm; color: #b8862b; flex-shrink: 0; }
+  .contact .citem + .citem::before { content: ''; display: inline-block; width: 1.2mm; height: 1.2mm; background: #b8862b; border-radius: 50%; margin-right: 7mm; vertical-align: middle; }
   .legal { text-align: center; font-size: 7px; margin-top: 1mm; letter-spacing: .05em; }
   .legal p { margin: .5mm 0 0; color: #6f6a63; }
   .legal p:first-child { color: #8a5f1e; font-weight: 600; }
@@ -738,10 +772,10 @@ function renderPrintHtml(inv, logo) {
   /* 30/30/10/15/15 column distribution — matches the PDF exactly, so the
      table can never widen past the sheet (long names wrap in-cell). */
   table.items col.c1 { width: 30%; }
-  table.items col.c2 { width: 30%; }
+  table.items col.c2 { width: 28%; }
   table.items col.c3 { width: 10%; }
-  table.items col.c4 { width: 15%; }
-  table.items col.c5 { width: 15%; }
+  table.items col.c4 { width: 16%; }
+  table.items col.c5 { width: 16%; }
   table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; overflow-wrap: anywhere; }
   table.items th.num, table.items td.num { text-align: right; }
   table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; overflow-wrap: anywhere; }
@@ -761,10 +795,10 @@ function renderPrintHtml(inv, logo) {
   .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
   .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
   .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
+  .pagefoot .text { font-family: Georgia, serif; font-size: 9px; font-weight: 700; letter-spacing: .22em; color: #b8862b; white-space: nowrap; }
   .pagefoot { display: flex; align-items: center; justify-content: center; gap: 4mm; margin-top: 6mm; }
   .pagefoot .rule { flex: 0 1 32mm; height: 1px; background: linear-gradient(90deg, rgba(184,134,43,0), #b8862b); }
   .pagefoot .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
-  .pagefoot .text { font-family: Georgia, serif; font-size: 9px; font-weight: 700; letter-spacing: .22em; color: #b8862b; white-space: nowrap; }
   /* The frame's own margin (6mm) + padding (12mm) provide the ~18mm safe
      page margin, so @page must NOT add more — a 210mm sheet inside 12mm
      @page margins would measure 234mm and clip the gold frame's right edge
@@ -783,6 +817,7 @@ function renderPrintHtml(inv, logo) {
         <div class="brand-center">
           <span class="company">${brandLines.map((l) => `<span>${escapeHtml(l)}</span>`).join('')}</span>
           ${inv.company.tagline ? `<span class="tagline">${escapeHtml(inv.company.tagline)}</span>` : ''}
+          <span class="divider"><span class="rule"></span><span class="diamond"></span><span class="rule"></span></span>
         </div>
         <div class="title">
           <h2>${escapeHtml(docTitle)}</h2>
@@ -792,7 +827,11 @@ function renderPrintHtml(inv, logo) {
         </div>
       </div>
 
-      ${contactBits.length > 0 ? `<div class="contact">${contactBits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>` : ''}
+      ${contactBits.length > 0
+        ? `<div class="contact">${contactBits
+            .map((b) => `<span class="citem">${b.icon}<span>${escapeHtml(b.text)}</span></span>`)
+            .join('')}</div>`
+        : ''}
       ${legalBits.length > 0 ? `<div class="legal">${legalBits.map((l) => `<p>${escapeHtml(l)}</p>`).join('')}</div>` : ''}
 
       <div class="cards">
@@ -826,12 +865,12 @@ function renderPrintHtml(inv, logo) {
         <p class="t">Thank You!</p>
         <p class="line">${escapeHtml(inv.company.thanks)}</p>
         <p class="sub">We truly appreciate your trust in our attars.</p>
-        <p class="sign">— Team ${escapeHtml(inv.company.name)}</p>
+        <p class="sign">— Team ${escapeHtml(brandTitle)}</p>
       </div>
 
       <div class="pagefoot">
         <span class="rule"></span>
-        <span class="text">✦ Page 1 of 1 ✦</span>
+        <span class="text">◆ Page 1 of 1 ◆</span>
         <span class="rule"></span>
       </div>
 

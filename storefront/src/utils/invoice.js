@@ -22,7 +22,12 @@ import { BUSINESS, INVOICE } from '../data/content'
 // existing BUSINESS config — nothing is invented here. If a value is not
 // configured it is simply left out (no fake GSTIN / registration numbers).
 export const INVOICE_COMPANY = {
+  // Legal name — printed in the footer copyright line (© … All rights
+  // reserved).
   name: INVOICE.companyName || BUSINESS.name,
+  // Premium header brand title (reference design) — stacked centred on the
+  // invoice and used for the thank-you sign-off ("— Team Arees Perfumes").
+  brandTitle: INVOICE.brandTitle || INVOICE.companyName || BUSINESS.name,
   tagline: BUSINESS.tagline || '',
   phone: BUSINESS.phoneDisplay || '',
   email: BUSINESS.email || '',

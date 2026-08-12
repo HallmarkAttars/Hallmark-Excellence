@@ -115,6 +115,18 @@ describe('money math is untouched (regression guard)', () => {
   })
 })
 
+describe('company block — brand title vs legal name', () => {
+  it('exposes the premium header brandTitle separately from the legal name', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([{ product_name: 'A', unit_price: 100, quantity: 1 }])
+    )
+    // Header brand + thank-you sign-off use the luxury title…
+    expect(inv.company.brandTitle).toBe('Arees Perfumes')
+    // …while the footer copyright keeps the legal company name.
+    expect(inv.company.name).toBe('Hallmark of Excellence')
+  })
+})
+
 describe('order metadata + notes-shaped orders', () => {
   it('reads order id / date / time from the stored timestamp', () => {
     const inv = formatOrderForInvoice(

@@ -37,7 +37,12 @@ export const BUSINESS = {
 // and address are intentionally REUSED from BUSINESS above (never invented).
 // --------------------------------------------------------------------------
 export const INVOICE = {
+  // Legal-style name printed on the invoice (copyright line).
   companyName: 'Hallmark of Excellence',
+  // Premium header brand title (reference design) — stacked centred on the
+  // invoice and used for the thank-you sign-off ("— Team Arees Perfumes").
+  // Falls back to companyName when unset.
+  brandTitle: 'Arees Perfumes',
   gstNote: 'Prices are inclusive of applicable GST.',
   thanks: 'Thank you for your order.',
 }

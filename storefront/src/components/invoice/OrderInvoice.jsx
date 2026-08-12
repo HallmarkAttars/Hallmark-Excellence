@@ -21,6 +21,27 @@ import { formatOrderForInvoice, formatINR, invoiceBrandLines } from '../../utils
 import { INVOICE_LOGO } from './invoiceAssets'
 import './OrderInvoice.css'
 
+// --- Small contact icons (screen + print only — the PDF keeps clean text) --
+const ContactIcons = {
+  phone: (
+    <svg className="invoice-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c1 .3 2 .5 3 .6a2 2 0 0 1 1.5 2z" />
+    </svg>
+  ),
+  email: (
+    <svg className="invoice-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </svg>
+  ),
+  website: (
+    <svg className="invoice-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z" />
+    </svg>
+  ),
+}
+
 export default function OrderInvoice({ order, documentType }) {
   const inv = formatOrderForInvoice(order)
 
@@ -30,12 +51,19 @@ export default function OrderInvoice({ order, documentType }) {
   const rawDocType = String(documentType || inv.documentType || 'INVOICE').toUpperCase()
   const docTitle = rawDocType === 'ESTIMATE' || rawDocType === 'QUOTATION' ? 'ESTIMATE' : 'INVOICE'
 
-  // Brand rendered as two stacked centred lines (HALLMARK OF / EXCELLENCE).
-  const brandLines = invoiceBrandLines(inv.company.name)
+  // The premium header brand title (AREES / PERFUMES) — stacked centred
+  // lines; falls back to the legal company name when no brand title is set.
+  const brandTitle = inv.company.brandTitle || inv.company.name
+  const brandLines = invoiceBrandLines(brandTitle)
 
-  // Contact strip — real configured values only (phone · email · website).
-  const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
-  // Legal lines under the header — the real GST note + copyright.
+  // Contact strip — real configured values only (phone · email · website),
+  // each with a small elegant icon where the UI supports them.
+  const contactBits = [
+    inv.company.phone && { key: 'phone', icon: ContactIcons.phone, text: inv.company.phone },
+    inv.company.email && { key: 'email', icon: ContactIcons.email, text: inv.company.email },
+    inv.company.website && { key: 'website', icon: ContactIcons.website, text: inv.company.website },
+  ].filter(Boolean)
+  // Legal lines under the header — the real GST note + copyright (legal name).
   const legalBits = [inv.company.gstNote, `© ${inv.company.name}. All rights reserved.`].filter(Boolean)
 
   const infoRows = [
@@ -69,6 +97,12 @@ export default function OrderInvoice({ order, documentType }) {
             {inv.company.tagline && (
               <span className="invoice-tagline">{inv.company.tagline}</span>
             )}
+            {/* Gold decorative divider + diamond under the subtitle */}
+            <span className="invoice-brand-divider" aria-hidden="true">
+              <span className="invoice-divider-rule" />
+              <span className="invoice-divider-diamond" />
+              <span className="invoice-divider-rule" />
+            </span>
           </div>
           <div className="invoice-title-block">
             <h2 className="invoice-title">{docTitle}</h2>
@@ -83,8 +117,11 @@ export default function OrderInvoice({ order, documentType }) {
         {/* Contact strip — thin gold divider above; phone · email · website */}
         {contactBits.length > 0 && (
           <div className="invoice-contact">
-            {contactBits.map((bit, i) => (
-              <span className="invoice-contact-item" key={i}>{bit}</span>
+            {contactBits.map((bit) => (
+              <span className="invoice-contact-item" key={bit.key}>
+                {bit.icon}
+                <span>{bit.text}</span>
+              </span>
             ))}
           </div>
         )}
@@ -190,13 +227,13 @@ export default function OrderInvoice({ order, documentType }) {
           <p className="invoice-thanks-title">Thank You!</p>
           <p className="invoice-thanks-line">{inv.company.thanks}</p>
           <p className="invoice-thanks-sub">We truly appreciate your trust in our attars.</p>
-          <p className="invoice-thanks-sign">— Team {inv.company.name}</p>
+          <p className="invoice-thanks-sign">— Team {brandTitle}</p>
         </section>
 
         {/* Page footer — Page 1 of 1 with gold decorative separators */}
         <footer className="invoice-pagefoot" aria-hidden="true">
           <span className="invoice-pagefoot-rule" />
-          <span className="invoice-pagefoot-text">✦ Page 1 of 1 ✦</span>
+          <span className="invoice-pagefoot-text">◆ Page 1 of 1 ◆</span>
           <span className="invoice-pagefoot-rule" />
         </footer>
       </div>
