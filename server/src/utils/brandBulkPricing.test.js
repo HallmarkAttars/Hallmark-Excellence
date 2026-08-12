@@ -8,6 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   isValidBulkRule,
+  getBulkTiers,
+  getApplicableBulkTier,
   linePieces,
   lineUnitPieces,
   lineNormalPerPiece,
@@ -30,6 +32,20 @@ const DAHAB = {
   standard_price: 50,
   bulk_unit_price: 47,
   bulk_min_qty: 50,
+}
+
+// The spec's canonical multi-tier example: ₹50 normal, 100→₹43, 150→₹42,
+// 200→₹40.
+const MULTI = {
+  id: 'brand-multi',
+  name: 'Multi',
+  bulk_enabled: true,
+  standard_price: 50,
+  bulk_tiers: [
+    { minQuantity: 100, price: 43 },
+    { minQuantity: 200, price: 40 },
+    { minQuantity: 150, price: 42 },
+  ],
 }
 
 // A normalized order item (the shape createOrder produces before bulk is
@@ -87,6 +103,75 @@ describe('isValidBulkRule', () => {
   it('treats a partially configured rule as absent', () => {
     expect(isValidBulkRule({ ...AREES, bulk_unit_price: undefined })).toBe(false)
     expect(isValidBulkRule(null)).toBe(false)
+  })
+
+  it('accepts a multi-tier rule with every price below the standard and never rising', () => {
+    expect(isValidBulkRule(MULTI)).toBe(true)
+  })
+
+  it('rejects tiers whose price is not below the standard price', () => {
+    expect(
+      isValidBulkRule({ ...MULTI, bulk_tiers: [{ minQuantity: 100, price: 50 }] })
+    ).toBe(false)
+  })
+
+  it('rejects tiers whose price RISES with quantity (100→₹40 then 150→₹45)', () => {
+    expect(
+      isValidBulkRule({
+        ...MULTI,
+        bulk_tiers: [
+          { minQuantity: 100, price: 40 },
+          { minQuantity: 150, price: 45 },
+        ],
+      })
+    ).toBe(false)
+  })
+})
+
+describe('getBulkTiers', () => {
+  it('parses, sorts and dedupes the stored tiers array', () => {
+    expect(getBulkTiers(MULTI)).toEqual([
+      { minQuantity: 100, price: 43 },
+      { minQuantity: 150, price: 42 },
+      { minQuantity: 200, price: 40 },
+    ])
+  })
+
+  it('normalizes the legacy single-tier columns into one tier', () => {
+    expect(getBulkTiers(AREES)).toEqual([{ minQuantity: 70, price: 42 }])
+  })
+
+  it('prefers bulk_tiers over the legacy columns when both exist', () => {
+    expect(getBulkTiers({ ...AREES, bulk_tiers: [{ minQuantity: 100, price: 43 }] })).toEqual([
+      { minQuantity: 100, price: 43 },
+    ])
+  })
+})
+
+describe('getApplicableBulkTier (the spec tier matrix)', () => {
+  it('below the first tier → null (normal price)', () => {
+    expect(getApplicableBulkTier(MULTI, 50)).toBe(null) // 50 → normal ₹50
+    expect(getApplicableBulkTier(MULTI, 99)).toBe(null) // 99 → normal ₹50
+  })
+
+  it('100–149 → tier 1 (₹43)', () => {
+    expect(getApplicableBulkTier(MULTI, 100)).toEqual({ minQuantity: 100, price: 43 })
+    expect(getApplicableBulkTier(MULTI, 149)).toEqual({ minQuantity: 100, price: 43 })
+  })
+
+  it('150–199 → tier 2 (₹42)', () => {
+    expect(getApplicableBulkTier(MULTI, 150)).toEqual({ minQuantity: 150, price: 42 })
+    expect(getApplicableBulkTier(MULTI, 199)).toEqual({ minQuantity: 150, price: 42 })
+  })
+
+  it('200+ → tier 3 (₹40) — the HIGHEST applicable tier', () => {
+    expect(getApplicableBulkTier(MULTI, 200)).toEqual({ minQuantity: 200, price: 40 })
+    expect(getApplicableBulkTier(MULTI, 500)).toEqual({ minQuantity: 200, price: 40 })
+  })
+
+  it('legacy single-tier brands resolve their one tier', () => {
+    expect(getApplicableBulkTier(AREES, 70)).toEqual({ minQuantity: 70, price: 42 })
+    expect(getApplicableBulkTier(AREES, 69)).toBe(null)
   })
 })
 
@@ -290,9 +375,114 @@ describe('applyBrandBulk', () => {
     const { items: out, brands } = applyBrandBulk(items, { 'brand-arees': AREES, 'brand-dahab': DAHAB })
 
     expect(brands).toEqual([
-      { brand_id: 'brand-arees', brand_name: 'Arees', total_pieces: 70, bulk_min_qty: 70, unlocked: true },
+      {
+        brand_id: 'brand-arees',
+        brand_name: 'Arees',
+        total_pieces: 70,
+        bulk_min_qty: 70,
+        bulk_unit_price: 42,
+        unlocked: true,
+      },
     ])
     expect(out[0].brand_total_pieces).toBe(70)
+  })
+
+  // --- Multi-tier -----------------------------------------------------------
+  it('charges every line of a multi-tier brand at the HIGHEST applicable tier', () => {
+    // 150 pieces → the 150-tier (₹42), NOT the first tier (₹43).
+    const items = [
+      makeItem({
+        brand_id: 'brand-multi',
+        brand_name: 'Multi',
+        quantity: 1,
+        unit_pieces: 150,
+        pieces: 150,
+        unit_price: 7500,
+        subtotal: 7500,
+      }),
+    ]
+    const { items: out } = applyBrandBulk(items, { 'brand-multi': MULTI })
+
+    expect(out[0]).toMatchObject({
+      unit_price: 6300,
+      subtotal: 6300,
+      bulk_active: true,
+      bulk_per_unit: 42,
+      bulk_min_qty: 150,
+    })
+  })
+
+  it('applies tier 1 at exactly its boundary and tier 3 at 200', () => {
+    const multiItem = (pieces, unitPrice) =>
+      makeItem({
+        brand_id: 'brand-multi',
+        brand_name: 'Multi',
+        quantity: 1,
+        unit_pieces: pieces,
+        pieces,
+        unit_price: unitPrice,
+        subtotal: unitPrice,
+      })
+    const out100 = applyBrandBulk([multiItem(100, 5000)], { 'brand-multi': MULTI }).items[0]
+    expect(out100).toMatchObject({ bulk_active: true, bulk_per_unit: 43, unit_price: 4300, bulk_min_qty: 100 })
+
+    const out200 = applyBrandBulk([multiItem(200, 10000)], { 'brand-multi': MULTI }).items[0]
+    expect(out200).toMatchObject({ bulk_active: true, bulk_per_unit: 40, unit_price: 8000, bulk_min_qty: 200 })
+  })
+
+  it('keeps normal prices below the first tier', () => {
+    const items = [
+      makeItem({
+        brand_id: 'brand-multi',
+        brand_name: 'Multi',
+        quantity: 1,
+        unit_pieces: 99,
+        pieces: 99,
+        unit_price: 4950,
+        subtotal: 4950,
+      }),
+    ]
+    const { items: out } = applyBrandBulk(items, { 'brand-multi': MULTI })
+    expect(out[0]).toMatchObject({ unit_price: 4950, subtotal: 4950 })
+    expect(out[0].bulk_active).toBeUndefined()
+  })
+
+  it('sums pieces across products of the same brand before choosing the tier', () => {
+    // Pink Musk 60 + CR7 90 = 150 AREES pieces → the 150-tier applies to BOTH.
+    const a = makeItem({ product_id: 'p1', quantity: 1, unit_pieces: 60, pieces: 60, unit_price: 3000, subtotal: 3000, brand_id: 'brand-multi', brand_name: 'Multi' })
+    const b = makeItem({ product_id: 'p2', quantity: 1, unit_pieces: 90, pieces: 90, unit_price: 4500, subtotal: 4500, brand_id: 'brand-multi', brand_name: 'Multi' })
+    const { items: out } = applyBrandBulk([a, b], { 'brand-multi': MULTI })
+    expect(out[0]).toMatchObject({ bulk_active: true, bulk_per_unit: 42, unit_price: 2520 })
+    expect(out[1]).toMatchObject({ bulk_active: true, bulk_per_unit: 42, unit_price: 3780 })
+  })
+
+  it('never combines quantities between brands (AREES 60 + DAHAB 90: AREES stays locked, DAHAB unlocks on its own 90)', () => {
+    const arees = [makeItem({ product_id: 'p1', quantity: 1, unit_pieces: 60, pieces: 60, unit_price: 3000, subtotal: 3000 })]
+    const dahab = [
+      makeItem({
+        product_id: 'p4',
+        brand_id: 'brand-dahab',
+        brand_name: 'Dahab',
+        quantity: 1,
+        unit_pieces: 90,
+        pieces: 90,
+        unit_price: 4500,
+        subtotal: 4500,
+      }),
+    ]
+    const { items: out } = applyBrandBulk([...arees, ...dahab], { 'brand-arees': AREES, 'brand-dahab': DAHAB })
+    // AREES 60 < its own 70 threshold — DAHAB's 90 is NEVER added to it.
+    expect(out[0].bulk_active).toBeUndefined()
+    // DAHAB's own 90 ≥ 50 unlocks DAHAB on its own.
+    expect(out[1]).toMatchObject({ bulk_active: true, bulk_per_unit: 47 })
+  })
+
+  it('existing single-tier brands keep working exactly as before', () => {
+    // 70 AREES pieces at legacy 70→₹42.
+    const items = [makeItem({ quantity: 1, unit_pieces: 70, pieces: 70, unit_price: 3150, subtotal: 3150 })]
+    const { items: out, brands } = applyBrandBulk(items, { 'brand-arees': AREES })
+    expect(out[0]).toMatchObject({ bulk_active: true, bulk_per_unit: 42, unit_price: 2940, subtotal: 2940 })
+    expect(brands[0]).toMatchObject({ bulk_min_qty: 70, bulk_unit_price: 42, unlocked: true })
   })
 
   it('leaves items without a brand untouched', () => {

@@ -35,7 +35,9 @@ create table if not exists products (
 -- Note: stock, product-level bulk (bulk_price / bulk_min_qty / bulk_enabled)
 -- and pack options (product_packs) were removed from the application.
 -- Existing databases should run migration_drop_stock_bulk_packs.sql.
--- Brand-level bulk pricing lives on the brands table and is unaffected.
+-- Brand-level bulk pricing lives on the brands table (bulk_enabled /
+-- standard_price / bulk_unit_price / bulk_min_qty / bulk_tiers) and is
+-- unaffected.
 
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),

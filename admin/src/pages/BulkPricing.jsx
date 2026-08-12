@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getBrands, updateBrandBulkPricing } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
+import { getBulkTiers, validateTiers } from '../utils/brandBulkTiers'
 import './BulkPricing.css'
 
 // The storefront's exact five brands — same scoping as the Brands page.
@@ -9,27 +10,20 @@ const EXPECTED_SLUGS = ['arees', 'dahab', 'misk-al-arab', 'oud-al-haramain', 'am
 
 const EMPTY_FORM = {
   brand_id: '',
-  bulk_min_qty: '',
   standard_price: '',
-  bulk_unit_price: '',
   status: 'active', // 'active' | 'inactive'
+  tiers: [{ minQuantity: '', price: '' }],
 }
 
 const inr = (n) => (n == null || n === '' ? '—' : `₹${Number(n).toLocaleString('en-IN')}`)
 
-// A brand has an ACTIVE rule only when bulk_enabled is true AND all three
-// values are configured and valid (normal > bulk > 0, whole qty >= 1) — the
-// exact same rule the storefront uses before showing anything.
+// A brand has an ACTIVE rule only when bulk_enabled is true AND its stored
+// tiers are complete and valid (every price below the normal price, never
+// rising with quantity) — the same rule the storefront uses before showing
+// anything.
 function hasActiveRule(b) {
-  const std = Number(b.standard_price)
-  const bulk = Number(b.bulk_unit_price)
-  const min = Number(b.bulk_min_qty)
-  return Boolean(
-    b.bulk_enabled === true &&
-    Number.isFinite(std) && std > 0 &&
-    Number.isFinite(bulk) && bulk > 0 && bulk < std &&
-    Number.isInteger(min) && min >= 1
-  )
+  if (b.bulk_enabled !== true) return false
+  return validateTiers(getBulkTiers(b), b.standard_price) === null
 }
 
 export default function BulkPricing() {
@@ -80,12 +74,17 @@ export default function BulkPricing() {
   }
 
   const openEdit = (brand) => {
+    // Normalize the stored config (multi-tier jsonb OR legacy single-tier
+    // columns) into editable rows — existing single-tier brands open with
+    // one tier and are untouched until saved.
+    const storedTiers = getBulkTiers(brand)
     setForm({
       brand_id: brand.id,
-      bulk_min_qty: brand.bulk_min_qty != null ? String(brand.bulk_min_qty) : '',
       standard_price: brand.standard_price != null ? String(brand.standard_price) : '',
-      bulk_unit_price: brand.bulk_unit_price != null ? String(brand.bulk_unit_price) : '',
       status: brand.bulk_enabled === true ? 'active' : 'inactive',
+      tiers: storedTiers && storedTiers.length > 0
+        ? storedTiers.map((t) => ({ minQuantity: String(t.minQuantity), price: String(t.price) }))
+        : [{ minQuantity: '', price: '' }],
     })
     setModalError('')
     setEditingId(brand.id)
@@ -101,9 +100,33 @@ export default function BulkPricing() {
 
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
 
-  // Client-side validation mirrors the server (brandBulkPricing controller):
-  // brand required, unlock qty whole > 0, normal price > 0, bulk price > 0
-  // and strictly below the normal price, no duplicate active rule per brand.
+  // --- Multi-tier editor ---------------------------------------------------
+  const updateTier = (index, field, value) => {
+    setForm((f) => ({
+      ...f,
+      tiers: f.tiers.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
+    }))
+  }
+
+  const addTier = () => {
+    setForm((f) => ({ ...f, tiers: [...f.tiers, { minQuantity: '', price: '' }] }))
+  }
+
+  const removeTier = (index) => {
+    setForm((f) => ({
+      ...f,
+      // Never leave the editor with zero rows — removing the last row adds a
+      // fresh empty one so the admin always sees the input grid.
+      tiers: f.tiers.filter((_, i) => i !== index).length > 0
+        ? f.tiers.filter((_, i) => i !== index)
+        : [{ minQuantity: '', price: '' }],
+    }))
+  }
+
+  // Client-side validation mirrors the server (brands.controller): normal
+  // price > 0, at least one tier, every tier a positive whole quantity with
+  // a positive price below the normal price, unique quantities, and prices
+  // that never rise with quantity. Tiers are sorted ascending before saving.
   const handleSubmit = async (e) => {
     e.preventDefault()
     setModalError('')
@@ -116,25 +139,34 @@ export default function BulkPricing() {
       setModalError('Brand not found.')
       return
     }
-    const min = Number(form.bulk_min_qty)
     const std = Number(form.standard_price)
-    const bulk = Number(form.bulk_unit_price)
-
-    if (form.bulk_min_qty === '' || !Number.isInteger(min) || min < 1) {
-      setModalError('Bulk unlock quantity must be a whole number greater than 0.')
-      return
-    }
     if (form.standard_price === '' || !Number.isFinite(std) || std <= 0) {
       setModalError('Normal price must be a number greater than 0.')
       return
     }
-    if (form.bulk_unit_price === '' || !Number.isFinite(bulk) || bulk <= 0) {
-      setModalError('Bulk price must be a number greater than 0.')
-      return
-    }
-    if (bulk >= std) {
-      setModalError('Bulk price must be less than the normal price.')
-      return
+
+    // Unused (fully empty) rows are pruned — a tier with ANY value filled is
+    // validated strictly so a half-filled row can never be saved, no matter
+    // the status.
+    const filled = form.tiers.filter(
+      (t) => String(t.minQuantity).trim() !== '' || String(t.price).trim() !== ''
+    )
+    if (filled.length === 0) {
+      if (form.status === 'active') {
+        setModalError('Add at least one bulk price tier.')
+        return
+      }
+      // Inactive with no tiers — there is nothing to validate or store beyond
+      // disabling whatever rule is already saved.
+    } else {
+      const tiers = filled
+        .map((t) => ({ minQuantity: Number(t.minQuantity), price: Number(t.price) }))
+        .sort((a, b) => a.minQuantity - b.minQuantity)
+      const tierError = validateTiers(tiers, std)
+      if (tierError) {
+        setModalError(tierError)
+        return
+      }
     }
     if (modalMode === 'add' && hasActiveRule(brand)) {
       setModalError(`"${brand.name}" already has an active bulk pricing rule. Edit it instead.`)
@@ -143,16 +175,26 @@ export default function BulkPricing() {
 
     setSaving(true)
     try {
+      const tiers = filled
+        .map((t) => ({ minQuantity: Number(t.minQuantity), price: Number(t.price) }))
+        .sort((a, b) => a.minQuantity - b.minQuantity)
       if (form.status === 'active') {
         await updateBrandBulkPricing(brand.id, {
           bulk_enabled: true,
           standard_price: std,
-          bulk_unit_price: bulk,
-          bulk_min_qty: min,
+          tiers,
+        })
+      } else if (filled.length > 0) {
+        // Inactive with (validated) edits — persist the config but keep the
+        // rule hidden so re-activating restores exactly what was entered.
+        await updateBrandBulkPricing(brand.id, {
+          bulk_enabled: false,
+          standard_price: std,
+          tiers,
         })
       } else {
-        // Inactive — the rule stays stored (re-activating is one click) but
-        // the storefront hides it entirely.
+        // Inactive, untouched rule — the rule stays stored (re-activating is
+        // one click) but the storefront hides it entirely.
         await updateBrandBulkPricing(brand.id, { bulk_enabled: false })
       }
       closeModal()
@@ -171,6 +213,7 @@ export default function BulkPricing() {
         standard_price: null,
         bulk_unit_price: null,
         bulk_min_qty: null,
+        tiers: null,
       })
       setConfirmRemove(null)
       load()
@@ -186,9 +229,10 @@ export default function BulkPricing() {
         <div>
           <h1>Bulk Pricing</h1>
           <p className="bulk-pricing-intro">
-            Brand-level quantity discounts — one rule per brand. When a customer's cart
-            reaches the unlock quantity across <strong>any mix</strong> of that brand's
-            products, every eligible product of the brand is charged at the bulk price.
+            Brand-level quantity discounts with <strong>multiple price tiers</strong> per brand.
+            When a customer's cart reaches a tier's minimum across <strong>any mix</strong> of that
+            brand's products, every eligible product is charged at the <strong>highest applicable
+            tier</strong> — the best rate the quantity qualifies for.
           </p>
         </div>
         {canEdit && brandsWithoutRule.length > 0 && (
@@ -208,9 +252,9 @@ export default function BulkPricing() {
             <thead>
               <tr>
                 <th>Brand</th>
-                <th>Unlock Qty</th>
+                <th>Price Tiers</th>
                 <th>Normal Price</th>
-                <th>Bulk Price</th>
+                <th>Best Bulk Price</th>
                 <th>Status</th>
                 <th className="bulk-pricing-actions-col">Actions</th>
               </tr>
@@ -218,7 +262,9 @@ export default function BulkPricing() {
             <tbody>
               {brands.map((brand) => {
                 const active = hasActiveRule(brand)
-                const configured = brand.bulk_min_qty != null
+                const tiers = getBulkTiers(brand)
+                const configured = Boolean(tiers && tiers.length > 0)
+                const bestTier = tiers ? tiers[tiers.length - 1] : null
                 return (
                   <tr key={brand.id}>
                     <td className="bulk-pricing-brand">
@@ -231,17 +277,32 @@ export default function BulkPricing() {
                     </td>
                     <td>
                       {configured ? (
-                        <span className="bulk-pricing-qty">
-                          {Number(brand.bulk_min_qty).toLocaleString('en-IN')} pcs
-                        </span>
+                        <ul className="bulk-pricing-tiers">
+                          {tiers.map((t) => (
+                            <li key={t.minQuantity}>
+                              <span className="bulk-pricing-qty">
+                                {Number(t.minQuantity).toLocaleString('en-IN')} pcs
+                              </span>
+                              <span className="bulk-pricing-tier-arrow">→</span>
+                              <span className="bulk-pricing-rate">
+                                ₹{Number(t.price).toLocaleString('en-IN')}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       ) : (
                         <span className="bulk-pricing-empty">—</span>
                       )}
                     </td>
                     <td>{inr(brand.standard_price)}</td>
                     <td>
-                      {brand.bulk_unit_price != null ? (
-                        <span className="bulk-pricing-rate">{inr(brand.bulk_unit_price)} / pc</span>
+                      {bestTier ? (
+                        <span className="bulk-pricing-rate">
+                          {inr(bestTier.price)} / pc
+                          <span className="bulk-pricing-brand-sub">
+                            from {Number(bestTier.minQuantity).toLocaleString('en-IN')} pcs
+                          </span>
+                        </span>
                       ) : (
                         <span className="bulk-pricing-empty">—</span>
                       )}
@@ -310,19 +371,19 @@ export default function BulkPricing() {
 
             <div className="form-row form-row-2">
               <div className="form-field">
-                <label htmlFor="bp-qty">Bulk Unlock Quantity</label>
+                <label htmlFor="bp-normal">Normal Price (₹ / piece)</label>
                 <input
-                  id="bp-qty"
-                  name="bulk_min_qty"
+                  id="bp-normal"
+                  name="standard_price"
                   type="number"
-                  min="1"
-                  step="1"
-                  placeholder="e.g. 70"
-                  value={form.bulk_min_qty}
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 50"
+                  value={form.standard_price}
                   onChange={handleChange}
                   required
                 />
-                <small className="field-example">Combined pieces of this brand in one cart.</small>
+                <small className="field-example">The per-piece price before any bulk discount.</small>
               </div>
               <div className="form-field">
                 <label htmlFor="bp-status">Status</label>
@@ -339,36 +400,53 @@ export default function BulkPricing() {
               </div>
             </div>
 
-            <div className="form-row form-row-2">
-              <div className="form-field">
-                <label htmlFor="bp-normal">Normal Price (₹ / piece)</label>
-                <input
-                  id="bp-normal"
-                  name="standard_price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 45"
-                  value={form.standard_price}
-                  onChange={handleChange}
-                  required
-                />
+            {/* BULK PRICE TIERS — dynamic rows, validated on save */}
+            <div className="bulk-tiers-block">
+              <p className="bulk-tiers-title">BULK PRICE TIERS</p>
+              <div className="bulk-tier-head">
+                <span>Minimum Quantity</span>
+                <span>Price / Piece</span>
+                <span />
               </div>
-              <div className="form-field">
-                <label htmlFor="bp-bulk">Bulk Price (₹ / piece)</label>
-                <input
-                  id="bp-bulk"
-                  name="bulk_unit_price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 42"
-                  value={form.bulk_unit_price}
-                  onChange={handleChange}
-                  required
-                />
-                <small className="field-example">Must be less than the normal price.</small>
+              <div className="bulk-tier-list">
+                {form.tiers.map((tier, index) => (
+                  <div className="bulk-tier-row" key={index}>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="e.g. 100"
+                      value={tier.minQuantity}
+                      onChange={(e) => updateTier(index, 'minQuantity', e.target.value)}
+                      aria-label={`Tier ${index + 1} minimum quantity`}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 43"
+                      value={tier.price}
+                      onChange={(e) => updateTier(index, 'price', e.target.value)}
+                      aria-label={`Tier ${index + 1} price per piece`}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm bulk-tier-remove"
+                      onClick={() => removeTier(index)}
+                      aria-label={`Delete tier ${index + 1}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
               </div>
+              <button type="button" className="btn btn-outline btn-sm bulk-tiers-add" onClick={addTier}>
+                + Add Price Tier
+              </button>
+              <small className="field-example bulk-tier-hint">
+                The highest tier the quantity reaches is applied automatically (e.g. 150 pieces of a
+                100/150/200-pcs rule uses the 150-pcs rate). Prices must never rise with quantity.
+              </small>
             </div>
 
             {modalError && <p className="login-error">{modalError}</p>}

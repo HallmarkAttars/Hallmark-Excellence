@@ -306,7 +306,12 @@ export default function Cart() {
                           <>
                             <span className="cart-brand-count">
                               {Number(g.bulk.totalPieces).toLocaleString('en-IN')} /{' '}
-                              {Number(g.bulk.bulkMinQty).toLocaleString('en-IN')} pieces
+                              {Number(
+                                g.bulk.unlocked && g.bulk.tier
+                                  ? g.bulk.tier.minQuantity
+                                  : g.bulk.bulkMinQty
+                              ).toLocaleString('en-IN')}{' '}
+                              pieces
                             </span>
                             <span className="cart-brand-prices">
                               ₹{Number(g.bulk.standardPrice).toLocaleString('en-IN')} →{' '}
@@ -314,6 +319,11 @@ export default function Cart() {
                                 ₹{Number(g.bulk.bulkUnitPrice).toLocaleString('en-IN')}
                               </span>{' '}
                               / piece
+                              {g.bulk.unlocked && g.bulk.tier && (
+                                <span className="cart-brand-tier">
+                                  {' '}· from {Number(g.bulk.tier.minQuantity).toLocaleString('en-IN')} pcs
+                                </span>
+                              )}
                             </span>
                             {g.bulk.unlocked && g.bulk.savings > 0 && (
                               <span className="cart-brand-savings">

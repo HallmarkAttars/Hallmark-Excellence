@@ -33,6 +33,82 @@
 }
 .bulk-pricing-empty { color: rgba(20, 17, 13, 0.35); }
 
+/* Table — Price Tiers cell: one compact "100 pcs → ₹43" row per tier */
+.bulk-pricing-tiers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.bulk-pricing-tiers li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  padding: 1px 0;
+}
+.bulk-pricing-tier-arrow {
+  color: rgba(20, 17, 13, 0.35);
+}
+
+/* Modal — BULK PRICE TIERS editor */
+.bulk-tiers-block {
+  margin: 14px 0 4px;
+  padding: 12px;
+  border: 1px solid rgba(184, 137, 56, 0.35);
+  border-radius: 10px;
+  background: rgba(244, 236, 222, 0.45);
+}
+.bulk-tiers-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold-deep);
+  text-transform: uppercase;
+}
+.bulk-tier-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr 74px;
+  gap: 8px;
+  padding: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bulk-tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bulk-tier-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 74px;
+  gap: 8px;
+  align-items: center;
+}
+.bulk-tier-row input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--cream);
+  font-size: var(--admin-text-base);
+  font-weight: 400;
+}
+.bulk-tier-remove {
+  white-space: nowrap;
+}
+.bulk-tiers-add {
+  margin-top: 10px;
+}
+.bulk-tier-hint {
+  display: block;
+  margin-top: 8px;
+}
+
 .bulk-pricing-actions { white-space: nowrap; }
 .bulk-pricing-actions .btn { margin-right: 6px; }
 .bulk-pricing-actions .btn:last-child { margin-right: 0; }

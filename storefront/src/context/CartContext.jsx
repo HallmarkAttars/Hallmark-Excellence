@@ -262,7 +262,9 @@ export function CartProvider({ children }) {
         // unlocked. Never the line's own stored (possibly stale) per-piece
         // figure — the cart/checkout per-unit displays must all show this.
         normal_per_piece: pricing && pricing.isPiecePriced ? pricing.chargedPerPiece : null,
-        bulk_min_qty: bulk ? bulk.bulkMinQty : null,
+        // The applied tier's minimum once unlocked (matches the server's
+        // order snapshot), otherwise the first tier's minimum.
+        bulk_min_qty: bulk ? (bulk.tier ? bulk.tier.minQuantity : bulk.bulkMinQty) : null,
         brand_total_pieces: bulk ? bulk.totalPieces : null,
         brand_name: (i.brand_id != null ? brandNameById.get(String(i.brand_id)) : undefined) ?? i.brand_name ?? null,
         // Exact piece count — explicit for piece-based lines, derived for

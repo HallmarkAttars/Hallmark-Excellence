@@ -201,6 +201,12 @@
   color: #1E7A34;
   font-weight: 700;
 }
+/* Applicable-tier hint ("· from 150 pcs") — quieter than the rate itself. */
+.cart-brand-tier {
+  color: rgba(20, 17, 13, 0.55);
+  font-weight: 500;
+  white-space: nowrap;
+}
 /* Savings — quiet green, only ever shown when bulk is actually unlocked. */
 .cart-brand-savings {
   font-weight: 700;

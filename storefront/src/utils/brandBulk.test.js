@@ -7,6 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   isValidBulkRule,
+  getBulkTiers,
+  getApplicableBulkTier,
   linePieces,
   lineUnitPieces,
   lineNormalPerPiece,
@@ -37,6 +39,20 @@ const DAHAB = {
   bulk_min_qty: 50,
 }
 
+// The spec's canonical multi-tier example: ₹50 normal, 100→₹43, 150→₹42,
+// 200→₹40.
+const MULTI = {
+  id: 'brand-multi',
+  name: 'Multi',
+  bulk_enabled: true,
+  standard_price: 50,
+  bulk_tiers: [
+    { minQuantity: 100, price: 43 },
+    { minQuantity: 200, price: 40 },
+    { minQuantity: 150, price: 42 },
+  ],
+}
+
 describe('isValidBulkRule', () => {
   it('accepts a complete, valid rule', () => {
     expect(isValidBulkRule(AREES)).toBe(true)
@@ -56,6 +72,108 @@ describe('isValidBulkRule', () => {
   })
   it('treats null as absent', () => {
     expect(isValidBulkRule(null)).toBe(false)
+  })
+
+  it('accepts a multi-tier rule with every price below the standard and never rising', () => {
+    expect(isValidBulkRule(MULTI)).toBe(true)
+  })
+
+  it('rejects tiers whose price is not below the standard price', () => {
+    expect(
+      isValidBulkRule({ ...MULTI, bulk_tiers: [{ minQuantity: 100, price: 50 }] })
+    ).toBe(false)
+  })
+
+  it('rejects tiers whose price RISES with quantity (100→₹40 then 150→₹45)', () => {
+    expect(
+      isValidBulkRule({
+        ...MULTI,
+        bulk_tiers: [
+          { minQuantity: 100, price: 40 },
+          { minQuantity: 150, price: 45 },
+        ],
+      })
+    ).toBe(false)
+  })
+
+  it('allows equal tier prices (a bigger order is never more expensive)', () => {
+    expect(
+      isValidBulkRule({
+        ...MULTI,
+        bulk_tiers: [
+          { minQuantity: 100, price: 43 },
+          { minQuantity: 150, price: 43 },
+        ],
+      })
+    ).toBe(true)
+  })
+
+  it('rejects an empty / garbage tiers array', () => {
+    expect(isValidBulkRule({ ...MULTI, bulk_tiers: [] })).toBe(false)
+    expect(
+      isValidBulkRule({ ...MULTI, bulk_tiers: [{ minQuantity: 'x', price: 'y' }] })
+    ).toBe(false)
+  })
+})
+
+describe('getBulkTiers', () => {
+  it('parses, sorts and dedupes the stored tiers array', () => {
+    expect(getBulkTiers(MULTI)).toEqual([
+      { minQuantity: 100, price: 43 },
+      { minQuantity: 150, price: 42 },
+      { minQuantity: 200, price: 40 },
+    ])
+  })
+
+  it('normalizes the legacy single-tier columns into one tier', () => {
+    expect(getBulkTiers(AREES)).toEqual([{ minQuantity: 70, price: 42 }])
+    expect(getBulkTiers(DAHAB)).toEqual([{ minQuantity: 50, price: 47 }])
+  })
+
+  it('prefers bulk_tiers over the legacy columns when both exist', () => {
+    const both = { ...AREES, bulk_tiers: [{ minQuantity: 100, price: 43 }] }
+    expect(getBulkTiers(both)).toEqual([{ minQuantity: 100, price: 43 }])
+  })
+
+  it('returns null with no usable tier', () => {
+    expect(getBulkTiers(null)).toBe(null)
+    expect(getBulkTiers({})).toBe(null)
+    expect(getBulkTiers({ bulk_min_qty: 0, bulk_unit_price: 42 })).toBe(null)
+  })
+})
+
+describe('getApplicableBulkTier (the spec tier matrix)', () => {
+  it('below the first tier → null (normal price)', () => {
+    expect(getApplicableBulkTier(MULTI, 50)).toBe(null) // 50 → normal ₹50
+    expect(getApplicableBulkTier(MULTI, 99)).toBe(null) // 99 → normal ₹50
+  })
+
+  it('100–149 → tier 1 (₹43)', () => {
+    expect(getApplicableBulkTier(MULTI, 100)).toEqual({ minQuantity: 100, price: 43 })
+    expect(getApplicableBulkTier(MULTI, 120)).toEqual({ minQuantity: 100, price: 43 })
+    expect(getApplicableBulkTier(MULTI, 149)).toEqual({ minQuantity: 100, price: 43 })
+  })
+
+  it('150–199 → tier 2 (₹42)', () => {
+    expect(getApplicableBulkTier(MULTI, 150)).toEqual({ minQuantity: 150, price: 42 })
+    expect(getApplicableBulkTier(MULTI, 180)).toEqual({ minQuantity: 150, price: 42 })
+    expect(getApplicableBulkTier(MULTI, 199)).toEqual({ minQuantity: 150, price: 42 })
+  })
+
+  it('200+ → tier 3 (₹40) — the HIGHEST applicable tier', () => {
+    expect(getApplicableBulkTier(MULTI, 200)).toEqual({ minQuantity: 200, price: 40 })
+    expect(getApplicableBulkTier(MULTI, 500)).toEqual({ minQuantity: 200, price: 40 })
+  })
+
+  it('legacy single-tier brands resolve their one tier', () => {
+    expect(getApplicableBulkTier(AREES, 70)).toEqual({ minQuantity: 70, price: 42 })
+    expect(getApplicableBulkTier(AREES, 69)).toBe(null)
+  })
+
+  it('is defensive with missing/garbage input', () => {
+    expect(getApplicableBulkTier(null, 150)).toBe(null)
+    expect(getApplicableBulkTier(MULTI, undefined)).toBe(null)
+    expect(getApplicableBulkTier(MULTI, 'abc')).toBe(null)
   })
 })
 
@@ -263,6 +381,40 @@ describe('buildBrandBulk', () => {
 
   it('returns an empty map for an empty cart', () => {
     expect(buildBrandBulk([], [AREES])).toEqual({})
+  })
+
+  it('resolves the HIGHEST applicable tier for multi-tier brands', () => {
+    const items = [line('p1', 'brand-multi', 150, 50)]
+    const bulk = buildBrandBulk(items, [MULTI])
+    expect(bulk['brand-multi']).toMatchObject({
+      totalPieces: 150,
+      bulkMinQty: 100,
+      unlocked: true,
+      bulkUnitPrice: 42,
+      tier: { minQuantity: 150, price: 42 },
+    })
+  })
+
+  it('switches the applicable tier as the quantity crosses a boundary', () => {
+    // 149 → the 100-tier; 150 → the 150-tier (spec tests 4 & 5).
+    const at149 = buildBrandBulk([line('p1', 'brand-multi', 149, 50)], [MULTI])
+    expect(at149['brand-multi']).toMatchObject({ unlocked: true, bulkUnitPrice: 43, tier: { minQuantity: 100, price: 43 } })
+    const at150 = buildBrandBulk([line('p1', 'brand-multi', 150, 50)], [MULTI])
+    expect(at150['brand-multi']).toMatchObject({ unlocked: true, bulkUnitPrice: 42, tier: { minQuantity: 150, price: 42 } })
+    // And back down: 150 → 149 returns to the 100-tier (spec test 11).
+    const back = buildBrandBulk([line('p1', 'brand-multi', 149, 50)], [MULTI])
+    expect(back['brand-multi']).toMatchObject({ unlocked: true, bulkUnitPrice: 43, tier: { minQuantity: 100, price: 43 } })
+  })
+
+  it('shows the first tier as the advertised rate while locked', () => {
+    const bulk = buildBrandBulk([line('p1', 'brand-multi', 80, 50)], [MULTI])
+    expect(bulk['brand-multi']).toMatchObject({
+      unlocked: false,
+      bulkMinQty: 100,
+      remaining: 20,
+      bulkUnitPrice: 43,
+      tier: null,
+    })
   })
 })
 

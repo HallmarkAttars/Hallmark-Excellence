@@ -1,0 +1,23 @@
+-- Multi-Tier Brand Bulk Pricing — extends the existing single-tier brand
+-- bulk columns (bulk_enabled / standard_price / bulk_unit_price /
+-- bulk_min_qty) with an ordered list of quantity-based price tiers.
+--
+-- Adds ONE column to the brands table:
+--   bulk_tiers  jsonb
+--              array of { "minQuantity": <int>, "price": <numeric> } sorted
+--              ascending by minQuantity, e.g.
+--                [{"minQuantity": 100, "price": 43},
+--                 {"minQuantity": 150, "price": 42},
+--                 {"minQuantity": 200, "price": 40}]
+--
+-- The HIGHEST tier whose minQuantity the cart's/order's combined brand pieces
+-- meet is applied. NULL (the default) keeps the existing single-tier
+-- behaviour — the legacy bulk_unit_price / bulk_min_qty columns are still
+-- normalized into one tier, so NO existing brand or order is affected.
+--
+-- The server keeps the legacy columns in sync with the FIRST tier, so older
+-- readers (and pre-migration databases) keep working unchanged.
+--
+-- Run once in the Supabase SQL editor (same process as the other migrations).
+
+alter table brands add column if not exists bulk_tiers jsonb;

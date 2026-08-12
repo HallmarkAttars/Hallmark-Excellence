@@ -341,9 +341,19 @@ async function createOrder(req, res) {
       let dbBrands = []
       let { data, error } = await supabase
         .from('brands')
-        .select('id, name, bulk_enabled, standard_price, bulk_unit_price, bulk_min_qty')
+        .select('id, name, bulk_enabled, standard_price, bulk_unit_price, bulk_min_qty, bulk_tiers')
         .in('id', brandIds)
-      // Pre-migration DB (no brand bulk columns yet) — fall back to names
+      // Pre-migration DB (no bulk_tiers column yet) — retry with the legacy
+      // single-tier bulk columns only so multi-tier-aware and legacy-brand
+      // DBs both keep working.
+      if (error && /does not exist|could not find/i.test(error.message)) {
+        console.warn('[createOrder] bulk_tiers column missing — running with the legacy single-tier brand bulk columns. Run migration_add_bulk_tiers.sql in Supabase to enable multi-tier bulk pricing.')
+        ;({ data, error } = await supabase
+          .from('brands')
+          .select('id, name, bulk_enabled, standard_price, bulk_unit_price, bulk_min_qty')
+          .in('id', brandIds))
+      }
+      // Pre-migration DB (no brand bulk columns at all) — fall back to names
       // only so checkout keeps working without brand bulk pricing.
       if (error && /does not exist|could not find/i.test(error.message)) {
         console.warn('[createOrder] Brand bulk columns missing — running without brand bulk pricing. Run migration_add_brand_bulk_pricing.sql in Supabase to enable it.')

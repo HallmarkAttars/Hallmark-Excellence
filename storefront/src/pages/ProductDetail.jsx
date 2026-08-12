@@ -3,7 +3,14 @@ import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { lineNormalPerPiece, pieceBandRange, pieceWord, productPageBrandPieces } from '../utils/brandBulk'
+import {
+  getApplicableBulkTier,
+  getBulkTiers,
+  lineNormalPerPiece,
+  pieceBandRange,
+  pieceWord,
+  productPageBrandPieces,
+} from '../utils/brandBulk'
 import { QualityIcon, SecureIcon, ShippingIcon, PhoneIcon } from '../components/icons'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
@@ -244,10 +251,26 @@ export default function ProductDetail() {
   const totalBrandPieces = isBrandBulkProduct
     ? productPageBrandPieces(cartBrandPieces, selectionPieces, selectionInCart)
     : 0
-  const bulkMinQty = isBrandBulkProduct ? Math.floor(Number(brandRule.bulk_min_qty)) : 0
-  const brandUnlocked = isBrandBulkProduct && totalBrandPieces >= bulkMinQty
+  // Multi-tier resolution: progress targets the FIRST tier; once unlocked,
+  // the HIGHEST applicable tier drives the price, savings and the shown
+  // threshold (100/150/200 pcs example: 149 → 100-tier ₹43, 150 → 150-tier
+  // ₹42).
+  const brandTiers = isBrandBulkProduct ? getBulkTiers(brandRule) : null
+  const firstBulkTier = brandTiers ? brandTiers[0] : null
+  const bulkMinQty = firstBulkTier ? firstBulkTier.minQuantity : 0
+  const applicableTier = isBrandBulkProduct
+    ? getApplicableBulkTier(brandRule, totalBrandPieces)
+    : null
+  const brandUnlocked = isBrandBulkProduct && Boolean(applicableTier)
   const brandRemaining = isBrandBulkProduct ? Math.max(0, bulkMinQty - totalBrandPieces) : 0
-  const bulkPerPiece = isBrandBulkProduct ? Number(brandRule.bulk_unit_price) : 0
+  // The applicable tier's rate once unlocked; the first tier's rate (the
+  // advertised offer) while locked.
+  const bulkPerPiece = applicableTier
+    ? applicableTier.price
+    : firstBulkTier
+      ? firstBulkTier.price
+      : 0
+  const bulkThresholdShown = brandUnlocked && applicableTier ? applicableTier.minQuantity : bulkMinQty
 
   // Brand products with a bulk rule, OR a brand product whose selected Pieces
   // band is active, show a per-piece price + total (the exact math the cart
@@ -610,9 +633,13 @@ export default function ProductDetail() {
                   ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
                 </span>
               </div>
-              {!brandUnlocked && (
+              {!brandUnlocked ? (
                 <p className="pd-bulk-min">
                   From {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+                </p>
+              ) : (
+                <p className="pd-bulk-min">
+                  Bulk rate from {Number(applicableTier.minQuantity).toLocaleString('en-IN')} pieces
                 </p>
               )}
               <div className="pd-bulk-progress">
@@ -624,7 +651,7 @@ export default function ProductDetail() {
                 </div>
                 <span className="pd-bulk-count">
                   {Number(totalBrandPieces).toLocaleString('en-IN')} /{' '}
-                  {Number(bulkMinQty).toLocaleString('en-IN')} pieces
+                  {Number(bulkThresholdShown).toLocaleString('en-IN')} pieces
                   {brandUnlocked && <span className="pd-bulk-check"> ✓</span>}
                 </span>
               </div>

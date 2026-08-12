@@ -57,6 +57,24 @@ async function main() {
     process.exit(1)
   }
 
+  // Multi-tier bulk_tiers column may not exist yet on older databases — the
+  // seed then writes the legacy single-tier columns only (still fully
+  // supported).
+  const { error: tiersColError } = await supabase
+    .from('brands')
+    .select('bulk_tiers')
+    .limit(1)
+  const hasTiersColumn = !tiersColError
+  if (tiersColError && !/does not exist|could not find/i.test(tiersColError.message)) {
+    console.error('✗ bulk_tiers preflight probe failed:', tiersColError.message)
+    process.exit(1)
+  }
+  if (hasTiersColumn) {
+    console.log('✓ brands.bulk_tiers column present — seeding tiers.')
+  } else {
+    console.log('• brands.bulk_tiers column missing — seeding the legacy single-tier columns only (run migration_add_bulk_tiers.sql to enable tiers).')
+  }
+
   // --- Validate config -------------------------------------------------------
   for (const brand of BRANDS) {
     if (!Number.isFinite(brand.standardPrice) || brand.standardPrice <= 0) {
@@ -96,12 +114,19 @@ async function main() {
     }
 
     const updates = disable
-      ? { bulk_enabled: false, standard_price: null, bulk_unit_price: null, bulk_min_qty: null }
+      ? {
+          bulk_enabled: false,
+          standard_price: null,
+          bulk_unit_price: null,
+          bulk_min_qty: null,
+          ...(hasTiersColumn ? { bulk_tiers: null } : {}),
+        }
       : {
           bulk_enabled: true,
           standard_price: brand.standardPrice,
           bulk_unit_price: brand.bulkUnitPrice,
           bulk_min_qty: BRAND_BULK_MIN_QTY,
+          ...(hasTiersColumn ? { bulk_tiers: [{ minQuantity: BRAND_BULK_MIN_QTY, price: brand.bulkUnitPrice }] } : {}),
         }
 
     const { error: updateError } = await supabase

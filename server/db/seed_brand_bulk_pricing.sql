@@ -16,26 +16,30 @@
 -- (it also works before/after migration_add_brand_bulk_pricing.sql).
 -- ============================================================================
 
--- 1. Ensure the brand bulk columns exist (same as the migration file)
+-- 1. Ensure the brand bulk columns exist (same as the migration files),
+--    including the multi-tier bulk_tiers jsonb column.
 alter table brands add column if not exists bulk_enabled boolean not null default false;
 alter table brands add column if not exists standard_price numeric(10,2);
 alter table brands add column if not exists bulk_unit_price numeric(10,2);
 alter table brands add column if not exists bulk_min_qty int;
+alter table brands add column if not exists bulk_tiers jsonb;
 
--- 2. Seed AREES
+-- 2. Seed AREES — a single tier (legacy columns mirror the tier).
 update brands set
-  bulk_enabled   = true,
-  standard_price = 2500,
-  bulk_unit_price = 2000,
-  bulk_min_qty   = 91
+  bulk_enabled     = true,
+  standard_price   = 2500,
+  bulk_unit_price  = 2000,
+  bulk_min_qty     = 91,
+  bulk_tiers       = '[{"minQuantity": 91, "price": 2000}]'::jsonb
 where slug = 'arees';
 
--- 3. Seed DAHAB
+-- 3. Seed DAHAB — a single tier (legacy columns mirror the tier).
 update brands set
-  bulk_enabled   = true,
-  standard_price = 2300,
-  bulk_unit_price = 1850,
-  bulk_min_qty   = 91
+  bulk_enabled     = true,
+  standard_price   = 2300,
+  bulk_unit_price  = 1850,
+  bulk_min_qty     = 91,
+  bulk_tiers       = '[{"minQuantity": 91, "price": 1850}]'::jsonb
 where slug = 'dahab';
 
 -- ----------------------------------------------------------------------------
@@ -52,5 +56,6 @@ where slug = 'dahab';
 --   bulk_enabled    = false,
 --   standard_price  = null,
 --   bulk_unit_price = null,
---   bulk_min_qty    = null
+--   bulk_min_qty    = null,
+--   bulk_tiers      = null
 -- where slug in ('arees', 'dahab');
