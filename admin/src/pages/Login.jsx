@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getEmailError } from '../utils/email'
 import './Login.css'
 
 export default function Login() {
@@ -14,6 +15,16 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // Centralized email validation (UX layer; the server re-validates). A
+    // malformed or disposable address gets a friendly message without a
+    // round-trip.
+    const emailError = getEmailError(email, 'Email is required.')
+    if (emailError) {
+      setError(emailError)
+      return
+    }
+
     setSubmitting(true)
     const res = await login(email, password)
     setSubmitting(false)

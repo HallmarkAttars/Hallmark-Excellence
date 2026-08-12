@@ -8,6 +8,7 @@ import { useCart } from '../context/CartContext'
 import { lineUnitPrice } from '../utils/variantPricing'
 import { submitContactForm } from '../utils/contactForm'
 import { paymentMethodLabel } from '../utils/invoice'
+import { getEmailError } from '../utils/email'
 import {
   UserIcon,
   HomeIcon,
@@ -354,8 +355,9 @@ export default function Contact() {
       if (!form.name.trim()) errs.name = 'Name is required.'
       if (!form.email.trim()) {
         errs.email = 'Email is required.'
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-        errs.email = 'Enter a valid email address.'
+      } else {
+        const emailError = getEmailError(form.email)
+        if (emailError) errs.email = emailError
       }
       if (!phoneValid) errs.phone = 'Enter a valid 10-digit mobile number.'
       if (!form.house.trim()) errs.house = 'House No. & Floor is required.'
@@ -375,6 +377,13 @@ export default function Contact() {
     } else {
       if (!form.name.trim() || !form.email.trim() || !form.phone || !form.message.trim()) {
         setError('Please fill in all required fields.')
+        return
+      }
+      // Contact form email — centralized format + disposable check (the
+      // server/Formspree side can't validate the address for us).
+      const contactEmailError = getEmailError(form.email)
+      if (contactEmailError) {
+        setError(contactEmailError)
         return
       }
       if (!phoneValid) {

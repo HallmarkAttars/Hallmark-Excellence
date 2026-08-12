@@ -13,6 +13,14 @@ const employeesRoutes = require('./routes/employees.routes')
 
 const app = express()
 
+// --- Trust proxy ----------------------------------------------------------
+// Render (and Vercel) sit behind one trusted proxy that appends the REAL
+// client IP to X-Forwarded-For. With trust proxy = 1, req.ip resolves to that
+// real IP — required for the rate limiters' per-IP keys to be unspoofable.
+// (Clients can still SEND X-Forwarded-For headers; trust proxy makes Express
+// use the rightmost untrusted value appended by the proxy, ignoring them.)
+app.set('trust proxy', 1)
+
 // --- CORS -------------------------------------------------------------
 // Only the storefront and admin origins configured in .env may call this API.
 const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_URL].filter(Boolean)

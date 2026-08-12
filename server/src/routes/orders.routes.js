@@ -12,17 +12,20 @@ const {
   getDashboardStats,
 } = require('../controllers/orders.controller')
 const { trackOrders } = require('../controllers/tracking.controller')
+const { orderLimiter, trackingLimiter } = require('../middleware/rateLimit')
 
 const router = express.Router()
 
 // --- Public ---
-router.post('/orders', createOrder)
-router.get('/orders/track', trackOrder)
+// Rate-limited: checkout triggers the Brevo emails (per-IP cap) and tracking
+// is a public lookup surface (per-IP cap).
+router.post('/orders', orderLimiter, createOrder)
+router.get('/orders/track', trackingLimiter, trackOrder)
 // /api/track-order — the single tracking endpoint used by the storefront
 // (phone OR order-id lookup). Routed for ALL methods so the handler can
 // answer non-POST requests with 405 METHOD_NOT_ALLOWED. Kept alongside the
 // legacy GET /api/orders/track so older clients keep working.
-router.all('/track-order', trackOrders)
+router.all('/track-order', trackingLimiter, trackOrders)
 router.get('/pincode/:pincode', lookupPincode)
 
 // --- Admin (protected + permission-checked) ---

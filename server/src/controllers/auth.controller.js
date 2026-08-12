@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const supabase = require('../config/supabase')
 const { signAdminToken } = require('../utils/authTokens')
+const { normalizeEmail, validateEmail } = require('../utils/emailValidation')
 
 // POST /api/auth/login
 async function login(req, res) {
@@ -11,10 +12,18 @@ async function login(req, res) {
       return res.status(400).json({ error: 'email and password are required.' })
     }
 
+    // Centralized validation — a malformed or disposable email gets the SAME
+    // generic 401 as a wrong password, so no account-existence information is
+    // ever revealed. The lookup uses the normalized email (domain lowercased).
+    const normalizedEmail = normalizeEmail(email)?.normalized || ''
+    if (!normalizedEmail || validateEmail(normalizedEmail)) {
+      return res.status(401).json({ error: 'Invalid email or password.' })
+    }
+
     const { data: admin, error } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
     if (error) {

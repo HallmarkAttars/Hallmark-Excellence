@@ -1,6 +1,12 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails } = require('../services/orderEmailService')
 const {
+  normalizeEmail,
+  validateEmailWithHost,
+  EMAIL_ERRORS,
+} = require('../utils/emailValidation')
+const { domainHasMailHosts } = require('../utils/mx')
+const {
   resolvePaymentMethod,
   resolvePaymentStatus,
 } = require('../utils/orderPayment')
@@ -260,10 +266,18 @@ async function createOrder(req, res) {
     }
 
     // Customer email is REQUIRED — it is the recipient of the order
-    // confirmation email.
-    const customerEmail = String(email || '').trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-      return res.status(400).json({ error: 'A valid email address is required.' })
+    // confirmation email. Validated through the CENTRALIZED email rules:
+    // syntax → disposable blocklist → DNS host check. The DNS check is
+    // fail-open (a DNS blip never blocks checkout); only a domain that
+    // authoritatively does not exist is rejected. The stored value is the
+    // normalized form (local part as typed, domain lowercased).
+    const customerEmail = normalizeEmail(email)?.normalized || ''
+    if (!customerEmail) {
+      return res.status(400).json({ error: EMAIL_ERRORS.invalid })
+    }
+    const emailError = await validateEmailWithHost(customerEmail, domainHasMailHosts)
+    if (emailError) {
+      return res.status(400).json({ error: emailError })
     }
 
     // --- Duplicate-order / duplicate-email protection -----------------------

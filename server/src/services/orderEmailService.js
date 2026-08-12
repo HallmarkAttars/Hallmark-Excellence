@@ -15,6 +15,7 @@
 // ---------------------------------------------------------------------------
 
 const brevo = require('@getbrevo/brevo')
+const { validateEmailSyntax } = require('../utils/emailValidation')
 
 // NOTE: the installed @getbrevo/brevo@6 SDK uses the new client API
 // (new BrevoClient({ apiKey }) + client.transactionalEmails.sendTransacEmail).
@@ -243,9 +244,11 @@ async function sendOrderEmails({ order }) {
 
     const emails = []
 
-    // 1) Customer confirmation — only when a real address exists.
+    // 1) Customer confirmation — only when a real address exists (centralized
+    // syntax check; an address that passed checkout is always valid, this is
+    // a belt-and-braces guard for any legacy row).
     const customerEmail = String(params.customerEmail || '').trim().toLowerCase()
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    if (validateEmailSyntax(customerEmail)) {
       emails.push({
         tag: 'Customer email',
         to: [{ email: customerEmail, name: params.customerName || 'Valued Customer' }],
@@ -257,7 +260,7 @@ async function sendOrderEmails({ order }) {
 
     // 2) Admin notification — always to ADMIN_EMAIL (infohallmarkexcellence@gmail.com).
     const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase()
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+    if (validateEmailSyntax(adminEmail)) {
       emails.push({
         tag: 'Admin email',
         to: [{ email: adminEmail, name: 'Hallmark Excellence Admin' }],

@@ -1,12 +1,11 @@
 const bcrypt = require('bcryptjs')
 const supabase = require('../config/supabase')
 const { ROLES } = require('../config/roles')
+const { normalizeEmail, validateEmail } = require('../utils/emailValidation')
 
 // Every read returns this projection — password_hash is NEVER selected.
 const EMPLOYEE_SELECT =
   'id, first_name, last_name, email, phone, role, is_active, last_login, created_at'
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function toEmployee(row, selfId) {
   return {
@@ -89,8 +88,14 @@ async function createEmployee(req, res) {
     if (!first_name?.trim() || !email?.trim() || !password) {
       return res.status(400).json({ error: 'First name, email, and temporary password are required.' })
     }
-    if (!EMAIL_RE.test(String(email).trim())) {
-      return res.status(400).json({ error: 'Enter a valid email address.' })
+    // Centralized validation — format + disposable blocklist. The stored
+    // value is the normalized form (local part as typed, domain lowercased).
+    const normalizedEmail = normalizeEmail(email)?.normalized || ''
+    const emailError = validateEmail(email)
+    // validateEmail always returns a friendly message when the email is
+    // invalid (and an empty normalizedEmail implies a syntax failure).
+    if (!normalizedEmail || emailError) {
+      return res.status(400).json({ error: emailError })
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'Temporary password must be at least 6 characters.' })
@@ -107,7 +112,7 @@ async function createEmployee(req, res) {
       .insert({
         first_name: String(first_name).trim(),
         last_name: String(last_name || '').trim(),
-        email: String(email).trim().toLowerCase(),
+        email: normalizedEmail,
         phone: String(phone || ''),
         password_hash: passwordHash,
         role: roleLower,
@@ -176,11 +181,13 @@ async function updateEmployee(req, res) {
       patch.phone = String(req.body.phone || '')
     }
 
-    // Email change — validate format + duplicate (excluding the row itself).
+    // Email change — validate format + disposable blocklist + duplicate
+    // (excluding the row itself).
     if (req.body.email !== undefined) {
-      const email = String(req.body.email).trim().toLowerCase()
-      if (!EMAIL_RE.test(email)) {
-        return res.status(400).json({ error: 'Enter a valid email address.' })
+      const email = normalizeEmail(req.body.email)?.normalized || ''
+      const emailError = validateEmail(req.body.email)
+      if (!email || emailError) {
+        return res.status(400).json({ error: emailError || 'Please enter a valid email address.' })
       }
       const { data: dup } = await supabase.from('users').select('id').eq('email', email).maybeSingle()
       if (dup && dup.id !== id) {

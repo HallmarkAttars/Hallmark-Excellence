@@ -1,10 +1,12 @@
 const express = require('express')
 const { requireAuth } = require('../middleware/auth.middleware')
 const { login, verify } = require('../controllers/auth.controller')
+const { loginIpLimiter, loginEmailLimiter } = require('../middleware/rateLimit')
 
 const router = express.Router()
 
-router.post('/login', login)
+// Per-IP + per-email throttling (both return the same generic 429).
+router.post('/login', loginIpLimiter, loginEmailLimiter, login)
 router.get('/verify', requireAuth, verify)
 router.post('/verify', requireAuth, verify)
 

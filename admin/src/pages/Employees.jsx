@@ -6,6 +6,7 @@ import {
   deleteEmployee,
 } from '../services/mockApi'
 import { ROLES, ROLE_LABELS } from '../config/roles'
+import { getEmailError } from '../utils/email'
 import Modal from '../components/ui/Modal'
 import './Employees.css'
 
@@ -111,7 +112,12 @@ export default function Employees() {
     const errs = {}
     if (!form.first_name.trim()) errs.first_name = 'First name is required.'
     if (!form.email.trim()) errs.email = 'Email is required.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = 'Enter a valid email address.'
+    else {
+      // Centralized email validation (UX layer; the server re-validates with
+      // the full blocklist + normalization on create/update).
+      const emailError = getEmailError(form.email)
+      if (emailError) errs.email = emailError
+    }
     if (!ROLES.includes(form.role)) errs.role = 'Select a role.'
     if (modalMode === 'add' && form.password.length < 6) errs.password = 'Temporary password must be at least 6 characters.'
     if (Object.keys(errs).length > 0) {
