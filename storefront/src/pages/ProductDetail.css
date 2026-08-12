@@ -359,12 +359,14 @@
   color: var(--charcoal-soft);
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3; /* standard counterpart — keeps VS Code's vendor-prefix check happy */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 .pd-desc.is-open {
   display: block;
   -webkit-line-clamp: unset;
+  line-clamp: unset; /* standard counterpart — same warning fix for the open state */
   overflow: visible;
 }
 .pd-desc-toggle {
