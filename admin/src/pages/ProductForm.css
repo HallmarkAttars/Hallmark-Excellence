@@ -237,6 +237,19 @@
   font-size: 0.72rem;
 }
 
+/* -------- Attar price sync hint (brand bulk normal price) -------- */
+.attar-price-sync-hint {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: rgba(184, 134, 43, 0.1);
+  border: 1px solid rgba(184, 134, 43, 0.25);
+  color: #8a6a2f;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
 .unit-combobox input {
   width: 100%;
   padding: 10px 12px;

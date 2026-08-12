@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
 import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantValidation'
+// Attar price auto-fill (Category = Attar + Brand → the default variant's
+// price comes from the brand's Bulk Pricing normal price). Pure helpers with
+// unit tests in utils/attarPriceSync.test.js.
+import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -45,6 +49,15 @@ export default function ProductForm() {
   // selected variant) + price_per_unit (informational display) + is_default.
   // No stock, no bulk pricing, no package pricing.
   const [variants, setVariants] = useState([])
+  // The variant the price sync drives — the default variant's per-piece
+  // price. Tracked so switching which variant is default re-runs the sync.
+  const defaultVariantIndex = variants.findIndex((v) => v.is_default)
+  // Tracks the brand whose bulk normal price was last auto-synced into the
+  // default variant's per-piece price. Lets the form re-sync when the admin
+  // switches brands (AREES → DAHAB updates the price) while NEVER overwriting
+  // a price the admin typed by hand, and never touching saved prices in edit
+  // mode (historical products keep their exact stored data).
+  const [priceSyncedBrand, setPriceSyncedBrand] = useState(null)
 
   useEffect(() => {
     getCategories().then(setCategories)
@@ -102,6 +115,37 @@ export default function ProductForm() {
   const selectedCategory = categories.find((c) => String(c.id) === String(form.category_id))
   const isAttarCategory = selectedCategory?.slug === 'attar' || selectedCategory?.name === 'Attar'
 
+  // The brand whose Bulk Pricing configuration drives Attar prices. Only the
+  // Attar category uses brand pricing — every other category is untouched.
+  const selectedBrand = brands.find((b) => String(b.id) === String(form.brand_id))
+  const brandNormalPrice =
+    isAttarCategory && selectedBrand ? Number(selectedBrand.standard_price) : null
+  const brandHasNormalPrice = Number.isFinite(brandNormalPrice) && brandNormalPrice > 0
+
+  // ATTAR PRICE SYNC — the product's per-piece price automatically comes from
+  // the selected brand's Bulk Pricing normal price:
+  //   • Pick Category = Attar + a Brand → the default variant's Price Per Unit
+  //     is filled with the brand's normal price (admin never types it again).
+  //   • Change the brand (AREES → DAHAB) → the price updates to the new brand.
+  //   • A price the admin typed by hand is respected (never clobbered).
+  //   • Edit mode never auto-syncs — existing products keep their saved data.
+  useEffect(() => {
+    if (!shouldSyncAttarPrice({ isEdit, isAttarCategory, brandHasNormalPrice })) {
+      setPriceSyncedBrand(null)
+      return
+    }
+    setVariants((prev) =>
+      applyAttarPriceSync({
+        variants: prev,
+        brandId: form.brand_id,
+        priceSyncedBrand,
+        brandNormalPrice,
+      })
+    )
+    setPriceSyncedBrand(form.brand_id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, isAttarCategory, form.brand_id, selectedBrand, variants.length, defaultVariantIndex, priceSyncedBrand])
+
   const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
 
   // Only preview locally here — the actual Cloudinary upload happens on
@@ -121,22 +165,7 @@ export default function ProductForm() {
   // Variant Total Price is ALWAYS computed automatically: Quantity × Price
   // Per Unit (e.g. 60 × ₹45 = ₹2,700). Returns '' while either input is
   // missing/invalid so the read-only field never shows a fabricated number.
-  const computeVariantTotal = (quantity, perUnit) => {
-    const q = Number(quantity)
-    const p = Number(perUnit)
-    if (
-      String(quantity ?? '').trim() === '' ||
-      String(perUnit ?? '').trim() === '' ||
-      !Number.isFinite(q) ||
-      !Number.isFinite(p) ||
-      q <= 0 ||
-      p < 0
-    ) {
-      return ''
-    }
-    // Round to 2 decimals to match the numeric(10,2) column.
-    return Math.round(q * p * 100) / 100
-  }
+  // (computeVariantTotal lives in utils/attarPriceSync.js — unit-tested.)
 
   const addVariant = () => {
     setVariants((prev) => [
@@ -510,6 +539,20 @@ export default function ProductForm() {
             {isAttarCategory && !form.brand_id && !lockedBrandId && (
               <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>
                 Brand is required for Attar products
+              </small>
+            )}
+            {/* Attar price sync helper — the normal price is pulled straight
+                from the brand's Bulk Pricing config, so the admin never types
+                it again. Shown only when ADDING an Attar product with a brand
+                that has a configured normal price — never in edit mode, where
+                the saved price is deliberately preserved (not re-synced). */}
+            {!isEdit && isAttarCategory && form.brand_id && selectedBrand && (
+              <small className="attar-price-sync-hint">
+                {brandHasNormalPrice ? (
+                  <>Price synced from {selectedBrand.name} bulk pricing (₹{Number(brandNormalPrice).toLocaleString('en-IN')} / piece)</>
+                ) : (
+                  <>{selectedBrand.name} has no bulk pricing normal price yet</>
+                )}
               </small>
             )}
           </div>
