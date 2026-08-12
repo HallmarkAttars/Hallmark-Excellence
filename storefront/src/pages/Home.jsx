@@ -9,8 +9,6 @@ import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
 import SkeletonCollectionBanner from '../components/skeleton/SkeletonCollectionBanner'
 import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
 import SkeletonSocialStrip from '../components/skeleton/SkeletonSocialStrip'
-import SlowLoadNotice from '../components/skeleton/SlowLoadNotice'
-import useSlowLoadNotice from '../hooks/useSlowLoadNotice'
 import { getCategories, getBrands, getProducts } from '../services/mockApi'
 import { HOME_BRANDS } from '../data/content'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
@@ -22,10 +20,6 @@ export default function Home() {
   // True until ALL three fetches have settled (success OR failure) — a single
   // failing endpoint must not leave the page stuck on skeletons forever.
   const [loading, setLoading] = useState(true)
-
-  // Shows the "waking up our servers" notice only after `loading` has stayed
-  // true for 4s (i.e. a real cold start), never on a fast load.
-  const showSlowNotice = useSlowLoadNotice(loading)
 
   useEffect(() => {
     // Individual loads — a failure just leaves that section hidden (no hang).
@@ -61,8 +55,6 @@ export default function Home() {
           renders immediately and is never wrapped in a loading condition.
           Only the data-driven sections below swap to skeletons. */}
       <Hero />
-
-      {showSlowNotice && <SlowLoadNotice />}
 
       {loading ? (
         <>
