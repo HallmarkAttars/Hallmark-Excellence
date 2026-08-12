@@ -4,7 +4,6 @@ import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
 import BrandShowcaseCard from '../components/home/BrandShowcaseCard'
 import FeaturedProducts from '../components/home/FeaturedProducts'
-import WhyChooseUs from '../components/home/WhyChooseUs'
 import SocialStrip from '../components/home/SocialStrip'
 import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
 import SkeletonCollectionBanner from '../components/skeleton/SkeletonCollectionBanner'
@@ -58,9 +57,9 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero and WhyChooseUs are static/local content (no fetch dependency) —
-          they always render immediately and are never wrapped in a loading
-          condition. Only the data-driven sections below swap to skeletons. */}
+      {/* Hero is static/local content (no fetch dependency) — it always
+          renders immediately and is never wrapped in a loading condition.
+          Only the data-driven sections below swap to skeletons. */}
       <Hero />
 
       {showSlowNotice && <SlowLoadNotice />}
@@ -119,8 +118,6 @@ export default function Home() {
         </>
       )}
 
-      {/* Why Choose Us closes the page — immediately before the footer */}
-      <WhyChooseUs />
     </div>
   )
 }

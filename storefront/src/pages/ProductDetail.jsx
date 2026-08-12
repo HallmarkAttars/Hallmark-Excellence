@@ -65,7 +65,6 @@ export default function ProductDetail() {
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
-  const [activeImage, setActiveImage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
   // Initial state: NO variant is selected and NO price is shown. The
@@ -105,7 +104,6 @@ export default function ProductDetail() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    setActiveImage(0)
     setAdded(false)
     // Deliberately NOT auto-selecting a variant: the customer must choose
     // one explicitly before any price is revealed.
@@ -474,22 +472,12 @@ export default function ProductDetail() {
   return (
     <div className="container product-detail">
       <div className="product-detail-layout">
-        {/* Gallery — large rounded image on a warm stage, thumb indicator below */}
+        {/* One main product image — the only image access on the page
+            (the thumbnail/gallery navigation was removed). */}
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">
             <img src={product.image} alt={product.name} />
           </div>
-          {product.image && (
-            <div className="product-detail-thumbs">
-              <button
-                className="product-detail-thumb is-active"
-                onClick={() => setActiveImage(0)}
-                aria-label="Show product image"
-              >
-                <img src={product.image} alt="" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Information — eyebrow · title · rating · price · description */}

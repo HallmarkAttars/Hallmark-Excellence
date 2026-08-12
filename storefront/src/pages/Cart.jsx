@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { cartLineKey } from '../utils/cartLines'
@@ -174,17 +174,6 @@ export default function Cart() {
   const { pricedItems, total, itemCount, brandBulk, brands } = useCart()
   const navigate = useNavigate()
 
-  // Collapsed brand groups — pure UI state, never touches cart data.
-  const [collapsed, setCollapsed] = useState(() => new Set())
-  const toggleBrand = (id) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   // Group cart lines by brand (brand items) with the ADMIN-defined brand
   // order (display_order, never alphabetical — same rule as the header
   // dropdown); category products (no brand) fall into their own section.
@@ -275,88 +264,70 @@ export default function Cart() {
 
       <div className="cart-layout">
         <section className="cart-main" aria-label="Items in your cart">
-          {/* Brand groups — compact collapsible headers with the bulk status,
+          {/* Brand groups — always-expanded headers with the bulk status,
               pieces/threshold, normal → bulk rate and savings. The products
-              sit flat inside one card per brand. */}
+              sit flat inside one card per brand and are ALWAYS visible (no
+              accordion — the header is not interactive). */}
           <div className="cart-brand-groups">
-            {brandGroups.map((g) => {
-              const isCollapsed = collapsed.has(g.id)
-              return (
-                <section key={g.id} className="cart-brand-group">
-                  <button
-                    type="button"
-                    className="cart-brand-head"
-                    onClick={() => toggleBrand(g.id)}
-                    aria-expanded={!isCollapsed}
-                    aria-controls={`cart-brand-${g.id}`}
-                  >
-                    <div className="cart-brand-head-text">
-                      <div className="cart-brand-head-top">
-                        <span className="cart-brand-name">{g.name}</span>
-                        {g.bulk && (
-                          g.bulk.unlocked ? (
-                            <span className="cart-brand-status is-unlocked">✓ Bulk price active</span>
-                          ) : (
-                            <span className="cart-brand-status">Bulk pricing</span>
-                          )
-                        )}
-                      </div>
-                      <div className="cart-brand-head-meta">
-                        {g.bulk ? (
-                          <>
-                            <span className="cart-brand-count">
-                              {Number(g.bulk.totalPieces).toLocaleString('en-IN')} /{' '}
-                              {Number(
-                                g.bulk.unlocked && g.bulk.tier
-                                  ? g.bulk.tier.minQuantity
-                                  : g.bulk.bulkMinQty
-                              ).toLocaleString('en-IN')}{' '}
-                              pieces
-                            </span>
-                            <span className="cart-brand-prices">
-                              ₹{Number(g.bulk.standardPrice).toLocaleString('en-IN')} →{' '}
-                              <span className={g.bulk.unlocked ? 'is-bulk' : ''}>
-                                ₹{Number(g.bulk.bulkUnitPrice).toLocaleString('en-IN')}
-                              </span>{' '}
-                              / piece
-                              {g.bulk.unlocked && g.bulk.tier && (
-                                <span className="cart-brand-tier">
-                                  {' '}· from {Number(g.bulk.tier.minQuantity).toLocaleString('en-IN')} pcs
-                                </span>
-                              )}
-                            </span>
-                            {g.bulk.unlocked && g.bulk.savings > 0 && (
-                              <span className="cart-brand-savings">
-                                You save ₹{Number(g.bulk.savings).toLocaleString('en-IN')}
+            {brandGroups.map((g) => (
+              <section key={g.id} className="cart-brand-group">
+                <div className="cart-brand-head">
+                  <div className="cart-brand-head-text">
+                    <div className="cart-brand-head-top">
+                      <span className="cart-brand-name">{g.name}</span>
+                      {g.bulk && (
+                        g.bulk.unlocked ? (
+                          <span className="cart-brand-status is-unlocked">✓ Bulk price active</span>
+                        ) : (
+                          <span className="cart-brand-status">Bulk pricing</span>
+                        )
+                      )}
+                    </div>
+                    <div className="cart-brand-head-meta">
+                      {g.bulk ? (
+                        <>
+                          <span className="cart-brand-count">
+                            {Number(g.bulk.totalPieces).toLocaleString('en-IN')} /{' '}
+                            {Number(
+                              g.bulk.unlocked && g.bulk.tier
+                                ? g.bulk.tier.minQuantity
+                                : g.bulk.bulkMinQty
+                            ).toLocaleString('en-IN')}{' '}
+                            pieces
+                          </span>
+                          <span className="cart-brand-prices">
+                            ₹{Number(g.bulk.standardPrice).toLocaleString('en-IN')} →{' '}
+                            <span className={g.bulk.unlocked ? 'is-bulk' : ''}>
+                              ₹{Number(g.bulk.bulkUnitPrice).toLocaleString('en-IN')}
+                            </span>{' '}
+                            / piece
+                            {g.bulk.unlocked && g.bulk.tier && (
+                              <span className="cart-brand-tier">
+                                {' '}· from {Number(g.bulk.tier.minQuantity).toLocaleString('en-IN')} pcs
                               </span>
                             )}
-                          </>
-                        ) : (
-                          <span className="cart-brand-count">
-                            {g.items.length} {g.items.length === 1 ? 'product' : 'products'}
                           </span>
-                        )}
-                      </div>
+                          {g.bulk.unlocked && g.bulk.savings > 0 && (
+                            <span className="cart-brand-savings">
+                              You save ₹{Number(g.bulk.savings).toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="cart-brand-count">
+                          {g.items.length} {g.items.length === 1 ? 'product' : 'products'}
+                        </span>
+                      )}
                     </div>
-                    <svg
-                      className={`cart-brand-chevron ${isCollapsed ? 'is-collapsed' : ''}`}
-                      width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </button>
-                  {!isCollapsed && (
-                    <div className="cart-brand-items" id={`cart-brand-${g.id}`}>
-                      {g.items.map((item) => (
-                        <CartLine key={cartLineKey(item)} item={item} inGroup />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              )
-            })}
+                  </div>
+                </div>
+                <div className="cart-brand-items">
+                  {g.items.map((item) => (
+                    <CartLine key={cartLineKey(item)} item={item} inGroup />
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
 
           {/* Category products — separate section, no brand bulk UI. */}

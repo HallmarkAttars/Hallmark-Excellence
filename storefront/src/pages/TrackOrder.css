@@ -30,6 +30,30 @@
   .track-card { padding: 28px 32px; }
 }
 
+/* ---------- Order result — a stack of separate premium cards ----------
+   One wrapper per order; the header / summary / payment cards and the
+   action row are distinct rounded cards with a consistent gap. */
+.track-order-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.track-order-card .track-card {
+  margin-bottom: 0;
+  box-shadow: var(--shadow-soft);
+}
+.track-order-card .track-card-actions {
+  margin-top: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+@media (max-width: 767px) {
+  .track-order-card { gap: 12px; }
+}
+
 .track-card-title {
   font-family: var(--font-display);
   font-size: 1.35rem;
@@ -218,7 +242,11 @@
 
 .track-note { color: var(--charcoal-soft); font-size: 0.9rem; }
 
-/* ---------- Progress tracker: horizontal desktop ---------- */
+/* ---------- Progress tracker: horizontal desktop ----------
+   Four evenly spaced steps; the icon + label + real status date stack
+   under the step. Completed/current steps are GREEN (success), future
+   steps stay muted cream/gray. The connector leading out of a done or
+   current step fills green. */
 .track-steps {
   display: flex;
   align-items: flex-start;
@@ -247,7 +275,7 @@
 .track-step:last-child::after { display: none; }
 /* Filled when the step leading into the next one is complete/current */
 .track-step.is-done::after,
-.track-step.is-current::after { background: var(--gold); }
+.track-step.is-current::after { background: var(--success-green); }
 
 .track-step-icon {
   position: relative;
@@ -263,23 +291,22 @@
   color: var(--charcoal-soft);
   flex-shrink: 0;
 }
-.track-step.is-current .track-step-icon {
-  border-color: var(--gold-deep);
-  background: var(--white);
-  box-shadow: 0 0 0 1px var(--gold-deep);
-}
-/* Filled inner dot — the current step reads as ●, never a hollow circle */
-.track-step.is-current .track-step-icon::before {
-  content: '';
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--gold-deep);
-}
+.track-step.is-current .track-step-icon,
 .track-step.is-done .track-step-icon {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: var(--success-green);
+  border-color: var(--success-green);
   color: var(--white);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.16);
+}
+.track-step.is-current .track-step-icon {
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22);
+}
+.track-step-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
 }
 .track-step-label {
   font-size: 0.8rem;
@@ -287,12 +314,26 @@
   color: var(--charcoal-soft);
   white-space: nowrap;
 }
-.track-step.is-current .track-step-label { color: var(--charcoal); }
-.track-step.is-done .track-step-label { color: var(--gold-deep); }
+.track-step.is-current .track-step-label,
+.track-step.is-done .track-step-label {
+  color: #2e7d32;
+  font-weight: 700;
+}
+.track-step-date {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.track-step.is-current .track-step-date,
+.track-step.is-done .track-step-date {
+  color: #3e8a44;
+}
 
 /* ---------- Progress tracker: vertical mobile ---------- */
 @media (max-width: 767px) {
-  .track-steps { flex-direction: column; align-items: stretch; }
+  .track-steps { flex-direction: column; align-items: stretch; gap: 6px; }
   .track-step {
     flex-direction: row;
     align-items: center;
@@ -309,35 +350,8 @@
     height: auto;
   }
   .track-step:last-child::after { display: none; }
+  .track-step-body { align-items: flex-start; }
   .track-step-label { white-space: normal; }
-}
-
-/* ---------- Completed/active "Order Placed" step is GREEN ----------
-   When the Order Placed step is the current step (Pending order) or already
-   completed (Processing / Shipped / Delivered orders), the circle, the inner
-   filled dot and the connector leading into the next step read as a success
-   green (var(--success-green)). ONLY the first step is affected —
-   Processing, Shipped and Delivered keep their existing gold/neutral states,
-   and the Pending status pill is untouched. Applies on every breakpoint
-   (mobile / tablet / desktop). */
-.track-step:first-child.is-current .track-step-icon,
-.track-step:first-child.is-done .track-step-icon {
-  border-color: var(--success-green);
-}
-.track-step:first-child.is-current .track-step-icon {
-  background: var(--white);
-  box-shadow: 0 0 0 1px var(--success-green);
-}
-.track-step:first-child.is-current .track-step-icon::before {
-  background: var(--success-green);
-}
-.track-step:first-child.is-done .track-step-icon {
-  background: var(--success-green);
-  color: var(--white);
-}
-.track-step:first-child.is-current::after,
-.track-step:first-child.is-done::after {
-  background: var(--success-green);
 }
 
 /* ---------- Order summary items ---------- */
@@ -422,29 +436,74 @@
   font-variant-numeric: tabular-nums;
 }
 
-.track-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+/* ---------- Total Amount row (bottom of the summary card) ---------- */
+.track-total-row {
+  display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 8px 0;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.track-total-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+.track-total-label svg { color: var(--gold-deep); flex-shrink: 0; }
+.track-total-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-deep);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .track-total-value { font-size: 19px; }
+}
+
+/* ---------- Payment information rows ---------- */
+.track-pay-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.track-pay-row:first-of-type { padding-top: 0; }
+.track-pay-row:last-of-type { border-bottom: none; padding-bottom: 0; }
+.track-pay-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eaf5ec;
+  border: 1px solid rgba(30, 122, 52, 0.25);
+  color: #1e7a34;
+}
+.track-pay-label {
+  flex: 1;
+  min-width: 0;
   font-size: 0.92rem;
   color: var(--charcoal-soft);
 }
-.track-total {
-  border-top: 1px solid var(--line);
-  margin-top: 4px;
-  padding-top: 14px;
-  color: var(--charcoal);
-}
-.track-total span:first-child {
-  font-size: 17px;
-  font-weight: 600;
-}
-.track-total span:last-child {
-  font-size: 19px;
+.track-pay-value {
+  font-size: 0.92rem;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  color: var(--charcoal);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+  .track-pay-icon { width: 32px; height: 32px; }
+  .track-pay-value { font-size: 0.88rem; }
 }
 
 /* ---------- Actions ---------- */
@@ -518,31 +577,56 @@
   .track-tabs { flex-direction: column; }
 }
 
-/* ---------- Per-order card header ---------- */
-.track-card-head {
+/* ---------- Order header card ----------
+   Bag icon · prominent order number · placed date · status pill. */
+.track-head-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 14px;
+  gap: 14px;
   margin-bottom: 18px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
 }
-.track-card-head .track-order-number { margin: 0; }
-.track-card-head .track-placed-on { margin: 0; }
-.track-card-head .track-status-pill { margin-left: auto; }
+.track-order-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f5ecd8;
+  border: 1px solid rgba(184, 137, 56, 0.4);
+  color: var(--gold-deep);
+}
+.track-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.track-head-text .track-order-number { margin: 0; font-size: 1.15rem; }
+.track-head-text .track-placed-on { margin: 0; }
+.track-head-row .track-status-pill { flex-shrink: 0; }
 @media (max-width: 480px) {
-  .track-card-head .track-status-pill { margin-left: 0; }
+  .track-head-row { gap: 10px; }
+  .track-order-icon { width: 42px; height: 42px; }
+  .track-head-text .track-order-number { font-size: 1.05rem; }
+  .track-head-row .track-status-pill { margin-left: auto; }
 }
 
-/* ---------- Per-card invoice actions (resolved order only) ---------- */
+/* ---------- Per-card invoice actions (resolved order only) ----------
+   Standalone card under the payment card (no top border — the card itself
+   provides the chrome; padding is set by .track-order-card). */
 .track-card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+  padding: 18px 20px;
+}
+@media (min-width: 768px) {
+  .track-card-actions { padding: 20px 32px; }
 }
 @media (max-width: 767px) {
   .track-card-actions { flex-direction: column; }
@@ -664,14 +748,14 @@
     margin-bottom: 16px;
   }
 
-  /* Card header — order number / placed date / status badge grouped tighter */
-  .track-card-head {
-    gap: 4px 14px;
+  /* Order header card — icon / order number / placed date / status pill */
+  .track-head-row {
+    gap: 10px;
     margin-bottom: 12px;
     padding-bottom: 10px;
   }
 
-  /* Section titles (Order Progress / Order Summary) */
+  /* Section titles (Order Progress / Order Summary / Payment Information) */
   .track-card-title { margin-bottom: 12px; }
 
   /* Timeline — compact 38–42px steps, tight connector */
@@ -687,20 +771,19 @@
   .track-item-img { width: 64px; height: 64px; }
 
   /* Payment rows — compact 34–38px rows */
-  .track-row { padding: 6px 0; }
+  .track-pay-row { padding: 10px 0; }
 
   /* Total — modest separation, no large blank gap before it */
-  .track-total {
+  .track-total-row {
     margin-top: 12px;
     padding-top: 12px;
     padding-bottom: 12px;
   }
 
-  /* Actions — tighter button group, full-width 44px tap targets */
-  .track-card-actions {
-    margin-top: 14px;
-    padding-top: 12px;
-    gap: 8px;
-  }
+  /* Actions — tighter button group, full-width 44px tap targets. No
+     margin/padding-top here — the card stack (.track-order-card) already
+     owns the vertical rhythm via its gap, and the base .track-card-actions
+     padding provides the internal chrome. */
+  .track-card-actions { gap: 8px; }
   .track-card-actions .btn { min-height: 44px; }
 }

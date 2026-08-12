@@ -28,9 +28,9 @@ function stepIndexFor(status) {
   }
 }
 
-// Format the STORED Supabase created_at in Asia/Kolkata — the same single
-// timestamp used by the order confirmation and Admin Orders. Never generates
-// its own time. Returns null when no real timestamp exists.
+// Format a STORED timestamp in Asia/Kolkata — the same timezone used by the
+// order confirmation and Admin Orders. Never generates its own time. Returns
+// null when no real timestamp exists.
 function formatPlacedAt(value) {
   if (!value) return null
   const d = new Date(value)
@@ -53,6 +53,42 @@ function formatPlacedAt(value) {
   return { date, time }
 }
 
+// Best-effort status-step timestamp for the progress timeline.
+//
+// DATA SAFETY: the backend currently stores ONLY created_at — there are no
+// per-status timestamps (no status_history / processing_at / shipped_at /
+// delivered_at columns or JSONB fields). Per the product rules we NEVER
+// fabricate a date: steps without a REAL stored timestamp render "—". The
+// lookup below is written defensively so the timeline lights up
+// automatically the day the API starts returning per-status timestamps
+// (status_history / status_timestamps maps or *_at fields) — no UI change
+// needed then.
+function stepTimestamp(order, label) {
+  const o = order || {}
+  // A single history map (any casing / key style) wins when present.
+  const history =
+    o.status_history || o.statusHistory || o.status_timestamps || o.statusTimestamps || null
+  if (history && typeof history === 'object') {
+    const v =
+      history[label] ??
+      history[label.toLowerCase()] ??
+      history[label.toUpperCase()]
+    if (v) return formatPlacedAt(v)
+  }
+  // Fallback: dedicated *_at fields per step.
+  const candidates = {
+    'Order Placed': [o.createdAt, o.created_at, o.placedAt, o.placed_at],
+    Processing: [o.processingAt, o.processing_at, o.processedAt, o.processed_at],
+    Shipped: [o.shippedAt, o.shipped_at],
+    Delivered: [o.deliveredAt, o.delivered_at],
+  }[label] || []
+  for (const v of candidates) {
+    const f = formatPlacedAt(v)
+    if (f) return f
+  }
+  return null
+}
+
 function itemImage(item) {
   if (item.image) return item.image
   if (item.imageUrl) return item.imageUrl
@@ -65,6 +101,46 @@ function CheckIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
+// Order header icon — shopping bag (premium stroke style).
+function OrderIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
+      <path d="M8.5 10V6.5a3.5 3.5 0 0 1 7 0V10" />
+    </svg>
+  )
+}
+
+// Small receipt icon — beside the Total Amount row.
+function ReceiptIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 3h14v18l-2.2-1.6L14.5 21l-2.5-1.7L9.5 21l-2.3-1.6L5 21V3Z" />
+      <path d="M9 8h6M9 12h6" />
+    </svg>
+  )
+}
+
+// Small wallet/card icon — payment method row.
+function CardIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+      <path d="M2.5 10h19M6 14.5h4" />
+    </svg>
+  )
+}
+
+// Small clock icon — payment status row.
+function ClockIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
     </svg>
   )
 }
@@ -156,46 +232,75 @@ function OrderResultCard({ order }) {
   const placedAt = formatPlacedAt(order.createdAt)
 
   return (
-    <section className="track-card track-order-card" aria-label={`Order ${order.orderId}`}>
-      <header className="track-card-head">
-        <p className="track-order-number">Order #{order.orderId}</p>
-        {placedAt && <p className="track-placed-on">Placed on {placedAt.date} • {placedAt.time}</p>}
-        <span className={`track-status-pill track-status-${(order.status || '').toLowerCase()}`}>
-          {order.status}
-        </span>
+    <section className="track-order-card" aria-label={`Order ${order.orderId}`}>
+      {/* ---------- Order header card ----------
+          Bag icon · prominent order number · placed date/time · status pill. */}
+      <header className="track-card track-head-card">
+        <div className="track-head-row">
+          <span className="track-order-icon" aria-hidden="true">
+            <OrderIcon />
+          </span>
+          <div className="track-head-text">
+            <p className="track-order-number">Order #{order.orderId}</p>
+            {placedAt && (
+              <p className="track-placed-on">
+                Placed on {placedAt.date} • {placedAt.time}
+              </p>
+            )}
+          </div>
+          <span
+            className={`track-status-pill track-status-${(order.status || '').toLowerCase()}`}
+          >
+            {order.status}
+          </span>
+        </div>
+
+        {/* Cancelled — never shown as delivery progress */}
+        {isCancelled ? (
+          <div className="track-cancelled" role="alert">
+            <h2>Order Cancelled</h2>
+            <p>This order has been cancelled.</p>
+          </div>
+        ) : (
+          <section aria-label="Order progress">
+            <h3 className="track-card-title">Order Progress</h3>
+            <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
+              {STATUS_STEPS.map((label, i) => {
+                const state =
+                  stepIndex < 0
+                    ? 'upcoming'
+                    : i < stepIndex
+                      ? 'done'
+                      : i === stepIndex
+                        ? 'current'
+                        : 'upcoming'
+                const stepDate = stepTimestamp(order, label)
+                return (
+                  <div className={`track-step is-${state}`} key={label}>
+                    <span className="track-step-icon" aria-hidden="true">
+                      {state === 'done' || state === 'current' ? <CheckIcon /> : null}
+                    </span>
+                    <div className="track-step-body">
+                      <span className="track-step-label">{label}</span>
+                      <span className="track-step-date">
+                        {stepDate
+                          ? `${stepDate.date}${stepDate.time ? ` • ${stepDate.time}` : ''}`
+                          : '—'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {stepIndex < 0 && (
+              <p className="track-note">We will keep you updated on this order.</p>
+            )}
+          </section>
+        )}
       </header>
 
-      {/* Cancelled — never shown as delivery progress */}
-      {isCancelled ? (
-        <div className="track-cancelled" role="alert">
-          <h2>Order Cancelled</h2>
-          <p>This order has been cancelled.</p>
-        </div>
-      ) : (
-        <section aria-label="Order progress">
-          <h3 className="track-card-title">Order Progress</h3>
-          <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
-            {STATUS_STEPS.map((label, i) => {
-              const state =
-                stepIndex < 0 ? 'upcoming' : i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'upcoming'
-              return (
-                <div className={`track-step is-${state}`} key={label}>
-                  <span className="track-step-icon" aria-hidden="true">
-                    {state === 'done' ? <CheckIcon /> : null}
-                  </span>
-                  <span className="track-step-label">{label}</span>
-                </div>
-              )
-            })}
-          </div>
-          {stepIndex < 0 && (
-            <p className="track-note">We will keep you updated on this order.</p>
-          )}
-        </section>
-      )}
-
-      {/* Order summary */}
-      <section aria-label="Order summary">
+      {/* ---------- Order summary card ---------- */}
+      <section className="track-card track-summary-card" aria-label="Order summary">
         <h3 className="track-card-title">Order Summary</h3>
         {order.items && order.items.length > 0 ? (
           order.items.map((item, i) => (
@@ -204,17 +309,35 @@ function OrderResultCard({ order }) {
         ) : (
           <p className="track-note">No items available for this order.</p>
         )}
-        <div className="track-row">
-          <span>Payment Method</span>
-          <span>{order.payment_method || 'Cash On Delivery'}</span>
+        <div className="track-total-row">
+          <span className="track-total-label">
+            <ReceiptIcon />
+            Total Amount
+          </span>
+          <span className="track-total-value">
+            ₹{Number(order.total || 0).toLocaleString('en-IN')}
+          </span>
         </div>
-        <div className="track-row">
-          <span>Payment Status</span>
-          <span>{order.payment_status || 'Pending'}</span>
+      </section>
+
+      {/* ---------- Payment information card ---------- */}
+      <section className="track-card track-payment-card" aria-label="Payment information">
+        <h3 className="track-card-title">Payment Information</h3>
+        <div className="track-pay-row">
+          <span className="track-pay-icon" aria-hidden="true">
+            <CardIcon />
+          </span>
+          <span className="track-pay-label">Payment Method</span>
+          <span className="track-pay-value">
+            {order.payment_method || 'Cash On Delivery'}
+          </span>
         </div>
-        <div className="track-row track-total">
-          <span>Total</span>
-          <span>₹{Number(order.total || 0).toLocaleString('en-IN')}</span>
+        <div className="track-pay-row">
+          <span className="track-pay-icon" aria-hidden="true">
+            <ClockIcon />
+          </span>
+          <span className="track-pay-label">Payment Status</span>
+          <span className="track-pay-value">{order.payment_status || 'Pending'}</span>
         </div>
       </section>
 

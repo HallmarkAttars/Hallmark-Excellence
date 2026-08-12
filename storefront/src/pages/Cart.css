@@ -101,8 +101,9 @@
 
 /* ============================================================
    Brand groups — one white card per brand: compact header (bulk
-   status / pieces / normal → bulk / savings / collapse chevron)
-   above flat, divided product rows.
+   status / pieces / normal → bulk / savings) above flat, divided
+   product rows. The header is NOT interactive — the products are
+   always expanded (no accordion, no chevron).
    ============================================================ */
 .cart-brand-groups {
   display: flex;
@@ -119,7 +120,7 @@
   min-width: 0;
 }
 
-/* Header is one accessible button (expand/collapse = UI only). */
+/* Header — plain non-interactive block (always expanded). */
 .cart-brand-head {
   width: 100%;
   display: flex;
@@ -127,17 +128,8 @@
   gap: 12px;
   padding: 13px 18px;
   background: none;
-  border: none;
-  cursor: pointer;
   text-align: left;
   font-family: var(--font-body);
-  transition: background 0.2s ease;
-}
-.cart-brand-head:hover { background: var(--cream-soft); }
-.cart-brand-head:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: -2px;
-  border-radius: 16px;
 }
 .cart-brand-head-text {
   flex: 1;
@@ -213,21 +205,11 @@
   color: #1E4A2E;
   white-space: nowrap;
 }
-.cart-brand-chevron {
-  flex-shrink: 0;
-  color: var(--gold-deep);
-  transition: transform 0.25s ease;
-}
-.cart-brand-chevron.is-collapsed { transform: rotate(180deg); }
 
-/* Products inside a brand group — flat rows divided by hairlines. */
+/* Products inside a brand group — flat rows divided by hairlines. Always
+   visible (the section has no collapse behaviour). */
 .cart-brand-items {
   border-top: 1px solid var(--line-soft);
-  animation: cart-group-in 0.25s ease;
-}
-@keyframes cart-group-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: none; }
 }
 
 /* ---------- Category products — separate section, no bulk UI ---------- */
