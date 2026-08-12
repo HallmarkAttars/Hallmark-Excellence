@@ -222,7 +222,7 @@ function drawDiamond(doc, cx, cy, half) {
 // contain its thumbnail frame, otherwise the image drawn centred in the cell
 // spills over the row edges into the rows above/below.
 const THUMB_FRAME = 13 // ~49px frame
-const THUMB_CELL_PAD = 2.6 // must match styles.cellPadding top/bottom
+const THUMB_CELL_PAD = 3.2 // must match styles.cellPadding top/bottom
 
 // ---------------------------------------------------------------------------
 // PDF layout
@@ -258,9 +258,12 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const brandTitle = inv.company.brandTitle || inv.company.name
   let brandX = M
   if (logo) {
-    const logoW = 34
-    const logoH = Math.max(9, Math.min(14, (logoW * logo.h) / logo.w))
-    doc.addImage(logo.dataUrl, 'JPEG', M, 15.5, logoW, logoH)
+    // Taller, vertically-centred logo inside the 19→37mm header band — the
+    // previous 15.5mm placement crammed the whole header against the top of
+    // the sheet.
+    const logoW = 36
+    const logoH = Math.max(10, Math.min(18, (logoW * logo.h) / logo.w))
+    doc.addImage(logo.dataUrl, 'JPEG', M, 19, logoW, logoH)
     brandX = M + logoW + 7
   }
 
@@ -288,7 +291,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
   fitTextToWidth(doc, docTitle, MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 1 })
   const titleLeftEdge = W - M - 1 - textWidthMm(doc, docTitle, { charSpace: 1 })
-  doc.text(docTitle, W - M - 1, 17.5, { align: 'right', charSpace: 1 })
+  doc.text(docTitle, W - M - 1, 30, { align: 'right', charSpace: 1 })
 
   // Brand name (centre) — two stacked serif lines (AREES / PERFUMES),
   // shrink-fit to the LONGEST line inside the band bounded by the left edge
@@ -300,18 +303,17 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const centerMax = Math.max(20, Math.min(W / 2 - brandX, centerRightBound - 2 - W / 2) * 2)
   doc.setFont('times', 'bold').setFontSize(24).setTextColor(...INK)
   fitTextToWidth(doc, brandLongest, centerMax, { size: 24, minSize: 12 })
-  doc.text(brandLines[0], W / 2, 16.5, { align: 'center' })
-  if (brandLines[1]) doc.text(brandLines[1], W / 2, 20.9, { align: 'center' })
+  doc.text(brandLines[0], W / 2, 30, { align: 'center' })
+  if (brandLines[1]) doc.text(brandLines[1], W / 2, 36.5, { align: 'center' })
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...GOLD)
   if (inv.company.tagline) {
     const tagline = inv.company.tagline.toUpperCase()
-    // Keep the tagline inside the SAME safe centre band as the brand name —
-    // when an unusually long order id crowds the right side it shrinks
-    // (letter-spacing first) instead of colliding with the meta block.
-    // Baseline 24.6 keeps a >2.2mm gap to the first meta line (28.0) so the
-    // A4-containment test's vertical-overlap pairs never compare them.
+    // Tagline baseline 42.5 sits between the Date (43) and Time (47.5) meta
+      // lines; the horizontal centre band (bounded by the right block's left
+      // edge) keeps them apart, and long order ids shrink the band instead of
+      // colliding.
     fitTextToWidth(doc, tagline, centerMax, { size: 9, minSize: 6, charSpace: 1.1 })
-    doc.text(tagline, W / 2, 24.6, { align: 'center', charSpace: 1.1 })
+    doc.text(tagline, W / 2, 42.5, { align: 'center', charSpace: 1.1 })
   }
 
   // Gold decorative divider + diamond under the subtitle. Drawn as GRAPHICS
@@ -319,41 +321,41 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   // can never be mistaken for a label; centred, well inside the right meta
   // block's left edge (x ≥ 174), so nothing can collide.
   doc.setDrawColor(...GOLD).setLineWidth(0.3)
-  doc.line(W / 2 - 10, 27.2, W / 2 - 3.2, 27.2)
-  doc.line(W / 2 + 3.2, 27.2, W / 2 + 10, 27.2)
-  drawDiamond(doc, W / 2, 27.2, 1.1)
+  doc.line(W / 2 - 10, 47, W / 2 - 3.2, 47)
+  doc.line(W / 2 + 3.2, 47, W / 2 + 10, 47)
+  drawDiamond(doc, W / 2, 47, 1.1)
 
   // #order / Date / Time (right) — each line shrink-fits within the cap.
-  let ry = 28.0
+  let ry = 38.5
   for (const line of rightMeta) {
     const isOrderId = applyRightMetaFont(doc, line)
     doc.setTextColor(...(isOrderId ? TEXT : MUTED))
     fitTextToWidth(doc, line, MAX_RIGHT_BLOCK, { size: isOrderId ? 8 : 7.5, minSize: 5.5 })
     doc.text(line, W - M, ry, { align: 'right' })
-    ry += 4.2
+    ry += 4.5
   }
 
   // Thin gold divider + centred contact strip (real config values only). The
   // GST / copyright legal lines sit quietly underneath on the plain page —
   // the old dark footer band has been removed.
   doc.setDrawColor(...GOLD).setLineWidth(0.7)
-  doc.line(M, 41, W - M, 41)
+  doc.line(M, 56, W - M, 56)
   const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
   if (contactBits.length > 0) {
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(contactBits.join('   ·   '), W / 2, 45.5, { align: 'center' })
+    doc.text(contactBits.join('   ·   '), W / 2, 61.5, { align: 'center' })
   }
   doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(...MUTED)
   if (inv.company.gstNote) {
-    doc.text(inv.company.gstNote, W / 2, 49.5, { align: 'center' })
+    doc.text(inv.company.gstNote, W / 2, 66, { align: 'center' })
   }
-  doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, 52.5, { align: 'center' })
+  doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, 70, { align: 'center' })
 
   // ========================= BILL TO / ORDER INFO ===========================
   const cardGap = 8
   const cardW = (CW - cardGap) / 2 // 87
-  const padX = 5
-  const padY = 4.2
+  const padX = 6
+  const padY = 6
 
   // Measure BILL TO content
   const billLines = []
@@ -364,9 +366,9 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     const wrapped = doc.splitTextToSize(line || '', cardW - padX * 2)
     for (const l of wrapped) billLines.push({ text: l, size: 8.5, style: 'normal', color: MUTED })
   }
-  let billH = 10 // heading + gap
+  let billH = 12 // heading + gap
   billLines.forEach((l) => {
-    billH += l.size * 0.5 + (l.style === 'bold' ? 1.7 : 0.9)
+    billH += l.size * 0.5 + (l.style === 'bold' ? 2.2 : 1.2)
   })
 
   // ORDER INFORMATION rows (real values only) — including the real status
@@ -376,10 +378,10 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   if (inv.time) orderRows.push(['Time', inv.time])
   if (inv.paymentMethod) orderRows.push(['Payment', inv.paymentMethod])
   if (inv.status) orderRows.push(['Status', inv.status])
-  const orderH = 10 + orderRows.length * 6.4
+  const orderH = 14 + orderRows.length * 7
 
   const cardH = Math.max(billH, orderH) + padY * 2
-  let y = 56
+  let y = 78
 
   // Draw the two cards
   doc.setFillColor(...CREAM)
@@ -390,21 +392,21 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
 
   // BILL TO text
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GOLD)
-  doc.text('BILL TO', M + padX, y + padY + 3.5)
-  let by = y + padY + 8
+  doc.text('BILL TO', M + padX, y + padY + 4.5)
+  let by = y + padY + 10
   for (const l of billLines) {
     doc.setFont('helvetica', l.style).setFontSize(l.size).setTextColor(...l.color)
     // Shrink-fit keeps a very long name/line inside the card's width.
     fitTextToWidth(doc, l.text, cardW - padX * 2, { size: l.size, minSize: 6 })
     doc.text(l.text, M + padX, by)
-    by += l.size * 0.5 + (l.style === 'bold' ? 1.7 : 0.9)
+    by += l.size * 0.5 + (l.style === 'bold' ? 2.2 : 1.2)
   }
 
   // ORDER INFORMATION text
   const infoRight = M + cardW + cardGap + cardW - padX
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GOLD)
-  doc.text('ORDER INFORMATION', M + cardW + cardGap + padX, y + padY + 3.5)
-  let oy = y + padY + 8
+  doc.text('ORDER INFORMATION', M + cardW + cardGap + padX, y + padY + 4.5)
+  let oy = y + padY + 10
   for (const [label, value] of orderRows) {
     doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
     doc.text(label, M + cardW + cardGap + padX, oy)
@@ -415,11 +417,11 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.setFont('helvetica', 'bold').setTextColor(...TEXT)
     fitTextToWidth(doc, value, maxValueW, { size: 8.5, minSize: 5.5 })
     doc.text(value, infoRight, oy, { align: 'right' })
-    oy += 6.4
+    oy += 7
   }
 
   // ============================= ITEMS TABLE ================================
-  const tableStartY = y + cardH + 5
+  const tableStartY = y + cardH + 7
   autoTable(doc, {
     startY: tableStartY,
     // Explicit bottom margin keeps the last row clear of the per-page page
@@ -466,7 +468,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       // table past the A4 margin (the old auto sizing let unbroken text push
       // the right edge of the sheet).
       overflow: 'linebreak',
-      cellPadding: { top: 2.6, bottom: 2.6, left: 1.5, right: 1.5 },
+      cellPadding: { top: 3.2, bottom: 3.2, left: 1.5, right: 1.5 },
     },
     headStyles: {
       font: 'helvetica',
@@ -476,7 +478,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       fillColor: INK,
       lineColor: GOLD,
       lineWidth: 0.5,
-      cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 },
+      cellPadding: { top: 3.6, bottom: 3.6, left: 1.5, right: 1.5 },
     },
     columnStyles: {
       // Fixed proportional widths — 30/28/10/16/16 of the 182mm content
@@ -532,7 +534,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     },
   })
 
-  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 6
+  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 9
 
   // ============================ PRICE SUMMARY ===============================
   const sumW = 78
@@ -544,7 +546,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Subtotal', sumX, ty)
   drawMoney(doc, rupee, inv.subtotal, W - M, ty, { align: 'right' })
-  ty += 5.5
+  ty += 6
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Delivery / Transport', sumX, ty)
   if (inv.delivery == null) {
@@ -553,33 +555,33 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   } else {
     drawMoney(doc, rupee, inv.delivery, W - M, ty, { align: 'right' })
   }
-  ty += 4.5
+  ty += 5
   doc.setDrawColor(...GOLD).setLineWidth(0.4)
   doc.line(sumX, ty, W - M, ty)
-  ty += 5
+  ty += 5.5
   doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(...INK)
   doc.text('TOTAL', sumX, ty)
   drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 13, color: GOLD })
-  ty += 10
+  ty += 12
 
   // =========================== THANK-YOU CARD ===============================
   if (ty > H - 52) {
     doc.addPage()
     ty = M
   }
-  const thanksH = 25
+  const thanksH = 30
   doc.setFillColor(...CREAM)
   doc.setDrawColor(...GOLD)
   doc.setLineWidth(0.3)
   doc.roundedRect(M, ty, CW, thanksH, 3, 3, 'FD')
   doc.setFont('times', 'bold').setFontSize(13).setTextColor(...GOLD)
-  doc.text('Thank You!', W / 2, ty + 8, { align: 'center' })
+  doc.text('Thank You!', W / 2, ty + 9, { align: 'center' })
   doc.setFont('times', 'italic').setFontSize(10.5).setTextColor(...TEXT)
-  doc.text(inv.company.thanks, W / 2, ty + 14.5, { align: 'center' })
+  doc.text(inv.company.thanks, W / 2, ty + 16, { align: 'center' })
   doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
-  doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 19.5, { align: 'center' })
+  doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 21.5, { align: 'center' })
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text(`— Team ${brandTitle}`, W / 2, ty + 24, { align: 'center' })
+  doc.text(`— Team ${brandTitle}`, W / 2, ty + 26.5, { align: 'center' })
 
   // ============== PAGE FRAME + CORNER DETAILS + FOOTER (every page) ========
   const pages = doc.getNumberOfPages()

@@ -34,7 +34,9 @@ vi.mock('jspdf', async (importOriginal) => {
       // the wrappers actually intercept calls.
       this.roundedRect = (x, y, w, h, rx, ry, style) => {
         const frames = globalThis.__pdfFrames
-        if (frames && w === 13 && h === 13) {
+        // Frame size is 13mm ± tiny float noise (e.g. 12.999999999999998 from
+        // height - 2×pad); accept anything within 0.1mm of the 13×13 frame.
+        if (frames && Math.abs(w - 13) < 0.1 && Math.abs(h - 13) < 0.1) {
           frames.push({
             page: this.internal.getCurrentPageInfo().pageNumber,
             y,
