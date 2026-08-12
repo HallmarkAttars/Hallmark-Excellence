@@ -1,73 +1,38 @@
 // ============================================================================
-// <OrderInvoice order={order} /> — the ONE reusable invoice sheet (admin copy,
-// identical to the storefront component). Rendered from the SAVED ORDER
-// RECORD via utils/invoice.js (never the cart, never live product prices).
+// <OrderInvoice order={order} documentType?="INVOICE|ESTIMATE" /> — the ONE
+// reusable invoice sheet (admin copy, identical to the storefront component).
+// Rendered from the SAVED ORDER RECORD via utils/invoice.js (never the cart,
+// never live product prices).
+//
+// DESIGN: premium luxury attar invoice — warm off-white sheet, thin double
+// gold page border with gold corner accents, two-line serif brand + tagline,
+// dynamic INVOICE / ESTIMATE title with #order / date / time, BILL TO +
+// ORDER INFORMATION cards, dark product table, right-aligned totals, gold
+// thank-you card and a "Page 1 of 1" footer. Every value comes from
+// formatOrderForInvoice(order); nothing is hardcoded and nothing is invented.
 // ============================================================================
 
-import { formatOrderForInvoice, formatINR } from '../../utils/invoice'
+import { formatOrderForInvoice, formatINR, invoiceBrandLines } from '../../utils/invoice'
 import { INVOICE_LOGO } from './invoiceAssets'
 import './OrderInvoice.css'
 
-// --- Small stroke icons (inline so this copy stays self-contained) ----------
-const icons = {
-  phone: (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.27a2 2 0 0 1 2.1-.45c.9.34 1.84.57 2.8.7A2 2 0 0 1 22 16.9Z" />
-    </svg>
-  ),
-  mail: (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path d="m22 7-10 6L2 7" />
-    </svg>
-  ),
-  check: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m5 12.5 4.5 4.5L19 7.5" />
-    </svg>
-  ),
-  gem: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M6 3h12l4 6-10 12L2 9l4-6Z" />
-      <path d="M2 9h20M12 21 8 9l4-6 4 6-4 12" />
-    </svg>
-  ),
-  shield: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10Z" />
-      <path d="m9 11.5 2 2 4-4.5" />
-    </svg>
-  ),
-  headset: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 12a9 9 0 0 1 18 0" />
-      <path d="M3 13.5v3a2.5 2.5 0 0 0 2.5 2.5H7v-8H5.5A2.5 2.5 0 0 0 3 13.5Z" />
-      <path d="M21 13.5v3a2.5 2.5 0 0 1-2.5 2.5H17v-8h1.5a2.5 2.5 0 0 1 2.5 2.5Z" />
-      <path d="M17 19a3 3 0 0 1-3 3h-2" />
-    </svg>
-  ),
-  payment: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <path d="M2 10h20M6 15h4" />
-    </svg>
-  ),
-}
-
-// Trust row copy — descriptive lines only (no invented business claims).
-// Each item carries its own line-icon key so the four promises render with
-// distinct icons (gem / check / shield / headset).
-const TRUST_ITEMS = [
-  { key: 'original', icon: 'gem', title: '100% Original', sub: 'Authentic attars from trusted sources' },
-  { key: 'quality', icon: 'check', title: 'Premium Quality', sub: 'Finest ingredients & long lasting' },
-  { key: 'packaging', icon: 'shield', title: 'Secure Packaging', sub: 'Carefully packed for safe delivery' },
-  { key: 'support', icon: 'headset', title: 'Customer Support', sub: "We're here to help you always" },
-]
-
-export default function OrderInvoice({ order }) {
+export default function OrderInvoice({ order, documentType }) {
   const inv = formatOrderForInvoice(order)
 
-  const contactBits = [inv.company.phone, inv.company.email].filter(Boolean)
+  // Document type — INVOICE by default; an explicit prop or a stored
+  // document_type flag on the order record switches to ESTIMATE. Both paths
+  // normalise onto INVOICE/ESTIMATE (a 'quotation' flag prints ESTIMATE).
+  const rawDocType = String(documentType || inv.documentType || 'INVOICE').toUpperCase()
+  const docTitle = rawDocType === 'ESTIMATE' || rawDocType === 'QUOTATION' ? 'ESTIMATE' : 'INVOICE'
+
+  // Brand rendered as two stacked centred lines (HALLMARK OF / EXCELLENCE).
+  const brandLines = invoiceBrandLines(inv.company.name)
+
+  // Contact strip — real configured values only (phone · email · website).
+  const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
+  // Legal lines under the header — the real GST note + copyright.
+  const legalBits = [inv.company.gstNote, `© ${inv.company.name}. All rights reserved.`].filter(Boolean)
+
   const infoRows = [
     inv.orderId && ['Order ID', inv.orderId],
     inv.date && ['Date', inv.date],
@@ -77,50 +42,50 @@ export default function OrderInvoice({ order }) {
   ].filter(Boolean)
 
   return (
-    <div className="invoice-sheet" aria-label={`Invoice ${inv.orderId}`}>
-      {/* Hairline gold page frame + corner accents */}
+    <div className="invoice-sheet" aria-label={`${docTitle} ${inv.orderId}`}>
+      {/* Thin double gold page border + corner accents */}
       <div className="invoice-frame">
         <span className="invoice-corner invoice-corner--tl" aria-hidden="true" />
         <span className="invoice-corner invoice-corner--tr" aria-hidden="true" />
         <span className="invoice-corner invoice-corner--bl" aria-hidden="true" />
         <span className="invoice-corner invoice-corner--br" aria-hidden="true" />
 
-        {/* Header — logo (left) · brand (centre) · INVOICE + reference (right) */}
+        {/* Header — logo (left) · two-line brand (centre) · INVOICE/ESTIMATE (right) */}
         <header className="invoice-head">
           <div className="invoice-brand">
             <img src={INVOICE_LOGO} alt="" className="invoice-logo" />
           </div>
           <div className="invoice-brand-center">
-            <span className="invoice-company">{inv.company.name}</span>
+            <span className="invoice-company">
+              {brandLines.map((line, i) => (
+                <span className="invoice-company-line" key={i}>{line}</span>
+              ))}
+            </span>
             {inv.company.tagline && (
               <span className="invoice-tagline">{inv.company.tagline}</span>
             )}
           </div>
           <div className="invoice-title-block">
-            <h2 className="invoice-title">Invoice</h2>
+            <h2 className="invoice-title">{docTitle}</h2>
             {inv.orderId && (
-              <p className="invoice-meta-line">
-                Invoice # <strong>{inv.orderId}</strong>
-              </p>
+              <p className="invoice-meta-line">#<strong>{inv.orderId}</strong></p>
             )}
-            {inv.date && <p className="invoice-meta-line">Date: {inv.date}</p>}
-            {inv.time && <p className="invoice-meta-line">Time: {inv.time}</p>}
+            {inv.date && <p className="invoice-meta-line">Date : {inv.date}</p>}
+            {inv.time && <p className="invoice-meta-line">Time : {inv.time}</p>}
           </div>
         </header>
 
-        {/* Contact bar — thin gold divider + real contact values only */}
+        {/* Contact strip — thin gold divider above; phone · email · website */}
         {contactBits.length > 0 && (
           <div className="invoice-contact">
-            <span className="invoice-contact-item">
-              <span className="invoice-contact-icon" aria-hidden="true">{icons.phone}</span>
-              {contactBits[0]}
-            </span>
-            {contactBits[1] && (
-              <span className="invoice-contact-item">
-                <span className="invoice-contact-icon" aria-hidden="true">{icons.mail}</span>
-                {contactBits[1]}
-              </span>
-            )}
+            {contactBits.map((bit, i) => (
+              <span className="invoice-contact-item" key={i}>{bit}</span>
+            ))}
+          </div>
+        )}
+        {legalBits.length > 0 && (
+          <div className="invoice-legal">
+            {legalBits.map((line, i) => <p key={i}>{line}</p>)}
           </div>
         )}
 
@@ -197,7 +162,7 @@ export default function OrderInvoice({ order }) {
           </tbody>
         </table>
 
-        {/* Totals (right) + payment / status */}
+        {/* Totals — right-aligned pricing summary */}
         <div className="invoice-lower">
           <section className="invoice-summary" aria-label="Totals">
             <div className="invoice-summary-row">
@@ -213,42 +178,7 @@ export default function OrderInvoice({ order }) {
               <span className="invoice-grand-amount">{formatINR(inv.total)}</span>
             </div>
           </section>
-
-          {/* Payment method + real order status */}
-          <section className="invoice-pay-status" aria-label="Payment and status">
-            <div className="invoice-pay-block">
-              <span className="invoice-pay-icon" aria-hidden="true">{icons.payment}</span>
-              <div>
-                <p className="invoice-pay-label">Payment Method</p>
-                <p className="invoice-pay-value">{inv.paymentMethod}</p>
-              </div>
-            </div>
-            <div className="invoice-pay-block">
-              <span className="invoice-pay-icon" aria-hidden="true">{icons.check}</span>
-              <div>
-                <p className="invoice-pay-label">Payment Status</p>
-                <p className={`invoice-status-pill invoice-status-pill--${String(inv.paymentStatus).toLowerCase()}`}>
-                  {inv.paymentStatus}
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
-
-        {/* Trust row — compact premium reassurance */}
-        <section className="invoice-trust" aria-label="Why shop with us">
-          {TRUST_ITEMS.map((t) => (
-            <div className="invoice-trust-item" key={t.key}>
-              <span className="invoice-trust-icon" aria-hidden="true">
-                {icons[t.icon] || icons.check}
-              </span>
-              <div>
-                <strong>{t.title}</strong>
-                <span>{t.sub}</span>
-              </div>
-            </div>
-          ))}
-        </section>
 
         {/* Thank-you card */}
         <section className="invoice-thanks-card" aria-label="Thank you">
@@ -258,12 +188,11 @@ export default function OrderInvoice({ order }) {
           <p className="invoice-thanks-sign">— Team {inv.company.name}</p>
         </section>
 
-        {/* Dark footer with the real GST note + copyright */}
-        <footer className="invoice-foot">
-          <p className="invoice-foot-line">{inv.company.gstNote}</p>
-          <p className="invoice-foot-line">
-            © {inv.company.name}. All rights reserved.
-          </p>
+        {/* Page footer — Page 1 of 1 with gold decorative separators */}
+        <footer className="invoice-pagefoot" aria-hidden="true">
+          <span className="invoice-pagefoot-rule" />
+          <span className="invoice-pagefoot-text">✦ Page 1 of 1 ✦</span>
+          <span className="invoice-pagefoot-rule" />
         </footer>
       </div>
     </div>

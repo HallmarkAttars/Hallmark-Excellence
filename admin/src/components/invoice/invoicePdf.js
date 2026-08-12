@@ -2,17 +2,19 @@
 // Invoice PDF / print — premium A4 document generation (no screenshots).
 //
 // DESIGN: luxury attar invoice for Hallmark of Excellence.
-//   • Frame   — hairline gold page frame with a lighter inner outline
-//   • Header  — logo (left) · brand name + tagline (centre) · gold INVOICE
-//               title + invoice # / date / time (right), thin gold divider
-//               and a centred contact bar below
+//   • Frame   — thin DOUBLE gold page border (outer line + inner hairline)
+//               with gold diamond accents at the four corners
+//   • Header  — logo (left) · two-line serif brand + tagline (centre) ·
+//               dynamic INVOICE / ESTIMATE title + #order / date / time
+//               (right), thin gold divider with the contact strip (phone ·
+//               email · website) and the GST / copyright lines below
 //   • Cards   — BILL TO + ORDER INFORMATION (Order ID / Date / Time / Payment
 //               / Status) side by side on a warm cream fill
 //   • Table   — dark header, white rows, subtle separators, aspect-preserved
 //               thumbnails, brand · size detail lines
 //   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount)
-//   • Payment + coloured status pill, trust row, thank-you card, subtle
-//     legal lines under the header contact bar
+//   • Thanks  — gold-bordered thank-you card, then a "Page i of n" footer
+//               flanked by gold rules + dots, redrawn on every page
 //   • Multi-page: the table header repeats, totals stay together, and the
 //     gold frame + page number are redrawn on every page.
 //
@@ -32,6 +34,7 @@ import {
   formatOrderForInvoice,
   formatINR,
   invoiceFileName,
+  invoiceBrandLines,
 } from '../../utils/invoice'
 
 // --- Palette (Hallmark Excellence luxury) ----------------------------------
@@ -43,25 +46,6 @@ const GOLD_LIGHT = [206, 166, 86] // lighter gold for small accents
 const CREAM = [247, 242, 232] // #F7F2E8
 const CREAM_BORDER = [230, 220, 198] // #E6DCC6 — thumb frame
 const HAIRLINE = [236, 231, 220] // #ECE7DC
-const WHITE = [255, 255, 255]
-
-// Real order-status colours (unknown statuses fall back to gold).
-const STATUS_COLORS = {
-  pending: GOLD,
-  confirmed: [46, 125, 50],
-  processing: [21, 101, 192],
-  shipped: [21, 101, 192],
-  delivered: [46, 125, 50],
-  cancelled: [198, 40, 40],
-  // Payment status — Paid turns green once staff confirm receipt (no gateway).
-  paid: [46, 125, 50],
-}
-function statusColor(status) {
-  const key = String(status || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
-  return STATUS_COLORS[key] || STATUS_COLORS.pending
-}
 
 // --- Rupee-capable font (optional) -----------------------------------------
 // Loaded once, cached for the session; returns base64 TTF or null on failure.
@@ -213,15 +197,24 @@ export function fitTextToWidth(
   return s
 }
 
-// Font for the header's right meta lines (Invoice # / Date / Time): bold for
-// the order id, normal for the rest. Returns whether it is the order-id line
+// Font for the header's right meta lines (#order / Date / Time): bold for the
+// order-id line, normal for the rest. Returns whether it is the order-id line
 // so the caller can style it consistently. Shared by the measurement and draw
 // loops so the fit math always uses the same metrics as the draw.
 function applyRightMetaFont(doc, line) {
-  const isOrderId = line.startsWith('Invoice #')
+  const isOrderId = line.startsWith('#')
   doc.setFont('helvetica', isOrderId ? 'bold' : 'normal')
   doc.setFontSize(isOrderId ? 8 : 7.5)
   return isOrderId
+}
+
+// Small filled diamond — the gold corner accent on the page frame. Drawn as
+// two triangles (jsPDF 4.x has no translate/rotate helpers, so the shape is
+// pure geometry).
+function drawDiamond(doc, cx, cy, half) {
+  doc.setFillColor(...GOLD)
+  doc.triangle(cx, cy - half, cx - half, cy, cx, cy + half, 'F')
+  doc.triangle(cx, cy + half, cx + half, cy, cx, cy - half, 'F')
 }
 
 // Product thumbnail frame (mm) and the items table's vertical cell padding.
@@ -230,14 +223,6 @@ function applyRightMetaFont(doc, line) {
 // spills over the row edges into the rows above/below.
 const THUMB_FRAME = 13 // ~49px frame
 const THUMB_CELL_PAD = 2.6 // must match styles.cellPadding top/bottom
-
-// Trust row copy — mirrors the on-screen sheet.
-const TRUST_ITEMS = [
-  { title: '100% Original', sub: 'Authentic attars from trusted sources' },
-  { title: 'Premium Quality', sub: 'Finest ingredients & long lasting' },
-  { title: 'Secure Packaging', sub: 'Carefully packed for safe delivery' },
-  { title: 'Customer Support', sub: "We're here to help you always" },
-]
 
 // ---------------------------------------------------------------------------
 // PDF layout
@@ -260,13 +245,14 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const r1 = (n) => Math.round(n * 10) / 10 // one-decimal rounding (exact 182mm column sum)
 
   // ============================= HEADER =====================================
-  // Layout: logo (left) · brand name + tagline (centre) · INVOICE + invoice #
-  // / date / time (right). The centred brand and the right block share the
-  // same vertical band, so each is shrink-fit to a MEASURED width: a very
-  // long order id can never shove the company name out of the page, and the
-  // right-aligned INVOICE title keeps a deliberate 0.75mm inset because
-  // jsPDF's charSpace extends right-aligned text ~1 charSpace past its
-  // anchor (that previously clipped the last letter against the gold frame).
+  // Layout: logo (left) · two-line brand name + tagline (centre) · INVOICE /
+  // ESTIMATE + #order / date / time (right). The centred brand and the right
+  // block share the same vertical band, so each is shrink-fit to a MEASURED
+  // width: a very long order id can never shove the company name out of the
+  // page, and the right-aligned title keeps a deliberate 0.75mm inset because
+  // jsPDF's charSpace extends right-aligned text ~1 charSpace past its anchor
+  // (that previously clipped the last letter against the gold frame).
+  const docTitle = inv.documentType || 'INVOICE'
   let brandX = M
   if (logo) {
     const logoW = 34
@@ -275,16 +261,16 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     brandX = M + logoW + 7
   }
 
-  // Right header block: Invoice # / Date / Time — capped at a fixed width so
-  // its left edge can never collide with the centred brand name. The brand's
+  // Right header block: #order / Date / Time — capped at a fixed width so its
+  // left edge can never collide with the centred brand name. The brand's
   // centre budget uses the block's ACTUAL natural width (capped), so normal
-  // invoices keep the company name at full 17pt and only genuinely long ids
+  // invoices keep the company name at full 24pt and only genuinely long ids
   // / dates trigger shrink-fit.
   const MAX_RIGHT_BLOCK = 62 // mm
   const rightMeta = []
-  if (inv.orderId) rightMeta.push(`Invoice # ${inv.orderId}`)
-  if (inv.date) rightMeta.push(`Date: ${inv.date}`)
-  if (inv.time) rightMeta.push(`Time: ${inv.time}`)
+  if (inv.orderId) rightMeta.push(`#${inv.orderId}`)
+  if (inv.date) rightMeta.push(`Date : ${inv.date}`)
+  if (inv.time) rightMeta.push(`Time : ${inv.time}`)
   let naturalRightW = 0
   for (const line of rightMeta) {
     applyRightMetaFont(doc, line)
@@ -293,40 +279,40 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const rightBlockW = Math.min(MAX_RIGHT_BLOCK, naturalRightW)
   const rightBlockLeft = W - M - rightBlockW
 
-  // INVOICE title (right, gold) — modest charSpace + a 1mm inset (≥ the
-  // charSpace) keeps the last letter safely inside the gold page frame even
-  // with jsPDF's right-aligned charSpace quirk. titleLeftEdge is measured at
-  // whatever size fitTextToWidth left applied (always 21pt in practice, as
-  // 'INVOICE' fits its cap), so it self-consistently tracks any future shrink.
+  // INVOICE / ESTIMATE title (right, gold) — modest charSpace + a 1mm inset
+  // (≥ the charSpace) keeps the last letter safely inside the gold page frame
+  // even with jsPDF's right-aligned charSpace quirk.
   doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
-  fitTextToWidth(doc, 'INVOICE', MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 1 })
-  const titleLeftEdge = W - M - 1 - textWidthMm(doc, 'INVOICE', { charSpace: 1 })
-  doc.text('INVOICE', W - M - 1, 17.5, { align: 'right', charSpace: 1 })
+  fitTextToWidth(doc, docTitle, MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 1 })
+  const titleLeftEdge = W - M - 1 - textWidthMm(doc, docTitle, { charSpace: 1 })
+  doc.text(docTitle, W - M - 1, 17.5, { align: 'right', charSpace: 1 })
 
-  // Brand name (centre) — shrink-fit inside the band bounded by the left edge
-  // and the tightest of the INVOICE title / right meta block (with a 2mm gap);
-  // stays perfectly centred whenever it fits.
+  // Brand name (centre) — two stacked serif lines (HALLMARK OF / EXCELLENCE),
+  // shrink-fit to the LONGEST line inside the band bounded by the left edge
+  // and the tightest of the title / right meta block (with a 2mm gap); stays
+  // perfectly centred whenever it fits.
+  const brandLines = invoiceBrandLines(inv.company.name)
+  const brandLongest = brandLines.reduce((a, b) => (b.length > a.length ? b : a), '')
   const centerRightBound = Math.min(rightBlockLeft, titleLeftEdge)
   const centerMax = Math.max(20, Math.min(W / 2 - brandX, centerRightBound - 2 - W / 2) * 2)
-  // Brand name (centre) — the most prominent text on the sheet (24pt serif,
-  // uppercase). Shrink-fit keeps it clear of the INVOICE title and the right
-  // meta block even when an order id is unusually long.
   doc.setFont('times', 'bold').setFontSize(24).setTextColor(...INK)
-  const brandName = inv.company.name.toUpperCase()
-  fitTextToWidth(doc, brandName, centerMax, { size: 24, minSize: 12 })
-  doc.text(brandName, W / 2, 16.5, { align: 'center' })
+  fitTextToWidth(doc, brandLongest, centerMax, { size: 24, minSize: 12 })
+  doc.text(brandLines[0], W / 2, 16.5, { align: 'center' })
+  if (brandLines[1]) doc.text(brandLines[1], W / 2, 20.9, { align: 'center' })
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...GOLD)
   if (inv.company.tagline) {
     const tagline = inv.company.tagline.toUpperCase()
     // Keep the tagline inside the SAME safe centre band as the brand name —
     // when an unusually long order id crowds the right side it shrinks
     // (letter-spacing first) instead of colliding with the meta block.
+    // Baseline 24.6 keeps a >2.2mm gap to the first meta line (28.0) so the
+    // A4-containment test's vertical-overlap pairs never compare them.
     fitTextToWidth(doc, tagline, centerMax, { size: 9, minSize: 6, charSpace: 1.1 })
-    doc.text(tagline, W / 2, 21.5, { align: 'center', charSpace: 1.1 })
+    doc.text(tagline, W / 2, 24.6, { align: 'center', charSpace: 1.1 })
   }
 
-  // Invoice # / Date / Time (right) — each line shrink-fits within the cap.
-  let ry = 24.5
+  // #order / Date / Time (right) — each line shrink-fits within the cap.
+  let ry = 28.0
   for (const line of rightMeta) {
     const isOrderId = applyRightMetaFont(doc, line)
     doc.setTextColor(...(isOrderId ? TEXT : MUTED))
@@ -335,21 +321,21 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     ry += 4.2
   }
 
-  // Thin gold divider + centred contact bar (real config values only). The
-  // legal / copyright lines sit quietly underneath on the plain page — the
-  // old dark footer band has been removed.
+  // Thin gold divider + centred contact strip (real config values only). The
+  // GST / copyright legal lines sit quietly underneath on the plain page —
+  // the old dark footer band has been removed.
   doc.setDrawColor(...GOLD).setLineWidth(0.7)
-  doc.line(M, 37, W - M, 37)
-  const contactBits = [inv.company.phone, inv.company.email].filter(Boolean)
+  doc.line(M, 41, W - M, 41)
+  const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
   if (contactBits.length > 0) {
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(contactBits.join('   ·   '), W / 2, 42, { align: 'center' })
+    doc.text(contactBits.join('   ·   '), W / 2, 45.5, { align: 'center' })
   }
   doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(...MUTED)
   if (inv.company.gstNote) {
-    doc.text(inv.company.gstNote, W / 2, 46, { align: 'center' })
+    doc.text(inv.company.gstNote, W / 2, 49.5, { align: 'center' })
   }
-  doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, 49.5, { align: 'center' })
+  doc.text(`© ${inv.company.name}. All rights reserved.`, W / 2, 52.5, { align: 'center' })
 
   // ========================= BILL TO / ORDER INFO ===========================
   const cardGap = 8
@@ -381,7 +367,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const orderH = 10 + orderRows.length * 6.4
 
   const cardH = Math.max(billH, orderH) + padY * 2
-  let y = 52
+  let y = 56
 
   // Draw the two cards
   doc.setFillColor(...CREAM)
@@ -564,70 +550,6 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 13, color: GOLD })
   ty += 10
 
-  // ======================= PAYMENT + STATUS (pill) ==========================
-  if (ty > H - 46) {
-    doc.addPage()
-    ty = M
-  }
-  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text('PAYMENT METHOD', M, ty)
-  doc.setFont('helvetica', 'bold').setFontSize(9.5).setTextColor(...INK)
-  doc.text(inv.paymentMethod || '', M, ty + 4.5)
-
-  doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text('PAYMENT STATUS', W / 2, ty)
-  // Status pill — colour derived from the REAL payment status text (always
-  // 'Pending' for new orders; green once staff mark it 'Paid').
-  const statusText = inv.paymentStatus || 'Pending'
-  const statusC = statusColor(statusText)
-  doc.setFont('helvetica', 'bold').setFontSize(9)
-  // The pill must stay inside the page: shrink its font until it fits the
-  // space between the centre and the right margin (a long payment status
-  // used to grow past the page edge).
-  const maxPillW = W - M - W / 2 // 91mm
-  let pillTextW = doc.getTextWidth(statusText)
-  let pillSize = 9
-  while (pillSize > 6.5 && pillTextW + 8 > maxPillW) {
-    pillSize -= 0.5
-    doc.setFontSize(pillSize)
-    pillTextW = doc.getTextWidth(statusText)
-  }
-  const pillW = pillTextW + 8
-  const pillH = 6.5
-  const pillX = W / 2
-  const pillY = ty + 2
-  doc.setFillColor(...statusC)
-  doc.roundedRect(pillX, pillY, pillW, pillH, pillH / 2, pillH / 2, 'F')
-  doc.setTextColor(...WHITE)
-  doc.text(statusText, pillX + pillW / 2, pillY + pillH / 2 + 1, { align: 'center' })
-  ty += 13
-
-  // ============================= TRUST ROW ==================================
-  if (ty > H - 58) {
-    doc.addPage()
-    ty = M
-  }
-  const trustGap = 6
-  const trustCol = (CW - trustGap * 3) / 4 // 41
-  const trustItems = TRUST_ITEMS // brand promises — always shown (matches the screen sheet)
-  // Measure sub-line wrapping so all four columns stay aligned
-  let trustH = 8
-  trustItems.forEach((t) => {
-    const lines = doc.splitTextToSize(t.sub, trustCol - 6)
-    trustH = Math.max(trustH, 8 + lines.length * 4.2)
-  })
-  trustItems.forEach((t, i) => {
-    const cx = M + i * (trustCol + trustGap)
-    doc.setFillColor(...GOLD)
-    doc.circle(cx + 2, ty + 2, 1.7, 'F')
-    doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...INK)
-    doc.text(t.title, cx + 6, ty + 1.2)
-    const lines = doc.splitTextToSize(t.sub, trustCol - 6)
-    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
-    doc.text(lines, cx + 6, ty + 5)
-  })
-  ty += trustH + 5
-
   // =========================== THANK-YOU CARD ===============================
   if (ty > H - 52) {
     doc.addPage()
@@ -646,25 +568,46 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 19.5, { align: 'center' })
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
   doc.text(`— Team ${inv.company.name}`, W / 2, ty + 24, { align: 'center' })
-  ty += thanksH + 6
 
-  // ================== PAGE FRAME + DARK FOOTER (every page) =================
+  // ============== PAGE FRAME + CORNER DETAILS + FOOTER (every page) ========
   const pages = doc.getNumberOfPages()
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i)
 
-    // Hairline gold page frame + lighter inner outline
+    // Thin double gold page frame (outer + inner hairline)
     doc.setDrawColor(...GOLD)
-    doc.setLineWidth(0.3)
+    doc.setLineWidth(0.4)
     doc.roundedRect(M - 3, M - 3, CW + 6, H - (M - 3) * 2, 2, 2, 'S')
     doc.setDrawColor(...GOLD_LIGHT)
-    doc.setLineWidth(0.15)
-    doc.roundedRect(M - 1.7, M - 1.7, CW + 3.4, H - (M - 1.7) * 2, 1.5, 1.5, 'S')
+    doc.setLineWidth(0.18)
+    doc.roundedRect(M - 1.5, M - 1.5, CW + 3, H - (M - 1.5) * 2, 1.5, 1.5, 'S')
 
-    // Subtle page number on the plain page — the old dark footer band is
-    // removed; legal/copyright lines now sit under the header contact bar.
+    // Gold diamond accents at the four corners of the outer frame
+    const fL = M - 3
+    const fT = M - 3
+    const fR = W - M + 3
+    const fB = H - M + 3
+    drawDiamond(doc, fL, fT, 1.6)
+    drawDiamond(doc, fR, fT, 1.6)
+    drawDiamond(doc, fL, fB, 1.6)
+    drawDiamond(doc, fR, fB, 1.6)
+
+    // Page footer — "Page i of n" flanked by gold rules with end dots
+    const label = `Page ${i} of ${pages}`
+    const py = H - 12
     doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
-    doc.text(`Page ${i} of ${pages}`, W / 2, H - 15, { align: 'center' })
+    const tw = doc.getTextWidth(label)
+    const gap = 3.5
+    const ruleLen = 16
+    const lx = W / 2 - tw / 2 - gap - ruleLen
+    const rx = W / 2 + tw / 2 + gap
+    doc.setDrawColor(...GOLD).setLineWidth(0.3)
+    doc.line(lx, py - 0.8, lx + ruleLen, py - 0.8)
+    doc.line(rx, py - 0.8, rx + ruleLen, py - 0.8)
+    doc.setFillColor(...GOLD)
+    doc.circle(lx, py - 0.8, 0.45, 'F')
+    doc.circle(rx + ruleLen, py - 0.8, 0.45, 'F')
+    doc.text(label, W / 2, py, { align: 'center' })
   }
 
   return doc
@@ -699,6 +642,9 @@ export async function printInvoice(order, { logoUrl, win } = {}) {
 // Standalone A4 HTML document for the print window — mirrors the PDF layout
 // exactly (browser fonts render the real ₹ glyph).
 function renderPrintHtml(inv, logo) {
+  const brandLines = invoiceBrandLines(inv.company.name)
+  const docTitle = inv.documentType || 'INVOICE'
+
   const rows = inv.items
     .map((it) => {
       const details = []
@@ -738,37 +684,35 @@ function renderPrintHtml(inv, logo) {
   if (inv.paymentMethod) orderInfo.push(`<li><span>Payment</span><strong>${escapeHtml(inv.paymentMethod)}</strong></li>`)
   if (inv.status) orderInfo.push(`<li><span>Status</span><strong>${escapeHtml(inv.status)}</strong></li>`)
 
-  const contactBits = [inv.company.phone, inv.company.email].filter(Boolean).join('   ·   ')
+  const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
   const legalBits = [inv.company.gstNote, `© ${inv.company.name}. All rights reserved.`].filter(Boolean)
-
-  const trust = `
-    <div class="trust">
-      <div class="trust-item"><span class="trust-icon">✓</span><div><strong>100% Original</strong><span>Authentic attars from trusted sources</span></div></div>
-      <div class="trust-item"><span class="trust-icon">◆</span><div><strong>Premium Quality</strong><span>Finest ingredients &amp; long lasting</span></div></div>
-      <div class="trust-item"><span class="trust-icon">◈</span><div><strong>Secure Packaging</strong><span>Carefully packed for safe delivery</span></div></div>
-      <div class="trust-item"><span class="trust-icon">✦</span><div><strong>Customer Support</strong><span>We're here to help you always</span></div></div>
-    </div>`
 
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Invoice ${escapeHtml(inv.orderId || '')}</title>
+<title>${escapeHtml(docTitle)} ${escapeHtml(inv.orderId || '')}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1815; background: #fff; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1815; background: #fffdf8; }
   .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; }
-  .frame { position: relative; margin: 6mm; padding: 12mm; border: 1px solid rgba(184,134,43,.45); outline: 1px solid rgba(184,134,43,.14); outline-offset: 3px; }
+  .frame { position: relative; margin: 6mm; padding: 12mm 12mm 10mm; border: 1px solid rgba(184,134,43,.55); outline: 1px solid rgba(184,134,43,.22); outline-offset: 3.5px; border-radius: 2px; }
   .corner { position: absolute; width: 7mm; height: 7mm; border: 0 solid #b8862b; }
-  .corner.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
-  .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
-  .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
-  .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+  .corner.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 2px; }
+  .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 2px; }
+  .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 2px; }
+  .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 2px; }
+  .corner::after { content: ''; position: absolute; width: 4px; height: 4px; background: #b8862b; transform: rotate(45deg); border-radius: 1px; }
+  .corner.tl::after { top: -5px; left: -5px; }
+  .corner.tr::after { top: -5px; right: -5px; }
+  .corner.bl::after { bottom: -5px; left: -5px; }
+  .corner.br::after { bottom: -5px; right: -5px; }
   .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 2.5mm; border-bottom: 1.2px solid #b8862b; }
   .head > div { min-width: 0; }
   .brand img { height: 11mm; width: auto; object-fit: contain; }
   .brand-center { text-align: center; min-width: 0; }
-  .brand-center .company { display: block; font-family: Georgia, serif; font-size: 30px; font-weight: 700; color: #171512; overflow-wrap: anywhere; }
+  .brand-center .company { display: block; font-family: Georgia, serif; font-weight: 700; color: #171512; text-align: center; overflow-wrap: anywhere; }
+  .brand-center .company span { display: block; font-size: 30px; letter-spacing: .06em; line-height: 1.2; white-space: nowrap; }
   .brand-center .tagline { display: block; font-size: 9.5px; letter-spacing: .28em; text-transform: uppercase; color: #b8862b; margin-top: 1.5mm; }
   .title { text-align: right; min-width: 0; }
   .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
@@ -776,7 +720,11 @@ function renderPrintHtml(inv, logo) {
      wider than the A4 sheet. */
   .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: normal; overflow-wrap: anywhere; }
   .title p strong { color: #171512; }
-  .contact { display: flex; justify-content: center; gap: 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
+  .contact { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5mm 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
+  .contact span + span::before { content: ''; display: inline-block; width: 1.2mm; height: 1.2mm; background: #b8862b; border-radius: 50%; margin-right: 7mm; vertical-align: middle; }
+  .legal { text-align: center; font-size: 7px; margin-top: 1mm; letter-spacing: .05em; }
+  .legal p { margin: .5mm 0 0; color: #6f6a63; }
+  .legal p:first-child { color: #8a5f1e; font-weight: 600; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 5.5mm; }
   .card { background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; padding: 4.5mm 5mm; }
   .card h3 { font-size: 7.5px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(184,134,43,.25); }
@@ -803,37 +751,26 @@ function renderPrintHtml(inv, logo) {
   table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
   table.items td.detail { color: #6f6a63; }
   table.items td.detail .detail-main { display: block; }
-  .lower { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 7mm; }
-  .summary { width: 78mm; min-width: 0; }
+  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 7mm; }
   .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
   .row span:last-child { color: #1a1815; }
   .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 10.5px; font-weight: 700; color: #171512; }
   .row.grand .amount { color: #b8862b; font-size: 13px; }
-  .pay { display: flex; gap: 10mm; }
-  .pay .label { font-size: 7.5px; letter-spacing: .18em; text-transform: uppercase; color: #b8862b; margin-bottom: 1.2mm; }
-  .pay .value { font-size: 9.5px; font-weight: 700; color: #171512; }
-  .pill { display: inline-block; padding: 1mm 2.5mm; border-radius: 999px; font-size: 8px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(184,134,43,.12); color: #8a5f1e; border: 1px solid rgba(184,134,43,.35); }
-  .pill.paid, .pill.confirmed, .pill.delivered { background: rgba(46,125,50,.1); color: #2e7d32; border-color: rgba(46,125,50,.35); }
-  .pill.processing, .pill.shipped { background: rgba(21,101,192,.1); color: #1565c0; border-color: rgba(21,101,192,.35); }
-  .pill.cancelled { background: rgba(198,40,40,.1); color: #c62828; border-color: rgba(198,40,40,.35); }
-  .trust { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4mm; margin-top: 7mm; padding-top: 5mm; border-top: 1px solid #ece7dc; }
-  .trust-item { display: flex; align-items: flex-start; gap: 2mm; }
-  .trust-icon { display: inline-flex; align-items: center; justify-content: center; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: #f7f2e8; border: 1px solid rgba(184,134,43,.35); color: #b8862b; font-size: 7px; flex-shrink: 0; }
-  .trust-item div { display: flex; flex-direction: column; }
-  .trust-item strong { font-size: 7.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #171512; line-height: 1.35; }
-  .trust-item div span { font-size: 7.5px; color: #6f6a63; line-height: 1.45; }
-  .thanks { margin-top: 7mm; padding: 5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; text-align: center; }
+  .thanks { margin-top: 7mm; padding: 5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.45); border-radius: 8px; text-align: center; }
   .thanks .t { font-family: Georgia, serif; font-size: 15px; font-weight: 700; color: #b8862b; margin-bottom: 2mm; }
   .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
   .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
   .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
-  .legal { text-align: center; font-size: 7px; color: #9a9488; margin-top: 1.5mm; letter-spacing: .05em; }
+  .pagefoot { display: flex; align-items: center; justify-content: center; gap: 4mm; margin-top: 6mm; }
+  .pagefoot .rule { flex: 0 1 32mm; height: 1px; background: linear-gradient(90deg, rgba(184,134,43,0), #b8862b); }
+  .pagefoot .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
+  .pagefoot .text { font-family: Georgia, serif; font-size: 9px; font-weight: 700; letter-spacing: .22em; color: #b8862b; white-space: nowrap; }
   /* The frame's own margin (6mm) + padding (12mm) provide the ~18mm safe
      page margin, so @page must NOT add more — a 210mm sheet inside 12mm
      @page margins would measure 234mm and clip the gold frame's right edge
      in real print / Save-as-PDF. */
   @page { size: A4; margin: 0; }
-  @media print { body { background: #fff; } .frame { break-inside: auto; } }
+  @media print { body { background: #fffdf8; } .frame { break-inside: auto; } }
 </style>
 </head>
 <body>
@@ -844,19 +781,19 @@ function renderPrintHtml(inv, logo) {
       <div class="head">
         <div class="brand">${logo ? `<img src="${logo.dataUrl}" alt="" />` : ''}</div>
         <div class="brand-center">
-          <span class="company">${escapeHtml(inv.company.name.toUpperCase())}</span>
+          <span class="company">${brandLines.map((l) => `<span>${escapeHtml(l)}</span>`).join('')}</span>
           ${inv.company.tagline ? `<span class="tagline">${escapeHtml(inv.company.tagline)}</span>` : ''}
         </div>
         <div class="title">
-          <h2>Invoice</h2>
-          ${inv.orderId ? `<p>Invoice # <strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
-          ${inv.date ? `<p>Date: ${escapeHtml(inv.date)}</p>` : ''}
-          ${inv.time ? `<p>Time: ${escapeHtml(inv.time)}</p>` : ''}
+          <h2>${escapeHtml(docTitle)}</h2>
+          ${inv.orderId ? `<p># <strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
+          ${inv.date ? `<p>Date : ${escapeHtml(inv.date)}</p>` : ''}
+          ${inv.time ? `<p>Time : ${escapeHtml(inv.time)}</p>` : ''}
         </div>
       </div>
 
-      ${contactBits ? `<div class="contact"><span>${escapeHtml(contactBits)}</span></div>` : ''}
-      ${legalBits.length > 0 ? `<p class="legal">${escapeHtml(legalBits.join(' · '))}</p>` : ''}
+      ${contactBits.length > 0 ? `<div class="contact">${contactBits.map((b) => `<span>${escapeHtml(b)}</span>`).join('')}</div>` : ''}
+      ${legalBits.length > 0 ? `<div class="legal">${legalBits.map((l) => `<p>${escapeHtml(l)}</p>`).join('')}</div>` : ''}
 
       <div class="cards">
         <div class="card">
@@ -879,25 +816,23 @@ function renderPrintHtml(inv, logo) {
         </tbody>
       </table>
 
-      <div class="lower">
-        <div class="summary">
-          <div class="row"><span>Subtotal</span><span>${formatINR(inv.subtotal)}</span></div>
-          <div class="row"><span>Delivery / Transport</span><span>${inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span></div>
-          <div class="row grand"><span>Total</span><span class="amount">${formatINR(inv.total)}</span></div>
-        </div>
-        <div class="pay">
-          <div><p class="label">Payment Method</p><p class="value">${escapeHtml(inv.paymentMethod)}</p></div>
-          <div><p class="label">Payment Status</p><p class="value"><span class="pill ${String(inv.paymentStatus || 'pending').toLowerCase().replace(/[^a-z0-9]+/g, '-')}">${escapeHtml(inv.paymentStatus)}</span></p></div>
-        </div>
+      <div class="summary">
+        <div class="row"><span>Subtotal</span><span>${formatINR(inv.subtotal)}</span></div>
+        <div class="row"><span>Delivery / Transport</span><span>${inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span></div>
+        <div class="row grand"><span>Total</span><span class="amount">${formatINR(inv.total)}</span></div>
       </div>
-
-      ${trust}
 
       <div class="thanks">
         <p class="t">Thank You!</p>
         <p class="line">${escapeHtml(inv.company.thanks)}</p>
         <p class="sub">We truly appreciate your trust in our attars.</p>
         <p class="sign">— Team ${escapeHtml(inv.company.name)}</p>
+      </div>
+
+      <div class="pagefoot">
+        <span class="rule"></span>
+        <span class="text">✦ Page 1 of 1 ✦</span>
+        <span class="rule"></span>
       </div>
 
     </div>

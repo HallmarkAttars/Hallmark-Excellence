@@ -1,6 +1,6 @@
 /* ============================================================================
    OrderInvoice — premium luxury attar invoice (A4 preview)
-   White sheet · #171512 ink · #B8862B gold · #F7F2E8 cream · #6F6A63 muted
+   Warm white sheet · #171512 ink · #B8862B gold · #F7F2E8 cream · #6F6A63 muted
    Mirrors the jsPDF + print-window layouts so screen / print / PDF agree.
    ============================================================================ */
 
@@ -9,7 +9,7 @@
   max-width: 210mm;
   min-height: 297mm;
   margin: 0 auto;
-  background: #ffffff;
+  background: #fffdf8;
   color: #1a1815;
   font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
@@ -18,18 +18,23 @@
   box-shadow: 0 12px 44px rgba(23, 21, 18, 0.12);
 }
 
-/* ---------- Hairline gold page frame + corner accents ---------- */
+/* ---------- Thin double gold page frame + corner accents ---------- */
 .invoice-frame {
   position: relative;
   margin: 6mm;
   padding: 12mm 12mm 10mm;
-  border: 1px solid rgba(184, 134, 43, 0.45);
-  outline: 1px solid rgba(184, 134, 43, 0.14);
-  outline-offset: 3px;
+  /* Outer gold border + inner hairline offset by 3.5px = the double border. */
+  border: 1px solid rgba(184, 134, 43, 0.55);
+  outline: 1px solid rgba(184, 134, 43, 0.22);
+  outline-offset: 3.5px;
+  border-radius: 2px;
   /* Fills the A4 sheet: 297mm − margins (12mm) − padding (22mm) so the frame
-     stays inside the page instead of stretching the preview taller than A4. */
+     stays inside the page instead of stretching the preview taller than A4.
+     Flex column pins the page footer to the bottom of the sheet. */
   min-height: calc(297mm - 12mm - 22mm);
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 .invoice-corner {
   position: absolute;
@@ -40,12 +45,26 @@
   border-width: 0;
   pointer-events: none;
 }
-.invoice-corner--tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
-.invoice-corner--tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; }
-.invoice-corner--bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; }
-.invoice-corner--br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; }
+.invoice-corner--tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 2px; }
+.invoice-corner--tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 2px; }
+.invoice-corner--bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 2px; }
+.invoice-corner--br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 2px; }
+/* Small gold diamond at each corner — sits on the junction of the two lines. */
+.invoice-corner::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #b8862b;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+.invoice-corner--tl::after { top: -5px; left: -5px; }
+.invoice-corner--tr::after { top: -5px; right: -5px; }
+.invoice-corner--bl::after { bottom: -5px; left: -5px; }
+.invoice-corner--br::after { bottom: -5px; right: -5px; }
 
-/* ---------- Header: logo (left) · brand (centre) · INVOICE (right) ---------- */
+/* ---------- Header: logo (left) · two-line brand (centre) · title (right) -- */
 .invoice-head {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -60,7 +79,7 @@
   min-width: 0;
 }
 .invoice-logo {
-  height: 42px;
+  height: 44px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;
@@ -71,18 +90,22 @@
 }
 .invoice-company {
   display: block;
+}
+.invoice-company-line {
+  display: block;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: #171512;
-  line-height: 1.1;
+  line-height: 1.16;
+  white-space: nowrap;
 }
 .invoice-tagline {
   display: block;
   margin-top: 3px;
   font-size: 8.5px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: #b8862b;
 }
@@ -117,27 +140,47 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Contact bar (thin gold divider + real contact values) ---------- */
+/* ---------- Contact strip (thin gold divider + real contact values) ------- */
 .invoice-contact {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 6px 22px;
-  margin-top: 6px;
-  padding: 6px 0 0;
+  gap: 6px 9mm;
+  margin-top: 7px;
+  padding: 0;
 }
 .invoice-contact-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  position: relative;
+  font-size: 10.5px;
+  color: #6f6a63;
+  letter-spacing: 0.03em;
+}
+.invoice-contact-item + .invoice-contact-item::before {
+  content: '';
+  position: absolute;
+  left: -4.7mm;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  background: #b8862b;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+/* Legal lines — real GST note + copyright, quietly under the contact strip. */
+.invoice-legal {
+  margin-top: 4px;
+  text-align: center;
+}
+.invoice-legal p {
+  margin: 1px 0 0;
+  font-size: 9.5px;
   color: #6f6a63;
   letter-spacing: 0.02em;
 }
-.invoice-contact-icon {
-  display: inline-flex;
-  color: #b8862b;
+.invoice-legal p:first-child {
+  color: #8a5f1e;
+  font-weight: 600;
 }
 
 /* ---------- BILL TO + ORDER INFORMATION cards ---------- */
@@ -287,18 +330,14 @@
 .invoice-amount { font-weight: 700; color: #171512; }
 .invoice-empty { color: #8f8980; font-style: italic; }
 
-/* ---------- Lower zone: totals (right) + payment / status ---------- */
+/* ---------- Totals (right-aligned pricing summary) ---------- */
 .invoice-lower {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   margin-top: 7mm;
 }
 .invoice-summary {
   width: min(78mm, 100%);
-  margin-left: auto;
 }
 .invoice-summary-row {
   display: flex;
@@ -325,137 +364,13 @@
   font-weight: 700;
 }
 
-.invoice-pay-status {
-  display: flex;
-  gap: 10mm;
-  min-width: 0;
-}
-.invoice-pay-block {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  min-width: 0;
-}
-.invoice-pay-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #f7f2e8;
-  border: 1px solid rgba(184, 134, 43, 0.35);
-  color: #b8862b;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.invoice-pay-label {
-  margin: 0 0 2px;
-  font-size: 9.5px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #b8862b;
-  font-weight: 700;
-}
-.invoice-pay-value {
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #171512;
-  white-space: nowrap;
-}
-.invoice-status-pill {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: rgba(184, 134, 43, 0.12);
-  color: #8a5f1e;
-  border: 1px solid rgba(184, 134, 43, 0.35);
-}
-/* Status colours — derived from the REAL status; unknown → neutral gold */
-.invoice-status-pill--confirmed,
-.invoice-status-pill--delivered {
-  background: rgba(46, 125, 50, 0.1);
-  color: #2e7d32;
-  border-color: rgba(46, 125, 50, 0.35);
-}
-.invoice-status-pill--processing,
-.invoice-status-pill--shipped {
-  background: rgba(21, 101, 192, 0.1);
-  color: #1565c0;
-  border-color: rgba(21, 101, 192, 0.35);
-}
-.invoice-status-pill--cancelled {
-  background: rgba(198, 40, 40, 0.1);
-  color: #c62828;
-  border-color: rgba(198, 40, 40, 0.35);
-}
-/* Payment status — Paid (staff-confirmed) gets the same green as delivered */
-.invoice-status-pill--paid {
-  background: rgba(46, 125, 50, 0.1);
-  color: #2e7d32;
-  border-color: rgba(46, 125, 50, 0.35);
-}
-
-/* ---------- Trust row ---------- */
-.invoice-trust {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5mm;
-  margin-top: 7mm;
-  padding-top: 6mm;
-  border-top: 1px solid #ece7dc;
-}
-.invoice-trust-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
-}
-.invoice-trust-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #f7f2e8;
-  border: 1px solid rgba(184, 134, 43, 0.35);
-  color: #b8862b;
-  flex-shrink: 0;
-}
-.invoice-trust-item div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.invoice-trust-item strong {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #171512;
-  line-height: 1.35;
-}
-.invoice-trust-item div span {
-  font-size: 10px;
-  color: #6f6a63;
-  line-height: 1.45;
-}
-
 /* ---------- Thank-you card ---------- */
 .invoice-thanks-card {
   margin-top: 7mm;
   padding: 6mm 6mm 5mm;
   background: #f7f2e8;
-  border: 1px solid rgba(184, 134, 43, 0.4);
-  border-radius: 6px;
+  border: 1px solid rgba(184, 134, 43, 0.45);
+  border-radius: 8px;
   text-align: center;
 }
 .invoice-thanks-title {
@@ -486,21 +401,33 @@
   color: #b8862b;
 }
 
-/* ---------- Dark footer ---------- */
-.invoice-foot {
-  margin-top: 6mm;
-  padding: 4.5mm 4mm 4mm;
-  background: #171512;
-  border-radius: 5px;
-  text-align: center;
+/* ---------- Page footer — Page 1 of 1 with gold separators ---------- */
+.invoice-pagefoot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5mm;
+  /* margin-top: auto pins the footer to the sheet bottom on short orders;
+     padding keeps the breathing room from the thanks card above. */
+  margin-top: auto;
+  padding-top: 6mm;
 }
-.invoice-foot-line {
-  margin: 0;
-  font-size: 10px;
-  color: rgba(247, 242, 232, 0.72);
-  line-height: 1.7;
+.invoice-pagefoot-rule {
+  flex: 0 1 32mm;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(184, 134, 43, 0), #b8862b);
 }
-.invoice-foot-line:first-child { color: rgba(184, 134, 43, 0.9); }
+.invoice-pagefoot-rule:last-child {
+  background: linear-gradient(90deg, #b8862b, rgba(184, 134, 43, 0));
+}
+.invoice-pagefoot-text {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #b8862b;
+  white-space: nowrap;
+}
 
 /* ---------- Narrow mobile preview (PDF stays true A4) ---------- */
 @media (max-width: 640px) {
@@ -511,10 +438,8 @@
   .invoice-title-block { text-align: center; }
   .invoice-title { font-size: 26px; }
   .invoice-cards { grid-template-columns: 1fr; gap: 5mm; }
-  .invoice-lower { flex-direction: column; }
-  .invoice-summary { margin-left: 0; width: 100%; }
-  .invoice-pay-status { gap: 8mm; flex-wrap: wrap; }
-  .invoice-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm; }
+  .invoice-lower { justify-content: stretch; }
+  .invoice-summary { width: 100%; }
   /* Fixed table layout + proportional columns: the table always fits its
      container at narrow widths — content wraps instead of forcing a wide
      min-content width that overflows the sheet (the old auto layout could
@@ -533,9 +458,7 @@
   .invoice-thumb-frame { width: 40px; height: 40px; }
   .invoice-item-detail { white-space: normal; }
   .invoice-pack-tag { display: block; margin: 2px 0 0; white-space: normal; }
-}
-@media (max-width: 420px) {
-  .invoice-trust { grid-template-columns: 1fr; }
+  .invoice-company-line { white-space: normal; }
 }
 
 /* ---------- Print isolation (Ctrl+P on the View Order page) ---------- */
@@ -555,7 +478,7 @@
   }
   .invoice-frame {
     margin: 0;
-    outline: none;
     min-height: 0;
+    display: block;
   }
 }

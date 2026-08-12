@@ -26,6 +26,9 @@ export const INVOICE_COMPANY = {
   tagline: BUSINESS.tagline || '',
   phone: BUSINESS.phoneDisplay || '',
   email: BUSINESS.email || '',
+  // Not configured today (BUSINESS has no website) — the contact strip
+  // simply omits it; nothing fake is ever printed.
+  website: BUSINESS.website || '',
   address: BUSINESS.address || '',
   gstNote: INVOICE.gstNote || 'Prices are inclusive of applicable GST.',
   thanks: INVOICE.thanks || 'Thank you for your order.',
@@ -74,6 +77,17 @@ export function invoiceFileName(orderId) {
   return `Invoice-${safe || 'ORDER'}.pdf`
 }
 
+// Brand name split into two centred lines — "Hallmark of Excellence" becomes
+// ["HALLMARK OF", "EXCELLENCE"] (uppercased, split at the last space). The
+// luxury header renders these stacked under one another with the tagline
+// below. A single-word name simply returns one line.
+export function invoiceBrandLines(name) {
+  const n = String(name || '').trim().toUpperCase()
+  const idx = n.lastIndexOf(' ')
+  if (idx > 0 && idx < n.length - 1) return [n.slice(0, idx), n.slice(idx + 1)]
+  return [n]
+}
+
 // Parse the notes JSONB (string or already-parsed object); never throws.
 function parseNotes(order) {
   if (!order) return {}
@@ -109,6 +123,13 @@ export function formatOrderForInvoice(order) {
   // Payment status always starts 'Pending' (there is no gateway); only staff
   // can mark an order 'Paid' after manually receiving the payment.
   const paymentStatus = pick(order.payment_status, notes.payment_status) || 'Pending'
+  // Document type — INVOICE by default; an ESTIMATE/QUOTATION flag stored on
+  // the order record (document_type / documentType) switches the title. The
+  // invoice component also accepts an explicit documentType prop override.
+  const rawDocType = String(
+    pick(order.document_type, order.documentType, notes.document_type, notes.documentType) || ''
+  ).toUpperCase()
+  const documentType = rawDocType === 'ESTIMATE' || rawDocType === 'QUOTATION' ? 'ESTIMATE' : 'INVOICE'
   const total = Number(order.total ?? order.total_amount ?? notes.total_amount ?? 0)
 
   const customer = {
@@ -194,6 +215,7 @@ export function formatOrderForInvoice(order) {
     status,
     paymentMethod,
     paymentStatus,
+    documentType,
     total: Number.isFinite(total) ? total : 0,
     subtotal,
     delivery, // number | null  (null => "To be confirmed")
