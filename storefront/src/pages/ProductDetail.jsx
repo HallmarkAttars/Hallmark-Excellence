@@ -86,17 +86,8 @@ export default function ProductDetail() {
   // Synchronous re-entry guard for handleAdd: React state (`adding`) cannot
   // block two clicks in the same frame, and a double-fire would add the
   // selected quantity twice (60 → 120). The ref is set before the first
-  // mutation and cleared when the add completes. Also guards the sticky
-  // mobile bar button — the main CTA and the bar share this one guard.
+  // mutation and cleared when the add completes.
   const addingRef = useRef(false)
-
-  // The sticky mobile cart bar needs the floating WhatsApp button lifted so
-  // the two never overlap. Purely visual: a body class scoped in CSS to
-  // mobile only, removed on unmount.
-  useEffect(() => {
-    document.body.classList.add('has-cart-bar')
-    return () => document.body.classList.remove('has-cart-bar')
-  }, [])
 
   // Clear feedback timers on unmount.
   useEffect(() => () => {
@@ -306,8 +297,8 @@ export default function ProductDetail() {
     pieceStylePrice && variantSelected ? chargedPerPiece * selectionPieces : 0
 
   // --- Presentation derived values (display only — same underlying math) ---
-  // The line total used by the quantity section and the sticky mobile bar:
-  // the same total the cart line will charge.
+  // The line total shown in the quantity section: the same total the cart
+  // line will charge.
   const lineTotal =
     pieceStylePrice && variantSelected
       ? brandDisplayTotal
@@ -323,10 +314,10 @@ export default function ProductDetail() {
     : hasVariants
       ? ` / ${unitDisplay(selectedUnit)}`
       : ''
-  // Stepper disable states (shared by the main control and the mobile bar).
-  // The + button stays enabled at a band's max when a NEXT band exists — the
-  // existing auto-advance (handleIncrease → nextVariant) must stay reachable;
-  // it is disabled only on the last band's max.
+  // Stepper disable states. The + button stays enabled at a band's max when
+  // a NEXT band exists — the existing auto-advance (handleIncrease →
+  // nextVariant) must stay reachable; it is disabled only on the last band's
+  // max.
   const canDecrease = pieceMode ? qty > pieceMin : qty > 1
   const canIncrease =
     pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true
@@ -560,8 +551,8 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Quantity — stepper + selected label + TOTAL (same state as the
-              sticky mobile bar; the two can never diverge). */}
+          {/* Quantity — stepper + selected label + TOTAL. One quantity state,
+              one handler pair, one Add to Cart — identical on every breakpoint. */}
           {variantSelected && (
             <div className="pd-quantity">
               <p className="pd-section-title">Quantity</p>
@@ -716,61 +707,6 @@ export default function ProductDetail() {
           <ProductGrid products={related} />
         </div>
       )}
-
-      {/* Sticky mobile cart bar — shares the SAME qty / handlers / add state
-          as the main controls (no second quantity state). Mobile-only. */}
-      <div className="pd-mobile-bar" role="region" aria-label="Quick add to cart">
-        <div className="pd-bar-info">
-          <img src={product.image} alt="" className="pd-bar-thumb" />
-          <div className="pd-bar-text">
-            <span className="pd-bar-name">{product.name}</span>
-            <span className="pd-bar-sub">
-              {hasVariants
-                ? (variantSelected ? variantLabel(selectedVariant) : 'Select a variant')
-                : `${qty} selected`}
-            </span>
-            {variantSelected && (
-              <span className="pd-bar-price">
-                ₹{Number(lineTotal).toLocaleString('en-IN')}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="pd-bar-actions">
-          {variantSelected && (
-            <div className="pd-bar-qty" aria-label="Quantity">
-              <button
-                type="button"
-                onClick={handleDecrease}
-                disabled={!canDecrease}
-                aria-label="Decrease quantity"
-              >
-                −
-              </button>
-              <span aria-live="polite">{qty}</span>
-              <button
-                type="button"
-                onClick={handleIncrease}
-                disabled={!canIncrease}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="btn btn-primary pd-bar-add"
-            onClick={handleAdd}
-            disabled={adding}
-          >
-            <BagIcon /> {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
-          </button>
-        </div>
-        {hasVariants && variantHint && (
-          <p className="pd-bar-hint" role="alert">Please select a variant</p>
-        )}
-      </div>
     </div>
   )
 }

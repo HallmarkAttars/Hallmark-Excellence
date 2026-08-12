@@ -5,7 +5,7 @@
    ============================================================ */
 
 .product-detail {
-  padding: 28px 16px 160px; /* bottom clears the sticky mobile bar */
+  padding: 28px 16px 64px;
 }
 .product-detail-layout {
   display: grid;
@@ -434,14 +434,16 @@
 .qty-selector {
   display: flex;
   align-items: center;
-  height: 50px;
+  height: 52px;
+  min-width: 170px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   overflow: hidden;
   background: var(--white);
 }
 .qty-selector button {
-  flex: 0 0 46px;
+  flex: 0 0 48px;
+  min-width: 48px;
   height: 100%;
   border: none;
   background: none;
@@ -688,117 +690,8 @@
 .product-detail-related h2 { margin-bottom: 24px; }
 
 /* ============================================================
-   Sticky mobile cart bar (mobile only)
-   Shares the SAME quantity state / handlers / add guard as the
-   main controls — never a second independent state. The floating
-   WhatsApp button is lifted above the bar via body.has-cart-bar.
+   NOTE: the old sticky mobile cart bar (.pd-mobile-bar / .pd-bar-*
+   / body.has-cart-bar) was removed — the main quantity control and
+   Add to Cart button are the single set of controls on every
+   breakpoint. The WhatsApp button keeps its normal fixed position.
    ============================================================ */
-.pd-mobile-bar { display: none; }
-
-@media (max-width: 767px) {
-  .pd-mobile-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 90;
-    background: var(--white);
-    border-top: 1px solid rgba(80, 60, 30, 0.12);
-    box-shadow: 0 -8px 24px rgba(29, 25, 20, 0.08);
-    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
-  }
-  .pd-bar-info {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .pd-bar-thumb {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    object-fit: contain;
-    background: var(--stage);
-    border: 1px solid var(--line-soft);
-    flex-shrink: 0;
-  }
-  .pd-bar-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    line-height: 1.3;
-  }
-  .pd-bar-name {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--charcoal);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .pd-bar-sub {
-    font-size: 0.68rem;
-    color: var(--charcoal-soft);
-  }
-  .pd-bar-price {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--gold-deep);
-    font-variant-numeric: tabular-nums;
-  }
-  .pd-bar-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .pd-bar-qty {
-    display: flex;
-    align-items: center;
-    height: 40px;
-    border: 1px solid var(--line-strong);
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--white);
-  }
-  .pd-bar-qty button {
-    flex: 0 0 36px;
-    height: 100%;
-    border: none;
-    background: none;
-    font-size: 1.05rem;
-    line-height: 1;
-    color: var(--charcoal);
-  }
-  .pd-bar-qty button:disabled { opacity: 0.35; cursor: not-allowed; }
-  .pd-bar-qty span {
-    min-width: 36px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 0.92rem;
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-  .pd-bar-add {
-    height: 42px;
-    padding: 0 20px;
-    border-radius: 10px;
-    min-width: 150px;
-  }
-  .pd-bar-hint {
-    flex-basis: 100%;
-    margin: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: #b26a00;
-  }
-
-  /* Keep WhatsApp reachable above the bar — never overlapped */
-  body.has-cart-bar .sticky-whatsapp {
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-  }
-}

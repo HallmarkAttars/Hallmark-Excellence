@@ -28,10 +28,13 @@ function ScrollToTop() {
   return null
 }
 
-// Very subtle page-content fade on every route change (200–300ms, transform +
-// opacity only). Keying by pathname remounts the current page so the fade
-// replays on navigation — browser back/forward is unaffected, no routes or
-// duplicate pages are created, and reduced-motion users get no movement.
+// Very subtle page-content fade on every route change (200–300ms, opacity
+// only — NO transform, see animations.css: a persisted transform creates a
+// containing block that breaks position:fixed descendants like the sticky
+// mobile Add-to-Cart bar). Keying by pathname remounts the current page so
+// the fade replays on navigation — browser back/forward is unaffected, no
+// routes or duplicate pages are created, and reduced-motion users get no
+// movement.
 function PageContent() {
   const { pathname } = useLocation()
   return (

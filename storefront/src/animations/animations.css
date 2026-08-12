@@ -52,10 +52,17 @@
 .js .page-heading > *:nth-child(2) { animation-delay: 80ms; }
 .js .page-heading > *:nth-child(3) { animation-delay: 160ms; }
 
-/* ---------- Route page transition (subtle, 200–300ms) ---------- */
+/* ---------- Route page transition (subtle, 200–300ms) ----------
+   Opacity ONLY — deliberately no transform. animation-fill-mode: both
+   keeps the final keyframe applied after the animation ends, and a
+   persisted transform (even the identity matrix a transform→none
+   interpolation computes to) establishes a containing block. That
+   re-anchors every position:fixed descendant — the product page's
+   sticky Add to Cart bar, Shop's filter drawer, Quick View, the Brand
+   menu — to the page instead of the viewport. Fade alone avoids this. */
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .js .page-fade {
   animation: page-enter 0.28s ease-out both;
