@@ -41,8 +41,8 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
   return (
     <Link
       to={`/brand/${slug}`}
-      className={`brand-showcase-card brand-showcase-card--${variant} ${image ? '' : 'has-no-image'}`}
-      aria-label={`${brand.name} collection`}
+      className={`brand-showcase-card brand-showcase-card--${variant}`}
+      aria-label={`Shop the ${brand.name} collection`}
     >
       {image ? (
         <img

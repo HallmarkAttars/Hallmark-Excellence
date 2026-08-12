@@ -168,8 +168,7 @@
 }
 
 /* ---------- Featured vs standard sizing ---------- */
-.brand-showcase-card--featured,
-.brand-showcase-card--standard {
+.brand-showcase-card {
   aspect-ratio: 4 / 5;
   min-height: 360px;
 }
