@@ -9,9 +9,10 @@
   padding: 0 16px 88px;
   box-sizing: border-box;
   min-width: 0;
-  /* Success green for the completed/active "Order Placed" timeline step —
-     page-scoped token (no global design-system green exists). */
-  --success-green: #2E7D32;
+  /* Success green + soft green for the completed/active timeline steps —
+     page-scoped tokens (no global design-system green exists). */
+  --success-green: #2F8F46;
+  --step-soft-green: #EAF6ED;
 }
 @media (min-width: 768px) {
   .track-layout { padding: 0 24px 104px; }
@@ -242,11 +243,17 @@
 
 .track-note { color: var(--charcoal-soft); font-size: 0.9rem; }
 
-/* ---------- Progress tracker: horizontal desktop ----------
-   Four evenly spaced steps; the icon + label + real status date stack
-   under the step. Completed/current steps are GREEN (success), future
-   steps stay muted cream/gray. The connector leading out of a done or
-   current step fills green. */
+/* ---------- Order Progress card ----------
+   The four-step timeline lives in its own white card beneath the order
+   header, with the serif "Order Progress" heading above it. */
+.track-progress-card .track-card-title { font-size: 1.5rem; }
+
+/* ---------- Progress tracker: horizontal at EVERY width ----------
+   Four evenly spaced steps; the circle icon sits on top with the label
+   + real status date underneath. Completed/current steps are GREEN,
+   future steps stay muted cream/gray. The thin DASHED connector between
+   circles is green over the completed portion and soft beige over the
+   pending portion — driven entirely by the EXISTING order status. */
 .track-steps {
   display: flex;
   align-items: flex-start;
@@ -257,25 +264,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   position: relative;
   text-align: center;
 }
-/* Connector line to the NEXT step, at the icon's vertical centre */
+/* Dashed connector to the NEXT step, at the icon's vertical centre */
 .track-step::after {
   content: '';
   position: absolute;
-  top: 17px;
-  left: calc(50% + 24px);
-  right: calc(-50% + 24px);
-  height: 2px;
-  background: var(--line);
-  transition: background-color 0.3s ease;
+  top: 17px; /* vertical centre of the 36px circle */
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  border-top: 2px dashed var(--line);
+  transition: border-color 0.3s ease;
+  z-index: 0;
 }
 .track-step:last-child::after { display: none; }
-/* Filled when the step leading into the next one is complete/current */
-.track-step.is-done::after,
-.track-step.is-current::after { background: var(--success-green); }
+/* Completed portion of the journey is green; the connector leaving the
+   CURRENT step stays pending (the journey hasn't passed it yet). */
+.track-step.is-done::after { border-color: var(--success-green); }
 
 .track-step-icon {
   position: relative;
@@ -288,18 +295,19 @@
   justify-content: center;
   background: var(--white);
   border: 2px solid var(--line);
-  color: var(--charcoal-soft);
+  color: #b3ab9d;
   flex-shrink: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease, box-shadow 0.3s ease;
 }
 .track-step.is-current .track-step-icon,
 .track-step.is-done .track-step-icon {
-  background: var(--success-green);
+  background: var(--step-soft-green);
   border-color: var(--success-green);
-  color: var(--white);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.16);
+  color: var(--success-green);
 }
 .track-step.is-current .track-step-icon {
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.22);
+  box-shadow: 0 0 0 4px rgba(47, 143, 70, 0.16);
 }
 .track-step-body {
   display: flex;
@@ -307,16 +315,20 @@
   align-items: center;
   gap: 3px;
   min-width: 0;
+  max-width: 100%;
 }
 .track-step-label {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
+  line-height: 1.25;
   color: var(--charcoal-soft);
-  white-space: nowrap;
+  white-space: normal; /* "Order Placed" wraps to two lines when tight */
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 .track-step.is-current .track-step-label,
 .track-step.is-done .track-step-label {
-  color: #2e7d32;
+  color: var(--success-green);
   font-weight: 700;
 }
 .track-step-date {
@@ -328,30 +340,7 @@
 }
 .track-step.is-current .track-step-date,
 .track-step.is-done .track-step-date {
-  color: #3e8a44;
-}
-
-/* ---------- Progress tracker: vertical mobile ---------- */
-@media (max-width: 767px) {
-  .track-steps { flex-direction: column; align-items: stretch; gap: 6px; }
-  .track-step {
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-    text-align: left;
-  }
-  /* Vertical connector from this icon down to the next */
-  .track-step::after {
-    top: 36px;
-    bottom: -8px;
-    left: 17px;
-    right: auto;
-    width: 2px;
-    height: auto;
-  }
-  .track-step:last-child::after { display: none; }
-  .track-step-body { align-items: flex-start; }
-  .track-step-label { white-space: normal; }
+  color: var(--success-green);
 }
 
 /* ---------- Order summary items ---------- */
@@ -583,10 +572,10 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--line);
 }
+/* The progress section now lives in its own card, so the head row ends
+   flush; the cancelled notice below it gets a small top margin instead. */
+.track-head-card .track-cancelled { margin: 14px 0 0; }
 .track-order-icon {
   flex-shrink: 0;
   width: 48px;
@@ -749,22 +738,22 @@
   }
 
   /* Order header card — icon / order number / placed date / status pill */
-  .track-head-row {
-    gap: 10px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-  }
+  .track-head-row { gap: 10px; }
 
   /* Section titles (Order Progress / Order Summary / Payment Information) */
   .track-card-title { margin-bottom: 12px; }
 
-  /* Timeline — compact 38–42px steps, tight connector */
-  .track-steps { margin-bottom: 16px; }
-  .track-step {
-    min-height: 40px;
-    gap: 12px;
+  /* Timeline — stays horizontal, just tighter type */
+  .track-progress-card .track-card-title { font-size: 1.35rem; }
+  .track-steps { margin-bottom: 14px; }
+  .track-step { min-height: 40px; gap: 7px; }
+  .track-step-label { font-size: 0.75rem; }
+  .track-step-date {
+    font-size: 0.63rem;
+    /* Per-status dates may arrive from the backend later — let them wrap
+       (date / time on two lines) instead of overflowing the narrow column. */
+    white-space: normal;
   }
-  .track-step::after { top: 36px; bottom: -6px; }
 
   /* Order summary rows — smaller image, tighter vertical rhythm */
   .track-item { padding: 12px 0; }

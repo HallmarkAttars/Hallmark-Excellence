@@ -105,6 +105,53 @@ function CheckIcon() {
   )
 }
 
+// ---------- Order Progress step icons (premium outline style) ----------
+// Clipboard with check — Order Placed
+function ClipboardIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="5" y="4.5" width="14" height="16.5" rx="2" />
+      <path d="M9 4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V4.5Z" />
+      <path d="m9.2 13 2 2 3.6-3.8" />
+    </svg>
+  )
+}
+
+// Package box — Processing
+function BoxIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3 4.5 7v10L12 21l7.5-4V7L12 3Z" />
+      <path d="M4.5 7 12 11l7.5-4M12 11v10" />
+    </svg>
+  )
+}
+
+// Delivery truck — Shipped
+function TruckIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2.5 6.5h11.5v9H2.5z" />
+      <path d="M14 9.5h3.2l3.3 3.4V15.5H14" />
+      <circle cx="6.6" cy="17.4" r="1.9" />
+      <circle cx="17.4" cy="17.4" r="1.9" />
+    </svg>
+  )
+}
+
+// Check-circle — Delivered
+function CheckCircleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="m8.2 12.4 2.5 2.5 5-5.3" />
+    </svg>
+  )
+}
+
+// Icon shown inside each timeline step, in order.
+const STEP_ICONS = [ClipboardIcon, BoxIcon, TruckIcon, CheckCircleIcon]
+
 // Order header icon — shopping bag (premium stroke style).
 function OrderIcon() {
   return (
@@ -256,48 +303,60 @@ function OrderResultCard({ order }) {
         </div>
 
         {/* Cancelled — never shown as delivery progress */}
-        {isCancelled ? (
+        {isCancelled && (
           <div className="track-cancelled" role="alert">
             <h2>Order Cancelled</h2>
             <p>This order has been cancelled.</p>
           </div>
-        ) : (
-          <section aria-label="Order progress">
-            <h3 className="track-card-title">Order Progress</h3>
-            <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
-              {STATUS_STEPS.map((label, i) => {
-                const state =
-                  stepIndex < 0
-                    ? 'upcoming'
-                    : i < stepIndex
-                      ? 'done'
-                      : i === stepIndex
-                        ? 'current'
-                        : 'upcoming'
-                const stepDate = stepTimestamp(order, label)
-                return (
-                  <div className={`track-step is-${state}`} key={label}>
-                    <span className="track-step-icon" aria-hidden="true">
-                      {state === 'done' || state === 'current' ? <CheckIcon /> : null}
-                    </span>
-                    <div className="track-step-body">
-                      <span className="track-step-label">{label}</span>
-                      <span className="track-step-date">
-                        {stepDate
-                          ? `${stepDate.date}${stepDate.time ? ` • ${stepDate.time}` : ''}`
-                          : '—'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            {stepIndex < 0 && (
-              <p className="track-note">We will keep you updated on this order.</p>
-            )}
-          </section>
         )}
       </header>
+
+      {/* ---------- Order Progress card ----------
+          Four horizontal steps: Order Placed → Processing → Shipped →
+          Delivered. Icon circles + dotted connectors light up green up to
+          the EXISTING order status; future steps stay muted. Dates come
+          from real stored timestamps only — never fabricated. */}
+      {!isCancelled && (
+        <section className="track-card track-progress-card" aria-label="Order progress">
+          <h3 className="track-card-title">Order Progress</h3>
+          <div className={`track-steps ${stepIndex < 0 ? 'is-unmapped' : ''}`}>
+            {STATUS_STEPS.map((label, i) => {
+              const state =
+                stepIndex < 0
+                  ? 'upcoming'
+                  : i < stepIndex
+                    ? 'done'
+                    : i === stepIndex
+                      ? 'current'
+                      : 'upcoming'
+              const stepDate = stepTimestamp(order, label)
+              const StepIcon = STEP_ICONS[i] || CheckCircleIcon
+              return (
+                <div
+                  className={`track-step is-${state}`}
+                  key={label}
+                  aria-current={state === 'current' ? 'step' : undefined}
+                >
+                  <span className="track-step-icon" aria-hidden="true">
+                    <StepIcon />
+                  </span>
+                  <div className="track-step-body">
+                    <span className="track-step-label">{label}</span>
+                    <span className="track-step-date">
+                      {stepDate
+                        ? `${stepDate.date}${stepDate.time ? ` • ${stepDate.time}` : ''}`
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {stepIndex < 0 && (
+            <p className="track-note">We will keep you updated on this order.</p>
+          )}
+        </section>
+      )}
 
       {/* ---------- Order summary card ---------- */}
       <section className="track-card track-summary-card" aria-label="Order summary">
