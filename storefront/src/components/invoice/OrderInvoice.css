@@ -473,25 +473,45 @@
   .invoice-cards { grid-template-columns: 1fr; gap: 5mm; }
   .invoice-lower { justify-content: stretch; }
   .invoice-summary { width: 100%; }
-  /* Fixed table layout + proportional columns: the table always fits its
-     container at narrow widths — content wraps instead of forcing a wide
-     min-content width that overflows the sheet (the old auto layout could
-     spill ~160px past a 320px viewport). */
+  /* Fixed table layout + PROPORTIONAL columns: PRODUCT gets the largest
+     share (38–42%) so the name stays on one or two WORD-wrapped lines —
+     never the character-by-character column the equal/auto widths caused.
+     The page itself stays overflow-x hidden; nothing here scrolls. */
   .invoice-table { table-layout: fixed; }
   .invoice-table th,
-  .invoice-table td { white-space: normal; overflow-wrap: anywhere; }
-  .invoice-table th:nth-child(1) { width: 36%; }
-  .invoice-table th:nth-child(2) { width: 24%; }
-  .invoice-table th:nth-child(3) { width: 11%; }
-  .invoice-table th:nth-child(4) { width: 13%; }
-  .invoice-table th:nth-child(5) { width: 16%; }
-  .invoice-table th { padding: 7px 5px; font-size: 8.5px; }
-  .invoice-table td { padding: 7px 5px; font-size: 11.5px; }
-  .invoice-item-name { min-width: 0; }
-  .invoice-thumb-frame { width: 40px; height: 40px; }
-  .invoice-item-detail { white-space: normal; }
+  .invoice-table td { white-space: normal; overflow-wrap: normal; word-break: normal; }
+  .invoice-table th:nth-child(1),
+  .invoice-table td:nth-child(1) { width: 40%; }
+  .invoice-table th:nth-child(2),
+  .invoice-table td:nth-child(2) { width: 25%; }
+  .invoice-table th:nth-child(3),
+  .invoice-table td:nth-child(3) { width: 10%; }
+  .invoice-table th:nth-child(4),
+  .invoice-table td:nth-child(4) { width: 12%; }
+  .invoice-table th:nth-child(5),
+  .invoice-table td:nth-child(5) { width: 13%; }
+  .invoice-table th { padding: 6px 5px; font-size: 8px; white-space: nowrap; }
+  .invoice-table td { padding: 7px 5px; font-size: 11px; }
+  /* On very narrow screens the nowrap currency columns get tight — shrink
+     the numeric font so a large amount (₹99,999) can never overflow the
+     fixed column and push the sheet off-screen. */
+  @media (max-width: 360px) {
+    .invoice-table td { font-size: 10px; }
+    .invoice-table td.invoice-num { font-size: 9.5px; }
+    .invoice-table th { font-size: 7.5px; padding: 6px 3px; }
+    .invoice-table td { padding: 7px 3px; }
+  }
+  /* Qty / Rate / Amount never break across lines (₹2,520 stays whole). */
+  .invoice-table td.invoice-num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* Product cell: name wraps by WORD only, image + name sit side by side. */
+  .invoice-item-name { min-width: 0; align-items: flex-start; }
+  .invoice-item-name-text { white-space: normal; overflow-wrap: normal; word-break: normal; }
+  .invoice-thumb-frame { width: 38px; height: 38px; flex-shrink: 0; }
+  .invoice-item-detail { white-space: normal; overflow-wrap: normal; word-break: normal; }
   .invoice-pack-tag { display: block; margin: 2px 0 0; white-space: normal; }
   .invoice-company-line { white-space: normal; }
+  /* Totals — currency stays on one line, right aligned. */
+  .invoice-summary-row span:last-child { white-space: nowrap; }
 }
 
 /* ---------- Print isolation (Ctrl+P on the View Order page) ---------- */

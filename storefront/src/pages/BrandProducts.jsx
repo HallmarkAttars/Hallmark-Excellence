@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
+import { brandHeroImage } from '../data/content'
 import './BrandProducts.css'
 
 // Same client-side sort options as the Shop page — no backend, no extra reads.
@@ -92,6 +93,9 @@ export default function BrandProducts() {
 
   const brandName = brand?.name || 'Brand'
   const activeSort = SORT_OPTIONS.find((o) => o.value === sort)?.label || 'Featured'
+  // Brand hero banner background — resolved from the brand name (see
+  // content.js BRAND_HERO_IMAGES). null keeps the plain dark header.
+  const heroImage = brandHeroImage(brandName)
 
   const toggleCategory = (id) => {
     setCategoryFilter((cur) => (cur === id ? 'all' : id))
@@ -104,8 +108,13 @@ export default function BrandProducts() {
 
   return (
     <div className="brand-page">
-      {/* Compact premium collection header (hidden until brand loads — no flash) */}
-      <header className="brand-header">
+      {/* Compact premium collection header — the brand's hero image fills the
+          background (subtle dark overlay keeps the text readable); the plain
+          dark header remains when the brand has no image. */}
+      <header
+        className="brand-header"
+        style={heroImage ? { backgroundImage: `url('${heroImage}')` } : undefined}
+      >
         {brand && (
           <>
             <p className="brand-header-label">{brandName} Collection</p>

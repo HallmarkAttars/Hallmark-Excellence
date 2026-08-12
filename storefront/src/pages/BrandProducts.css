@@ -3,9 +3,17 @@
    Header → toolbar → product grid · no giant hero, no dead space
    ============================================================ */
 
-/* ---------- Compact collection header (180–220px desktop) ---------- */
+/* ---------- Compact collection header (180–220px desktop) ----------
+   The brand's hero image fills the header when one exists (background
+   image set inline from the brand name); a subtle dark overlay sits on
+   top so the existing text stays readable while the image stays clearly
+   visible. The plain dark header remains for brands without an image. */
 .brand-header {
-  background: #1B1814;
+  position: relative;
+  background-color: #1B1814;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: var(--cream);
   text-align: center;
   border-bottom: 1px solid rgba(198, 154, 75, 0.25);
@@ -15,6 +23,21 @@
   align-items: center;
   justify-content: center;
   padding: 44px 24px;
+}
+
+/* Subtle dark overlay over the hero image — the image stays clearly
+   visible but the centred text remains readable on any artwork. */
+.brand-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(27, 24, 20, 0.45);
+  pointer-events: none;
+  z-index: 0;
+}
+.brand-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-header-label {

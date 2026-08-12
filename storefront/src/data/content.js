@@ -99,6 +99,29 @@ export const HOME_BRANDS = {
 }
 
 // --------------------------------------------------------------------------
+// BRAND HERO IMAGES — collection-page hero banner backgrounds.
+// The images live in storefront/public; the brand NAME (from the database)
+// picks the image via brandHeroImage(name). Public URL paths are used
+// (e.g. '/Arees8ml.webp') — never filesystem paths.
+// --------------------------------------------------------------------------
+export const BRAND_HERO_IMAGES = {
+  'arees 12ml': '/Arees 12ml.webp',
+  'arees bakhoor': '/Arees bakhoor.webp',
+  'arees luxury': '/Arees luxury.webp',
+  'arees 8ml': '/Arees8ml.webp',
+  'dahab 8ml': '/dahab 8ml.webp',
+}
+
+// Normalized brand-name → hero image lookup (case/space-insensitive).
+// Returns null when the brand has no hero image (the plain dark header
+// remains) — never a hardcoded fallback image.
+export function brandHeroImage(name) {
+  if (!name) return null
+  const key = String(name).trim().toLowerCase()
+  return BRAND_HERO_IMAGES[key] || null
+}
+
+// --------------------------------------------------------------------------
 // COLLECTIONS — homepage brand banner copy (fallbacks; live copy comes from
 // the Admin/database per brand and overrides these when set).
 // --------------------------------------------------------------------------
