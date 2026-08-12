@@ -5,6 +5,11 @@ const {
   resolvePaymentStatus,
 } = require('../utils/orderPayment')
 const { applyBrandBulk, isValidBulkRule } = require('../utils/brandBulkPricing')
+const {
+  parseOrderNotes,
+  stringifyOrderNotes,
+  recordStatusTimestamp,
+} = require('../utils/orderStatusHistory')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -160,10 +165,7 @@ async function trackOrder(req, res) {
 
     // Verify the phone against the stored value. Checkout persists it inside
     // the notes JSONB; fall back to a legacy phone column for older orders.
-    let notesInfo = {}
-    try {
-      if (data.notes) notesInfo = JSON.parse(data.notes)
-    } catch {}
+    const notesInfo = parseOrderNotes(data)
     const storedPhone = normalizePhone(data.phone || notesInfo.phone || '')
     if (!storedPhone || storedPhone !== phone) {
       // Deliberately identical to the "no order" response above.
@@ -204,6 +206,9 @@ async function trackOrder(req, res) {
         customer_name: data.customer_name || notesInfo.customer_name || '',
         payment_method: data.payment_method || 'Cash On Delivery',
         payment_status: data.payment_status || 'Pending',
+        // Per-status transition timestamps recorded by updateOrderStatus —
+        // drives the customer's order-progress timeline dates.
+        status_history: notesInfo.status_history || null,
         total: Number(data.total ?? data.total_amount ?? notesInfo.total_amount ?? 0),
         items,
       },
@@ -799,9 +804,37 @@ async function updateOrderStatus(req, res) {
       })
     }
 
+    // --- Per-status timestamp recording (customer order-progress timeline) -
+    // The orders table has no per-status timestamp columns, so each
+    // transition time is appended to the order's existing `notes`
+    // status_history JSONB — the same additive, zero-migration pattern used
+    // for customer_name / items / brand_bulk. First write wins per step:
+    // re-setting a status never rewrites the original transition time, and
+    // every other notes field is preserved untouched. (The read-then-update
+    // is not atomic — two concurrent status changes could lose one notes
+    // write — acceptable for low-frequency admin actions; no optimistic
+    // concurrency exists elsewhere either.)
+    const { data: existing, error: readError } = await supabase
+      .from('orders')
+      .select('id, notes')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (readError) {
+      console.error('updateOrderStatus read error:', readError.message || readError)
+      console.error('updateOrderStatus read code:', readError.code)
+      console.error('updateOrderStatus read hint:', readError.hint)
+      return res.status(500).json({ error: 'Failed to update order status.' })
+    }
+    if (!existing) {
+      return res.status(404).json({ error: 'Order not found.' })
+    }
+
+    const mergedNotes = recordStatusTimestamp(parseOrderNotes(existing), matched)
+
     const { data, error } = await supabase
       .from('orders')
-      .update({ order_status: matched })
+      .update({ order_status: matched, notes: stringifyOrderNotes(mergedNotes) })
       .eq('id', id)
       .select('*')
       .maybeSingle()

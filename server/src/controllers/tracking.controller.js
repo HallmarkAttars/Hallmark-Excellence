@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase')
+const { parseOrderNotes } = require('../utils/orderStatusHistory')
 
 // ---------------------------------------------------------------------------
 // POST /api/track-order
@@ -52,26 +53,11 @@ function normalizeStoredPhone(raw) {
   return indianFormat ? digits.slice(-10) : ''
 }
 
-function parseNotes(row) {
-  if (!row || row.notes == null) return {}
-  // Properly-encoded jsonb row — the client already returned the object.
-  if (typeof row.notes === 'object') return row.notes
-  try {
-    const parsed = JSON.parse(row.notes)
-    // Legacy rows store the notes JSON as a string INSIDE the jsonb column
-    // (double-encoded: JSON.stringify applied twice). Parse again to reach
-    // the real object. Handles both historical formats without touching the
-    // stored records.
-    return typeof parsed === 'string' ? JSON.parse(parsed) : parsed
-  } catch {
-    // malformed notes never block tracking — treat as empty
-  }
-  return {}
-}
-
 // Minimal customer-safe projection of one order row.
+// (Notes parsing — including the double-encoded legacy rows — lives in the
+// shared util orderStatusHistory.parseOrderNotes.)
 function toSafeTrackingOrder(row) {
-  const notesInfo = parseNotes(row)
+  const notesInfo = parseOrderNotes(row)
   const items = (row.items || notesInfo.items || []).map((it) => ({
     product_name: it.product_name || it.name || 'Product',
     image: it.image || null,
@@ -97,6 +83,9 @@ function toSafeTrackingOrder(row) {
     orderId: row.order_number,
     createdAt: row.created_at,
     status: row.order_status || 'Pending',
+    // Per-status transition timestamps recorded by updateOrderStatus — the
+    // storefront stepTimestamp() reads these to date each timeline step.
+    status_history: notesInfo.status_history || null,
     total: Number(row.total ?? row.total_amount ?? notesInfo.total_amount ?? 0),
     payment_method: row.payment_method || 'Cash On Delivery',
     payment_status: row.payment_status || 'Pending',
@@ -161,7 +150,7 @@ async function trackOrders(req, res) {
       }
 
       const orders = (data || [])
-        .filter((row) => normalizeStoredPhone(row.phone || parseNotes(row).phone || '') === digits)
+        .filter((row) => normalizeStoredPhone(row.phone || parseOrderNotes(row).phone || '') === digits)
         .map(toSafeTrackingOrder)
 
       return res.json({ orders })
