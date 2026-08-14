@@ -23,7 +23,15 @@ app.set('trust proxy', 1)
 
 // --- CORS -------------------------------------------------------------
 // Only the storefront and admin origins configured in .env may call this API.
-const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_URL].filter(Boolean)
+// Both storefront host variants (apex + www) are allowed explicitly so the
+// browser works no matter which host the visitor uses; env vars remain the
+// source of truth for custom/local deployments.
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://areesperfumes.in',
+  'https://www.areesperfumes.in',
+  process.env.ADMIN_URL,
+].filter(Boolean)
 
 // Vercel preview deployments get random subdomains (e.g.
 // my-app-git-fix-1a2b3c.vercel.app) that aren't in .env. Allow any
