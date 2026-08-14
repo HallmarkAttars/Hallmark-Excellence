@@ -34,9 +34,15 @@ export default function Reveal({ as: Tag = 'div', delay = 0, className = '', chi
           }
         })
       },
-      // Trigger slightly early so cards begin to rise just before they are
-      // fully inside the viewport — never after the user has passed them.
-      { threshold: 0.08, rootMargin: '0px 0px -6% 0px' }
+      // threshold 0 — reveal as soon as ANY part of the element enters the
+      // viewport (pulled in slightly early by the rootMargin), never after
+      // the user has passed it. Do NOT use a percentage threshold here:
+      // it is relative to the ELEMENT's height, so a tall grid (e.g. the
+      // ~10,000px two-column Shop grid on a 844px-tall phone) would need
+      // ~800px visible before it ever fires — more than the viewport can
+      // show — leaving the section invisible-but-clickable. Threshold 0 is
+      // height-independent and fires reliably for any element size.
+      { threshold: 0, rootMargin: '0px 0px -6% 0px' }
     )
     io.observe(el)
     return () => io.disconnect()
