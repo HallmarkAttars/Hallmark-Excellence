@@ -11,7 +11,7 @@
 
 import { buildSitemapXml, resolveSiteUrl } from '../src/utils/seo.js'
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in'
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 
 // Keep the upstream request well inside the platform function timeout.
 const FETCH_TIMEOUT_MS = 8000
@@ -40,9 +40,9 @@ export default async function handler(req, res) {
     // partial sitemap with the datasets that DID load is strictly better than
     // none. Any fetch errors are logged below.
     const [productsRes, categoriesRes, brandsRes] = await Promise.allSettled([
-      fetchPublicJson('/api/products'),
-      fetchPublicJson('/api/categories'),
-      fetchPublicJson('/api/brands'),
+      fetchPublicJson('/products'),
+      fetchPublicJson('/categories'),
+      fetchPublicJson('/brands'),
     ])
 
     const products = productsRes.status === 'fulfilled' ? productsRes.value.products : []

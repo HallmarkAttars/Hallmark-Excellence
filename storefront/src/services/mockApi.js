@@ -7,47 +7,47 @@ import { api } from './api'
 export async function getProducts() {
   // Backend currently exposes products through /api/products
   // (ensure you have products.routes.js wired).
-  return (await api.get('/api/products')).products ?? []
+  return (await api.get('/products')).products ?? []
 }
 
 export async function getProductById(id) {
-  const data = await api.get(`/api/products/${id}`)
+  const data = await api.get(`/products/${id}`)
   return data.product ?? data ?? null
 }
 
 export async function getProductsByCategory(slug) {
-  const data = await api.get(`/api/categories/${slug}/products`)
+  const data = await api.get(`/categories/${slug}/products`)
   return data.products ?? []
 }
 
 export async function getProductsByBrand(slug) {
-  const data = await api.get(`/api/brands/${slug}/products`)
+  const data = await api.get(`/brands/${slug}/products`)
   return data.products ?? []
 }
 
 export async function getRelatedProducts(product, limit = 4) {
-  const data = await api.get(`/api/products/${product.id}/related?limit=${limit}`)
+  const data = await api.get(`/products/${product.id}/related?limit=${limit}`)
   return data.products ?? []
 }
 
 export async function getCategories() {
-  const data = await api.get('/api/categories')
+  const data = await api.get('/categories')
   return data.categories ?? []
 }
 
 export async function getCategoryBySlug(slug) {
   // Backend doesn’t have this exact endpoint; fetch categories and find.
-  const data = await api.get('/api/categories')
+  const data = await api.get('/categories')
   return (data.categories ?? []).find((c) => c.slug === slug) ?? null
 }
 
 export async function getBrands() {
-  const data = await api.get('/api/brands')
+  const data = await api.get('/brands')
   return data.brands ?? []
 }
 
 export async function getBrandBySlug(slug) {
-  const data = await api.get('/api/brands')
+  const data = await api.get('/brands')
   return (data.brands ?? []).find((b) => b.slug === slug) ?? null
 }
 
@@ -84,7 +84,7 @@ export function normalizeOrderId(raw) {
 // this same function. POST /api/track-order returns { orders: [...] } with an
 // empty array when nothing matches.
 export async function trackOrder({ type, value }) {
-  const data = await api.post('/api/track-order', { type, value })
+  const data = await api.post('/track-order', { type, value })
   return Array.isArray(data.orders) ? data.orders : []
 }
 
@@ -112,7 +112,7 @@ export async function submitOrder(payload) {
   console.log('[submitOrder] Sending payload:', JSON.stringify(requestBody, null, 2))
 
   try {
-    const res = await api.post('/api/orders', requestBody)
+    const res = await api.post('/orders', requestBody)
     console.log('[submitOrder] Response:', JSON.stringify(res, null, 2))
     return {
       success: true,

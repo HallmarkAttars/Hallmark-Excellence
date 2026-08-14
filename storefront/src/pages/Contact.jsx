@@ -279,7 +279,7 @@ export default function Contact() {
     }
     setPinInfo({ status: 'loading', localities: [], city: '', state: '', locality: '', error: '', pinNotFound: false })
     // Same origin-safe api helper as every other storefront call.
-    api.get(`/api/pincode/${pin}`)
+    api.get(`/pincode/${pin}`)
       .then((data) => {
         // Ignore stale responses if the user has since changed the PIN.
         if (currentPin.current !== pin) return

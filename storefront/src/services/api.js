@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 
 // Abort requests that take longer than this (e.g. a Render free-tier cold
 // start spinning the server back up) so pages surface a friendly error +
