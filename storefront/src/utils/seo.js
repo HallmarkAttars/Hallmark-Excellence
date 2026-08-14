@@ -13,23 +13,52 @@
 // ============================================================================
 
 // --------------------------------------------------------------------------
+// Canonical domain
+// --------------------------------------------------------------------------
+// ONE canonical storefront domain: the apex (https://areesperfumes.in). The
+// www host (and any other host) must NEVER appear in generated URLs, so
+// sitemap.xml / robots.txt always point search engines at the single
+// canonical host — regardless of which host the request actually arrived on.
+export const CANONICAL_ORIGIN = 'https://areesperfumes.in'
+
+const WWW_HOST = 'www.areesperfumes.in'
+const APEX_HOST = 'areesperfumes.in'
+
+// Rewrite the www host to the apex. Exact-match only — preview hosts like
+// *.vercel.app pass through untouched.
+function normalizeHost(host) {
+  return String(host).toLowerCase() === WWW_HOST ? APEX_HOST : host
+}
+
+// --------------------------------------------------------------------------
 // Site URL resolution
 // --------------------------------------------------------------------------
-// The production domain is NOT hardcoded anywhere in the project, so the
-// canonical base URL is resolved at request time:
+// The canonical base URL is resolved at request time:
 //   1. SITE_URL env var (set in the Vercel project settings) wins when present
 //      — this is the way to pin a fixed canonical domain.
 //   2. Otherwise the request's own host is used (x-forwarded-host, which
 //      Vercel always sets), so the custom domain AND *.vercel.app previews
 //      always emit URLs for the domain the request actually arrived on.
 //      Production hosts are never localhost, so no localhost URL can leak.
+// In BOTH paths a www.areesperfumes.in host is normalized to the apex, so
+// generated URLs can never carry www.
 // Throws when neither is available (never happens on Vercel).
 export function resolveSiteUrl(siteUrl, headers = {}) {
-  if (siteUrl) return String(siteUrl).replace(/\/+$/, '')
+  if (siteUrl) {
+    // Normalize a www SITE_URL to the apex (http/https, case-insensitive),
+    // preserving any path, then strip trailing slashes.
+    const normalized = String(siteUrl).replace(
+      /^https?:\/\/www\.areesperfumes\.in(?=(\/|$))/i,
+      CANONICAL_ORIGIN
+    )
+    return normalized.replace(/\/+$/, '')
+  }
   const proto = headers['x-forwarded-proto'] || 'https'
-  const host = headers['x-forwarded-host'] || headers['host']
+  // Vercel may send a comma-separated host list; the first entry is the
+  // request's own host.
+  const host = String(headers['x-forwarded-host'] || headers['host'] || '').split(',')[0].trim()
   if (!host) throw new Error('Cannot resolve the site URL: no host header and no SITE_URL configured.')
-  return `${proto}://${host}`
+  return `${proto}://${normalizeHost(host)}`
 }
 
 // --------------------------------------------------------------------------

@@ -8,11 +8,40 @@
 // ============================================================================
 
 import { describe, expect, it } from 'vitest'
-import { buildRobotsTxt, buildSitemapXml, resolveSiteUrl, xmlEscape } from './seo'
+import {
+  buildRobotsTxt,
+  buildSitemapXml,
+  resolveSiteUrl,
+  xmlEscape,
+  CANONICAL_ORIGIN,
+} from './seo'
+
+describe('canonical domain', () => {
+  it('pins the apex as the canonical origin (never www)', () => {
+    expect(CANONICAL_ORIGIN).toBe('https://areesperfumes.in')
+  })
+})
 
 describe('resolveSiteUrl', () => {
   it('prefers an explicit SITE_URL over request headers', () => {
     expect(resolveSiteUrl('https://example.com/', { 'x-forwarded-host': 'other.com' })).toBe('https://example.com')
+  })
+
+  it('normalizes a www forwarded host to the apex (sitemap/robots never emit www)', () => {
+    expect(resolveSiteUrl(null, { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'www.areesperfumes.in' })).toBe(
+      'https://areesperfumes.in'
+    )
+    expect(resolveSiteUrl(null, { host: 'www.areesperfumes.in' })).toBe('https://areesperfumes.in')
+    expect(resolveSiteUrl(null, { 'x-forwarded-host': 'WWW.AREESPERFUMES.IN' })).toBe('https://areesperfumes.in')
+    expect(resolveSiteUrl(null, { 'x-forwarded-host': 'www.areesperfumes.in, something.else' })).toBe(
+      'https://areesperfumes.in'
+    )
+  })
+
+  it('normalizes a www SITE_URL to the apex, preserving any path', () => {
+    expect(resolveSiteUrl('https://www.areesperfumes.in/')).toBe('https://areesperfumes.in')
+    expect(resolveSiteUrl('http://www.areesperfumes.in/shop')).toBe('https://areesperfumes.in/shop')
+    expect(resolveSiteUrl('https://www.areesperfumes.in/sitemap.xml')).toBe('https://areesperfumes.in/sitemap.xml')
   })
 
   it('derives the base URL from the forwarded host', () => {
