@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://hallmark-excellence.onrender.com'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in'
 
 // If an authenticated request comes back 401, the stored token is dead
 // (missing/expired/invalid). Clear it and bounce to login instead of

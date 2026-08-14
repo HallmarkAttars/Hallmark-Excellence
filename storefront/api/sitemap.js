@@ -11,7 +11,7 @@
 
 import { buildSitemapXml, resolveSiteUrl } from '../src/utils/seo.js'
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://hallmark-excellence.onrender.com'
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in'
 
 // Keep the upstream request well inside the platform function timeout.
 const FETCH_TIMEOUT_MS = 8000
