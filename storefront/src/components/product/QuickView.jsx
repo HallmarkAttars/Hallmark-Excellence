@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
+import { cloudinarySrc } from '../../utils/productImage'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -102,7 +103,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
         </button>
 
         <div className="quickview-media">
-          <img src={product.image} alt={product.name} />
+          <img src={cloudinarySrc(product.image, { width: 700 })} alt={product.name} decoding="async" />
         </div>
 
         <div className="quickview-info">

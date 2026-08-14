@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { cloudinarySrc } from '../../utils/productImage'
 import Reveal from '../../animations/Reveal'
 import { SOCIAL_STRIP } from '../../data/content'
 import './SocialStrip.css'
@@ -23,7 +24,7 @@ export default function SocialStrip({ products }) {
               className="social-tile"
               aria-label={product.name}
             >
-              <img src={product.image} alt={product.name} loading="lazy" />
+              <img src={cloudinarySrc(product.image, { width: 300 })} alt={product.name} loading="lazy" decoding="async" />
             </Link>
           ))}
         </div>

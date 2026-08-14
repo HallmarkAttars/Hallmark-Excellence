@@ -326,3 +326,16 @@ a, button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 767px) {
   .page-heading { padding: 40px 16px 24px; }
 }
+
+/* ---------- Lazy route fallback (React.lazy Suspense) ---------- */
+.route-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+}

@@ -22,7 +22,11 @@ export default function Shop() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    Promise.all([getProducts(), getCategories(), getBrands()])
+    // Normal mounts reuse the shared 60s catalog cache (Home → Shop navigation
+    // doesn't refetch). The "Try Again" retry forces a fresh network read so
+    // it can never be served a stale cached failure.
+    const refresh = reloadKey > 0
+    Promise.all([getProducts({ refresh }), getCategories({ refresh }), getBrands({ refresh })])
       .then(([p, c, b]) => {
         setProducts(p)
         setCategories(c)

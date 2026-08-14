@@ -6,8 +6,12 @@ import './Hero.css'
 export default function Hero() {
   // Background image comes from assets.js (inline style overrides the CSS
   // rule); the dark overlay + fallback ink background stay in CSS.
+  // Modern browsers pick the optimized WebP variant (88 KB); legacy browsers
+  // without WebP fall back to the original PNG — identical visuals.
   const bgStyle = IMAGES.heroBackground
-    ? { backgroundImage: `url(${IMAGES.heroBackground})` }
+    ? {
+        backgroundImage: `image-set(url(${IMAGES.heroBackgroundWebp}) type('image/webp') 1x, url(${IMAGES.heroBackground}) type('image/png') 1x)`,
+      }
     : undefined
 
   return (

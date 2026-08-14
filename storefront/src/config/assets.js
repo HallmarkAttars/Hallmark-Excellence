@@ -18,8 +18,11 @@ export const IMAGES = {
   logo: '/HE color Logo.png', // Navbar (light background)
   logoLight: '/HE white Logo.png', // Footer (dark background)
 
-  // Hero — full-bleed background image (dark overlay is applied in CSS)
+  // Hero — full-bleed background image (dark overlay is applied in CSS).
+  // WebP is the primary (optimized) variant; the PNG is the legacy-browser
+  // fallback served via image-set in Hero.jsx.
   heroBackground: '/Hero.png',
+  heroBackgroundWebp: '/Hero.webp',
 
   // Homepage collection banners — used as FALLBACKS; the live card/cover
   // images come from the Admin/database per brand (brands.card_image_url /

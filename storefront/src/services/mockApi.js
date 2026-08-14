@@ -4,25 +4,68 @@
 
 import { api } from './api'
 
-export async function getProducts() {
-  // Backend currently exposes products through /api/products
-  // (ensure you have products.routes.js wired).
-  return (await api.get('/products')).products ?? []
+// ----------------------------------------------------------------------------
+// Client-side response cache for catalog reads
+// ----------------------------------------------------------------------------
+// Products / categories / brands are read-only catalog data that changes only
+// when an Admin edits them. Caching them for a short TTL means:
+//   • multiple components asking for the same data at once (e.g. the header's
+//     brand dropdown and the Shop page both call getBrands on mount) share ONE
+//     network request — no duplicate /api/brands calls;
+//   • navigating between Home → Shop → Categories within the TTL reuses the
+//     already-fetched data instead of refetching the same payload every time.
+// The TTL is short (60s) so Admin edits surface within a minute, and callers
+// that need a guaranteed fresh read (e.g. the Shop "Try Again" retry) can pass
+// { refresh: true } to bypass the cache entirely. Failed requests are never
+// cached — the next call retries the network.
+
+const CATALOG_TTL_MS = 60_000
+const catalogCache = new Map() // key → { promise, expiresAt }
+
+function cachedCatalogRead(key, loader, { refresh = false } = {}) {
+  const now = Date.now()
+  const hit = catalogCache.get(key)
+  if (!refresh && hit && hit.expiresAt > now) return hit.promise
+
+  // Store the promise immediately so concurrent callers share the in-flight
+  // request (dedup). On success the entry gains its TTL; on failure it is
+  // removed so the next call retries.
+  const promise = loader()
+    .then((data) => {
+      catalogCache.set(key, { promise, expiresAt: Date.now() + CATALOG_TTL_MS })
+      return data
+    })
+    .catch((err) => {
+      catalogCache.delete(key)
+      throw err
+    })
+  catalogCache.set(key, { promise, expiresAt: now + CATALOG_TTL_MS })
+  return promise
 }
 
-export async function getProductById(id) {
-  const data = await api.get(`/products/${id}`)
-  return data.product ?? data ?? null
+export async function getProducts(options) {
+  return cachedCatalogRead('products', async () => (await api.get('/products')).products ?? [], options)
 }
 
-export async function getProductsByCategory(slug) {
-  const data = await api.get(`/categories/${slug}/products`)
-  return data.products ?? []
+export async function getProductById(id, options) {
+  return cachedCatalogRead(`product:${id}`, async () => {
+    const data = await api.get(`/products/${id}`)
+    return data.product ?? data ?? null
+  }, options)
 }
 
-export async function getProductsByBrand(slug) {
-  const data = await api.get(`/brands/${slug}/products`)
-  return data.products ?? []
+export async function getProductsByCategory(slug, options) {
+  return cachedCatalogRead(`category-products:${slug}`, async () => {
+    const data = await api.get(`/categories/${slug}/products`)
+    return data.products ?? []
+  }, options)
+}
+
+export async function getProductsByBrand(slug, options) {
+  return cachedCatalogRead(`brand-products:${slug}`, async () => {
+    const data = await api.get(`/brands/${slug}/products`)
+    return data.products ?? []
+  }, options)
 }
 
 export async function getRelatedProducts(product, limit = 4) {
@@ -30,25 +73,23 @@ export async function getRelatedProducts(product, limit = 4) {
   return data.products ?? []
 }
 
-export async function getCategories() {
-  const data = await api.get('/categories')
-  return data.categories ?? []
+export async function getCategories(options) {
+  return cachedCatalogRead('categories', async () => (await api.get('/categories')).categories ?? [], options)
 }
 
-export async function getCategoryBySlug(slug) {
+export async function getCategoryBySlug(slug, options) {
   // Backend doesn’t have this exact endpoint; fetch categories and find.
-  const data = await api.get('/categories')
-  return (data.categories ?? []).find((c) => c.slug === slug) ?? null
+  const data = await getCategories(options)
+  return (data.categories ?? data).find((c) => c.slug === slug) ?? null
 }
 
-export async function getBrands() {
-  const data = await api.get('/brands')
-  return data.brands ?? []
+export async function getBrands(options) {
+  return cachedCatalogRead('brands', async () => (await api.get('/brands')).brands ?? [], options)
 }
 
-export async function getBrandBySlug(slug) {
-  const data = await api.get('/brands')
-  return (data.brands ?? []).find((b) => b.slug === slug) ?? null
+export async function getBrandBySlug(slug, options) {
+  const data = await getBrands(options)
+  return (data.brands ?? data).find((b) => b.slug === slug) ?? null
 }
 
 export async function submitContactMessage(payload) {

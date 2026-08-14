@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { cloudinarySrc } from '../../utils/productImage'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -105,9 +106,10 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           aria-label={`View ${product.name}`}
         >
           <img
-            src={product.image}
+            src={cloudinarySrc(product.image, { width: 600 })}
             alt={product.name}
             loading="lazy"
+            decoding="async"
             onError={handleImgError}
           />
         </Link>

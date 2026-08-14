@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
+import { cloudinarySrc } from '../utils/productImage'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import {
@@ -113,7 +114,9 @@ export default function ProductDetail() {
     setSelectionInCart(false)
     setDescOpen(false)
     addingRef.current = false
-    getProductById(id)
+    // Normal mounts reuse the catalog cache; the "Try Again" retry forces a
+    // fresh read so it can never be served a stale cached failure.
+    getProductById(id, { refresh: reloadKey > 0 })
       .then((p) => {
         setProduct(p)
         setLoading(false)
@@ -476,7 +479,8 @@ export default function ProductDetail() {
             (the thumbnail/gallery navigation was removed). */}
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">
-            <img src={product.image} alt={product.name} />
+            {/* Main (LCP) product image — eager, optimized Cloudinary size */}
+            <img src={cloudinarySrc(product.image, { width: 900 })} alt={product.name} decoding="async" fetchPriority="high" />
           </div>
         </div>
 
