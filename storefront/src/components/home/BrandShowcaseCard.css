@@ -1,12 +1,18 @@
 /* ============================================================
-   BrandShowcaseCard — homepage "Our Brands" full-image luxury
-   cards. The entire card IS the photograph: absolute image layer
-   (object-fit: cover) + dark bottom gradient overlay, text sits
-   bottom-left ON the image. No split, no cream content panel.
+   BrandShowcaseCard — homepage "Our Brands" premium editorial
+   grid.
 
-   Featured row: 2-up large cards (1:1.35 on desktop).
-   Standard row: 3-up cards (4:5 on desktop).
-   Mobile: one full-width 4:5 card per row, equal sizes.
+   INTERNAL CARD COMPOSITION (the grid itself lives in Home.jsx /
+   .brands-showcase and is NOT changed here):
+     LEFT ZONE  ~55–60% — the product photograph stays visible
+                 (full-bleed background, object-fit: cover).
+     RIGHT ZONE ~40–45% — one reusable centered content column:
+                 label → title → divider → description → CTA.
+
+   Desktop:  image left, text right, both zones vertically centred.
+   Tablet:   same two-zone relationship, reduced type/spacing.
+   Mobile:   stacked — product image on top, content underneath
+             (no text over the product, no horizontal scrolling).
    ============================================================ */
 
 /* ---------- Section heading — centered "Our Brands" ---------- */
@@ -26,27 +32,39 @@
   color: var(--charcoal-soft);
 }
 
-/* ---------- Showcase grids ---------- */
-.brands-showcase {
-  display: grid;
-  gap: 16px;
+/* ---------- Container — near full desktop width ----------
+   Overrides the shared homepage container (1400px) for this
+   section only: min(100% − 32px, 1500px). */
+.our-brands-section .container {
+  max-width: 1500px;
+  padding-inline: 16px;
 }
-.brands-showcase > * {
-  height: 100%;
-}
-.brands-showcase--standard {
-  margin-top: 20px;
+@media (min-width: 768px) {
+  .our-brands-section .container { padding-inline: 24px; }
 }
 
-/* ---------- The card — full background image ---------- */
+/* ---------- Editorial grid (2 + 3 rhythm — unchanged) ---------- */
+.brands-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* mobile: single column */
+  gap: 14px;
+}
+.brands-showcase-cell {
+  min-width: 0; /* never force horizontal overflow */
+}
+
+/* ---------- The card — two-zone flex row ---------- */
 .brand-showcase-card {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row; /* product zone | content zone */
+  align-items: center; /* content zone vertically centred */
   justify-content: flex-end;
+  width: 100%; /* fill the grid cell — height then derives from aspect-ratio */
   min-width: 0;
   border-radius: 16px;
   overflow: hidden;
+  /* No border / outline / stroke — the image flows to the rounded edges */
   /* No-image stage (also the pre-image backdrop) */
   background:
     radial-gradient(240px 140px at 80% 0%, rgba(198, 154, 75, 0.22), transparent 65%),
@@ -56,7 +74,9 @@
   isolation: isolate;
 }
 
-/* Image layer — absolute, covers the whole card, never cropped by layout */
+/* Image layer — full-bleed background of the LEFT/product zone.
+   The image fills the whole card so it stays the visual focus on
+   the left; the text zone sits on top of the right-side gradient. */
 .brand-showcase-img {
   position: absolute;
   inset: 0;
@@ -65,7 +85,7 @@
   object-fit: cover;
   object-position: center;
   z-index: -2;
-  transition: transform 0.35s ease, filter 0.35s ease;
+  transition: transform 0.4s ease;
 }
 
 /* No-image fallback — centered monogram on the dark stage */
@@ -81,126 +101,281 @@
   color: var(--gold-light);
 }
 
-/* Dark gradient overlay — transparent top → strong dark bottom */
+/* ---------- Overlay — dark toward the TEXT zone only ----------
+   Transitions smoothly from the product area (left, nearly clear)
+   toward the content column (right, strong) so the image stays
+   visible while the text remains readable. Same direction for
+   every card — all text sits on the right. */
 .brand-showcase-overlay {
   position: absolute;
   inset: 0;
   z-index: -1;
   background: linear-gradient(
-    180deg,
-    rgba(23, 20, 17, 0) 22%,
-    rgba(23, 20, 17, 0.22) 46%,
-    rgba(23, 20, 17, 0.78) 80%,
-    rgba(23, 20, 17, 0.92) 100%
+    90deg,
+    rgba(23, 20, 17, 0.02) 0%,
+    rgba(23, 20, 17, 0.1) 42%,
+    rgba(23, 20, 17, 0.6) 72%,
+    rgba(23, 20, 17, 0.82) 100%
   );
 }
+/* Extra darkening faded in on hover — "overlay becomes stronger" */
+.brand-showcase-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(23, 20, 17, 0.12);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
 
-/* ---------- Content — bottom-left, ON the image ---------- */
+/* ---------- Content — the RIGHT zone, one reusable system ----------
+   Centered horizontally within its own column (never over the whole
+   card), vertically centred within the card. */
 .brand-showcase-content {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
   min-width: 0;
+  /* Featured (large) cards: ~60/40 split */
+  width: 40%;
+  max-width: 300px;
+  margin-right: 6%;
 }
+/* Standard (row-2) cards: ~55/45 split */
+.brand-showcase-card--standard .brand-showcase-content {
+  width: 45%;
+  max-width: 260px;
+  margin-right: 5%;
+}
+
+/* ---------- Text hierarchy (order matters) ---------- */
 .brand-showcase-label {
   margin: 0;
   font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--gold-light);
 }
 .brand-showcase-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 3.2vw, 1.9rem);
+  font-size: clamp(1.5rem, 5.5vw, 1.8rem); /* mobile baseline */
   font-weight: 600;
-  line-height: 1.12;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: #fff;
   text-wrap: balance;
 }
-.brand-showcase-line { display: block; }
+/* Decorative divider — lines + diamond, stays inside the column */
+.brand-showcase-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: var(--gold-light);
+}
+.brand-showcase-divider::before,
+.brand-showcase-divider::after {
+  content: '';
+  height: 1px;
+  width: 46px;
+  background: linear-gradient(90deg, transparent, rgba(198, 154, 75, 0.75), transparent);
+}
+.brand-showcase-divider-glyph {
+  font-size: 0.5rem;
+  line-height: 1;
+}
 .brand-showcase-desc {
-  margin: 0;
-  max-width: 36ch;
-  font-size: 0.84rem;
-  line-height: 1.55;
+  margin: 8px auto 0;
+  max-width: 240px;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.86);
 }
+/* CTA — minimal luxury button, follows the description in flow.
+   DEFAULT: solid white pill-less button, dark text.
+   HOVER:   soft warm cream, dark text.
+   ACTIVE:  transparent with a thin white border, white text —
+            immediate press feedback before navigation fires. */
 .brand-showcase-cta {
   margin-top: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: 1px solid rgba(198, 154, 75, 0.9);
-  border-radius: 999px;
+  gap: 10px;
+  padding: 12px 26px;
+  background: #ffffff;
+  border: 1px solid #ffffff; /* invisible against the white bg — keeps size stable */
+  border-radius: 3px;
   font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--gold-light);
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  color: #17130f;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 .brand-showcase-cta span {
   line-height: 1;
-  transition: transform 0.3s ease;
+  transition: transform 0.35s ease;
 }
 
-/* ---------- Hover (desktop pointers) — subtle zoom + slide ---------- */
-@media (hover: hover) and (pointer: fine) {
-  .brand-showcase-card:hover .brand-showcase-img {
-    transform: scale(1.045);
-    filter: brightness(0.88);
-  }
-  .brand-showcase-card:hover .brand-showcase-cta {
-    background: var(--gold);
-    border-color: var(--gold);
-    color: var(--ink);
-  }
-  .brand-showcase-card:hover .brand-showcase-cta span {
-    transform: translateX(4px);
-  }
-}
-
-/* ---------- Featured vs standard sizing ---------- */
+/* ---------- Sizing — mobile baseline (single column) ----------
+   Stacked: product image on top, content underneath. Content is in
+   flow so the card height grows with it — nothing ever clips. */
 .brand-showcase-card {
   aspect-ratio: 4 / 5;
-  min-height: 360px;
-}
-.brand-showcase-card--featured .brand-showcase-content { padding: 28px; }
-.brand-showcase-card--featured .brand-showcase-title {
-  font-size: clamp(1.7rem, 3.6vw, 2.3rem);
-}
-.brand-showcase-card--featured .brand-showcase-desc { font-size: 0.9rem; }
-.brand-showcase-card--featured .brand-showcase-cta {
-  padding: 12px 24px;
-  font-size: 0.72rem;
+  min-height: 420px;
 }
 
-/* ---------- Tablet (768–1023px) — two-up, equal heights ---------- */
-@media (min-width: 768px) {
-  .brands-showcase { gap: 20px; }
-  .brands-showcase--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .brands-showcase--standard {
+/* ---------- Mobile (≤767px) — single full-bleed image card ----------
+   The ENTIRE card is ONE product photograph: the image is an absolute
+   layer covering the whole card (never a top strip, never a solid dark
+   content box underneath) and a bottom dark gradient overlay keeps the
+   text readable while the product stays visible behind it. */
+@media (max-width: 767px) {
+  .brand-showcase-card {
+    flex-direction: column;
+    justify-content: flex-end; /* content sits inside the bottom gradient */
+    border-radius: 14px;
+  }
+  /* Image — full-card background layer */
+  .brand-showcase-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+  }
+  /* Overlay — dark only over the LOWER portion of the image */
+  .brand-showcase-overlay {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: auto;
+    background: linear-gradient(
+      180deg,
+      rgba(23, 20, 17, 0) 30%,
+      rgba(23, 20, 17, 0.4) 52%,
+      rgba(23, 20, 17, 0.78) 78%,
+      rgba(23, 20, 17, 0.92) 100%
+    );
+  }
+  /* Content — sits inside the bottom gradient area */
+  .brand-showcase-content,
+  .brand-showcase-card--featured .brand-showcase-content,
+  .brand-showcase-card--standard .brand-showcase-content {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 18px 20px 24px;
+    gap: 8px;
+  }
+  .brand-showcase-title { font-size: clamp(1.4rem, 5.5vw, 1.7rem); }
+  .brand-showcase-desc { max-width: 300px; }
+  .brand-showcase-cta { margin-top: 10px; }
+}
+
+/* ---------- Tablet (768–1023px) — two-zone, reduced type ---------- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .brands-showcase {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 32px;
+    gap: 12px;
+  }
+  .brand-showcase-card {
+    aspect-ratio: 1 / 1.05;
+    min-height: 380px;
+  }
+  .brand-showcase-title { font-size: clamp(1.25rem, 3.2vw, 1.6rem); }
+  .brand-showcase-desc { font-size: 0.85rem; }
+  .brand-showcase-content,
+  .brand-showcase-card--featured .brand-showcase-content,
+  .brand-showcase-card--standard .brand-showcase-content {
+    margin-right: 5%;
   }
 }
 
-/* ---------- Desktop (1024px+) — featured 2-up tall, standard 3-up ---------- */
+/* ---------- Desktop (1024px+) — editorial 2 + 3 rhythm ----------
+   The GRID structure stays exactly as before (2 large + 3 standard,
+   repeating for every group of five). Only the card-internal
+   composition scales up here. */
 @media (min-width: 1024px) {
-  .brands-showcase { gap: 24px; }
-  .brands-showcase--standard { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .brand-showcase-card--featured { aspect-ratio: 1 / 1.35; }
+  .brands-showcase {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .brands-showcase-cell--featured { grid-column: span 3; }
+  .brands-showcase-cell--standard { grid-column: span 2; }
+
+  /* Row 1 — landscape ~1.5:1 (≈480–520px tall) */
+  .brand-showcase-card--featured {
+    aspect-ratio: 1.5 / 1;
+    min-height: 480px;
+  }
+  /* Row 2 — square ~1:1 (≈480px tall) */
+  .brand-showcase-card--standard {
+    aspect-ratio: 1 / 1;
+    min-height: 400px;
+  }
+
+  .brand-showcase-title {
+    font-size: clamp(1.75rem, 2.5vw, 2.75rem); /* 28–44px */
+  }
+  .brand-showcase-card--standard .brand-showcase-title {
+    font-size: clamp(1.375rem, 1.7vw, 1.9rem); /* 22–30px */
+  }
+  .brand-showcase-desc { font-size: 0.95rem; }
+  .brand-showcase-card--standard .brand-showcase-desc { font-size: 0.9rem; }
+  .brand-showcase-cta { padding: 12px 28px; font-size: 0.72rem; }
 }
 
-/* ---------- Mobile (<768px) — one full-width card per row ---------- */
-@media (max-width: 767px) {
-  .brand-showcase-card { border-radius: 14px; }
-  .brand-showcase-content { padding: 20px; }
+/* ---------- Hover (desktop pointers) — subtle zoom + deepen ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .brand-showcase-card:hover .brand-showcase-img {
+    transform: scale(1.03);
+  }
+  .brand-showcase-card:hover .brand-showcase-overlay::after {
+    opacity: 1;
+  }
+  .brand-showcase-card:hover .brand-showcase-cta {
+    background: #f5f1e8; /* soft warm cream */
+    border-color: #f5f1e8;
+    color: #17130f;
+  }
+  .brand-showcase-card:hover .brand-showcase-cta span {
+    transform: translateX(5px);
+  }
+}
+
+/* Pressed — transparent with a thin white border, white text. Declared
+   AFTER the hover rule with equal-or-higher specificity so the press
+   state wins while the pointer is down over the button. */
+.brand-showcase-card .brand-showcase-cta:active {
+  background: transparent;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+/* ---------- Keyboard focus — whole card is a link ---------- */
+.brand-showcase-card:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 3px;
+}
+
+/* ---------- Reduced motion: static cards, content immediately visible ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .brand-showcase-img,
+  .brand-showcase-overlay::after,
+  .brand-showcase-cta,
+  .brand-showcase-cta span {
+    transition: none !important;
+    transform: none !important;
+  }
 }

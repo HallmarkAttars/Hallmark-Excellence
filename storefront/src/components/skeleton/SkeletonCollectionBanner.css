@@ -1,8 +1,9 @@
 /* ============================================================
    "Our Brands" skeleton — mirrors the full-image BrandShowcaseCard
-   layout (section head + featured 2-up + standard 3-up grids of
-   full-bleed cards). Reuses the shared shimmer system from
-   SkeletonBase.css — no new animation keyframes.
+   layout (section head + a single editorial grid: two large
+   LANDSCAPE cards then three square cards, repeating 2 + 3 on
+   desktop). Reuses the shared shimmer system from SkeletonBase.css
+   — no new animation keyframes.
    ============================================================ */
 
 .skeleton-brands-section {
@@ -15,16 +16,13 @@
   .skeleton-brands-section { padding: 48px 0 64px; }
 }
 
-/* Same container as the real .our-brands-section (1400px, warm padding) */
+/* Same container as the real .our-brands-section (1500px, warm padding) */
 .skeleton-brands-section .container {
-  max-width: 1400px;
-  padding-inline: 20px;
+  max-width: 1500px;
+  padding-inline: 16px;
 }
 @media (min-width: 768px) {
-  .skeleton-brands-section .container { padding-inline: 32px; }
-}
-@media (min-width: 1024px) {
-  .skeleton-brands-section .container { padding-inline: 48px; }
+  .skeleton-brands-section .container { padding-inline: 24px; }
 }
 
 /* --- Section heading block --- */
@@ -40,13 +38,14 @@
   height: 32px;
 }
 
-/* --- Showcase grids (mirror .brands-showcase) --- */
+/* --- Showcase grid (mirror .brands-showcase) --- */
 .skeleton-showcase {
   display: grid;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr); /* mobile: single column */
+  gap: 14px;
 }
-.skeleton-showcase--standard {
-  margin-top: 20px;
+.skeleton-showcase-cell {
+  min-width: 0;
 }
 
 /* --- Full-image card placeholder --- */
@@ -54,7 +53,7 @@
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 5;
-  min-height: 360px;
+  min-height: 420px;
   border-radius: 16px;
   overflow: hidden;
   background: var(--cream-deep);
@@ -82,20 +81,38 @@
 }
 
 /* ---------- Tablet (768–1023px) — two-up ---------- */
-@media (min-width: 768px) {
-  .skeleton-showcase { gap: 20px; }
-  .skeleton-showcase--featured { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .skeleton-showcase--standard {
+@media (min-width: 768px) and (max-width: 1023px) {
+  .skeleton-showcase {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 32px;
+    gap: 12px;
+  }
+  .skeleton-showcase-card {
+    aspect-ratio: 1 / 1.05;
+    min-height: 380px;
   }
 }
 
-/* ---------- Desktop (1024px+) — featured 2-up tall, standard 3-up ---------- */
+/* ---------- Desktop (1024px+) — editorial 2 + 3 rhythm ---------- */
 @media (min-width: 1024px) {
-  .skeleton-showcase { gap: 24px; }
-  .skeleton-showcase--standard { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .skeleton-showcase--featured .skeleton-showcase-card { aspect-ratio: 1 / 1.35; }
+  .skeleton-showcase {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .skeleton-showcase-cell--featured { grid-column: span 3; }
+  .skeleton-showcase-cell--standard { grid-column: span 2; }
+  .skeleton-showcase-cell--featured .skeleton-showcase-card {
+    aspect-ratio: 1.5 / 1;
+    min-height: 480px;
+  }
+  .skeleton-showcase-cell--standard .skeleton-showcase-card {
+    aspect-ratio: 1 / 1;
+    min-height: 400px;
+  }
+}
+
+/* ---------- Mobile — tighter radius ---------- */
+@media (max-width: 767px) {
+  .skeleton-showcase-card { border-radius: 14px; }
 }
 
 /* ---------- Reduced motion: static blocks, no sweep ---------- */

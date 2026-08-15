@@ -32,17 +32,16 @@ export default function Home() {
   }, [])
 
   // Active brands only, sorted by the admin's display position (shared rule
-  // with the header dropdown / footer — see utils/brandOrder.js). Featured
-  // (large cards) come first, the rest render as compact cards below. If no
-  // brand has a display_type yet, the first two act as featured so the section
-  // keeps its premium look pre-configuration.
+  // with the header dropdown / footer — see utils/brandOrder.js). The cards
+  // are laid out in a repeating editorial 2 + 3 rhythm purely by position:
+  // the first two brands of every group of five are the large ~50% cards and
+  // the next three the ~33% cards, so any number of brands keeps the premium
+  // layout (2+3, 2+3, …) instead of falling back to a small-card grid.
   const orderedBrands = sortBrandsByDisplayOrder(brands)
-  const featuredBrands = orderedBrands.filter((b) => b.display_type === 'featured')
-  const secondaryBrands = orderedBrands.filter((b) => b.display_type !== 'featured')
-  const featured =
-    featuredBrands.length > 0 ? featuredBrands : orderedBrands.slice(0, 2)
-  const secondary =
-    featuredBrands.length > 0 ? secondaryBrands : orderedBrands.slice(2)
+  const gridCards = orderedBrands.map((brand, i) => ({
+    brand,
+    variant: i % 5 < 2 ? 'featured' : 'standard',
+  }))
 
   // Admin-controlled featured products — uses the same is_featured field the
   // admin panel toggles. No extra API read: it reuses the products already
@@ -73,7 +72,7 @@ export default function Home() {
           {/* Our Brands — the existing Arees / Dahab collection cards moved
               directly below Shop by Category under one heading. The banners are
               the SAME components as before (no duplicates, no new content). */}
-          {orderedBrands.length > 0 && (
+          {gridCards.length > 0 && (
             <section className="our-brands-section">
               <div className="container">
                 <div className="section-head">
@@ -83,25 +82,20 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* FEATURED — the first two brands as large full-image cards */}
-                <div className="brands-showcase brands-showcase--featured">
-                  {featured.map((brand, i) => (
-                    <Reveal key={brand.id} delay={i * 120}>
-                      <BrandShowcaseCard brand={brand} variant="featured" />
+                {/* Editorial grid — two large 50% cards, then three 33% cards,
+                    repeating for every group of five brands. The Reveal wrapper
+                    is the grid cell (variant controls its column span). */}
+                <div className="brands-showcase">
+                  {gridCards.map(({ brand, variant }, i) => (
+                    <Reveal
+                      key={brand.id}
+                      delay={(i % 5) * 100}
+                      className={`brands-showcase-cell brands-showcase-cell--${variant}`}
+                    >
+                      <BrandShowcaseCard brand={brand} variant={variant} />
                     </Reveal>
                   ))}
                 </div>
-
-                {/* SECONDARY — the remaining brands, three-up on desktop */}
-                {secondary.length > 0 && (
-                  <div className="brands-showcase brands-showcase--standard">
-                    {secondary.map((brand, i) => (
-                      <Reveal key={brand.id} delay={i * 100}>
-                        <BrandShowcaseCard brand={brand} variant="standard" />
-                      </Reveal>
-                    ))}
-                  </div>
-                )}
               </div>
             </section>
           )}
