@@ -110,38 +110,23 @@ a, button { -webkit-tap-highlight-color: transparent; }
 /* ---------- Homepage content sections — shared horizontal boundary ----------
    Every homepage content section (Shop by Category, Our Brands, Featured
    Products, Follow Our Journey) uses ONE container so all content aligns to
-   the same left/right edge: 1400px max-width with 20 / 32 / 48 / 60px side
-   padding (mobile / tablet / desktop / large). Scoped to homepage-only
-   classes — other pages keep the global .container. */
+   the same left/right edge: 1500px max-width with 16 / 24px side padding
+   (mobile / tablet+). These values match .our-brands-section's own container
+   exactly, so every card section shares the same clean outer edges.
+   Scoped to homepage-only classes — other pages keep the global .container. */
 .category-section .container,
 .featured-section .container,
 .social-section .container,
 .our-brands-section .container {
-  max-width: 1400px;
-  padding-inline: 20px;
+  max-width: 1500px;
+  padding-inline: 16px;
 }
 @media (min-width: 768px) {
   .category-section .container,
   .featured-section .container,
   .social-section .container,
   .our-brands-section .container {
-    padding-inline: 32px;
-  }
-}
-@media (min-width: 1024px) {
-  .category-section .container,
-  .featured-section .container,
-  .social-section .container,
-  .our-brands-section .container {
-    padding-inline: 48px;
-  }
-}
-@media (min-width: 1440px) {
-  .category-section .container,
-  .featured-section .container,
-  .social-section .container,
-  .our-brands-section .container {
-    padding-inline: 60px;
+    padding-inline: 24px;
   }
 }
 

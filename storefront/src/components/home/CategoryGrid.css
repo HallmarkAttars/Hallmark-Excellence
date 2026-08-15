@@ -76,16 +76,18 @@
    desktop, 3 columns on tablet, 2 columns on mobile — no wrapping, no overflow. */
 .category-section .category-scroll {
   grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile: 2 columns */
+  gap: 14px; /* shared homepage card rhythm — matches Our Brands */
 }
 @media (min-width: 768px) and (max-width: 1199px) {
   .category-section .category-scroll {
     grid-template-columns: repeat(3, minmax(0, 1fr)); /* tablet: 3 columns */
+    gap: 12px; /* shared homepage card rhythm — matches Our Brands */
   }
 }
 @media (min-width: 1200px) {
   .category-section .category-scroll {
     grid-template-columns: repeat(6, minmax(0, 1fr)); /* desktop: 6 columns / 1 row */
-    gap: 16px; /* tighter gap so 6 cards fill the row without shrinking too small */
+    gap: 14px; /* shared homepage card rhythm — matches Our Brands */
   }
 }
 

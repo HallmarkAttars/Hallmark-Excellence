@@ -58,23 +58,17 @@
    from overflowing their track on very narrow screens. */
 .featured-track {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 320px stays 2-up, compact */
-  gap: 10px;
-}
-@media (min-width: 360px) {
-  .featured-track { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } /* mobile 2-up */
-}
-@media (min-width: 480px) {
-  .featured-track { gap: 16px; } /* large mobile keeps 2-up, roomier gaps */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile 2-up */
+  gap: 14px; /* shared homepage card rhythm — matches Our Brands */
 }
 @media (min-width: 768px) {
-  .featured-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } /* tablet 3-up */
+  .featured-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } /* tablet 3-up */
 }
 @media (min-width: 1024px) {
-  .featured-track { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; } /* laptop 4-up */
+  .featured-track { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; } /* laptop 4-up */
 }
 @media (min-width: 1200px) {
-  .featured-track { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; } /* desktop: 6 columns / 1 row, tighter gap */
+  .featured-track { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; } /* desktop: 6 columns / 1 row */
   /* 6-up showcase: the SAME shared card, tuned for ~190px tracks so the
      full-width ADD TO CART button, name and price stay comfortable and the
      4/3 image stage never feels cramped. Structure/design unchanged. */

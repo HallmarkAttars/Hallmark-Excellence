@@ -29,13 +29,14 @@
 }
 
 /* Mobile: horizontal strip — bleeds to the viewport edge through the
-   20px container gutter, so the strip is edge-to-edge with no page-level
-   horizontal scroll. */
+   16px container gutter, so the strip is edge-to-edge with no page-level
+   horizontal scroll. First and last tiles stay 16px from the viewport
+   edges — the same gap rhythm as the rest of the homepage. */
 .social-grid {
   display: flex;
-  gap: 12px;
-  margin: 0 -20px;
-  padding: 0 20px 8px;
+  gap: 14px; /* shared homepage card rhythm — matches Our Brands */
+  margin: 0 -16px;
+  padding: 0 16px 8px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
@@ -60,19 +61,12 @@
 }
 .social-tile:hover img { transform: scale(1.06); }
 
-@media (max-width: 360px) {
-  .social-grid {
-    margin: 0 -20px;
-    padding: 0 20px 8px;
-  }
-}
-
 /* Desktop: 6-column grid */
 @media (min-width: 768px) {
   .social-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 16px;
+    gap: 12px; /* shared homepage card rhythm — matches Our Brands */
     margin: 0;
     padding: 0;
     overflow: visible;
@@ -83,6 +77,10 @@
 @media (max-width: 1023px) and (min-width: 768px) {
   .social-grid { grid-template-columns: repeat(3, 1fr); }
   .social-tile:nth-child(n + 4) { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .social-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; } /* shared homepage card rhythm — matches Our Brands */
 }
 
 .social-cta {

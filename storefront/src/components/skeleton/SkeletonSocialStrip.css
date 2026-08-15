@@ -43,7 +43,7 @@
 /* --- Square photo tiles (matches .social-tile) --- */
 .skeleton-social-grid {
   display: flex;
-  gap: 12px;
+  gap: 14px; /* mirrors the real .social-grid */
   margin: 0 -16px;
   padding: 0 16px 8px;
   overflow-x: auto;
@@ -72,19 +72,13 @@
   transform: translateX(-100%);
   animation: skeleton-sweep 1.4s ease-in-out infinite;
 }
-@media (max-width: 360px) {
-  .skeleton-social-grid {
-    margin: 0 -14px;
-    padding: 0 14px 8px;
-  }
-}
 
 /* --- Desktop: 6-column grid --- */
 @media (min-width: 768px) {
   .skeleton-social-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 16px;
+    gap: 12px; /* mirrors the real .social-grid */
     margin: 0;
     padding: 0;
     overflow: visible;
@@ -94,6 +88,9 @@
 @media (max-width: 1023px) and (min-width: 768px) {
   .skeleton-social-grid { grid-template-columns: repeat(3, 1fr); }
   .skeleton-social-tile:nth-child(n + 4) { display: none; }
+}
+@media (min-width: 1024px) {
+  .skeleton-social-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; } /* mirrors the real .social-grid */
 }
 
 /* --- CTA placeholder --- */
