@@ -135,7 +135,6 @@ export default function BrandProducts() {
               resetToFirstPage()
             }}
             activeCount={activeCount}
-            align="left"
           />
         </div>
 

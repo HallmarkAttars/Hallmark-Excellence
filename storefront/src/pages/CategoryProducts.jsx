@@ -94,9 +94,10 @@ export default function CategoryProducts() {
 
       <div className="container category-body">
         {/* Combined FILTER & SORT control — same premium component as the
-            Brand pages. Centered on the category page. The brand-filter and
-            sort state above are the only source of truth; this component
-            only presents them (mobile bottom sheet / desktop popover). */}
+            Brand pages. LEFT-aligned with the product grid (alignment is
+            fixed inside the shared component). The brand-filter and sort
+            state above are the only source of truth; this component only
+            presents them (mobile bottom sheet / desktop popover). */}
         <div className="category-toolbar">
           <FilterSortControl
             key={slug}
@@ -116,7 +117,6 @@ export default function CategoryProducts() {
               resetToFirstPage()
             }}
             activeCount={activeCount}
-            align="center"
           />
         </div>
 

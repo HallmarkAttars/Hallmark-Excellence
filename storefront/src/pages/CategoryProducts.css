@@ -72,11 +72,10 @@
 
 /* ---------- Toolbar wrapper ----------
    Only spacing lives here — the control (button/sheet/popover) and its
-   alignment are provided by the shared FilterSortControl component. */
+   alignment (LEFT-aligned with the product grid) are provided by the
+   shared FilterSortControl component. */
 .category-toolbar {
   margin-bottom: 26px;
-  display: flex;
-  justify-content: center;
 }
 
 /* ---------- Grid rhythm ----------

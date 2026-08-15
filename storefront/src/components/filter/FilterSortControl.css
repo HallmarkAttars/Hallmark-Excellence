@@ -3,20 +3,17 @@
    shared by the Categories page and every Brand page.
    Mobile (<768px): full-width button → bottom sheet
    Desktop (≥768px): compact button → popover anchored below
-   Align variants: left (brand pages) / center (category page)
+   Alignment is fixed: always LEFT-aligned with the product grid
+   (no centering variant anywhere — desktop, tablet or mobile).
    ============================================================ */
 
 .filter-sort-control {
   /* Anchors the desktop popover directly under the control. */
   position: relative;
   display: flex;
+  justify-content: flex-start; /* button hugs the LEFT edge of the grid container */
   width: 100%;
 }
-
-/* Alignment: left-aligned with the product grid (brand pages) or centered
-   (category page). Defaults to left. */
-.filter-sort-align-left { justify-content: flex-start; }
-.filter-sort-align-center { justify-content: center; }
 
 /* ---------- Combined button ----------
    Full-width premium button on mobile; compact control on desktop. Same
@@ -102,9 +99,8 @@
   border-radius: 14px;
   box-shadow: 0 18px 50px rgba(27, 24, 20, 0.16);
 }
-/* Anchored to the button's left edge (brand pages) or centered (category). */
-.filter-sort-align-left .filter-sort-panel { left: 0; }
-.filter-sort-align-center .filter-sort-panel { left: 50%; transform: translateX(-50%); }
+/* Anchored to the button's left edge — matches the control's left alignment. */
+.filter-sort-control .filter-sort-panel { left: 0; }
 
 .filter-sort-panel-header {
   display: flex;

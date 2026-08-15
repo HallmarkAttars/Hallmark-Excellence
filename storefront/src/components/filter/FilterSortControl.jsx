@@ -65,8 +65,10 @@ const SlidersIcon = () => (
 //   sortValue      one of SORT_OPTIONS values ('default' = Featured)
 //   onSortChange   (value) => void
 //   activeCount    number of active filters/sorts (drives the badge)
-//   align          'left' (brand pages) | 'center' (category page)
 //   label          optional text under the control (defaults to none)
+//
+// Alignment is fixed at the component level: the control is always
+// LEFT-aligned with the product grid on every page (no centering variant).
 // ---------------------------------------------------------------------------
 export default function FilterSortControl({
   filterLabel = 'Category',
@@ -77,7 +79,6 @@ export default function FilterSortControl({
   sortValue = 'default',
   onSortChange = () => {},
   activeCount = 0,
-  align = 'left',
 }) {
   const [panelOpen, setPanelOpen] = useState(false) // desktop popover
   const [sheetOpen, setSheetOpen] = useState(false) // mobile bottom sheet
@@ -159,7 +160,7 @@ export default function FilterSortControl({
   const hasFilterOptions = filterOptions.length > 0
 
   return (
-    <div className={`filter-sort-control filter-sort-align-${align}`}>
+    <div className="filter-sort-control">
       <button
         type="button"
         ref={combinedBtnRef}
