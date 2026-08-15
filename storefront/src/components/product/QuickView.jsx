@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
+import { displayProductName } from '../../utils/productName'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -111,7 +112,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
             <p className="quickview-brand">{product.brand_name}</p>
           )}
 
-          <h2 className="quickview-name">{product.name}</h2>
+          <h2 className="quickview-name">{displayProductName(product.name)}</h2>
 
           {hasRating && (
             <p className="quickview-rating">

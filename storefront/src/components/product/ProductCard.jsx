@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
+import { displayProductName } from '../../utils/productName'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -76,6 +77,18 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
   const ratingDisplay = hasRating
     ? Number(product.rating).toFixed(2).replace(/\.?0+$/, '')
     : ''
+
+  // Top brown/gold label: Attar products keep their brand name (e.g.
+  // "AREES 8ML"); every other category shows its category name (e.g.
+  // "FRAGRANCE OIL") in the exact same label styling. The label text is
+  // uppercased by the existing .product-card-brand rule — nothing about the
+  // label's typography/position changes. Falls back to the other field when
+  // the preferred one is missing so no currently-visible label disappears.
+  const isAttarCategory =
+    String(product.category_name || '').trim().toLowerCase() === 'attar'
+  const cardLabel = isAttarCategory
+    ? product.brand_name || product.category_name
+    : product.category_name || product.brand_name
   // Add to Cart always takes the customer to the product details page, where
   // they pick the variant and quantity. Nothing is ever added to the cart
   // directly from a product card.
@@ -141,10 +154,10 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
       </div>
 
       <div className="product-card-body">
-        {(product.brand_name || hasRating) && (
+        {(cardLabel || hasRating) && (
           <div className="product-card-topline">
-            {product.brand_name && (
-              <p className="product-card-brand">{product.brand_name}</p>
+            {cardLabel && (
+              <p className="product-card-brand">{cardLabel}</p>
             )}
 
             {hasRating && (
@@ -164,7 +177,7 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           className="product-card-name-link"
           onClick={handleNavigate}
         >
-          <h3 className="product-card-name">{product.name}</h3>
+          <h3 className="product-card-name">{displayProductName(product.name)}</h3>
         </Link>
 
         {(product.category_name || variantLabel) && (
