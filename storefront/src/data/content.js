@@ -105,11 +105,11 @@ export const HOME_BRANDS = {
 // (e.g. '/Arees8ml.webp') — never filesystem paths.
 // --------------------------------------------------------------------------
 export const BRAND_HERO_IMAGES = {
-  'arees 12ml': '/Arees 12ml.webp',
-  'arees bakhoor': '/Arees bakhoor.webp',
-  'arees luxury': '/Arees luxury.webp',
-  'arees 8ml': '/Arees8ml.webp',
-  'dahab 8ml': '/dahab 8ml.webp',
+  'arees 12ml': '/arees12ml-hero.webp',
+  'arees bakhoor': '/bakhoor-hero.webp',
+  'arees luxury': '/areesluxury-hero.webp',
+  'arees 8ml': '/arees-hero.webp',
+  'dahab 8ml': '/Dahab-hero.webp',
 }
 
 // Normalized brand-name → hero image lookup (case/space-insensitive).
