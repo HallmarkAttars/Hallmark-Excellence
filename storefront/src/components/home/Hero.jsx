@@ -29,7 +29,7 @@ export default function Hero() {
         </h1>
         <p className="hero-tagline hero-reveal hero-reveal-2">{HERO.subtitle}</p>
         <div className="hero-actions hero-reveal hero-reveal-3">
-          <Link to={HERO.primaryCta.to} className="btn btn-gold hero-btn">
+          <Link to={HERO.primaryCta.to} className="btn hero-btn hero-btn-primary">
             {HERO.primaryCta.label}
           </Link>
           <Link to={HERO.secondaryCta.to} className="btn btn-outline-light hero-btn">

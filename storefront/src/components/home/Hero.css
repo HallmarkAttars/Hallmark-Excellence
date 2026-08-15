@@ -76,6 +76,23 @@
 
 .hero-btn-arrow { font-size: 1.05em; line-height: 1; }
 
+/* ---------- Primary CTA — "SHOP THE COLLECTION" ----------
+   Solid white fill with dark text, scoped to the hero only via
+   .hero-btn-primary. The shared .btn-gold (used on Cart, Contact,
+   TrackOrder, ViewOrder) is intentionally left untouched. All size /
+   padding / font / alignment come from .btn + .hero-btn — only the
+   fill and text color change here. */
+.hero-btn-primary {
+  background: var(--white);
+  color: var(--ink);
+  border-color: var(--white);
+}
+.hero-btn-primary:hover {
+  background: #f5f1e8; /* soft warm cream — same hover as the brand CTA */
+  border-color: #f5f1e8;
+  color: var(--ink);
+}
+
 /* ---------- Tablet ---------- */
 @media (min-width: 768px) and (max-width: 1023px) {
   .hero { min-height: 560px; }
