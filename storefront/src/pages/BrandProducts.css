@@ -3,7 +3,7 @@
    Header → toolbar → product grid · no giant hero, no dead space
    ============================================================ */
 
-/* ---------- Compact collection header (180–220px desktop) ----------
+/* ---------- Compact collection header (200px tablet · 300px desktop) ----------
    The brand's hero image fills the header when one exists (background
    image set inline from the brand name); a subtle dark overlay sits on
    top so the existing text stays readable while the image stays clearly
@@ -69,6 +69,13 @@
   .brand-header { min-height: 160px; padding: 36px 20px; }
   .brand-header h1 { font-size: clamp(1.9rem, 9vw, 2.4rem); }
   .brand-header-desc { font-size: 0.88rem; }
+}
+
+/* Desktop-only: slightly taller hero for more visual presence (+50% over
+   the base 200px). Scoped to the brand page header; tablet keeps the base
+   height and mobile keeps its own 160px — this rule cannot touch them. */
+@media (min-width: 1024px) {
+  .brand-header { min-height: 350px; }
 }
 
 /* ---------- Body: 1440px container with scaled gutters ---------- */
