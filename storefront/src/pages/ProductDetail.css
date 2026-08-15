@@ -553,46 +553,6 @@
   animation: fade-up 0.45s ease-out both;
 }
 
-/* ---------- Benefits strip ---------- */
-.pd-benefits {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 16px;
-  margin-top: 26px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line-soft);
-}
-@media (min-width: 480px) {
-  .pd-benefits { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-.pd-benefit {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  min-width: 0;
-}
-.pd-benefit svg {
-  color: var(--gold);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.pd-benefit div {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  min-width: 0;
-}
-.pd-benefit strong {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--charcoal);
-  letter-spacing: 0.01em;
-}
-.pd-benefit span {
-  font-size: 0.68rem;
-  color: var(--charcoal-soft);
-}
-
 /* ---------- Related products ---------- */
 .product-detail-related {
   grid-column: 1 / -1;

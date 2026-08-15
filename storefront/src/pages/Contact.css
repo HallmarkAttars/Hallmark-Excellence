@@ -7,7 +7,7 @@
 /* `.container.contact-layout` (two classes) beats `.container`'s
    `padding: 0 …` shorthand in the cascade — component CSS loads before
    index.css, so the bare `.contact-layout` bottom padding was silently
-   overridden to 0 (footer sat flush against the benefits row). */
+   overridden to 0 (footer sat flush against the page content). */
 .container.contact-layout {
   padding-bottom: 80px;
 }
@@ -250,8 +250,7 @@
 .contact-toast strong { font-family: var(--font-display); font-size: 1.2rem; color: var(--charcoal); }
 
 /* Checkout page container — centered, capped width, never overflows.
-   display: block neutralizes the base .contact-layout grid so the 28px
-   row-gap can never add to the trust strip's own margin. */
+   display: block neutralizes the base .contact-layout grid. */
 .contact-layout--checkout {
   display: block;
   width: 100%;
@@ -261,9 +260,14 @@
   box-sizing: border-box;
   min-width: 0;
 }
-/* Higher-specificity sibling of the `.container.contact-layout` fix above. */
+/* Higher-specificity sibling of the `.container.contact-layout` fix above.
+   The trust strip was removed, so 88px would leave dead space before the
+   footer — 64px keeps the same page-bottom rhythm as the rest of the site. */
 .container.contact-layout--checkout {
-  padding-bottom: 88px;
+  padding-bottom: 64px;
+}
+@media (max-width: 767px) {
+  .container.contact-layout--checkout { padding-bottom: 56px; }
 }
 /* Two-column checkout grid: Delivery Information (left) + Order Summary
    (right). The grid sizes naturally — no fixed heights, no absolute or
@@ -670,25 +674,6 @@
   color: var(--charcoal-soft);
 }
 
-/* Informational security strip — no gateway, display only */
-.checkout-payment-security {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(184, 137, 56, 0.08);
-  border: 1px solid rgba(184, 137, 56, 0.3);
-  color: #8a6a2f;
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.5;
-  text-align: center;
-}
-.checkout-payment-security svg {
-  flex-shrink: 0;
-}
 .checkout-payment-note {
   margin: 0;
   padding: 9px 12px;
@@ -718,9 +703,7 @@
 }
 
 /* ---------- Right column: sticky Order Summary card ---------- */
-/* Order Summary column — static, normal flow, fully inside its grid column.
-   Sticky was removed: a tall summary card pinned to the viewport overlapped
-   the trust strip below it while scrolling. Static flow can never overlap. */
+/* Order Summary column — static, normal flow, fully inside its grid column. */
 .checkout-summary-col {
   min-width: 0;
   width: 100%;
@@ -798,37 +781,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Green security box inside the summary */
-.checkout-security {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-top: 14px;
-  padding: 11px 13px;
-  border-radius: 10px;
-  background: rgba(30, 74, 46, 0.06);
-  border: 1px solid rgba(30, 74, 46, 0.2);
-}
-.checkout-security svg {
-  flex-shrink: 0;
-  color: #1E4A2E;
-}
-.checkout-security div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.checkout-security strong {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #1E4A2E;
-}
-.checkout-security span {
-  font-size: 0.74rem;
-  color: var(--charcoal-soft);
-}
-
-/* Return to Cart — lives INSIDE the Order Summary card, below the security box */
+/* Return to Cart — lives INSIDE the Order Summary card */
 .checkout-return-link {
   display: flex;
   align-items: center;
@@ -845,51 +798,6 @@
 .checkout-return-arrow { transition: transform 0.25s ease; }
 .checkout-return-link:hover .checkout-return-arrow { transform: translateX(-3px); }
 .checkout-summary-col .checkout-return-link { margin-top: 16px; }
-
-/* ---------- Trust strip — a separate block BELOW the checkout grid ----------
-   It is NOT part of the checkout grid, so no section can ever scroll
-   behind or under the Order Summary. Normal document flow only. */
-.checkout-trust-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 32px;
-  padding: 18px 22px;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-.checkout-trust-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-}
-.checkout-trust-item svg {
-  flex-shrink: 0;
-  color: var(--gold);
-}
-.checkout-trust-item div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.checkout-trust-item strong {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--charcoal);
-}
-.checkout-trust-item span {
-  font-size: 0.72rem;
-  color: var(--charcoal-soft);
-}
-@media (max-width: 767px) {
-  .checkout-trust-strip {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 16px 18px;
-  }
-}
 
 /* ---------- Mobile checkout ---------- */
 @media (max-width: 767px) {
@@ -1172,54 +1080,6 @@
 .contact-map-link-arrow { transition: transform 0.25s ease; }
 .contact-map-link:hover .contact-map-link-arrow { transform: translateX(3px); }
 
-/* ---------- Reassurance row (claims already used elsewhere on the site) ----------
-   Grid rows above give the cards→benefits gap its 40px rhythm (36px row gap
-   + 4px margin) — matching the main-section→features target of 40–48px. */
-.contact-benefits {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  margin-top: 4px;
-}
-.contact-benefit {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  min-height: 96px;
-  padding: 20px 22px;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  min-width: 0;
-}
-.contact-benefit-icon {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--cream-deep);
-  border: 1px solid var(--line);
-  color: var(--gold-deep);
-}
-.contact-benefit div {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.contact-benefit strong {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--charcoal);
-}
-.contact-benefit span {
-  font-size: 0.76rem;
-  color: var(--charcoal-soft);
-}
-
 /* ---------- Mobile contact page (single column, no overflow) ---------- */
 @media (max-width: 767px) {
   .contact-layout { gap: 20px; padding-bottom: 64px; }
@@ -1232,8 +1092,6 @@
   .contact-map { margin-top: 18px; border-radius: 12px; }
   .contact-map iframe { height: 260px; } /* mobile 240–280px */
   .contact-map-link { height: 48px; }
-  .contact-benefits { grid-template-columns: 1fr; gap: 12px; margin-top: 0; }
-  .contact-benefit { min-height: 0; padding: 16px; }
 }
 @media (max-width: 359px) {
   .contact-info-card { padding: 18px 13px; }

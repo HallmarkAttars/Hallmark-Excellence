@@ -12,7 +12,6 @@ import {
   pieceWord,
   productPageBrandPieces,
 } from '../utils/brandBulk'
-import { QualityIcon, SecureIcon, ShippingIcon, PhoneIcon } from '../components/icons'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -689,37 +688,6 @@ export default function ProductDetail() {
             <p className="product-detail-variant-hint" role="alert">Please select a variant</p>
           )}
 
-          {/* Benefits — gold icons, premium tone */}
-          <div className="pd-benefits" aria-label="Why shop with us">
-            <div className="pd-benefit">
-              <QualityIcon size={18} />
-              <div>
-                <strong>100% Original</strong>
-                <span>Authentic Products</span>
-              </div>
-            </div>
-            <div className="pd-benefit">
-              <SecureIcon size={18} />
-              <div>
-                <strong>Secure Packaging</strong>
-                <span>Carefully packed</span>
-              </div>
-            </div>
-            <div className="pd-benefit">
-              <ShippingIcon size={18} />
-              <div>
-                <strong>Fast Delivery</strong>
-                <span>Quick &amp; reliable</span>
-              </div>
-            </div>
-            <div className="pd-benefit">
-              <PhoneIcon size={18} />
-              <div>
-                <strong>Easy Support</strong>
-                <span>We're here to help</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

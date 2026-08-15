@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext'
 import { cartLineKey } from '../utils/cartLines'
 import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
-import { SecureIcon, ReturnsIcon, BoxIcon, QualityIcon, LockIcon, TrashIcon } from '../components/icons'
+import { LockIcon, TrashIcon } from '../components/icons'
 import './Cart.css'
 
 // One cart line — compact card: image | info (name, size, per-piece price) |
@@ -342,30 +342,6 @@ export default function Cart() {
             </section>
           )}
 
-          {/* Trust cards — bottom of the items area. */}
-          <div className="cart-trust" aria-label="Store promises">
-            <span className="cart-trust-item">
-              <SecureIcon size={18} />
-              <span className="cart-trust-text">
-                <strong>Secure Packaging</strong>
-                <small>Carefully packed</small>
-              </span>
-            </span>
-            <span className="cart-trust-item">
-              <BoxIcon size={18} />
-              <span className="cart-trust-text">
-                <strong>100% Original Products</strong>
-                <small>Authentic products only</small>
-              </span>
-            </span>
-            <span className="cart-trust-item">
-              <ReturnsIcon size={18} />
-              <span className="cart-trust-text">
-                <strong>Easy Returns</strong>
-                <small>Easy return support</small>
-              </span>
-            </span>
-          </div>
         </section>
 
         <aside className="cart-summary" aria-label="Order summary">
@@ -395,30 +371,6 @@ export default function Cart() {
             <span>Continue Shopping</span>
             <span className="cart-continue-arrow" aria-hidden="true">→</span>
           </Link>
-
-          <div className="cart-summary-trust" aria-label="Why shop with us">
-            <div className="cart-summary-trust-item">
-              <SecureIcon size={17} />
-              <div>
-                <strong>Secure Checkout</strong>
-                <span>100% safe &amp; secure</span>
-              </div>
-            </div>
-            <div className="cart-summary-trust-item">
-              <BoxIcon size={17} />
-              <div>
-                <strong>Fast Delivery</strong>
-                <span>Quick &amp; reliable shipping</span>
-              </div>
-            </div>
-            <div className="cart-summary-trust-item">
-              <QualityIcon size={17} />
-              <div>
-                <strong>Premium Quality</strong>
-                <span>Finest attars &amp; perfumes</span>
-              </div>
-            </div>
-          </div>
         </aside>
       </div>
     </div>

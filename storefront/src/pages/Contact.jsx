@@ -15,12 +15,8 @@ import {
   BuildingIcon,
   MapPinIcon,
   LockIcon,
-  SecureIcon,
-  BoxIcon,
-  QualityIcon,
   PhoneIcon,
   MailIcon,
-  ClockIcon,
   CashOnDeliveryIcon,
   UpiIcon,
 } from '../components/icons'
@@ -623,9 +619,7 @@ export default function Contact() {
 
       {isCheckout ? (
         <div className="container contact-layout contact-layout--checkout">
-          {/* Two-column grid: Delivery Information (left) + Order Summary
-              (right). The trust strip below is a SEPARATE block — it is not
-              part of this grid, so nothing can ever scroll under/over it. */}
+          {/* Two-column grid: Delivery Information (left) + Order Summary (right) */}
           <div className="checkout-grid">
             {/* LEFT — Delivery Information card */}
             <div className="contact-form-col">
@@ -939,12 +933,6 @@ export default function Contact() {
                       An advance payment is required to confirm your order.
                       Payment instructions will be provided after you place the order.
                     </p>
-                    {/* Informational only — there is NO payment gateway; the
-                        customer has only chosen how they will pay. */}
-                    <div className="checkout-payment-security">
-                      <SecureIcon size={19} />
-                      <span>Your payments are 100% secure and encrypted.</span>
-                    </div>
                   </div>
 
                   {error && <p className="contact-error">{error}</p>}
@@ -981,14 +969,6 @@ export default function Contact() {
                   <span>Total</span>
                   <span>₹{checkout.total.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="checkout-security">
-                  <SecureIcon size={18} />
-                  <div>
-                    <strong>Safe &amp; Secure Checkout</strong>
-                    <span>Your information is safe with us</span>
-                  </div>
-                </div>
-
                 <Link to="/cart" className="checkout-return-link">
                   <span className="checkout-return-arrow" aria-hidden="true">←</span> Return to Cart
                 </Link>
@@ -996,30 +976,6 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Full-width trust strip — separate block BELOW both columns */}
-          <div className="checkout-trust-strip" aria-label="Store promises">
-            <div className="checkout-trust-item">
-              <SecureIcon size={19} />
-              <div>
-                <strong>Secure Checkout</strong>
-                <span>Your data is protected</span>
-              </div>
-            </div>
-            <div className="checkout-trust-item">
-              <BoxIcon size={19} />
-              <div>
-                <strong>Fast Delivery</strong>
-                <span>Quick &amp; reliable shipping</span>
-              </div>
-            </div>
-            <div className="checkout-trust-item">
-              <QualityIcon size={19} />
-              <div>
-                <strong>100% Original</strong>
-                <span>Authentic products only</span>
-              </div>
-            </div>
-          </div>
         </div>
       ) : (
         <div className="container contact-layout contact-layout--page">
@@ -1188,26 +1144,6 @@ export default function Contact() {
             </div>
           </div>
 
-          {/* Reassurance row — claims already used on the site, never invented */}
-          <div className="contact-benefits" aria-label="Contact support promises">
-            {CONTACT.benefits.map((b) => (
-              <div className="contact-benefit" key={b.key}>
-                <span className="contact-benefit-icon" aria-hidden="true">
-                  {b.key === 'quick' ? (
-                    <ClockIcon size={18} />
-                  ) : b.key === 'secure' ? (
-                    <SecureIcon size={18} />
-                  ) : (
-                    <UserIcon size={18} />
-                  )}
-                </span>
-                <div>
-                  <strong>{b.title}</strong>
-                  <span>{b.subtitle}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>

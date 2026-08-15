@@ -496,47 +496,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Trust badges under the items ----------
-   Three equal white cards — icon + title + subtitle. */
-.cart-trust {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 22px;
-}
-.cart-trust-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 20px 22px;
-  background: var(--white);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  min-width: 0;
-}
-.cart-trust-item svg {
-  color: var(--gold);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.cart-trust-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.cart-trust-text strong {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--charcoal);
-  letter-spacing: 0.01em;
-}
-.cart-trust-text small {
-  font-size: 0.74rem;
-  color: var(--charcoal-soft);
-  line-height: 1.4;
-}
-
 /* ---------- Order summary (sticky on desktop only) ---------- */
 .cart-summary {
   background: var(--white);
@@ -626,33 +585,6 @@
 .cart-continue-arrow { transition: transform 0.25s ease; }
 .cart-continue-link:hover .cart-continue-arrow { transform: translateX(4px); }
 
-/* Trust items below the CTA */
-.cart-summary-trust {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(80, 60, 30, 0.10);
-}
-.cart-summary-trust-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-}
-.cart-summary-trust-item svg { color: var(--gold); flex-shrink: 0; }
-.cart-summary-trust-item div { display: flex; flex-direction: column; min-width: 0; }
-.cart-summary-trust-item strong {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--charcoal);
-}
-.cart-summary-trust-item span {
-  font-size: 0.74rem;
-  color: var(--charcoal-soft);
-}
-
 /* ============================================================
    Tablet (768–1023px) — two columns get compact
    ============================================================ */
@@ -718,10 +650,6 @@
   }
   .cart-item-qty { width: 118px; height: 38px; }
   .cart-item-total-col { align-items: flex-end; }
-
-  /* Trust cards stack into a single column on narrow screens */
-  .cart-trust { grid-template-columns: 1fr; gap: 10px; }
-  .cart-trust-item { padding: 16px; }
 
   /* Summary becomes a full-width card below the items */
   .cart-summary { padding: 22px 18px; }

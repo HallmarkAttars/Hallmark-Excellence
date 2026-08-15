@@ -159,20 +159,6 @@ export const COLLECTIONS = {
 }
 
 // --------------------------------------------------------------------------
-// WHY_CHOOSE_US — homepage trust section (icons resolved by `key` in the
-// component, mirroring the assets.js icon-key pattern)
-// --------------------------------------------------------------------------
-export const WHY_CHOOSE_US = {
-  title: 'Why Choose Us',
-  items: [
-    { key: 'natural', title: 'Natural Ingredients', subtitle: 'Sustainably Sourced' },
-    { key: 'authenticity', title: 'Authenticity Guaranteed', subtitle: 'Official Retailer' },
-    { key: 'delivery', title: 'Free Delivery', subtitle: 'On All Orders' },
-    { key: 'craft', title: 'Master Crafted', subtitle: 'Award-Winning' },
-  ],
-}
-
-// --------------------------------------------------------------------------
 // SOCIAL_STRIP — homepage "Follow Our Journey" band
 // --------------------------------------------------------------------------
 export const SOCIAL_STRIP = {
@@ -225,26 +211,6 @@ export const CONTACT = {
     addressLabel: 'Address',
     // Values come from BUSINESS (single source of truth) — never duplicated here.
   },
-  // Reassurance strip below the contact grid. Every claim is already used
-  // elsewhere on the site (contact success toast / secure checkout copy) —
-  // nothing new is invented here.
-  benefits: [
-    {
-      key: 'quick',
-      title: 'Quick Response',
-      subtitle: "We'll get back to you shortly",
-    },
-    {
-      key: 'secure',
-      title: 'Secure Communication',
-      subtitle: 'Your information is safe with us',
-    },
-    {
-      key: 'support',
-      title: 'Customer Support',
-      subtitle: 'Our team is here to help',
-    },
-  ],
   checkout: {
     eyebrow: 'Checkout',
     title: 'Complete Your Order',
