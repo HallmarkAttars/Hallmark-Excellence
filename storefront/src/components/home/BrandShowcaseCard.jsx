@@ -18,8 +18,6 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
   const slug = brand.slug
   const fallback = COLLECTIONS[slug] || COLLECTIONS.arees
 
-  const label =
-    brand.collection_label || fallback.eyebrow || `${brand.name} Collection`
   const title = brand.name || fallback.lines?.[0] || fallback.eyebrow
   const description = brand.description || fallback.description || null
   const image =
@@ -50,7 +48,6 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
       <span className="brand-showcase-overlay" aria-hidden="true" />
 
       <div className="brand-showcase-content">
-        <p className="brand-showcase-label">{label}</p>
         <h3 className="brand-showcase-title">{title}</h3>
         {/* Decorative divider — separates title from description */}
         <span className="brand-showcase-divider" aria-hidden="true">
@@ -58,7 +55,7 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
         </span>
         {description && <p className="brand-showcase-desc">{description}</p>}
         <span className="brand-showcase-cta">
-          View Details
+          View Products
           <span aria-hidden="true">→</span>
         </span>
       </div>
