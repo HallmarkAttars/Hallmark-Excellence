@@ -27,8 +27,8 @@
 /* ============================================================
    PRODUCT DETAIL — IMAGE
    ONE main product image (the thumbnail/gallery navigation was
-   removed) · portrait container · full product visible, never
-   cropped or stretched · centered on a warm stage.
+   removed) · portrait container · image FILLS the entire card
+   (cover), cropped intelligently from the edges, centered.
    ============================================================ */
 
 .product-detail-gallery {
@@ -45,11 +45,6 @@
   background: var(--stage);
   border: 1px solid var(--line-soft);
   box-shadow: var(--shadow-soft);
-
-  /* Keep the image visually centered */
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Main product image */
@@ -60,10 +55,10 @@
 
   /*
    * IMPORTANT:
-   * contain = show the complete product image
-   * without cropping or stretching.
+   * cover = the image completely fills the card with no empty
+   * gaps; excess is cropped from the edges, never stretched.
    */
-  object-fit: contain;
+  object-fit: cover;
   object-position: center center;
 }
 
@@ -91,7 +86,7 @@
     width: 100%;
     height: 100%;
 
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
   }
 }
@@ -148,7 +143,7 @@
     width: 100%;
     height: 100%;
 
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
   }
 }
