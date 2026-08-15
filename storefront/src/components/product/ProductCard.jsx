@@ -127,18 +127,14 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           />
         </Link>
 
-        {/* Status badges only (Featured + bulk-unlocked brand). Driven by
-            real product/brand data; nothing is ever invented. The bulk badge
-            appears only while the brand's bulk pricing is ACTIVE in the
-            customer's cart. */}
-        {(product.is_featured === true || bulkUnlocked) && (
+        {/* Status badge (Featured only). Driven by real product data;
+            nothing is ever invented. The brand's bulk-pricing state stays
+            fully active everywhere it is shown (product page, cart,
+            checkout) — it is simply no longer displayed as a badge on
+            product cards. */}
+        {product.is_featured === true && (
           <div className="product-card-badges">
-            {product.is_featured === true && (
-              <span className="product-card-badge is-featured">Featured</span>
-            )}
-            {bulkUnlocked && (
-              <span className="product-card-badge is-bulk">Bulk Unlocked</span>
-            )}
+            <span className="product-card-badge is-featured">Featured</span>
           </div>
         )}
 

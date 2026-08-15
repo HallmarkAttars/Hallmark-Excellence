@@ -8,7 +8,9 @@ export default function ProductGrid({
   error,
   onRetry,
   emptyMessage = 'No products found.',
-  // brand_id → { unlocked } — drives the optional "Bulk Unlocked" card badge.
+  // brand_id → { unlocked } — bulk-pricing state. Kept so the live brand
+  // bulk state flows to ProductCard (pricing stays fully operational); the
+  // "Bulk Unlocked" card badge is no longer rendered.
   bulkUnlockedByBrand = {},
 }) {
   if (error) {
