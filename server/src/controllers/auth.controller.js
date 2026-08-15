@@ -1,7 +1,19 @@
+const crypto = require('crypto')
 const bcrypt = require('bcryptjs')
 const supabase = require('../config/supabase')
+const { ENV_ADMIN_ID, getEnvAdminConfig } = require('../config/envAdmin')
 const { signAdminToken } = require('../utils/authTokens')
 const { normalizeEmail, validateEmail } = require('../utils/emailValidation')
+
+// Constant-time string comparison so a wrong ADMIN_PASSWORD does not reveal
+// itself through timing. Length mismatch short-circuits (length alone is
+// never treated as secret here).
+function safeEqual(a, b) {
+  const ba = Buffer.from(String(a ?? ''))
+  const bb = Buffer.from(String(b ?? ''))
+  if (ba.length !== bb.length) return false
+  return crypto.timingSafeEqual(ba, bb)
+}
 
 // POST /api/auth/login
 async function login(req, res) {
@@ -10,6 +22,29 @@ async function login(req, res) {
 
     if (!email || !password) {
       return res.status(400).json({ error: 'email and password are required.' })
+    }
+
+    // --- Env-configured master admin (server/.env.local) ------------------
+    // The ONLY source for these credentials is the server process — never
+    // client code, never the bundle, never an API response. When the
+    // submitted email matches ADMIN_USERNAME, validation happens entirely
+    // against ADMIN_PASSWORD. Every failure returns the SAME generic 401 as
+    // the users-table path, so no caller can tell which credential was wrong.
+    const envAdmin = getEnvAdminConfig()
+    const submittedEmail = normalizeEmail(email)?.normalized || ''
+    if (envAdmin.configured && submittedEmail === envAdmin.username) {
+      if (!safeEqual(password, envAdmin.password)) {
+        return res.status(401).json({ error: 'Invalid email or password.' })
+      }
+      const admin = {
+        id: ENV_ADMIN_ID,
+        email: envAdmin.username,
+        name: 'Administrator',
+        role: 'admin',
+      }
+      const token = signAdminToken(admin)
+      // The password is never part of the token or the response.
+      return res.json({ token, admin })
     }
 
     // Centralized validation — a malformed or disposable email gets the SAME

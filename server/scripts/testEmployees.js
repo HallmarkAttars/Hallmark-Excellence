@@ -6,12 +6,22 @@
 // (login blocked) → reactivate → self-protection → delete → deleted login.
 // The test employee is always deleted in `finally`, so no test data remains.
 require('dotenv').config()
+require('dotenv').config({ path: '.env.local', override: true })
 const http = require('http')
+const { getEnvAdminConfig } = require('../src/config/envAdmin')
+
+// Credentials come ONLY from server-side env (server/.env.local) — never
+// hardcoded in this script.
+const envAdmin = getEnvAdminConfig()
+if (!envAdmin.configured) {
+  console.error('ADMIN_USERNAME / ADMIN_PASSWORD must be set in server/.env.local')
+  process.exit(1)
+}
 
 const PORT = Number(process.env.PORT || 5000)
 const BASE = `http://localhost:${PORT}`
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@gmail.com'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin321'
+const ADMIN_EMAIL = envAdmin.username
+const ADMIN_PASSWORD = envAdmin.password
 const TEST_EMAIL = `test-employee-${Date.now()}@example.com`
 const TEST_PASSWORD = 'tempPass123'
 
@@ -79,10 +89,11 @@ async function main() {
   let testEmployeeId = null
 
   try {
-    // 2. List employees — existing admin must be present
+    // 2. List employees — an admin-role account must be present. (The env
+    //     master admin has no users-table row, so we look for any admin role.)
     const list = await request('/api/admin/employees', { token: adminToken })
     check('2. GET /api/admin/employees → 200', list.status === 200)
-    check('   list contains the admin account', Array.isArray(list.json?.employees) && list.json.employees.some((e) => e.email === ADMIN_EMAIL))
+    check('   list contains an admin account', Array.isArray(list.json?.employees) && list.json.employees.some((e) => e.role === 'admin'))
 
     // 3. Create a new STAFF employee
     const created = await request('/api/admin/employees', {
@@ -155,8 +166,9 @@ async function main() {
     const relogin = await login(TEST_EMAIL, TEST_PASSWORD)
     check('    Reactivated employee CAN log in', Boolean(relogin))
 
-    // 11. Self-protection: admin cannot deactivate / demote / delete self
-    const selfInfo = list2.json?.employees?.find((e) => e.email === ADMIN_EMAIL)
+    // 11. Self-protection: admin cannot deactivate / demote / delete self.
+    //     (Uses the first DB admin row — the env master admin has no row.)
+    const selfInfo = list2.json?.employees?.find((e) => e.role === 'admin')
     if (selfInfo) {
       const selfDeactivate = await request(`/api/admin/employees/${selfInfo.id}`, {
         method: 'PATCH', token: adminToken, body: { is_active: false },

@@ -3,11 +3,21 @@
 // success path (create → login → verify role → delete) for a permitted role.
 //   PORT=5002 node scripts/verifyCreateEmployee.js
 require('dotenv').config()
+require('dotenv').config({ path: '.env.local', override: true })
 const http = require('http')
+const { getEnvAdminConfig } = require('../src/config/envAdmin')
+
+// Credentials come ONLY from server-side env (server/.env.local) — never
+// hardcoded in this script.
+const envAdmin = getEnvAdminConfig()
+if (!envAdmin.configured) {
+  console.error('ADMIN_USERNAME / ADMIN_PASSWORD must be set in server/.env.local')
+  process.exit(1)
+}
 
 const PORT = Number(process.env.PORT || 5000)
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@gmail.com'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin321'
+const ADMIN_EMAIL = envAdmin.username
+const ADMIN_PASSWORD = envAdmin.password
 const UNIQ = Date.now()
 
 function req(path, { method = 'GET', token, body } = {}) {

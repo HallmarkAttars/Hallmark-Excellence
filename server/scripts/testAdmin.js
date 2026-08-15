@@ -1,5 +1,15 @@
 require('dotenv').config();
+require('dotenv').config({ path: '.env.local', override: true });
 const http = require('http');
+const { getEnvAdminConfig } = require('../src/config/envAdmin');
+
+// Credentials come ONLY from server-side env (server/.env.local) — never
+// hardcoded in this script.
+const envAdmin = getEnvAdminConfig();
+if (!envAdmin.configured) {
+  console.error('ADMIN_USERNAME / ADMIN_PASSWORD must be set in server/.env.local');
+  process.exit(1);
+}
 
 async function apiGet(path, token) {
   return new Promise((resolve, reject) => {
@@ -29,8 +39,8 @@ async function apiGet(path, token) {
 async function main() {
   // First login
   const loginData = JSON.stringify({
-    email: process.env.ADMIN_EMAIL || 'admin@gmail.com',
-    password: process.env.ADMIN_PASSWORD || 'admin321',
+    email: envAdmin.username,
+    password: envAdmin.password,
   });
   const token = await new Promise((resolve, reject) => {
     const options = {

@@ -15,8 +15,9 @@ need to do to run it.
   (so the admin edit form can load a single product) and
   `GET /api/products/:id/related` (so the storefront's "You May Also Like"
   section has something to call).
-- `scripts/createAdmin.js` now creates the admin login you asked for:
-  `admin@gmail.com` / `admin321`.
+- `scripts/createAdmin.js` now reads the admin login from server-side env
+  (`ADMIN_USERNAME` / `ADMIN_PASSWORD` in `server/.env.local`) instead of a
+  hardcoded default.
 
 **Storefront (`storefront/`)**
 - Categories weren't showing their images — the code read `cat.image` but
@@ -72,7 +73,13 @@ CLOUDINARY_API_SECRET=
 ```
 (`JWT_SECRET` and the CORS URLs are already filled in — leave them.)
 
-Create the admin login (`admin@gmail.com` / `admin321`):
+Set the admin login in `server/.env.local` (gitignored, never committed):
+```
+ADMIN_USERNAME=you@example.com
+ADMIN_PASSWORD=your-password
+```
+These credentials are validated server-side only. To also create the admin's
+row in the database (used by the existing users-table employee flow), run:
 ```bash
 npm run create-admin
 ```
@@ -94,7 +101,7 @@ cd admin
 npm install
 npm run dev         # http://localhost:5174/admin/login
 ```
-Log in with `admin@gmail.com` / `admin321`.
+Log in with the `ADMIN_USERNAME` / `ADMIN_PASSWORD` set in `server/.env.local`.
 
 ## Confirming the "edit in admin → changes on site" flow works
 

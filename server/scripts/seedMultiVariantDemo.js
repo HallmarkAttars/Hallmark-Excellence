@@ -9,6 +9,17 @@
 // Requires the local server (node server.js) running on PORT from .env.
 
 require('dotenv').config()
+require('dotenv').config({ path: '.env.local', override: true })
+const { getEnvAdminConfig } = require('../src/config/envAdmin')
+
+// Credentials come ONLY from server-side env (server/.env.local) — never
+// hardcoded in this script.
+const envAdmin = getEnvAdminConfig()
+if (!envAdmin.configured) {
+  console.error('ADMIN_USERNAME / ADMIN_PASSWORD must be set in server/.env.local')
+  process.exit(1)
+}
+
 const PORT = process.env.PORT || 5000
 const BASE = `http://localhost:${PORT}`
 
@@ -52,7 +63,7 @@ async function login() {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@gmail.com', password: 'admin321' }),
+    body: JSON.stringify({ email: envAdmin.username, password: envAdmin.password }),
   })
   const data = await res.json()
   if (!res.ok || !data.token) throw new Error(`Login failed: ${JSON.stringify(data).slice(0, 200)}`)

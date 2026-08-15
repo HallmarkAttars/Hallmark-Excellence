@@ -2,13 +2,26 @@
 // Edit the values below, then run:  node scripts/createAdmin.js
 
 require('dotenv').config()
+require('dotenv').config({ path: '.env.local', override: true })
 const bcrypt = require('bcryptjs')
 const supabase = require('../src/config/supabase')
+const { getEnvAdminConfig } = require('../src/config/envAdmin')
 
-// --- Configuration: override via environment variables or .env -------------
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@gmail.com'
+// --- Configuration: credentials come ONLY from server-side env -------------
+// ADMIN_USERNAME / ADMIN_PASSWORD live in server/.env.local (gitignored).
+// There is NO hardcoded fallback — running without them is an explicit
+// error, so a credential can never silently default to something committed
+// in the repository.
+const envAdmin = getEnvAdminConfig()
+if (!envAdmin.configured) {
+  console.error(
+    'ADMIN_USERNAME and ADMIN_PASSWORD must be set in server/.env.local to create the admin.'
+  )
+  process.exit(1)
+}
+const ADMIN_EMAIL = envAdmin.username
+const ADMIN_PASSWORD = envAdmin.password
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Store Admin'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin321'
 // ---------------------------------------------------------------------------
 
 async function createAdmin() {

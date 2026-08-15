@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const supabase = require('../config/supabase')
+const { ENV_ADMIN_ID, getEnvAdminConfig } = require('../config/envAdmin')
 const { can } = require('../config/roles')
 
 // Protects admin routes. Expects "Authorization: Bearer <token>".
@@ -31,6 +32,26 @@ async function requireAuth(req, res, next) {
   // treat it as invalid rather than hitting a Postgres type error (22P02).
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(decoded.id))) {
     return res.status(401).json({ error: 'Invalid or expired token.' })
+  }
+
+  // Env-configured master admin (server/.env.local) has no users-table row:
+  // when the token was issued for it, authorize it directly as role 'admin'
+  // (full permission matrix). The email must still match ADMIN_USERNAME, so
+  // a token for a different email can never impersonate the env admin.
+  const envAdmin = getEnvAdminConfig()
+  if (
+    envAdmin.configured &&
+    decoded.id === ENV_ADMIN_ID &&
+    String(decoded.email || '').toLowerCase() === envAdmin.username
+  ) {
+    req.admin = {
+      id: ENV_ADMIN_ID,
+      email: envAdmin.username,
+      name: 'Administrator',
+      role: 'admin',
+      is_active: true,
+    }
+    return next()
   }
 
   try {
