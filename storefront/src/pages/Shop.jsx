@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
+import Pagination from '../components/ui/Pagination'
+import usePagination from '../hooks/usePagination'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
@@ -8,6 +11,7 @@ import './Shop.css'
 export default function Shop() {
   // Brand bulk state — drives the "Bulk Unlocked" card badges live.
   const { brandBulk } = useCart()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [brands, setBrands] = useState([])
@@ -63,6 +67,23 @@ export default function Shop() {
     return list
   }, [products, categoryFilter, brandFilter])
 
+  // Client-side pagination over the filtered results: FILTER → PAGINATE →
+  // render (only the current page's ≤50 products are ever rendered). The
+  // page lives in the URL (?page=N); out-of-range pages clamp to the last
+  // valid page and the URL is corrected; every other query parameter is
+  // preserved. See hooks/usePagination.js.
+  const {
+    items: pageProducts,
+    totalPages,
+    currentPage,
+    goToPage,
+    resetToFirstPage,
+  } = usePagination(searchParams, setSearchParams, visibleProducts, {
+    scrollAnchorId: 'shop-product-grid',
+    loading,
+    error,
+  })
+
   // Category and Brand are mutually exclusive.
   // Selecting a category clears the brand; selecting a brand clears the category.
   const toggleCategory = (id) => {
@@ -72,6 +93,8 @@ export default function Shop() {
       if (next !== 'all') setBrandFilter('all')
       return next
     })
+    // A changed filter means a new result set — reset to page 1.
+    resetToFirstPage()
   }
 
   const toggleBrand = (id) => {
@@ -81,6 +104,8 @@ export default function Shop() {
       if (next !== 'all') setCategoryFilter('all')
       return next
     })
+    // A changed filter means a new result set — reset to page 1.
+    resetToFirstPage()
   }
 
   return (
@@ -107,13 +132,18 @@ export default function Shop() {
           </button>
         </div>
 
-        <div className="shop-results">
+        <div id="shop-product-grid" className="shop-results">
           <ProductGrid
-            products={visibleProducts}
+            products={pageProducts}
             loading={loading}
             error={error}
             onRetry={() => setReloadKey((k) => k + 1)}
             bulkUnlockedByBrand={brandBulk}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
           />
         </div>
       </div>

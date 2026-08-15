@@ -83,3 +83,6 @@
    The shared .grid-products already gives 2-up mobile / 3-up tablet /
    4-up desktop / 5-up large desktop, with minmax(0, 1fr) tracks so cards
    never overflow their track at any width. */
+
+/* Scroll target when pagination changes page — below the sticky header */
+.category-grid-anchor { scroll-margin-top: calc(var(--header-h) + 16px); }

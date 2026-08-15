@@ -121,7 +121,9 @@ describe('submitContactForm — res.ok gating', () => {
   })
 
   it('never reports success when fetch is missing (e.g. SSR/defensive)', async () => {
-    await expect(submitContactForm({}, undefined)).rejects.toThrow(FORMSPREE_ERROR_MESSAGE)
+    // null (NOT undefined) — undefined would trigger the default parameter
+    // and fall back to the real global fetch, hitting the network.
+    await expect(submitContactForm({}, null)).rejects.toThrow(FORMSPREE_ERROR_MESSAGE)
   })
 
   it('throws the friendly message when a broken fetch resolves to a non-Response', async () => {

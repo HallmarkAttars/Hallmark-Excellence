@@ -199,6 +199,8 @@
 .shop-results {
   width: 100%;
   min-width: 0;
+  /* Scroll target when pagination changes page — below the sticky header */
+  scroll-margin-top: calc(var(--header-h) + 16px);
 }
 
 .shop-layout .grid-products {

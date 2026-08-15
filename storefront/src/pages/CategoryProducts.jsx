@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import FilterSortControl from '../components/filter/FilterSortControl'
+import Pagination from '../components/ui/Pagination'
+import usePagination from '../hooks/usePagination'
 import { getCategoryBySlug, getProductsByCategory } from '../services/mockApi'
 import './CategoryProducts.css'
 
 export default function CategoryProducts() {
   const { slug } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [category, setCategory] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +61,23 @@ export default function CategoryProducts() {
     return list
   }, [products, brandFilter, sort])
 
+  // Client-side pagination over the filtered results: FILTER → SORT →
+  // PAGINATE → render (only the current page's ≤50 products are rendered).
+  // The page lives in the URL (?page=N) and the category slug stays in the
+  // path, so /categories/attar?page=2 always shows Attar page 2. Changing
+  // the brand filter or sort resets to page 1.
+  const {
+    items: pageProducts,
+    totalPages,
+    currentPage,
+    goToPage,
+    resetToFirstPage,
+  } = usePagination(searchParams, setSearchParams, visibleProducts, {
+    scrollAnchorId: 'category-product-grid',
+    loading,
+    error,
+  })
+
   // Active-state badge on the combined control — purely presentational.
   const activeCount = (brandFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
 
@@ -84,21 +104,36 @@ export default function CategoryProducts() {
             allLabel="All Brands"
             filterOptions={brands}
             filterValue={brandFilter}
-            onFilterChange={(id) => setBrandFilter((cur) => (cur === id ? 'all' : id))}
+            onFilterChange={(id) => {
+              setBrandFilter((cur) => (cur === id ? 'all' : id))
+              // A changed filter means a new result set — reset to page 1.
+              resetToFirstPage()
+            }}
             sortValue={sort}
-            onSortChange={setSort}
+            onSortChange={(value) => {
+              setSort(value)
+              // A changed sort reorders the results — reset to page 1.
+              resetToFirstPage()
+            }}
             activeCount={activeCount}
             align="center"
           />
         </div>
 
-        <ProductGrid
-          products={visibleProducts}
-          loading={loading}
-          error={error}
-          onRetry={() => setReloadKey((k) => k + 1)}
-          emptyMessage="No products in this category yet."
-        />
+        <div id="category-product-grid" className="category-grid-anchor">
+          <ProductGrid
+            products={pageProducts}
+            loading={loading}
+            error={error}
+            onRetry={() => setReloadKey((k) => k + 1)}
+            emptyMessage="No products in this category yet."
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
+        </div>
       </div>
     </div>
   )
