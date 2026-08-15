@@ -23,7 +23,7 @@ export const BUSINESS = {
   mapDirectionsUrl:
     'https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai',
   social: [
-    { key: 'instagram', label: 'Instagram', href: '#' },
+    { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
     { key: 'facebook', label: 'Facebook', href: '#' },
     { key: 'whatsapp', label: 'WhatsApp', href: '#' },
   ],
