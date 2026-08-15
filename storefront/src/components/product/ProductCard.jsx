@@ -142,10 +142,9 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           type="button"
           className="product-card-quickview"
           onClick={() => setQuickViewOpen(true)}
-          aria-label={`Quick view ${product.name}`}
+          aria-label="Quick view"
         >
           <EyeIcon />
-          Quick View
         </button>
       </div>
 
