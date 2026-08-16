@@ -657,6 +657,21 @@
   color: #fff;
 }
 
+/* --- Advance Payment card only (data-method="cod") ---
+   Small UI cleanup. The left radio circle is redundant — the whole card is
+   already the clickable/selectable control (role=radio button) — so it is
+   hidden, not replaced with another selector. The payment icon inside its
+   chip grows ~24% (21px → 26px); the chip itself, its spacing, color, and
+   vertical centering are unchanged. The UPI card keeps its own radio circle
+   and 21px icon untouched. */
+.checkout-payment-option[data-method="cod"] .checkout-payment-radio {
+  display: none;
+}
+.checkout-payment-option[data-method="cod"] .checkout-payment-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
 .checkout-payment-option-body {
   display: flex;
   flex-direction: column;
