@@ -198,22 +198,30 @@
 }
 .filter-sort-panel-apply:hover { background: #85591a; }
 
-/* ---------- Mobile bottom sheet ---------- */
+/* ---------- Mobile bottom sheet ----------
+   Stacking (both are portaled to <body>, so these are absolute in the root
+   stacking context):
+     page content (auto) < WhatsApp (95) < navbar (100) < search (140)
+     < sheet backdrop (150) < sheet (160) < QuickView (400) / toasts (450)
+   The backdrop covers the ENTIRE viewport — footer, header, products and the
+   WhatsApp button included — so nothing behind the sheet stays readable. */
 .filter-sort-sheet-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(27, 24, 20, 0.45);
-  z-index: calc(var(--z-drawer-backdrop, 120) + 5);
+  z-index: var(--z-backdrop);
 }
 .filter-sort-sheet {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: calc(var(--z-drawer, 130) + 10);
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   max-height: 85vh;
+  /* Fully opaque cream — never transparent/glass: page content behind the
+     sheet must never show through the panel. */
   background: #f8f4ea;
   border-radius: 18px 18px 0 0;
   border-top: 1px solid #d8cbb8;

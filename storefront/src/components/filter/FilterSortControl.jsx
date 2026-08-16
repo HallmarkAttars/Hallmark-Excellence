@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import './FilterSortControl.css'
 
 // ONE client-side sort set shared by every collection page (Category, Brand,
@@ -98,11 +99,14 @@ export default function FilterSortControl({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Lock body scroll while the mobile bottom sheet is open. If the viewport
-  // grows to desktop (>=768px) while open — where the sheet is hidden — close
-  // it so body scroll is never left locked with no visible sheet.
+  // Lock body scroll while the mobile bottom sheet is open (overscroll-
+  // containment stops iOS rubber-banding from scrolling the page behind the
+  // sheet). If the viewport grows to desktop (>=768px) while open — where the
+  // sheet is hidden — close it so body scroll is never left locked with no
+  // visible sheet.
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? 'hidden' : ''
+    document.body.style.overscrollBehavior = sheetOpen ? 'contain' : ''
     if (!sheetOpen) return undefined
     const mq = window.matchMedia('(min-width: 768px)')
     const onChange = (e) => {
@@ -111,6 +115,7 @@ export default function FilterSortControl({
     mq.addEventListener('change', onChange)
     return () => {
       document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
       mq.removeEventListener('change', onChange)
     }
   }, [sheetOpen])
@@ -261,82 +266,92 @@ export default function FilterSortControl({
         </>
       )}
 
-      {/* Mobile bottom sheet — same options, premium drawer */}
-      <div
-        ref={sheetRef}
-        className={`filter-sort-sheet${sheetOpen ? ' is-open' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!sheetOpen}
-        aria-label="Filter and sort"
-      >
-        <div className="filter-sort-sheet-header">
-          <h2>Filter &amp; Sort</h2>
-          <button
-            type="button"
-            className="filter-sort-sheet-close"
-            onClick={() => setSheetOpen(false)}
-            aria-label="Close filter and sort"
+      {/* Mobile bottom sheet — same options, premium drawer. Rendered through a
+          portal to <body> (same pattern as QuickView / toasts) so the sheet and
+          its full-screen backdrop escape every ancestor stacking context and
+          containing block (route animations, transforms, etc.). They are direct
+          children of <body> with their own z-index, so the navbar, footer and
+          WhatsApp button can never paint above the backdrop or the sheet. */}
+      {createPortal(
+        <>
+          <div
+            ref={sheetRef}
+            className={`filter-sort-sheet${sheetOpen ? ' is-open' : ''}`}
+            role="dialog"
+            aria-modal="true"
+            aria-hidden={!sheetOpen}
+            aria-label="Filter and sort"
           >
-            ✕
-          </button>
-        </div>
+            <div className="filter-sort-sheet-header">
+              <h2>Filter &amp; Sort</h2>
+              <button
+                type="button"
+                className="filter-sort-sheet-close"
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close filter and sort"
+              >
+                ✕
+              </button>
+            </div>
 
-        <div className="filter-sort-sheet-body">
-          <section className="filter-sort-sheet-section">
-            <h3>Filter</h3>
-            {hasFilterOptions ? (
-              <div className="filter-sort-sheet-group">
-                <p className="filter-sort-sheet-group-title">{filterLabel}</p>
+            <div className="filter-sort-sheet-body">
+              <section className="filter-sort-sheet-section">
+                <h3>Filter</h3>
+                {hasFilterOptions ? (
+                  <div className="filter-sort-sheet-group">
+                    <p className="filter-sort-sheet-group-title">{filterLabel}</p>
+                    <div className="filter-sort-sheet-options">
+                      <button
+                        type="button"
+                        className={filterValue === 'all' ? 'is-active' : ''}
+                        onClick={() => toggleFilter('all')}
+                      >
+                        {allLabel}
+                      </button>
+                      {filterOptions.map((o) => (
+                        <button
+                          type="button"
+                          key={o.id}
+                          className={filterValue === o.id ? 'is-active' : ''}
+                          onClick={() => toggleFilter(o.id)}
+                        >
+                          {o.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="filter-sort-sheet-note">No {filterLabel.toLowerCase()} filters for this collection.</p>
+                )}
+              </section>
+
+              <section className="filter-sort-sheet-section">
+                <h3>Sort By</h3>
                 <div className="filter-sort-sheet-options">
-                  <button
-                    type="button"
-                    className={filterValue === 'all' ? 'is-active' : ''}
-                    onClick={() => toggleFilter('all')}
-                  >
-                    {allLabel}
-                  </button>
-                  {filterOptions.map((o) => (
+                  {SORT_OPTIONS.map((opt) => (
                     <button
                       type="button"
-                      key={o.id}
-                      className={filterValue === o.id ? 'is-active' : ''}
-                      onClick={() => toggleFilter(o.id)}
+                      key={opt.value}
+                      className={sortValue === opt.value ? 'is-active' : ''}
+                      onClick={() => toggleSort(opt.value)}
                     >
-                      {o.name}
+                      {opt.label}
                     </button>
                   ))}
                 </div>
-              </div>
-            ) : (
-              <p className="filter-sort-sheet-note">No {filterLabel.toLowerCase()} filters for this collection.</p>
-            )}
-          </section>
-
-          <section className="filter-sort-sheet-section">
-            <h3>Sort By</h3>
-            <div className="filter-sort-sheet-options">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  type="button"
-                  key={opt.value}
-                  className={sortValue === opt.value ? 'is-active' : ''}
-                  onClick={() => toggleSort(opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
+              </section>
             </div>
-          </section>
-        </div>
 
-        <div className="filter-sort-sheet-footer">
-          <button type="button" className="filter-sort-sheet-apply" onClick={() => setSheetOpen(false)}>
-            Apply Filters
-          </button>
-        </div>
-      </div>
-      {sheetOpen && <div className="filter-sort-sheet-backdrop" onClick={() => setSheetOpen(false)} />}
+            <div className="filter-sort-sheet-footer">
+              <button type="button" className="filter-sort-sheet-apply" onClick={() => setSheetOpen(false)}>
+                Apply Filters
+              </button>
+            </div>
+          </div>
+          {sheetOpen && <div className="filter-sort-sheet-backdrop" onClick={() => setSheetOpen(false)} />}
+        </>,
+        document.body
+      )}
     </div>
   )
 }
