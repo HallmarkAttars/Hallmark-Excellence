@@ -109,7 +109,7 @@ export const BRAND_HERO_IMAGES = {
   'arees bakhoor': '/bakhoor-hero.webp',
   'arees luxury': '/areesluxury-hero.webp',
   'arees 8ml': '/arees-hero.webp',
-  'dahab 8ml': '/Dahab-hero.webp',
+  'dahab 6ml': '/Dahab-hero.webp',
 }
 
 // Normalized brand-name → hero image lookup (case/space-insensitive).
