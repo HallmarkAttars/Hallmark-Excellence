@@ -3,7 +3,7 @@
 
 insert into brands (name, slug) values
   ('Arees', 'arees'),
-  ('Dahab', 'dahab')
+  ('Dahab 6ml', 'dahab')
 on conflict (slug) do nothing;
 
 insert into categories (name, slug) values

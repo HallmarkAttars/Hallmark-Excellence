@@ -42,7 +42,7 @@ const BRANDS = [
   },
   {
     slug: 'dahab',
-    name: 'Dahab',
+    name: 'Dahab 6ml',
     collection_label: 'Dahab Collection',
     tagline: 'Rich Heritage, Lasting Impressions',
     description: 'A rich fragrance collection created to leave a lasting impression.',
