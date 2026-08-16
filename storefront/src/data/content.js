@@ -70,7 +70,7 @@ export const NAV_LINKS = [
 export const HERO = {
   title: ['The Art of', 'Hallmark', 'Attars'],
   subtitle:
-    'Alcohol-free oil perfumes, hand-blended in small batches from oud, rose, and amber — crafted to be worn, close to the heart and remembered long after.',
+    'Alcohol free oil perfumes, hand blended in small batches from oud, rose, and amber  crafted to be worn, close to the heart and remembered long after.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories/attars' },
 }
@@ -172,12 +172,12 @@ export const SOCIAL_STRIP = {
 // --------------------------------------------------------------------------
 export const ABOUT = {
   eyebrow: 'Our Story',
-  title: 'About Arees & Dahab',
+  title: 'About Hallmark Excellence',
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees & Dahab began as two family recipes — one built around oud and smoke, the other around rose and gold — before becoming a single house under one roof. Every attar is still blended in small batches, aged in glass, and bottled by hand.',
-      'We work only in oil. No alcohol, no shortcuts — just concentrated fragrance the way it was worn long before spray perfume existed.',
+      'With 30 years of experience in the perfumery industry, we are a trusted perfume trading company offering a complete range of products and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses.',
+      'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },
   values: [
