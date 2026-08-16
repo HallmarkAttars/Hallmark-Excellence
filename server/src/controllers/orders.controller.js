@@ -27,52 +27,74 @@ function round2(n) {
   return Math.round((Number(n) + Number.EPSILON) * 100) / 100
 }
 
-// Default user for guest checkouts (no auth on storefront)
-// This is the existing admin user in the users table
-const DEFAULT_USER_ID = 'a422c5dd-9b57-4fda-88a1-49c784002b7f'
+// Resolve the delivery address for a guest order.
+//
+// The checkout form always submits the customer's delivery details. There is
+// no auth on the storefront, so a guest has no `users` row — the live
+// `addresses.user_id` column is nullable (migration_fix_guest_addresses.sql)
+// and guest addresses are stored with user_id = NULL, exactly like the
+// guest-checkout pattern already applied to orders.user_id / address_id
+// (migration_fix_orders_v2.sql).
+//
+// Resolution order:
+//   1. Reuse a previously saved address for the same customer (same phone,
+//      preferring is_default, narrowed by postal code) — the "previously
+//      saved default address" case.
+//   2. Otherwise create a REAL address row from the submitted checkout data
+//      (never a placeholder) and return its id.
+//
+// Returns null ONLY on a genuine database error (logged). The caller keeps
+// failing loudly on null so a broken insert can never silently produce an
+// order with no delivery address.
+async function resolveAddressId({ full_name, phone, address, pincode, city, state }) {
+  const phoneKey = String(phone || '').trim()
+  const postalKey = String(pincode || '').trim()
 
-// Lazily cached default address ID for guest orders
-let _cachedAddressId = null
-
-async function getDefaultAddressId() {
-  if (_cachedAddressId) return _cachedAddressId
-
-  // Check if a "Guest Checkout" address already exists
-  const { data: existing } = await supabase
-    .from('addresses')
-    .select('id')
-    .eq('user_id', DEFAULT_USER_ID)
-    .limit(1)
-    .maybeSingle()
-
-  if (existing) {
-    _cachedAddressId = existing.id
-    return _cachedAddressId
+  // 1. Reuse an existing saved address for this customer.
+  if (phoneKey) {
+    let query = supabase
+      .from('addresses')
+      .select('id')
+      .eq('phone', phoneKey)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+    if (postalKey) query = query.eq('postal_code', postalKey)
+    const { data: existing, error: lookErr } = await query.maybeSingle()
+    if (lookErr) {
+      console.error('[resolveAddressId] Address lookup failed:', lookErr.message)
+      return null
+    }
+    if (existing) return existing.id
   }
 
-  // Create a placeholder address for guest orders
-  const { data: newAddr, error } = await supabase
+  // 2. No saved address — create a REAL address from the submitted checkout
+  //    data (never a placeholder). user_id stays NULL: a guest checkout has
+  //    no users row (public.users is empty on the live DB, and the old
+  //    hardcoded user UUID violated addresses_user_id_fkey).
+  const { data: created, error: insertErr } = await supabase
     .from('addresses')
     .insert({
-      user_id: DEFAULT_USER_ID,
-      full_name: 'Guest Checkout',
-      phone: '0000000000',
-      address_line1: 'Guest Address',
-      city: 'N/A',
-      state: 'N/A',
-      postal_code: '000000',
-      country: 'N/A'
+      user_id: null,
+      full_name: String(full_name || '').trim(),
+      phone: phoneKey,
+      address_line1: String(address || '').trim(),
+      address_line2: '',
+      city: String(city || '').trim(),
+      state: String(state || '').trim(),
+      country: 'India',
+      postal_code: postalKey,
+      is_default: true,
     })
     .select('id')
     .single()
 
-  if (error) {
-    console.error('[getDefaultAddressId] Could not create default address:', error.message)
+  if (insertErr) {
+    console.error('[resolveAddressId] Could not store checkout address:', insertErr.message)
     return null
   }
 
-  _cachedAddressId = newAddr.id
-  return _cachedAddressId
+  return created.id
 }
 
 // GET /api/pincode/:pincode
@@ -567,8 +589,18 @@ async function createOrder(req, res) {
 
     const orderNumber = generateOrderNumber()
 
-    // Get or create default address for guest orders
-    const addressId = await getDefaultAddressId()
+    // Resolve the delivery address from the SUBMITTED checkout data. When the
+    // customer has no previously saved default address, the address they typed
+    // at checkout is stored as a real address row and linked to the order —
+    // checkout never fails just because no default exists.
+    const addressId = await resolveAddressId({
+      full_name: customer_name,
+      phone,
+      address,
+      pincode,
+      city: req.body.city,
+      state: req.body.state,
+    })
     if (!addressId) {
       return res.status(500).json({ error: 'Failed to resolve default address for order.' })
     }
@@ -613,7 +645,11 @@ async function createOrder(req, res) {
 
     const insertPayload = {
       order_number: orderNumber,
-      user_id: DEFAULT_USER_ID,
+      // Guest checkout: no users row exists (public.users is empty on the
+      // live DB), so user_id is NULL — the orders.user_id column is nullable
+      // after migration_fix_guest_addresses.sql. The old hardcoded user UUID
+      // violated orders_user_id_fkey.
+      user_id: null,
       address_id: addressId,
       subtotal,
       shipping_charge: shippingCharge,
