@@ -1119,6 +1119,20 @@
 /* The animated checkmark badge (shared AnimatedCheck component) — the ring
    draws itself and the check strokes itself in; only spacing lives here. */
 .order-success-badge { margin-bottom: 16px; }
+/* Order-success checkmark is GREEN (#16A34A) — a professional success color
+   for the order confirmation ONLY. The shared AnimatedCheck defaults to gold
+   (tracking page); these higher-specificity rules recolor just this screen's
+   badge — ring, check, and glow — while keeping its shape, size, position,
+   spacing, and animation exactly unchanged. */
+.order-success-badge.animated-check {
+  filter: drop-shadow(0 0 14px rgba(22, 163, 74, 0.35));
+}
+.order-success-badge .animated-check-circle {
+  stroke: #16A34A;
+}
+.order-success-badge .animated-check-mark {
+  stroke: #16A34A;
+}
 .order-success-head h1 {
   font-size: clamp(2rem, 3.4vw, 2.6rem);
   line-height: 1.1;
