@@ -37,12 +37,6 @@ const PERMISSION_MATRIX = {
   // Brands
   'brands.view': ['admin', 'manager', 'staff'],
   'brands.edit': ['admin', 'manager'],
-
-  // Employees — admin-only
-  'employees.view': ['admin'],
-  'employees.create': ['admin'],
-  'employees.edit': ['admin'],
-  'employees.delete': ['admin'],
 }
 
 // True when `role` is allowed to perform `permission` (e.g. 'products.create').

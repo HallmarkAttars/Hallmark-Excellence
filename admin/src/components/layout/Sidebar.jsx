@@ -11,7 +11,6 @@ const NAV_ITEMS = [
   { to: '/admin/categories', label: 'Categories', permission: 'categories.view' },
   { to: '/admin/brands', label: 'Brands', permission: 'brands.view' },
   { to: '/admin/brands/bulk-pricing', label: 'Bulk Pricing', permission: 'brands.view' },
-  { to: '/admin/employees', label: 'Employees', permission: 'employees.view' },
 ]
 
 export default function Sidebar({ open, onClose }) {

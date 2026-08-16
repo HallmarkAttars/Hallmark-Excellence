@@ -13,7 +13,6 @@ import Brands from './pages/Brands'
 import BrandProductsPage from './pages/BrandProductsPage'
 import BrandForm from './pages/BrandForm'
 import BulkPricing from './pages/BulkPricing'
-import Employees from './pages/Employees'
 
 export default function App() {
   return (
@@ -63,14 +62,6 @@ export default function App() {
                 element={
                   <RequirePermission permission="brands.view">
                     <BulkPricing />
-                  </RequirePermission>
-                }
-              />
-              <Route
-                path="/admin/employees"
-                element={
-                  <RequirePermission permission="employees.view">
-                    <Employees />
                   </RequirePermission>
                 }
               />

@@ -79,7 +79,7 @@ ADMIN_USERNAME=you@example.com
 ADMIN_PASSWORD=your-password
 ```
 These credentials are validated server-side only. To also create the admin's
-row in the database (used by the existing users-table employee flow), run:
+row in the database (used by the admin login flow), run:
 ```bash
 npm run create-admin
 ```

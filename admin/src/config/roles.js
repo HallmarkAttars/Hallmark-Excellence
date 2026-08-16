@@ -34,11 +34,6 @@ const PERMISSION_MATRIX = {
 
   'brands.view': ['admin', 'manager', 'staff'],
   'brands.edit': ['admin', 'manager'],
-
-  'employees.view': ['admin'],
-  'employees.create': ['admin'],
-  'employees.edit': ['admin'],
-  'employees.delete': ['admin'],
 }
 
 export function can(role, permission) {

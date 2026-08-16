@@ -12,7 +12,6 @@ const brandsRoutes = require('./routes/brands.routes')
 const ordersRoutes = require('./routes/orders.routes')
 const authRoutes = require('./routes/auth.routes')
 const uploadRoutes = require('./routes/upload.routes')
-const employeesRoutes = require('./routes/employees.routes')
 
 const app = express()
 
@@ -79,7 +78,6 @@ app.use('/api', brandsRoutes)
 app.use('/api', ordersRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api', uploadRoutes)
-app.use('/api', employeesRoutes)
 
 // --- 404 fallback ---------------------------------------------------------
 app.use((req, res) => {
