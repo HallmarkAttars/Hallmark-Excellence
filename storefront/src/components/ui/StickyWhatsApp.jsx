@@ -6,10 +6,10 @@ import './StickyWhatsApp.css'
 // Contact, Track Order, View Order). Pure frontend: a single wa.me link —
 // no backend, no API, no database, no WhatsApp Business integration.
 //
-// Number: +91 82203 80845  →  https://wa.me/918220380845
+// Number: +91 98400 78909  →  https://wa.me/919840078909
 // Pre-filled message (URL-encoded): "Can I get more info about your products?"
 const WHATSAPP_URL =
-  'https://wa.me/918220380845?text=Can%20I%20get%20more%20info%20about%20your%20products%3F'
+  'https://wa.me/919840078909?text=Can%20I%20get%20more%20info%20about%20your%20products%3F'
 
 export default function StickyWhatsApp() {
   return (
