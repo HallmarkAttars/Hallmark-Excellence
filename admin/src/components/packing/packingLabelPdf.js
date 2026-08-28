@@ -4,8 +4,8 @@
 // the parcel.
 //
 // Carries ONLY packing/delivery data: Order ID (as text + a real Code 39
-// barcode), Customer, Mobile, wrapped Delivery Address, Payment method and a
-// compact ITEMS list. No prices, no email, no internal info.
+// barcode), Customer, Mobile, wrapped Delivery Address. No prices, no
+// payment, no email, no internal info.
 //
 // Reuses the same jsPDF stack as the invoice generator plus the zero-
 // dependency Code 39 encoder in utils/barcode.js (no new dependency, and the
@@ -19,13 +19,13 @@
 
 import { jsPDF } from 'jspdf'
 import { packingLabelData, packingLabelFileName } from '../../utils/packing'
-import { code39Svg, drawCode39 } from '../../utils/barcode'
+import { code39Svg, drawCode39, code39Modules } from '../../utils/barcode'
 
-// Palette — Arees & Dahab luxury (matches the admin/invoice design language).
-const INK = [23, 21, 18] // #171512
-const TEXT = [26, 24, 21] // #1A1815
-const GOLD = [184, 134, 43] // #B8862B
-const HAIRLINE = [230, 224, 208] // #E6E0D0
+// Palette — HIKMAEXPORTS premium branding.
+const INK = [23, 21, 18]        // #171512 — near-black for headings
+const TEXT = [26, 24, 21]       // #1A1815 — body text
+const GOLD = [184, 134, 43]     // #B8862B — gold accent
+const HAIRLINE = [230, 224, 208] // #E6E0D0 — light divider
 
 // Sheet size — 4" × 6" portrait, mm.
 const W = 101.6
@@ -34,11 +34,25 @@ const M = 6 // outer margin
 const CX = W / 2
 const INNER_W = W - M * 2
 
+// FROM address — hardcoded per brand spec.
+const FROM_ADDRESS = [
+  'HIKMAEXPORTS',
+  '83 & 84, Moore St,',
+  'Mannadi, George Town,',
+  'Chennai, Greater Chennai,',
+  'Tamil Nadu 600001',
+]
+
 // Fixed lower band — the barcode must never collide with content.
-const BARCODE_RULE_Y = 102 // gold divider under the content zone
-const BARCODE_Y = 108.5 // barcode top
+const BARCODE_RULE_Y = 88
+const BARCODE_Y = 94
 const BARCODE_H = 12
-const BARCODE_TEXT_Y = BARCODE_Y + BARCODE_H + 5.5
+const BARCODE_TEXT_Y = BARCODE_Y + BARCODE_H + 5 // 111
+
+// Footer positions.
+const PACKED_CARE_Y = 124
+const BOTTOM_RULE_Y = 138
+const THANK_YOU_Y = 145
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -46,6 +60,48 @@ function escapeHtml(value) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+// ---------------------------------------------------------------------------
+// PDF helper — draw a small gold diamond ornament at (cx, cy).
+// ---------------------------------------------------------------------------
+function drawDiamond(doc, cx, cy, size, gold) {
+  doc.setFillColor(...gold)
+  doc.triangle(cx, cy - size, cx + size, cy, cx, cy + size, 'F')
+  doc.triangle(cx, cy - size, cx - size, cy, cx, cy + size, 'F')
+}
+
+// ---------------------------------------------------------------------------
+// PDF helpers — small icons for the FROM / SHIP TO columns.
+// ---------------------------------------------------------------------------
+function drawBuildingIcon(doc, x, y, s, gold) {
+  doc.setFillColor(...gold)
+  doc.rect(x, y, s, s * 1.3, 'F')
+  doc.setFillColor(255, 255, 255)
+  doc.rect(x + s * 0.15, y + s * 0.7, s * 0.3, s * 0.5, 'F')
+  doc.rect(x + s * 0.55, y + s * 0.2, s * 0.3, s * 0.35, 'F')
+}
+
+function drawPersonIcon(doc, x, y, s, gold) {
+  doc.setFillColor(...gold)
+  doc.circle(x + s / 2, y + s * 0.35, s * 0.28, 'F')
+  doc.triangle(x, y + s * 0.75, x + s, y + s * 0.75, x + s / 2, y + s * 1.4, 'F')
+}
+
+function drawPhoneIcon(doc, x, y, s, gold) {
+  doc.setFillColor(...gold)
+  doc.roundedRect(x + s * 0.2, y, s * 0.6, s, 0.3, 0.3, 'F')
+  doc.setFillColor(255, 255, 255)
+  doc.rect(x + s * 0.32, y + s * 0.12, s * 0.36, s * 0.18, 'F')
+  doc.rect(x + s * 0.32, y + s * 0.7, s * 0.36, s * 0.18, 'F')
+}
+
+function drawLocationIcon(doc, x, y, s, gold) {
+  doc.setFillColor(...gold)
+  doc.circle(x + s / 2, y + s * 0.3, s * 0.32, 'F')
+  doc.triangle(x + s * 0.2, y + s * 0.5, x + s * 0.8, y + s * 0.5, x + s / 2, y + s * 1.1, 'F')
+  doc.setFillColor(255, 255, 255)
+  doc.circle(x + s / 2, y + s * 0.3, s * 0.14, 'F')
 }
 
 // ---------------------------------------------------------------------------
@@ -57,152 +113,205 @@ function drawLabel(doc, data) {
   const gold = GOLD.map((v) => v / 255)
   const hairline = HAIRLINE.map((v) => v / 255)
 
-  const fieldLabel = (label, y) => {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(5.6)
-    doc.setCharSpace(1.6)
-    doc.setTextColor(...gold)
-    doc.text(label.toUpperCase(), M, y)
-    doc.setCharSpace(0)
-  }
   const rule = (y, width = 0.4, color = gold) => {
     doc.setDrawColor(...color)
     doc.setLineWidth(width)
     doc.line(M, y, W - M, y)
   }
 
-  // ---- Header (compact, centered) ----------------------------------------
+  const fieldLabel = (label, x, y) => {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(5.6)
+    doc.setCharSpace(1.6)
+    doc.setTextColor(...gold)
+    doc.text(label.toUpperCase(), x, y)
+    doc.setCharSpace(0)
+  }
+
+  // Safe left-aligned text: ensures charSpace is always 0 after the call.
+  const leftText = (str, x, y, opts = {}) => {
+    doc.setCharSpace(0)
+    doc.text(str, x, y, opts)
+  }
+
+  // ---- Header -----------------------------------------------------------
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
+  doc.setFontSize(16)
   doc.setTextColor(...ink)
-  doc.text('AREES & DAHAB', CX, 9.5, { align: 'center' })
+  doc.text('HIKMAEXPORTS', CX, 10, { align: 'center' })
+
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(4.8)
-  doc.setCharSpace(2)
+  doc.setFontSize(5)
+  doc.setCharSpace(0.8)
   doc.setTextColor(...gold)
-  doc.text('PACKING / SHIPPING LABEL', CX, 13.2, { align: 'center' })
+  doc.text('PACKING / SHIPPING LABEL', CX, 14.5, { align: 'center' })
   doc.setCharSpace(0)
-  rule(15.2)
 
-  // ---- ORDER ID — the largest text on the label ---------------------------
-  let y = 21
-  fieldLabel('Order ID', y)
-  y += 6.6
-  // Fit the id into one line at the biggest size that fits. The font size
-  // must be set BEFORE measuring (getTextWidth scales with the current size).
+  // Gold rule with diamond ornament
+  rule(17)
+  drawDiamond(doc, CX, 17, 1.2, gold)
+
+  // ---- ORDER ID ---------------------------------------------------------
+  let y = 23
+  fieldLabel('ORDER ID', M, y)
+  y += 6
+
   const id = String(data.orderId || '—')
-  let idSize = 20
   doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
   doc.setTextColor(...text)
-  while (idSize > 10) {
-    doc.setFontSize(idSize)
-    if (doc.getTextWidth(id) <= INNER_W) break
-    idSize -= 1
-  }
   doc.text(id, M, y)
-  y += idSize / 2 + 2.6
-  rule(y, 0.25, hairline)
+  y += 8
 
-  // ---- SHIP TO -------------------------------------------------------------
-  y += 7
-  fieldLabel('Ship To', y)
-  y += 5.6
+  // ---- FROM / SHIP TO BOX -----------------------------------------------
+  const boxTop = y
+  const boxBottom = BARCODE_RULE_Y - 6
+  const boxLeft = M
+  const boxRight = W - M
+  const boxW = boxRight - boxLeft
+  const boxH = boxBottom - boxTop
+
+  // Gold border — draw as four stroked lines for maximum PDF-reader compat.
+  doc.setDrawColor(...gold)
+  doc.setLineWidth(0.5)
+  const r = 1.5 // corner radius mm
+  // Top edge
+  doc.line(boxLeft + r, boxTop, boxRight - r, boxTop)
+  // Bottom edge
+  doc.line(boxLeft + r, boxBottom, boxRight - r, boxBottom)
+  // Left edge
+  doc.line(boxLeft, boxTop + r, boxLeft, boxBottom - r)
+  // Right edge
+  doc.line(boxRight, boxTop + r, boxRight, boxBottom - r)
+  // Corner arcs (approximate with short diagonal segments)
+  // Top-left
+  doc.line(boxLeft, boxTop + r, boxLeft + r * 0.4, boxTop + r * 0.1)
+  doc.line(boxLeft + r * 0.4, boxTop + r * 0.1, boxLeft + r, boxTop)
+  // Top-right
+  doc.line(boxRight - r, boxTop, boxRight - r * 0.4, boxTop + r * 0.1)
+  doc.line(boxRight - r * 0.4, boxTop + r * 0.1, boxRight, boxTop + r)
+  // Bottom-right
+  doc.line(boxRight, boxBottom - r, boxRight - r * 0.4, boxBottom - r * 0.1)
+  doc.line(boxRight - r * 0.4, boxBottom - r * 0.1, boxRight - r, boxBottom)
+  // Bottom-left
+  doc.line(boxLeft + r, boxBottom, boxLeft + r * 0.4, boxBottom - r * 0.1)
+  doc.line(boxLeft + r * 0.4, boxBottom - r * 0.1, boxLeft, boxBottom - r)
+
+  // Vertical divider
+  doc.setLineWidth(0.3)
+  doc.line(CX, boxTop + 2, CX, boxBottom - 2)
+
+  // Column positions
+  const fromIconX = M + 2
+  const fromTextX = M + 6
+  const rightIconX = CX + 2
+  const rightTextX = CX + 6
+  const colMaxWidth = CX - M - 8
+
+  // --- FROM section (left column) ---
+  let fromY = boxTop + 7
+  drawBuildingIcon(doc, fromIconX, fromY - 4, 2.5, gold)
+  fieldLabel('FROM', fromTextX, fromY)
+  fromY += 6
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(6.5)
+  doc.setTextColor(...text)
+  for (const line of FROM_ADDRESS) {
+    const wrapped = doc.splitTextToSize(line, colMaxWidth)
+    for (const wline of wrapped) {
+      if (fromY > boxBottom - 3) break
+      doc.text(wline, fromTextX, fromY)
+      fromY += 3.2
+    }
+    if (fromY > boxBottom - 3) break
+  }
+
+  // --- SHIP TO section (right column) ---
+  let shipY = boxTop + 7
+  drawPersonIcon(doc, rightIconX, shipY - 4, 2.5, gold)
+  fieldLabel('SHIP TO', rightTextX, shipY)
+  shipY += 6
+
+  // Customer name
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
+  doc.setFontSize(8)
   doc.setTextColor(...text)
-  doc.text(String(data.customerName || '—'), M, y)
-  y += 5.4
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.6)
-  doc.setTextColor(...text)
-  doc.text(String(data.phone || '—'), M, y)
-  y += 5.2
+  doc.text(String(data.customerName || '—'), rightTextX, shipY)
+  shipY += 5
 
-  // Delivery address — wraps naturally and is capped (4 wrapped lines + an
-  // ellipsis) so the Order Summary always stays above the barcode band, no
-  // matter how long the address is. The floor is a hard safety net; the cap
-  // is what actually guarantees the layout never reaches it.
+  // Phone with icon
+  drawPhoneIcon(doc, rightIconX, shipY - 2.5, 2, gold)
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.4)
-  doc.setTextColor(...text)
-  // Hard safety net just above the barcode rule. The 4-line caps below are
-  // what actually keep the summary on the label; this floor guarantees the
-  // address/items text can never touch the rule even with degenerate input.
-  const floor = BARCODE_RULE_Y - 1
+  doc.setFontSize(6.5)
+  doc.text(String(data.phone || '—'), rightTextX + 3, shipY)
+  shipY += 5
+
+  // Address with icon
+  drawLocationIcon(doc, rightIconX, shipY - 2.5, 2.5, gold)
   const addrLines = data.addressLines.length > 0 ? data.addressLines : ['—']
-  const wrapped = []
   for (const line of addrLines) {
-    wrapped.push(...doc.splitTextToSize(String(line), INNER_W))
-  }
-  let addrDrawn = 0
-  for (const line of wrapped) {
-    if (addrDrawn >= 4 || (addrDrawn > 0 && y + 3.4 > floor)) break
-    doc.text(String(line), M, y)
-    y += 3.4
-    addrDrawn += 1
-  }
-  if (wrapped.length > addrDrawn) {
-    doc.setFontSize(7.4)
-    doc.setTextColor(...text)
-    doc.text('…', M, y + 0.5)
+    const wrapped = doc.splitTextToSize(line, colMaxWidth - 3)
+    for (const wline of wrapped) {
+      if (shipY > boxBottom - 3) break
+      doc.text(wline, rightTextX + 3, shipY)
+      shipY += 3.2
+    }
+    if (shipY > boxBottom - 3) break
   }
 
-  // ---- ORDER SUMMARY — payment + compact item list -------------------------
-  y = Math.max(y + 3, BARCODE_RULE_Y - 40)
-  fieldLabel('Order Summary', y)
-  y += 5.2
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7.6)
-  doc.setTextColor(...text)
-  doc.text(`PAYMENT: ${String(data.payment || '—')}`, M, y)
-  y += 4.8
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6.8)
-  doc.setTextColor(...text)
-  const items = Array.isArray(data.items) ? data.items : []
-  const itemLines = items.map(
-    (it) => `${it.quantity} × ${it.name}${it.size ? ` — ${it.size}` : ''}`
-  )
-  let itemsDrawn = 0
-  for (const line of itemLines) {
-    if (itemsDrawn >= 4 || (itemsDrawn > 0 && y + 3.2 > floor)) break
-    doc.text(String(line), M, y)
-    y += 3.2
-    itemsDrawn += 1
-  }
-  if (items.length > itemsDrawn) {
-    doc.setFontSize(6.8)
-    doc.setTextColor(...text)
-    doc.text('…', M, y + 0.5)
-  }
-  if (items.length === 0) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(6.8)
-    doc.setTextColor(...text)
-    doc.text('—', M, y + 0.5)
-  }
-
-  // ---- Barcode band (fixed, real Code 39 of the Order ID) ------------------
+  // ---- GOLD RULE SEPARATOR ---------------------------------------------
   rule(BARCODE_RULE_Y, 0.4, gold)
+
+  // ---- BARCODE ZONE ----------------------------------------------------
   const barcodeText = String(data.orderId || 'ORDER')
-  // Shrink the module width so the barcode never spills past the margins.
-  drawCode39(doc, barcodeText, M, BARCODE_Y, {
+  // Calculate barcode width first so we can center it precisely.
+  const barcodeModules = code39Modules(barcodeText)
+  const barcodeTotalUnits = barcodeModules.reduce((sum, s) => sum + s.width, 0)
+  const barcodeUnit = Math.min(0.24, INNER_W / Math.max(1, barcodeTotalUnits))
+  const barcodeWidthMm = barcodeTotalUnits * barcodeUnit
+  const barcodeX = CX - barcodeWidthMm / 2
+  drawCode39(doc, barcodeText, barcodeX, BARCODE_Y, {
     narrow: 0.24,
     height: BARCODE_H,
     maxWidth: INNER_W,
   })
+
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.4)
+  doc.setFontSize(8)
   doc.setTextColor(...text)
   doc.text(id, CX, BARCODE_TEXT_Y, { align: 'center' })
 
-  // ---- Footer (small, no wasted space) -------------------------------------
+  // ---- FOOTER — PACKED WITH CARE ---------------------------------------
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(4.8)
+  doc.setFontSize(5)
   doc.setCharSpace(2.2)
   doc.setTextColor(...gold)
-  doc.text('PACKED WITH CARE', CX, H - 5.5, { align: 'center' })
+
+  const packedText = 'PACKED WITH CARE'
+  const ptw = doc.getTextWidth(packedText)
+  const lineLen = 10
+  doc.setDrawColor(...gold)
+  doc.setLineWidth(0.3)
+  doc.line(CX - ptw / 2 - lineLen - 1, PACKED_CARE_Y - 1.2, CX - ptw / 2 - 1, PACKED_CARE_Y - 1.2)
+  doc.line(CX + ptw / 2 + 1, PACKED_CARE_Y - 1.2, CX + ptw / 2 + lineLen + 1, PACKED_CARE_Y - 1.2)
+  doc.text(packedText, CX, PACKED_CARE_Y, { align: 'center' })
+  doc.setCharSpace(0)
+
+  // ---- BOTTOM GOLD RULE + THANK YOU ------------------------------------
+  rule(BOTTOM_RULE_Y, 0.4, gold)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(5.5)
+  doc.setCharSpace(0.6)
+  doc.setTextColor(...gold)
+  const thankText = 'THANK YOU FOR YOUR ORDER!'
+  const tw = doc.getTextWidth(thankText)
+  // Diamond gap must be large enough to clear the text + charSpace.
+  const diamondGap = tw / 2 + 6
+  doc.text(thankText, CX, THANK_YOU_Y, { align: 'center' })
+  drawDiamond(doc, CX - diamondGap, THANK_YOU_Y - 1.2, 1, gold)
+  drawDiamond(doc, CX + diamondGap, THANK_YOU_Y - 1.2, 1, gold)
   doc.setCharSpace(0)
 }
 
@@ -251,57 +360,80 @@ export async function printPackingLabels(orders, { win } = {}) {
 // Cap the label's variable content the SAME way the PDF does, so the print
 // HTML can never push the fixed barcode footer off the 4×6 sheet:
 //   - address: at most 4 lines (an ellipsis row marks truncation)
-//   - items:   at most 4 rows (an ellipsis row marks truncation)
 const MAX_ADDRESS_LINES = 4
-const MAX_ITEM_ROWS = 4
+
+// Small inline SVG icons for the HTML print version.
+const ICON_SVG = {
+  building: `<svg width="10" height="12" viewBox="0 0 10 12" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="8" height="9" rx="0.5"/><rect x="3" y="0" width="4" height="4"/><rect x="3.5" y="8" width="3" height="4" fill="white"/></svg>`,
+  person: `<svg width="10" height="12" viewBox="0 0 10 12" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="3.5" r="2.5"/><path d="M0 12 L5 7 L10 12 Z"/></svg>`,
+  phone: `<svg width="8" height="10" viewBox="0 0 8 10" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="0" width="6" height="8" rx="1"/><rect x="2" y="1.5" width="4" height="1" fill="white"/><rect x="2" y="5.5" width="4" height="1" fill="white"/></svg>`,
+  location: `<svg width="8" height="11" viewBox="0 0 8 11" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><circle cx="4" cy="4" r="3"/><path d="M1 5 L4 10 L7 5 Z"/><circle cx="4" cy="4" r="1.2" fill="white"/></svg>`,
+}
 
 function labelMarkup(data, last) {
-  const items = Array.isArray(data.items) ? data.items : []
   const addressLines = data.addressLines.length > 0 ? data.addressLines : ['—']
 
   const addressRows =
-    addressLines.slice(0, MAX_ADDRESS_LINES).map((l) => `<span>${escapeHtml(l)}</span>`).join('') +
+    addressLines
+      .slice(0, MAX_ADDRESS_LINES)
+      .map((l) => `<span>${escapeHtml(l)}</span>`)
+      .join('') +
     (addressLines.length > MAX_ADDRESS_LINES ? '<span class="trunc">…</span>' : '')
 
-  const itemRows =
-    items.length > 0
-      ? items
-          .slice(0, MAX_ITEM_ROWS)
-          .map(
-            (it) =>
-              `<li><span class="sum-item-qty">${escapeHtml(it.quantity)} ×</span> ${escapeHtml(it.name)}${it.size ? ` <span class="sum-item-size">— ${escapeHtml(it.size)}</span>` : ''}</li>`
-          )
-          .join('') +
-        (items.length > MAX_ITEM_ROWS ? '<li class="trunc">…</li>' : '')
-      : '<li class="sum-empty">—</li>'
-  const barcode = code39Svg(String(data.orderId || 'ORDER'), { narrow: 0.22, height: 11, maxWidth: INNER_W })
+  const barcode = code39Svg(String(data.orderId || 'ORDER'), {
+    narrow: 0.22,
+    height: 11,
+    maxWidth: INNER_W,
+  })
 
   return `
     <section class="label${last ? '' : ' page-break'}">
       <div class="label-body">
         <header class="label-head">
-          <strong>AREES &amp; DAHAB</strong>
+          <strong>HIKMAEXPORTS</strong>
           <span>Packing / Shipping Label</span>
         </header>
+
+        <div class="ornament">
+          <hr class="ornament-rule" />
+          <span class="ornament-diamond">◆</span>
+        </div>
 
         <div class="field field-order-id">
           <span class="field-label">Order ID</span>
           <strong class="order-id">${escapeHtml(data.orderId)}</strong>
         </div>
 
-        <div class="field">
-          <span class="field-label">Ship To</span>
-          <strong class="value value-name">${escapeHtml(data.customerName)}</strong>
-          <span class="value value-phone">${escapeHtml(data.phone)}</span>
-          <div class="value value-address">
-            ${addressRows}
+        <div class="address-box">
+          <div class="address-col from-col">
+            <div class="col-header">
+              ${ICON_SVG.building}
+              <span class="field-label">FROM</span>
+            </div>
+            <div class="from-address">
+              <strong>HIKMAEXPORTS</strong>
+              <span>83 &amp; 84, Moore St,</span>
+              <span>Mannadi, George Town,</span>
+              <span>Chennai, Greater Chennai,</span>
+              <span>Tamil Nadu 600001</span>
+            </div>
           </div>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Order Summary</span>
-          <p class="sum-payment">PAYMENT: <strong>${escapeHtml(data.payment)}</strong></p>
-          <ul class="sum-items">${itemRows}</ul>
+          <div class="address-divider"></div>
+          <div class="address-col to-col">
+            <div class="col-header">
+              ${ICON_SVG.person}
+              <span class="field-label">SHIP TO</span>
+            </div>
+            <strong class="value-name">${escapeHtml(data.customerName)}</strong>
+            <div class="value-phone">
+              ${ICON_SVG.phone}
+              <span>${escapeHtml(data.phone)}</span>
+            </div>
+            <div class="value-address">
+              ${ICON_SVG.location}
+              ${addressRows}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -310,7 +442,13 @@ function labelMarkup(data, last) {
           ${barcode}
           <span class="barcode-id">${escapeHtml(data.orderId)}</span>
         </div>
-        <p class="foot-note">Packed With Care</p>
+        <div class="packed-care">
+          <span class="packed-line"></span>
+          <span class="packed-text">PACKED WITH CARE</span>
+          <span class="packed-line"></span>
+        </div>
+        <hr class="thank-you-rule" />
+        <p class="thank-you">✦ THANK YOU FOR YOUR ORDER! ✦</p>
       </footer>
     </section>`
 }
@@ -343,52 +481,129 @@ function renderLabelsHtml(labels) {
   .page-break { page-break-after: always; break-after: page; }
 
   /* Header — compact, centered */
-  .label-head { text-align: center; border-bottom: 1.2px solid #b8862b; padding-bottom: 1.8mm; }
-  .label-head strong { display: block; font-family: Georgia, serif; font-size: 13px; letter-spacing: .04em; color: #171512; }
-  .label-head span { display: block; font-size: 5.2px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-top: .6mm; }
+  .label-head { text-align: center; }
+  .label-head strong {
+    display: block; font-family: Georgia, serif; font-size: 16px;
+    letter-spacing: .04em; color: #171512;
+  }
+  .label-head span {
+    display: block; font-size: 5.2px; letter-spacing: .12em;
+    text-transform: uppercase; color: #b8862b; margin-top: .6mm;
+  }
+
+  /* Ornament line with centered diamond */
+  .ornament { position: relative; text-align: center; margin: 1.5mm 0; }
+  .ornament-rule { border: none; border-top: 0.5px solid #b8862b; margin: 0; }
+  .ornament-diamond {
+    position: relative; top: -6px; background: #fff;
+    padding: 0 4px; color: #b8862b; font-size: 8px; line-height: 1;
+  }
 
   /* Fields */
   .field { margin-top: 3.6mm; }
   .field-label {
-    display: block; font-size: 6px; font-weight: 700;
-    letter-spacing: .18em; text-transform: uppercase; color: #b8862b; margin-bottom: 1mm;
+    display: inline-block; font-size: 6px; font-weight: 700;
+    letter-spacing: .18em; text-transform: uppercase; color: #b8862b;
   }
-  .order-id { display: block; font-size: 22px; font-weight: 800; color: #1a1815; letter-spacing: .01em; }
-  .value { display: block; }
-  .value-name { font-size: 11px; font-weight: 700; color: #1a1815; }
-  .value-phone { font-size: 8px; font-weight: 600; color: #1a1815; margin-top: .6mm; }
-  .value-address {
-    font-size: 7.5px; font-weight: 500; line-height: 1.5; margin-top: 1.2mm;
-    word-wrap: break-word; overflow-wrap: anywhere; white-space: normal;
-    /* Hard safety net: even a single line that wraps many times (pathological
-       addresses) can never push the barcode footer off the fixed 4×6 sheet.
-       ~14mm ≈ the PDF's 4 wrapped address lines (3.4mm each). */
-    max-height: 14mm; overflow: hidden;
+  .order-id {
+    display: block; font-size: 14px; font-weight: 700;
+    color: #1a1815; letter-spacing: .01em; margin-top: 1mm;
   }
 
-  /* Order summary — payment + compact item list */
-  .sum-payment { font-size: 8px; font-weight: 600; color: #1a1815; }
-  .sum-payment strong { font-weight: 700; }
-  .sum-items { list-style: none; margin-top: 1mm; }
-  .sum-items li { font-size: 7px; line-height: 1.5; color: #1a1815; }
-  .sum-items { max-height: 16mm; overflow: hidden; }
-  .sum-item-qty { font-weight: 700; }
-  .sum-item-size { color: rgba(26,24,21,.72); }
-  .sum-empty { color: rgba(26,24,21,.5); }
+  /* Address box — FROM / SHIP TO side-by-side */
+  .address-box {
+    flex: 1; display: flex; border: 0.5px solid #b8862b;
+    border-radius: 3px; margin-top: 3mm; overflow: hidden; min-height: 0;
+  }
+  .address-col {
+    flex: 1; padding: 3mm; display: flex; flex-direction: column;
+    overflow: hidden; min-height: 0;
+  }
+  .address-divider {
+    width: 0.3px; background: #b8862b; margin: 2mm 0; flex-shrink: 0;
+  }
+
+  /* Col headers */
+  .col-header {
+    display: flex; align-items: center; gap: 2px; margin-bottom: 2mm;
+  }
+  .col-header .field-label { margin-bottom: 0; }
+  .col-header .icon { flex-shrink: 0; }
+
+  /* FROM section */
+  .from-address { font-size: 6.5px; line-height: 1.5; color: #1a1815; }
+  .from-address strong {
+    display: block; font-weight: 700; font-size: 7px; margin-bottom: 0.5mm;
+  }
+  .from-address span { display: block; }
+
+  /* SHIP TO section */
+  .value-name {
+    display: block; font-size: 8px; font-weight: 700; color: #1a1815;
+  }
+  .value-phone {
+    display: flex; align-items: center; gap: 2px;
+    font-size: 6.5px; font-weight: 600; color: #1a1815; margin-top: .8mm;
+  }
+  .value-address {
+    display: flex; gap: 2px; font-size: 6.5px; font-weight: 500;
+    line-height: 1.5; margin-top: .8mm;
+    word-wrap: break-word; overflow-wrap: anywhere; white-space: normal;
+    /* Hard safety net: pathological addresses never push the barcode off. */
+    max-height: 18mm; overflow: hidden;
+  }
+  .value-address > span { display: block; }
   .trunc { color: rgba(26,24,21,.55); }
 
-  /* Footer — barcode zone pinned to the bottom, then the tiny note */
-  .label-foot { margin-top: auto; text-align: center; }
+  /* Footer — barcode zone pinned to the bottom, then the notes */
+  .label-foot { flex-shrink: 0; text-align: center; }
   .barcode-zone { border-top: 1px solid rgba(184,134,43,.55); padding-top: 2mm; }
   .barcode-zone svg { display: block; margin: 0 auto; max-width: 100%; }
   .barcode-id {
-    display: block; margin-top: 1mm; font-size: 8px; font-weight: 600; letter-spacing: .12em; color: #1a1815;
+    display: block; margin-top: 1mm; font-size: 8px; font-weight: 600;
+    letter-spacing: .12em; color: #1a1815;
   }
-  .foot-note { margin-top: 1.2mm; font-size: 5.5px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: #b8862b; }
+
+  /* PACKED WITH CARE with flanking lines */
+  .packed-care {
+    display: flex; align-items: center; gap: 3mm; margin: 2mm 0;
+  }
+  .packed-line { flex: 1; border-top: 0.3px solid #b8862b; }
+  .packed-text {
+    font-size: 5.5px; font-weight: 700; letter-spacing: .3em;
+    text-transform: uppercase; color: #b8862b; white-space: nowrap;
+  }
+
+  /* THANK YOU rule + text */
+  .thank-you-rule {
+    border: none; border-top: 0.5px solid #b8862b; margin: 1.5mm 0;
+  }
+  .thank-you {
+    font-size: 5.5px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #b8862b;
+    white-space: nowrap;
+  }
+
+  /* Icons — small inline SVGs */
+  .icon { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+  .value-phone .icon, .value-address .icon {
+    flex-shrink: 0; display: inline-block;
+  }
+  .value-address { align-items: flex-start; }
+  .value-address > .icon { margin-top: 1px; }
 
   @media print {
     .page-break { page-break-after: always; break-after: page; }
-    .label { page-break-inside: avoid; }
+    .label {
+      page-break-inside: avoid;
+      /* Force exact 4×6 inch dimensions for the printer. */
+      width: 101.6mm !important;
+      height: 152.4mm !important;
+      padding: 5mm 6mm 4mm !important;
+      overflow: visible !important;
+    }
+    .label-head span { letter-spacing: .12em !important; }
+    .thank-you { letter-spacing: .1em !important; white-space: nowrap !important; }
     svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
