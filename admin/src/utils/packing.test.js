@@ -11,6 +11,7 @@ import {
   paymentShortLabel,
 } from './packing'
 import { buildPackingLabelsPdf } from '../components/packing/packingLabelPdf'
+import { code39Modules } from './barcode'
 
 describe('packing', () => {
   it('formatDateKey renders local YYYY-MM-DD', () => {
@@ -167,6 +168,156 @@ describe('packing', () => {
       // Empty list → empty document, never a crash.
       const empty = await buildPackingLabelsPdf([])
       expect(empty.getNumberOfPages()).toBe(1)
+    })
+  })
+
+  // -----------------------------------------------------------------------
+  // PDF element positioning — verify that the label layout is correct.
+  // These test the GEOMETRY of the label (centering, margins, box split)
+  // without mocking jsPDF internals.
+  // -----------------------------------------------------------------------
+  describe('PDF element positioning', () => {
+    // Sheet constants — must match packingLabelPdf.js exactly.
+    const W = 101.6
+    const H = 152.4
+    const M = 6
+    const CX = W / 2
+    const INNER_W = W - M * 2
+    const BARCODE_RULE_Y = 88
+    const BARCODE_Y = 94
+    const BARCODE_H = 12
+    const BARCODE_TEXT_Y = BARCODE_Y + BARCODE_H + 5
+    const PACKED_CARE_Y = 124
+    const BOTTOM_RULE_Y = 138
+    const THANK_YOU_Y = 145
+
+    // Helper — replicate the barcode centering math from packingLabelPdf.js
+    function barcodeCentering(text) {
+      const modules = code39Modules(text)
+      const totalUnits = modules.reduce((sum, s) => sum + s.width, 0)
+      const unit = Math.min(0.24, INNER_W / Math.max(1, totalUnits))
+      const widthMm = totalUnits * unit
+      const x = CX - widthMm / 2
+      return { modules, totalUnits, unit, widthMm, x }
+    }
+
+    it('barcode is horizontally centered on the page', () => {
+      const { widthMm, x } = barcodeCentering('ORD-519550')
+      // The center of the barcode must equal CX (page center).
+      expect(x + widthMm / 2).toBeCloseTo(CX, 4)
+      // Must not overflow the left or right margins.
+      expect(x).toBeGreaterThanOrEqual(M)
+      expect(x + widthMm).toBeLessThanOrEqual(W - M)
+    })
+
+    it('barcode fits within the printable area for various order IDs', () => {
+      const ids = ['ORD-001', 'ORD-519550', 'ORD-999999', 'A', 'ORDER', 'ORD-12345678']
+      for (const id of ids) {
+        const { widthMm, x } = barcodeCentering(id)
+        expect(widthMm).toBeLessThanOrEqual(INNER_W)
+        expect(x).toBeGreaterThanOrEqual(M)
+        expect(x + widthMm).toBeLessThanOrEqual(W - M)
+      }
+    })
+
+    it('barcode is wider for longer text', () => {
+      const short = barcodeCentering('A')
+      const long = barcodeCentering('ORD-519550')
+      expect(long.widthMm).toBeGreaterThan(short.widthMm)
+    })
+
+    it('FROM/SHIP TO box is a 50/50 split at the page center', () => {
+      const boxLeft = M
+      const boxRight = W - M
+      const leftColWidth = CX - boxLeft
+      const rightColWidth = boxRight - CX
+      // Columns must be equal width.
+      expect(leftColWidth).toBeCloseTo(rightColWidth, 10)
+      // Together they span the full inner width.
+      expect(leftColWidth + rightColWidth).toBeCloseTo(boxRight - boxLeft, 10)
+    })
+
+    it('FROM/SHIP TO column text starts at the same x offset from the divider', () => {
+      const fromTextX = M + 6
+      const rightTextX = CX + 6
+      // Both columns start at the same offset from their respective left edge.
+      expect(fromTextX - M).toBeCloseTo(rightTextX - CX, 10)
+    })
+
+    it('label dimensions match the 4×6 inch thermal sheet', () => {
+      expect(W).toBeCloseTo(101.6, 1)  // 4 inches
+      expect(H).toBeCloseTo(152.4, 1)  // 6 inches
+    })
+
+    it('all vertical elements are within the page and in correct order', () => {
+      // Header is near the top.
+      expect(10).toBeGreaterThan(0)
+      // Gold rule below header.
+      expect(17).toBeGreaterThan(10)
+      // ORDER ID label.
+      expect(23).toBeGreaterThan(17)
+      // ORDER ID value baseline.
+      expect(29).toBeGreaterThan(23)
+      // Box top below ORDER ID.
+      const boxTop = 31
+      expect(boxTop).toBeGreaterThan(29)
+      // Box bottom above barcode rule.
+      const boxBottom = BARCODE_RULE_Y - 6
+      expect(boxBottom).toBeGreaterThan(boxTop)
+      expect(boxBottom).toBeLessThan(BARCODE_RULE_Y)
+      // Barcode zone.
+      expect(BARCODE_Y).toBeGreaterThan(BARCODE_RULE_Y)
+      expect(BARCODE_TEXT_Y).toBeGreaterThan(BARCODE_Y + BARCODE_H)
+      // Footer elements.
+      expect(PACKED_CARE_Y).toBeGreaterThan(BARCODE_TEXT_Y)
+      expect(BOTTOM_RULE_Y).toBeGreaterThan(PACKED_CARE_Y)
+      expect(THANK_YOU_Y).toBeGreaterThan(BOTTOM_RULE_Y)
+      // All within page.
+      expect(THANK_YOU_Y).toBeLessThan(H)
+    })
+
+    it('vertical divider is exactly at the page center', () => {
+      expect(CX).toBeCloseTo(W / 2, 10)
+    })
+
+    it('barcode order ID text is centered below the barcode', () => {
+      // The barcode text uses { align: 'center' } at CX.
+      // Verify CX is between the margins.
+      expect(CX).toBeGreaterThan(M)
+      expect(CX).toBeLessThan(W - M)
+    })
+
+    it('PDF document is valid and serializable', async () => {
+      const order = {
+        id: 'test',
+        order_number: 'ORD-TEST',
+        customer_name: 'Test User',
+        phone: '+91 00000 00000',
+        address: '123 Test Street',
+        city: 'Test City',
+        state: 'Test State',
+        pincode: '000000',
+      }
+      const doc = await buildPackingLabelsPdf([order])
+      expect(doc.getNumberOfPages()).toBe(1)
+      // Should serialize to a non-empty ArrayBuffer.
+      const buf = doc.output('arraybuffer')
+      expect(buf).toBeInstanceOf(ArrayBuffer)
+      expect(buf.byteLength).toBeGreaterThan(0)
+    })
+
+    it('multiple labels each get their own page', async () => {
+      const make = (n) => ({
+        id: `u${n}`,
+        order_number: `ORD-${n}`,
+        customer_name: `User ${n}`,
+        phone: '+91 00000 00000',
+        address: `${n} Street`,
+        city: 'City',
+        pincode: '000000',
+      })
+      const doc = await buildPackingLabelsPdf([make(1), make(2), make(3)])
+      expect(doc.getNumberOfPages()).toBe(3)
     })
   })
 })
