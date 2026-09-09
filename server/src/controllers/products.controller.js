@@ -548,6 +548,37 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '')    // trim hyphens
 }
 
+// Generate a unique slug for a product name by checking existing slugs in Supabase
+async function generateUniqueSlug(name, currentProductId = null) {
+  const baseSlug = slugify(name)
+  if (!baseSlug) return 'product'
+
+  let query = supabase
+    .from('products')
+    .select('id, slug')
+    .or(`slug.eq.${baseSlug},slug.like.${baseSlug}-%`)
+
+  if (currentProductId) {
+    query = query.neq('id', currentProductId)
+  }
+
+  const { data, error } = await query
+  if (error || !Array.isArray(data) || data.length === 0) {
+    return baseSlug
+  }
+
+  const existingSlugs = new Set(data.map((row) => row.slug))
+  if (!existingSlugs.has(baseSlug)) {
+    return baseSlug
+  }
+
+  let counter = 2
+  while (existingSlugs.has(`${baseSlug}-${counter}`)) {
+    counter += 1
+  }
+  return `${baseSlug}-${counter}`
+}
+
 // Allowed units for variants (backend-authoritative validation).
 const VALID_UNITS = ['ML', 'Gram', 'Pieces']
 
@@ -677,9 +708,11 @@ async function createProduct(req, res) {
       order = await nextProductDisplayOrder()
     }
 
+    const uniqueSlug = await generateUniqueSlug(name)
+
     const payload = {
       name,
-      slug: slugify(name),
+      slug: uniqueSlug,
       description: description ?? null,
       price: price ?? 0,
       compare_at_price: compare_at_price ?? null,
@@ -701,8 +734,18 @@ async function createProduct(req, res) {
     )
 
     if (error) {
-      console.error('createProduct error:', error)
-      return res.status(500).json({ error: 'Failed to create product.' })
+      console.error('createProduct DB error:', {
+        message: error.message,
+        code: error.code,
+        detail: error.details || error.detail,
+        hint: error.hint,
+      })
+      return res.status(500).json({
+        error: error.message || 'Failed to create product.',
+        code: error.code,
+        detail: error.details || error.detail,
+        hint: error.hint,
+      })
     }
 
     // Insert variants (if any) after the product exists.
@@ -716,7 +759,12 @@ async function createProduct(req, res) {
         inserted = await insertVariants(data.id, variants)
       } catch (varErr) {
         console.error('createProduct insertVariants error:', varErr)
-        return res.status(500).json({ error: 'Failed to create product variants.' })
+        return res.status(500).json({
+          error: varErr.message || 'Failed to create product variants.',
+          code: varErr.code,
+          detail: varErr.details || varErr.detail,
+          hint: varErr.hint,
+        })
       }
     }
 
@@ -726,8 +774,19 @@ async function createProduct(req, res) {
 
     return res.status(201).json({ product: { ...product, price: pPrice, variants: inserted } })
   } catch (err) {
-    console.error('createProduct error:', err)
-    return res.status(500).json({ error: 'Internal server error' })
+    console.error('createProduct error:', {
+      message: err.message,
+      code: err.code,
+      detail: err.details || err.detail,
+      hint: err.hint,
+      stack: err.stack,
+    })
+    return res.status(500).json({
+      error: err.message || 'Internal server error',
+      code: err.code,
+      detail: err.details || err.detail,
+      hint: err.hint,
+    })
   }
 }
 
@@ -757,7 +816,7 @@ async function updateProduct(req, res) {
     const updates = {}
     if (name !== undefined) {
       updates.name = name
-      updates.slug = slugify(name)
+      updates.slug = await generateUniqueSlug(name, id)
     }
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
@@ -783,11 +842,11 @@ async function updateProduct(req, res) {
     let data
     let error
     if (Object.keys(updates).length === 0) {
-      ;({ data, error } = await selectProducts((select) =>
+      ; ({ data, error } = await selectProducts((select) =>
         supabase.from('products').select(select).eq('id', id).maybeSingle()
       ))
     } else {
-      ;({ data, error } = await withProductWriteRetry(
+      ; ({ data, error } = await withProductWriteRetry(
         (pl, select) => supabase.from('products').update(pl).eq('id', id).select(select).maybeSingle(),
         updates,
         PRODUCT_SELECT,
@@ -801,8 +860,18 @@ async function updateProduct(req, res) {
     }
 
     if (error) {
-      console.error('updateProduct error:', error)
-      return res.status(500).json({ error: 'Failed to update product.' })
+      console.error('updateProduct DB error:', {
+        message: error.message,
+        code: error.code,
+        detail: error.details || error.detail,
+        hint: error.hint,
+      })
+      return res.status(500).json({
+        error: error.message || 'Failed to update product.',
+        code: error.code,
+        detail: error.details || error.detail,
+        hint: error.hint,
+      })
     }
 
     if (!data) {
