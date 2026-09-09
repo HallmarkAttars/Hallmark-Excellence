@@ -70,7 +70,7 @@ export const NAV_LINKS = [
 export const HERO = {
   title: ['The Art of', 'Hallmark', 'Attars'],
   subtitle:
-    'Alcohol free oil perfumes, hand blended in small batches from oud, rose, and amber  crafted to be worn, close to the heart and remembered long after.',
+    'CRAFTING FRAGRANCE. CREATING IDENTITY.From captivating scents to beautiful bottles, discover the world of perfumery products.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories/attars' },
 }
