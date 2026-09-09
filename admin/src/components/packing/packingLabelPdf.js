@@ -142,9 +142,12 @@ function drawLabel(doc, data) {
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(5)
-  doc.setCharSpace(0.8)
+  const headSubCharSpace = 0.8
+  doc.setCharSpace(headSubCharSpace)
   doc.setTextColor(...gold)
-  doc.text('PACKING / SHIPPING LABEL', CX, 14.5, { align: 'center' })
+  const headSubText = 'PACKING / SHIPPING LABEL'
+  const headSubW = doc.getTextWidth(headSubText) + headSubCharSpace * (headSubText.length - 1)
+  doc.text(headSubText, CX - headSubW / 2, 14.5)
   doc.setCharSpace(0)
 
   // Gold rule with diamond ornament
@@ -285,17 +288,20 @@ function drawLabel(doc, data) {
   // ---- FOOTER — PACKED WITH CARE ---------------------------------------
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(5)
-  doc.setCharSpace(2.2)
+  const packedCharSpace = 2.2
+  doc.setCharSpace(packedCharSpace)
   doc.setTextColor(...gold)
 
   const packedText = 'PACKED WITH CARE'
-  const ptw = doc.getTextWidth(packedText)
+  const packedBaseW = doc.getTextWidth(packedText)
+  const ptw = packedBaseW + packedCharSpace * (packedText.length - 1)
   const lineLen = 10
+  const packedStartX = CX - ptw / 2
   doc.setDrawColor(...gold)
   doc.setLineWidth(0.3)
-  doc.line(CX - ptw / 2 - lineLen - 1, PACKED_CARE_Y - 1.2, CX - ptw / 2 - 1, PACKED_CARE_Y - 1.2)
-  doc.line(CX + ptw / 2 + 1, PACKED_CARE_Y - 1.2, CX + ptw / 2 + lineLen + 1, PACKED_CARE_Y - 1.2)
-  doc.text(packedText, CX, PACKED_CARE_Y, { align: 'center' })
+  doc.line(packedStartX - lineLen - 2, PACKED_CARE_Y - 1.2, packedStartX - 2, PACKED_CARE_Y - 1.2)
+  doc.line(packedStartX + ptw + 2, PACKED_CARE_Y - 1.2, packedStartX + ptw + lineLen + 2, PACKED_CARE_Y - 1.2)
+  doc.text(packedText, packedStartX, PACKED_CARE_Y)
   doc.setCharSpace(0)
 
   // ---- BOTTOM GOLD RULE + THANK YOU ------------------------------------
@@ -303,13 +309,15 @@ function drawLabel(doc, data) {
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(5.5)
-  doc.setCharSpace(0.6)
+  const thankCharSpace = 0.6
+  doc.setCharSpace(thankCharSpace)
   doc.setTextColor(...gold)
   const thankText = 'THANK YOU FOR YOUR ORDER!'
-  const tw = doc.getTextWidth(thankText)
-  // Diamond gap must be large enough to clear the text + charSpace.
-  const diamondGap = tw / 2 + 6
-  doc.text(thankText, CX, THANK_YOU_Y, { align: 'center' })
+  const thankBaseW = doc.getTextWidth(thankText)
+  const tw = thankBaseW + thankCharSpace * (thankText.length - 1)
+  const thankStartX = CX - tw / 2
+  doc.text(thankText, thankStartX, THANK_YOU_Y)
+  const diamondGap = tw / 2 + 4
   drawDiamond(doc, CX - diamondGap, THANK_YOU_Y - 1.2, 1, gold)
   drawDiamond(doc, CX + diamondGap, THANK_YOU_Y - 1.2, 1, gold)
   doc.setCharSpace(0)

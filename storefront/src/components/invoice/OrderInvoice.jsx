@@ -1,13 +1,8 @@
 // ============================================================================
 // <OrderInvoice order={order} documentType?="INVOICE|ESTIMATE" /> — the ONE
-// reusable invoice sheet. Rendered from the SAVED ORDER RECORD via
-// utils/invoice.js (never the cart, never live product prices). Used on the
-// success page, the View Order page, tracking results and Admin Orders —
-// identical document everywhere.
-//
-// The on-screen sheet is a responsive A4 preview; the dedicated print window
-// and the jsPDF download share the same data formatter, so the three surfaces
-// always agree.
+// reusable invoice sheet (admin copy, identical to the storefront component).
+// Rendered from the SAVED ORDER RECORD via utils/invoice.js (never the cart,
+// never live product prices).
 //
 // DESIGN: premium luxury attar invoice — warm off-white sheet, thin double
 // gold page border with gold corner accents, two-line serif brand + tagline,
@@ -109,8 +104,8 @@ export default function OrderInvoice({ order, documentType }) {
             {inv.orderId && (
               <p className="invoice-meta-line">#<strong>{inv.orderId}</strong></p>
             )}
-            {inv.date && <p className="invoice-meta-line">Date : {inv.date}</p>}
-            {inv.time && <p className="invoice-meta-line">Time : {inv.time}</p>}
+            {inv.date && <p className="invoice-meta-line">Date: {inv.date}</p>}
+            {inv.time && <p className="invoice-meta-line">Time: {inv.time}</p>}
           </div>
         </header>
 

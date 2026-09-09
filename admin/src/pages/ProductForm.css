@@ -126,9 +126,9 @@
 .variant-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 16px;
   margin-bottom: 14px;
   background: var(--cream);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* The Default variant gets a subtle gold ring so it stands out. */
@@ -151,11 +151,36 @@
   vertical-align: middle;
 }
 
+.variant-error-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(197, 48, 48, 0.12);
+  border: 1px solid rgba(197, 48, 48, 0.25);
+  color: #c53030;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
 .variant-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+}
+
+.variant-head-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.variant-title-row {
+  display: flex;
+  align-items: center;
 }
 
 .variant-title {
@@ -163,6 +188,11 @@
   font-weight: 600;
   font-size: 13px;
   color: rgba(20, 17, 13, 0.8);
+}
+
+.variant-head-actions {
+  display: flex;
+  align-items: center;
 }
 
 .variant-delete {
@@ -291,6 +321,150 @@
   margin: 0;
 }
 .variants-section input[type="number"] {
+  appearance: textfield;
   -moz-appearance: textfield;
 }
+
+/* ==========================================================================
+   DESKTOP / TABLET (>= 768px): PRESERVE CURRENT FULL FORM DISPLAY
+   ========================================================================== */
+@media (min-width: 768px) {
+  .variant-card {
+    padding: 14px 16px;
+  }
+  .variant-card-head {
+    margin-bottom: 10px;
+    cursor: default;
+  }
+  .variant-mobile-summary {
+    display: none !important;
+  }
+  .variant-chevron-btn {
+    display: none !important;
+  }
+  .variant-error-indicator {
+    display: none !important;
+  }
+  .variant-card-body {
+    display: block !important;
+  }
+}
+
+/* ==========================================================================
+   MOBILE ONLY (<= 767px): ACCORDION / COLLAPSIBLE VARIANT CARDS
+   ========================================================================== */
+@media (max-width: 767px) {
+  .variant-card {
+    padding: 0;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .variant-card.is-collapsed.has-incomplete-fields {
+    border-color: rgba(197, 48, 48, 0.35);
+  }
+
+  .variant-card-head {
+    padding: 12px 14px;
+    cursor: pointer;
+    min-height: 52px;
+    gap: 8px;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s ease;
+  }
+
+  .variant-card-head:focus-visible {
+    outline: 2px solid var(--gold-deep);
+    outline-offset: -2px;
+  }
+
+  .variant-card-head:active {
+    background: rgba(20, 17, 13, 0.03);
+  }
+
+  .variant-head-main {
+    flex: 1;
+    gap: 4px;
+  }
+
+  .variant-title-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .variant-title {
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .variant-mobile-summary {
+    display: block;
+    font-size: 0.78rem;
+    color: rgba(20, 17, 13, 0.65);
+    font-weight: 500;
+    line-height: 1.35;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .variant-head-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .variant-delete {
+    width: 38px;
+    height: 38px;
+  }
+
+  .variant-chevron-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: rgba(20, 17, 13, 0.65);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .variant-chevron-btn:active {
+    background: rgba(20, 17, 13, 0.08);
+    color: var(--charcoal);
+  }
+
+  .variant-chevron-icon {
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: rotate(0deg);
+  }
+
+  .variant-chevron-icon.is-expanded {
+    transform: rotate(180deg);
+  }
+
+  .variant-card.is-collapsed .variant-card-body {
+    display: none;
+  }
+
+  .variant-card.is-expanded .variant-card-head {
+    border-bottom: 1px solid rgba(20, 17, 13, 0.08);
+    background: rgba(20, 17, 13, 0.02);
+  }
+
+  .variant-card.is-expanded .variant-card-body {
+    display: block;
+    padding: 14px;
+  }
+}
+
 

@@ -104,8 +104,8 @@ export default function OrderInvoice({ order, documentType }) {
             {inv.orderId && (
               <p className="invoice-meta-line">#<strong>{inv.orderId}</strong></p>
             )}
-            {inv.date && <p className="invoice-meta-line">Date : {inv.date}</p>}
-            {inv.time && <p className="invoice-meta-line">Time : {inv.time}</p>}
+            {inv.date && <p className="invoice-meta-line">Date: {inv.date}</p>}
+            {inv.time && <p className="invoice-meta-line">Time: {inv.time}</p>}
           </div>
         </header>
 

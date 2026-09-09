@@ -151,11 +151,10 @@
   margin: 4px 0 0;
   font-size: 11px;
   color: #6f6a63;
-  /* Long order ids wrap instead of forcing the header wider than the sheet. */
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   max-width: 110mm;
   margin-left: auto;
+  text-align: right;
 }
 .invoice-meta-line strong {
   color: #171512;
@@ -221,7 +220,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8mm;
-  margin-top: 7mm;
+  margin-top: 5mm;
 }
 .invoice-card {
   background: #f7f2e8;
@@ -259,12 +258,12 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 14px;
+  gap: 12px;
   padding: 1.8mm 0;
   border-bottom: 1px solid rgba(184, 134, 43, 0.16);
 }
 .invoice-info-row:last-child { border-bottom: none; }
-.invoice-info-row span { color: #6f6a63; font-size: 11.5px; white-space: nowrap; }
+.invoice-info-row span { color: #6f6a63; font-size: 11.5px; white-space: nowrap; text-align: left; }
 .invoice-info-row strong {
   color: #171512;
   font-size: 12px;
@@ -277,18 +276,16 @@
 /* ---------- Items table: dark header, gold rule, real thumbnails ---------- */
 .invoice-table {
   width: 100%;
-  /* Fixed layout + proportional columns: the table always fits its
-     container — long names wrap in-cell instead of forcing the sheet wider
-     than A4 (the old auto layout could push the right edge off the page). */
   table-layout: fixed;
   border-collapse: collapse;
-  margin-top: 7mm;
+  margin-top: 5mm;
 }
-.invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 30%; }
-.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 28%; }
-.invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 10%; }
-.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 16%; }
-.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 16%; }
+.invoice-table th:nth-child(1), .invoice-table td:nth-child(1) { width: 29%; }
+.invoice-table th:nth-child(2), .invoice-table td:nth-child(2) { width: 26%; }
+.invoice-table th:nth-child(3), .invoice-table td:nth-child(3) { width: 13%; white-space: nowrap !important; }
+.invoice-table th:nth-child(4), .invoice-table td:nth-child(4) { width: 16%; white-space: nowrap !important; }
+.invoice-table th:nth-child(5), .invoice-table td:nth-child(5) { width: 16%; white-space: nowrap !important; }
+.invoice-table th:last-child, .invoice-table td:last-child { padding-right: 0; }
 .invoice-table th {
   background: #171512;
   color: #f7f2e8;
@@ -297,16 +294,19 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
-  padding: 9px 11px;
+  padding: 9px 8px;
   border-bottom: 1.5px solid #b8862b;
   white-space: nowrap;
 }
 .invoice-table th.invoice-num,
 .invoice-table td.invoice-num {
   text-align: right;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
 }
 .invoice-table td {
-  padding: 9px 11px;
+  padding: 8px 8px;
   border-bottom: 1px solid #ece7dc;
   font-size: 12px;
   vertical-align: top;
@@ -367,7 +367,7 @@
 .invoice-lower {
   display: flex;
   justify-content: flex-end;
-  margin-top: 7mm;
+  margin-top: 4mm;
 }
 .invoice-summary {
   width: min(78mm, 100%);
@@ -381,7 +381,7 @@
   color: #6f6a63;
   font-size: 12px;
 }
-.invoice-summary-row span:last-child { font-variant-numeric: tabular-nums; color: #1a1815; }
+.invoice-summary-row span:last-child { font-variant-numeric: tabular-nums; color: #1a1815; text-align: right; }
 .invoice-grand-total {
   border-top: 1.2px solid #b8862b;
   margin-top: 1.5mm;
@@ -399,8 +399,8 @@
 
 /* ---------- Thank-you card ---------- */
 .invoice-thanks-card {
-  margin-top: 7mm;
-  padding: 6mm 6mm 5mm;
+  margin-top: 4mm;
+  padding: 4mm 6mm 4mm;
   background: #f7f2e8;
   border: 1px solid rgba(184, 134, 43, 0.45);
   border-radius: 8px;
@@ -443,7 +443,7 @@
   /* margin-top: auto pins the footer to the sheet bottom on short orders;
      padding keeps the breathing room from the thanks card above. */
   margin-top: auto;
-  padding-top: 6mm;
+  padding-top: 4mm;
 }
 .invoice-pagefoot-rule {
   flex: 0 1 32mm;

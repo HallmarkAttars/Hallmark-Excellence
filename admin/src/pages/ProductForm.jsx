@@ -159,8 +159,57 @@ export default function ProductForm() {
     reader.readAsDataURL(file)
   }
 
+  // Tracks which variants are expanded on mobile. Keyed by variant unique key or index.
+  const [expandedMap, setExpandedMap] = useState({})
+
+  const toggleVariant = (key) => {
+    setExpandedMap((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
+  }
+
   // --- Variant helpers -----------------------------------------------------
   const hasVariants = variants.length > 0
+
+  // Formats the live compact summary for mobile collapsed headers:
+  // e.g. "100 ML • ₹45/unit • Total ₹4,500"
+  const getVariantSummary = (v) => {
+    const hasQty = v.quantity_value !== '' && v.quantity_value != null && !isNaN(Number(v.quantity_value))
+    const hasPpu = v.price_per_unit !== '' && v.price_per_unit != null && !isNaN(Number(v.price_per_unit))
+    const hasTotal = v.total_price !== '' && v.total_price != null && !isNaN(Number(v.total_price))
+
+    const qtyPart = hasQty ? `${v.quantity_value} ${v.quantity_unit || 'ML'}` : '— ML'
+    const ppuPart = hasPpu ? `₹${Number(v.price_per_unit).toLocaleString('en-IN')}/unit` : '₹—/unit'
+    const totalPart = hasTotal ? `Total ₹${Number(v.total_price).toLocaleString('en-IN')}` : 'Total ₹—'
+
+    return `${qtyPart} • ${ppuPart} • ${totalPart}`
+  }
+
+  // Detects if a variant is missing required fields or has invalid values
+  const isVariantIncomplete = (v, index) => {
+    const q = String(v.quantity_value ?? '').trim()
+    const u = String(v.quantity_unit ?? '').trim()
+    const p = v.price_per_unit
+    const t = v.total_price
+
+    if (!q || isNaN(Number(q)) || Number(q) <= 0) return true
+    if (!u || !UNIT_OPTIONS.includes(u)) return true
+    if (p === '' || p == null || isNaN(Number(p)) || Number(p) < 0) return true
+    if (t === '' || t == null || isNaN(Number(t)) || Number(t) < 0) return true
+
+    // Check duplicate quantity + unit with other variants
+    const key = `${q.toUpperCase()}|${u.toUpperCase()}`
+    const duplicate = variants.some((other, i) => {
+      if (i === index) return false
+      const oq = String(other.quantity_value ?? '').trim().toUpperCase()
+      const ou = String(other.quantity_unit ?? '').trim().toUpperCase()
+      return `${oq}|${ou}` === key
+    })
+    if (duplicate) return true
+
+    return false
+  }
 
   // Variant Total Price is ALWAYS computed automatically: Quantity × Price
   // Per Unit (e.g. 60 × ₹45 = ₹2,700). Returns '' while either input is
@@ -168,9 +217,11 @@ export default function ProductForm() {
   // (computeVariantTotal lives in utils/attarPriceSync.js — unit-tested.)
 
   const addVariant = () => {
+    const newKey = `var_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     setVariants((prev) => [
       ...prev,
       {
+        _key: newKey,
         quantity_value: '',
         quantity_unit: 'ML',
         total_price: '',
@@ -178,6 +229,18 @@ export default function ProductForm() {
         is_default: prev.length === 0, // first variant is default by default
       },
     ])
+    // Automatically expand the newly added variant so the user can immediately enter its details
+    setExpandedMap((prev) => ({
+      ...prev,
+      [newKey]: true,
+    }))
+    // Smoothly scroll the newly added variant into view
+    setTimeout(() => {
+      const el = document.getElementById(`variant-card-${newKey}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }, 60)
   }
 
   const updateVariant = (index, field, value) => {
@@ -380,112 +443,184 @@ export default function ProductForm() {
             </p>
           )}
 
-          {variants.map((v, index) => (
-            <div className={`variant-card${v.is_default ? ' is-default' : ''}`} key={index}>
-              <div className="variant-card-head">
-                <span className="variant-title">
-                  Variant {index + 1}
-                  {v.is_default && <span className="variant-default-badge">Default</span>}
-                </span>
-                <button
-                  type="button"
-                  className="variant-delete"
-                  onClick={() => removeVariant(index)}
-                  title="Delete variant"
-                  aria-label="Delete variant"
+          {variants.map((v, index) => {
+            const itemKey = v._key || `var_${index}`
+            const isExpanded = Boolean(expandedMap[itemKey])
+            const hasError = isVariantIncomplete(v, index)
+            const summaryText = getVariantSummary(v)
+
+            return (
+              <div
+                id={`variant-card-${itemKey}`}
+                className={`variant-card${v.is_default ? ' is-default' : ''}${isExpanded ? ' is-expanded' : ' is-collapsed'}${hasError ? ' has-incomplete-fields' : ''}`}
+                key={itemKey}
+              >
+                <div
+                  className="variant-card-head"
+                  onClick={() => toggleVariant(itemKey)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  aria-controls={`variant-body-${itemKey}`}
+                  aria-label={`Variant ${index + 1}${v.is_default ? ' Default' : ''}, ${isExpanded ? 'collapse details' : 'expand details'}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      toggleVariant(itemKey)
+                    }
+                  }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                </button>
-              </div>
+                  <div className="variant-head-main">
+                    <div className="variant-title-row">
+                      <span className="variant-title">
+                        Variant {index + 1}
+                        {v.is_default && <span className="variant-default-badge">Default</span>}
+                        {hasError && (
+                          <span className="variant-error-indicator" title="This variant has incomplete or invalid fields">
+                            ⚠️ Incomplete
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="variant-mobile-summary" aria-hidden="true">
+                      {summaryText}
+                    </div>
+                  </div>
 
-              <div className="variant-grid">
-                <div className="form-field">
-                  <label htmlFor={`qty-${index}`}>Quantity</label>
-                  <input
-                    id={`qty-${index}`}
-                    type="number"
-                    min="1"
-                    step="any"
-                    placeholder="e.g. 100"
-                    value={v.quantity_value}
-                    onChange={(e) => updateVariant(index, 'quantity_value', e.target.value)}
-                  />
-                  <small className="field-example">Example: 100</small>
+                  <div className="variant-head-actions">
+                    <button
+                      type="button"
+                      className="variant-delete"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeVariant(index)
+                      }}
+                      title="Delete variant"
+                      aria-label={`Delete Variant ${index + 1}`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="variant-chevron-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleVariant(itemKey)
+                      }}
+                      aria-expanded={isExpanded}
+                      aria-controls={`variant-body-${itemKey}`}
+                      aria-label={`Toggle Variant ${index + 1} details`}
+                      tabIndex={-1}
+                    >
+                      <svg
+                        className={`variant-chevron-icon ${isExpanded ? 'is-expanded' : ''}`}
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="form-field">
-                  <label htmlFor={`unit-${index}`}>Unit</label>
-                  <select
-                    id={`unit-${index}`}
-                    value={v.quantity_unit || 'ML'}
-                    onChange={(e) => updateVariant(index, 'quantity_unit', e.target.value)}
-                  >
-                    {unitOptionsFor(index).map((u) => (
-                      <option key={u} value={u}>{u}</option>
-                    ))}
-                  </select>
-                  <small className="field-example">ML, Gram or Pieces</small>
-                </div>
+                <div id={`variant-body-${itemKey}`} className="variant-card-body">
+                  <div className="variant-grid">
+                    <div className="form-field">
+                      <label htmlFor={`qty-${index}`}>Quantity</label>
+                      <input
+                        id={`qty-${index}`}
+                        type="number"
+                        min="1"
+                        step="any"
+                        placeholder="e.g. 100"
+                        value={v.quantity_value}
+                        onChange={(e) => updateVariant(index, 'quantity_value', e.target.value)}
+                      />
+                      <small className="field-example">Example: 100</small>
+                    </div>
 
-                <div className="form-field">
-                  <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
-                  <input
-                    id={`per-unit-${index}`}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={v.price_per_unit}
-                    onChange={(e) => updateVariant(index, 'price_per_unit', e.target.value)}
-                  />
-                  <small className="field-example">e.g. ₹45 for one piece</small>
+                    <div className="form-field">
+                      <label htmlFor={`unit-${index}`}>Unit</label>
+                      <select
+                        id={`unit-${index}`}
+                        value={v.quantity_unit || 'ML'}
+                        onChange={(e) => updateVariant(index, 'quantity_unit', e.target.value)}
+                      >
+                        {unitOptionsFor(index).map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </select>
+                      <small className="field-example">ML, Gram or Pieces</small>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
+                      <input
+                        id={`per-unit-${index}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={v.price_per_unit}
+                        onChange={(e) => updateVariant(index, 'price_per_unit', e.target.value)}
+                      />
+                      <small className="field-example">e.g. ₹45 for one piece</small>
+                    </div>
+                  </div>
+
+                  {/* Variant Total Price — READ-ONLY, always auto-calculated as
+                      Quantity × Price Per Unit. The admin never types it. */}
+                  <div className="form-field variant-total-field">
+                    <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
+                    <div className="variant-total-input-row">
+                      <input
+                        id={`total-price-${index}`}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="—"
+                        value={v.total_price === '' ? '' : Number(v.total_price)}
+                        readOnly
+                        tabIndex={-1}
+                        aria-readonly="true"
+                        className="variant-total-readonly"
+                      />
+                      <span className="variant-total-lock" title="Calculated automatically" aria-hidden="true">
+                        🔒
+                      </span>
+                    </div>
+                    <small className="field-example variant-total-formula">
+                      Automatically calculated: {String(v.quantity_value ?? '').trim() || '—'} × ₹{String(v.price_per_unit ?? '').trim() || '—'}
+                    </small>
+                  </div>
+
+                  <div className="variant-default">
+                    <label className="default-radio">
+                      <input
+                        type="radio"
+                        name="default-variant"
+                        checked={v.is_default}
+                        onChange={() => setDefaultVariant(index)}
+                      />
+                      <span>Default Variant</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-
-              {/* Variant Total Price — READ-ONLY, always auto-calculated as
-                  Quantity × Price Per Unit. The admin never types it. */}
-              <div className="form-field variant-total-field">
-                <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
-                <div className="variant-total-input-row">
-                  <input
-                    id={`total-price-${index}`}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="—"
-                    value={v.total_price === '' ? '' : Number(v.total_price)}
-                    readOnly
-                    tabIndex={-1}
-                    aria-readonly="true"
-                    className="variant-total-readonly"
-                  />
-                  <span className="variant-total-lock" title="Calculated automatically" aria-hidden="true">
-                    🔒
-                  </span>
-                </div>
-                <small className="field-example variant-total-formula">
-                  Automatically calculated: {String(v.quantity_value ?? '').trim() || '—'} × ₹{String(v.price_per_unit ?? '').trim() || '—'}
-                </small>
-              </div>
-
-              <div className="variant-default">
-                <label className="default-radio">
-                  <input
-                    type="radio"
-                    name="default-variant"
-                    checked={v.is_default}
-                    onChange={() => setDefaultVariant(index)}
-                  />
-                  <span>Default Variant</span>
-                </label>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="form-field">

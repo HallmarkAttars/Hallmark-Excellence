@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>INVOICE ORD-164714</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1815; background: #fffdf8; }
+  .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; }
+  .frame { position: relative; margin: 6mm; padding: 12mm 12mm 10mm; border: 1px solid rgba(184,134,43,.55); outline: 1px solid rgba(184,134,43,.22); outline-offset: 3.5px; border-radius: 2px; }
+  .corner { position: absolute; width: 7mm; height: 7mm; border: 0 solid #b8862b; }
+  .corner.tl { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; border-top-left-radius: 2px; }
+  .corner.tr { top: -1px; right: -1px; border-top-width: 2px; border-right-width: 2px; border-top-right-radius: 2px; }
+  .corner.bl { bottom: -1px; left: -1px; border-bottom-width: 2px; border-left-width: 2px; border-bottom-left-radius: 2px; }
+  .corner.br { bottom: -1px; right: -1px; border-bottom-width: 2px; border-right-width: 2px; border-bottom-right-radius: 2px; }
+  .corner::after { content: ''; position: absolute; width: 4px; height: 4px; background: #b8862b; transform: rotate(45deg); border-radius: 1px; }
+  .corner.tl::after { top: -5px; left: -5px; }
+  .corner.tr::after { top: -5px; right: -5px; }
+  .corner.bl::after { bottom: -5px; left: -5px; }
+  .corner.br::after { bottom: -5px; right: -5px; }
+  .head { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 14px; padding-bottom: 2.5mm; border-bottom: 1.2px solid #b8862b; }
+  .head > div { min-width: 0; }
+  .brand img { height: 11mm; width: auto; object-fit: contain; }
+  .brand-center { text-align: center; min-width: 0; }
+  .brand-center .company { display: block; font-family: Georgia, serif; font-weight: 700; color: #171512; text-align: center; overflow-wrap: anywhere; }
+  .brand-center .company span { display: block; font-size: 30px; letter-spacing: .06em; line-height: 1.2; white-space: nowrap; overflow-wrap: anywhere; }
+  .brand-center .tagline { display: block; font-size: 9.5px; letter-spacing: .28em; text-transform: uppercase; color: #b8862b; margin-top: 1.5mm; }
+  .brand-center .divider { display: flex; align-items: center; justify-content: center; gap: 2mm; margin-top: 1.2mm; }
+  .brand-center .divider .rule { width: 6mm; height: .3mm; background: linear-gradient(90deg, rgba(184,134,43,0), #b8862b); }
+  .brand-center .divider .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
+  .brand-center .divider .diamond { width: 1.5mm; height: 1.5mm; background: #b8862b; transform: rotate(45deg); border-radius: .3mm; }
+  .title { text-align: right; min-width: 0; }
+  .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; margin: 0; text-align: right; }
+  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: nowrap; text-align: right; }
+  .title p strong { color: #171512; }
+  .contact { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5mm 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
+  .contact .citem { display: inline-flex; align-items: center; gap: 1.2mm; }
+  .contact .cicon { width: 3.2mm; height: 3.2mm; color: #b8862b; flex-shrink: 0; }
+  .contact .citem + .citem::before { content: ''; display: inline-block; width: 1.2mm; height: 1.2mm; background: #b8862b; border-radius: 50%; margin-right: 7mm; vertical-align: middle; }
+  .legal { text-align: center; font-size: 7px; margin-top: 1mm; letter-spacing: .05em; }
+  .legal p { margin: .5mm 0 0; color: #6f6a63; }
+  .legal p:first-child { color: #8a5f1e; font-weight: 600; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 5mm; }
+  .card { background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; padding: 4.5mm 5mm; }
+  .card h3 { font-size: 7.5px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(184,134,43,.25); }
+  .card p { font-size: 9px; color: #1a1815; line-height: 1.5; }
+  .card p.customer { font-size: 11px; font-weight: 700; color: #171512; }
+  .card ul { list-style: none; }
+  .card ul li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 8.5px; color: #6f6a63; padding: 1.3mm 0; border-bottom: 1px solid rgba(184,134,43,.16); }
+  .card ul li:last-child { border-bottom: none; }
+  .card ul li span { text-align: left; white-space: nowrap; }
+  .card ul li strong { color: #171512; font-weight: 700; text-align: right; }
+  table.items { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 5mm; }
+  table.items col.c1 { width: 29%; }
+  table.items col.c2 { width: 26%; }
+  table.items col.c3 { width: 13%; }
+  table.items col.c4 { width: 16%; }
+  table.items col.c5 { width: 16%; }
+  table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; overflow-wrap: anywhere; }
+  table.items th:last-child, table.items td:last-child { padding-right: 0; }
+  table.items th.num, table.items td.num { text-align: right; white-space: nowrap !important; word-break: normal !important; overflow-wrap: normal !important; }
+  table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; overflow-wrap: anywhere; }
+  table.items tbody tr:nth-child(even) { background: #fbf9f4; }
+  table.items td.name { font-weight: 700; color: #171512; }
+  table.items td.name .thumb-frame { display: inline-flex; align-items: center; justify-content: center; width: 12mm; height: 12mm; background: #f7f2e8; border: 1px solid #e6dcc6; border-radius: 1.5mm; overflow: hidden; margin-right: 2.5mm; vertical-align: middle; }
+  table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
+  table.items td.detail { color: #6f6a63; }
+  table.items td.detail .detail-main { display: block; }
+  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 4mm; }
+  .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
+  .row span:last-child { color: #1a1815; text-align: right; }
+  .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 10.5px; font-weight: 700; color: #171512; }
+  .row.grand .amount { color: #b8862b; font-size: 13px; }
+  .thanks { margin-top: 4mm; padding: 4.5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.45); border-radius: 8px; text-align: center; }
+  .thanks .t { font-family: Georgia, serif; font-size: 15px; font-weight: 700; color: #b8862b; margin-bottom: 2mm; }
+  .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
+  .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
+  .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
+  @page { size: A4; margin: 0; }
+  @media print { body { background: #fffdf8; } .frame { break-inside: auto; } }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="frame">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+      <div class="head">
+        <div class="brand"></div>
+        <div class="brand-center">
+          <span class="company"><span>AREES</span><span>PERFUMES</span></span>
+          <span class="tagline">The Art of Significance Attars</span>
+          <span class="divider"><span class="rule"></span><span class="diamond"></span><span class="rule"></span></span>
+        </div>
+        <div class="title">
+          <h2>INVOICE</h2>
+          <p>#<strong>ORD-164714</strong></p>
+          <p>Date: 11 Aug 2026</p>
+          <p>Time: 2:32 PM</p>
+        </div>
+      </div>
+
+      <div class="contact"><span class="citem"><svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c1 .3 2 .5 3 .6a2 2 0 0 1 1.5 2z"/></svg><span>+91 98765 43210</span></span><span class="citem"><svg class="cicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg><span>hello@areesdahab.com</span></span></div>
+      <div class="legal"><p>Prices are inclusive of applicable GST.</p><p>© Hallmark of Excellence. All rights reserved.</p></div>
+
+      <div class="cards">
+        <div class="card">
+          <h3>Bill To</h3>
+          <p class="customer">Mohamed Fareeth Abdul Rahman Siddiqui</p><p>+91 9363456545</p><p>fareeth.mohamed@gmail.com</p><p>No 95, Moore Street, First Floor, Near Kalaiyam School Opposite Building</p><p>George Town, Chennai, Tamil Nadu - 600001</p>
+        </div>
+        <div class="card">
+          <h3>Order Information</h3>
+          <ul><li><span>Order ID</span><strong>ORD-164714</strong></li><li><span>Date</span><strong>11 Aug 2026</strong></li><li><span>Time</span><strong>2:32 PM</strong></li><li><span>Payment</span><strong>Advance Payment</strong></li><li><span>Status</span><strong>Processing</strong></li></ul>
+        </div>
+      </div>
+
+      <table class="items">
+        <colgroup><col class="c1" /><col class="c2" /><col class="c3" /><col class="c4" /><col class="c5" /></colgroup>
+        <thead>
+          <tr><th>Product</th><th>Details</th><th class="num">Qty</th><th class="num">Rate/pcs.</th><th class="num">Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+        <td class="name"><span>Royal Marriage Premium Oud Attar Concentrated Perfume Oil 12ml</span></td>
+        <td class="detail"><span class="detail-main">DAHAB · 12 ML</span></td>
+        <td class="num">20</td>
+        <td class="num">₹47</td>
+        <td class="num">₹940</td>
+      </tr><tr>
+        <td class="name"><span>Pink Musk &amp; Rose Blossom Attar For Women Long Lasting Fragrance</span></td>
+        <td class="detail"><span class="detail-main">AREES · 100 Pieces</span></td>
+        <td class="num">10</td>
+        <td class="num">₹45</td>
+        <td class="num">₹450</td>
+      </tr><tr>
+        <td class="name"><span>CR7 Platinum Edition Men Luxury Perfume Attar</span></td>
+        <td class="detail"><span class="detail-main">AREES · 60 Pieces</span></td>
+        <td class="num">1</td>
+        <td class="num">₹45</td>
+        <td class="num">₹45</td>
+      </tr><tr>
+        <td class="name"><span>Cold Water Fresh Aquatic Scent Premium Attar Bottle</span></td>
+        <td class="detail"><span class="detail-main">AREES · 150 Pieces</span></td>
+        <td class="num">1</td>
+        <td class="num">₹42</td>
+        <td class="num">₹42</td>
+      </tr>
+        </tbody>
+      </table>
+
+      <div class="summary">
+        <div class="row"><span>Subtotal</span><span>₹1,477</span></div>
+        <div class="row"><span>Delivery / Transport</span><span>To be confirmed</span></div>
+        <div class="row grand"><span>Total</span><span class="amount">₹2,940</span></div>
+      </div>
+
+      <div class="thanks">
+        <p class="t">Thank You!</p>
+        <p class="line">Thank you for your order.</p>
+        <p class="sub">We truly appreciate your trust in our attars.</p>
+        <p class="sign">— Team Arees Perfumes</p>
+      </div>
+
+      <div class="pagefoot">
+        <span class="rule"></span>
+        <span class="text">◆ Page 1 of 1 ◆</span>
+        <span class="rule"></span>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

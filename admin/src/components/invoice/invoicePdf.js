@@ -275,8 +275,8 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const MAX_RIGHT_BLOCK = 62 // mm
   const rightMeta = []
   if (inv.orderId) rightMeta.push(`#${inv.orderId}`)
-  if (inv.date) rightMeta.push(`Date : ${inv.date}`)
-  if (inv.time) rightMeta.push(`Time : ${inv.time}`)
+  if (inv.date) rightMeta.push(`Date: ${inv.date}`)
+  if (inv.time) rightMeta.push(`Time: ${inv.time}`)
   let naturalRightW = 0
   for (const line of rightMeta) {
     applyRightMetaFont(doc, line)
@@ -285,13 +285,11 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const rightBlockW = Math.min(MAX_RIGHT_BLOCK, naturalRightW)
   const rightBlockLeft = W - M - rightBlockW
 
-  // INVOICE / ESTIMATE title (right, gold) — modest charSpace + a 1mm inset
-  // (≥ the charSpace) keeps the last letter safely inside the gold page frame
-  // even with jsPDF's right-aligned charSpace quirk.
+  // INVOICE / ESTIMATE title (right, gold)
   doc.setFont('times', 'bold').setFontSize(21).setTextColor(...GOLD)
-  fitTextToWidth(doc, docTitle, MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 1 })
-  const titleLeftEdge = W - M - 1 - textWidthMm(doc, docTitle, { charSpace: 1 })
-  doc.text(docTitle, W - M - 1, 30, { align: 'right', charSpace: 1 })
+  fitTextToWidth(doc, docTitle, MAX_RIGHT_BLOCK, { size: 21, minSize: 13, charSpace: 0 })
+  const titleLeftEdge = W - M - textWidthMm(doc, docTitle, { charSpace: 0 })
+  doc.text(docTitle, W - M, 30, { align: 'right', charSpace: 0 })
 
   // Brand name (centre) — two stacked serif lines (AREES / PERFUMES),
   // shrink-fit to the LONGEST line inside the band bounded by the left edge
@@ -421,7 +419,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   }
 
   // ============================= ITEMS TABLE ================================
-  const tableStartY = y + cardH + 7
+  const tableStartY = y + cardH + 5
   autoTable(doc, {
     startY: tableStartY,
     // Explicit bottom margin keeps the last row clear of the per-page page
@@ -484,16 +482,19 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
       cellPadding: { top: 3.6, bottom: 3.6, left: 1.5, right: 1.5 },
     },
     columnStyles: {
-      // Fixed proportional widths — 30/28/10/16/16 of the 182mm content
-      // width (100%), so the table always fills exactly between the A4
-      // margins and money stays right-aligned and fully visible.
-      0: { cellWidth: r1(CW * 0.3) },
-      1: { cellWidth: r1(CW * 0.28) },
-      2: { cellWidth: r1(CW * 0.1), halign: 'right' },
+      0: { cellWidth: r1(CW * 0.29) },
+      1: { cellWidth: r1(CW * 0.26) },
+      2: { cellWidth: r1(CW * 0.13), halign: 'right' },
       3: { cellWidth: r1(CW * 0.16), halign: 'right' },
       4: { cellWidth: r1(CW * 0.16), halign: 'right' },
     },
     didParseCell: (data) => {
+      if (data.column.index === 4) {
+        data.cell.styles.cellPadding.right = 0
+      }
+      if (data.column.index === 2) {
+        data.cell.styles.overflow = 'visible'
+      }
       if (data.section === 'head') return
       const item = inv.items[data.row.index]
       if (data.column.index === 0) {
@@ -537,7 +538,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     },
   })
 
-  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 9
+  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 5
 
   // ============================ PRICE SUMMARY ===============================
   const sumW = 78
@@ -549,7 +550,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Subtotal', sumX, ty)
   drawMoney(doc, rupee, inv.subtotal, W - M, ty, { align: 'right' })
-  ty += 6
+  ty += 5.5
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
   doc.text('Delivery / Transport', sumX, ty)
   if (inv.delivery == null) {
@@ -558,33 +559,33 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   } else {
     drawMoney(doc, rupee, inv.delivery, W - M, ty, { align: 'right' })
   }
-  ty += 5
+  ty += 4.5
   doc.setDrawColor(...GOLD).setLineWidth(0.4)
   doc.line(sumX, ty, W - M, ty)
-  ty += 5.5
+  ty += 5
   doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(...INK)
   doc.text('TOTAL', sumX, ty)
   drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 13, color: GOLD })
-  ty += 12
+  ty += 7
 
   // =========================== THANK-YOU CARD ===============================
   if (ty > H - 52) {
     doc.addPage()
     ty = M
   }
-  const thanksH = 30
+  const thanksH = 24
   doc.setFillColor(...CREAM)
   doc.setDrawColor(...GOLD)
   doc.setLineWidth(0.3)
   doc.roundedRect(M, ty, CW, thanksH, 3, 3, 'FD')
   doc.setFont('times', 'bold').setFontSize(13).setTextColor(...GOLD)
-  doc.text('Thank You!', W / 2, ty + 9, { align: 'center' })
+  doc.text('Thank You!', W / 2, ty + 8, { align: 'center' })
   doc.setFont('times', 'italic').setFontSize(10.5).setTextColor(...TEXT)
-  doc.text(inv.company.thanks, W / 2, ty + 16, { align: 'center' })
+  doc.text(inv.company.thanks, W / 2, ty + 14.5, { align: 'center' })
   doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
-  doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 21.5, { align: 'center' })
+  doc.text('We truly appreciate your trust in our attars.', W / 2, ty + 19.5, { align: 'center' })
   doc.setFont('helvetica', 'bold').setFontSize(7.5).setTextColor(...GOLD)
-  doc.text(`— Team ${brandTitle}`, W / 2, ty + 26.5, { align: 'center' })
+  doc.text(`— Team ${brandTitle}`, W / 2, ty + 24, { align: 'center' })
 
   // ============== PAGE FRAME + CORNER DETAILS + FOOTER (every page) ========
   const pages = doc.getNumberOfPages()
@@ -752,10 +753,8 @@ function renderPrintHtml(inv, logo) {
   .brand-center .divider .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
   .brand-center .divider .diamond { width: 1.5mm; height: 1.5mm; background: #b8862b; transform: rotate(45deg); border-radius: .3mm; }
   .title { text-align: right; min-width: 0; }
-  .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; }
-  /* Long order ids wrap inside the right block instead of forcing the grid
-     wider than the A4 sheet. */
-  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: normal; overflow-wrap: anywhere; }
+  .title h2 { font-family: Georgia, serif; font-size: 21px; letter-spacing: .18em; color: #b8862b; font-weight: 700; margin: 0; text-align: right; }
+  .title p { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; margin-left: auto; max-width: 62mm; white-space: nowrap; text-align: right; }
   .title p strong { color: #171512; }
   .contact { display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5mm 7mm; padding: 2mm 0 0; font-size: 8px; color: #6f6a63; }
   .contact .citem { display: inline-flex; align-items: center; gap: 1.2mm; }
@@ -764,25 +763,25 @@ function renderPrintHtml(inv, logo) {
   .legal { text-align: center; font-size: 7px; margin-top: 1mm; letter-spacing: .05em; }
   .legal p { margin: .5mm 0 0; color: #6f6a63; }
   .legal p:first-child { color: #8a5f1e; font-weight: 600; }
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 5.5mm; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; margin-top: 5mm; }
   .card { background: #f7f2e8; border: 1px solid rgba(184,134,43,.4); border-radius: 6px; padding: 4.5mm 5mm; }
   .card h3 { font-size: 7.5px; letter-spacing: .24em; text-transform: uppercase; color: #b8862b; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid rgba(184,134,43,.25); }
   .card p { font-size: 9px; color: #1a1815; line-height: 1.5; }
   .card p.customer { font-size: 11px; font-weight: 700; color: #171512; }
   .card ul { list-style: none; }
-  .card ul li { display: flex; justify-content: space-between; gap: 12px; font-size: 8.5px; color: #6f6a63; padding: 1.3mm 0; border-bottom: 1px solid rgba(184,134,43,.16); }
+  .card ul li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 8.5px; color: #6f6a63; padding: 1.3mm 0; border-bottom: 1px solid rgba(184,134,43,.16); }
   .card ul li:last-child { border-bottom: none; }
+  .card ul li span { text-align: left; white-space: nowrap; }
   .card ul li strong { color: #171512; font-weight: 700; text-align: right; }
-  table.items { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 7mm; }
-  /* 30/30/10/15/15 column distribution — matches the PDF exactly, so the
-     table can never widen past the sheet (long names wrap in-cell). */
-  table.items col.c1 { width: 30%; }
-  table.items col.c2 { width: 28%; }
-  table.items col.c3 { width: 10%; }
+  table.items { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 5mm; }
+  table.items col.c1 { width: 29%; }
+  table.items col.c2 { width: 26%; }
+  table.items col.c3 { width: 13%; }
   table.items col.c4 { width: 16%; }
   table.items col.c5 { width: 16%; }
   table.items th { background: #171512; color: #f7f2e8; text-align: left; font-size: 7.5px; letter-spacing: .14em; text-transform: uppercase; padding: 2.5mm 2.5mm; border-bottom: 1.5px solid #b8862b; overflow-wrap: anywhere; }
-  table.items th.num, table.items td.num { text-align: right; }
+  table.items th:last-child, table.items td:last-child { padding-right: 0; }
+  table.items th.num, table.items td.num { text-align: right; white-space: nowrap !important; word-break: normal !important; overflow-wrap: normal !important; }
   table.items td { padding: 2.5mm 2.5mm; font-size: 8.5px; border-bottom: 1px solid #ece7dc; vertical-align: top; overflow-wrap: anywhere; }
   table.items tbody tr:nth-child(even) { background: #fbf9f4; }
   table.items td.name { font-weight: 700; color: #171512; }
@@ -790,24 +789,16 @@ function renderPrintHtml(inv, logo) {
   table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
   table.items td.detail { color: #6f6a63; }
   table.items td.detail .detail-main { display: block; }
-  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 7mm; }
+  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 4mm; }
   .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 9px; color: #6f6a63; }
-  .row span:last-child { color: #1a1815; }
+  .row span:last-child { color: #1a1815; text-align: right; }
   .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 10.5px; font-weight: 700; color: #171512; }
   .row.grand .amount { color: #b8862b; font-size: 13px; }
-  .thanks { margin-top: 7mm; padding: 5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.45); border-radius: 8px; text-align: center; }
+  .thanks { margin-top: 4mm; padding: 4.5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.45); border-radius: 8px; text-align: center; }
   .thanks .t { font-family: Georgia, serif; font-size: 15px; font-weight: 700; color: #b8862b; margin-bottom: 2mm; }
   .thanks .line { font-family: Georgia, serif; font-style: italic; font-size: 11px; color: #171512; }
   .thanks .sub { font-size: 8.5px; color: #6f6a63; margin-top: 1.2mm; }
   .thanks .sign { font-size: 8px; font-weight: 700; color: #b8862b; margin-top: 2mm; }
-  .pagefoot .text { font-family: Georgia, serif; font-size: 9px; font-weight: 700; letter-spacing: .22em; color: #b8862b; white-space: nowrap; }
-  .pagefoot { display: flex; align-items: center; justify-content: center; gap: 4mm; margin-top: 6mm; }
-  .pagefoot .rule { flex: 0 1 32mm; height: 1px; background: linear-gradient(90deg, rgba(184,134,43,0), #b8862b); }
-  .pagefoot .rule:last-child { background: linear-gradient(90deg, #b8862b, rgba(184,134,43,0)); }
-  /* The frame's own margin (6mm) + padding (12mm) provide the ~18mm safe
-     page margin, so @page must NOT add more — a 210mm sheet inside 12mm
-     @page margins would measure 234mm and clip the gold frame's right edge
-     in real print / Save-as-PDF. */
   @page { size: A4; margin: 0; }
   @media print { body { background: #fffdf8; } .frame { break-inside: auto; } }
 </style>
@@ -826,9 +817,9 @@ function renderPrintHtml(inv, logo) {
         </div>
         <div class="title">
           <h2>${escapeHtml(docTitle)}</h2>
-          ${inv.orderId ? `<p># <strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
-          ${inv.date ? `<p>Date : ${escapeHtml(inv.date)}</p>` : ''}
-          ${inv.time ? `<p>Time : ${escapeHtml(inv.time)}</p>` : ''}
+          ${inv.orderId ? `<p>#<strong>${escapeHtml(inv.orderId)}</strong></p>` : ''}
+          ${inv.date ? `<p>Date: ${escapeHtml(inv.date)}</p>` : ''}
+          ${inv.time ? `<p>Time: ${escapeHtml(inv.time)}</p>` : ''}
         </div>
       </div>
 
