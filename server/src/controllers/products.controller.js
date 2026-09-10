@@ -703,12 +703,22 @@ async function createProduct(req, res) {
       explicitOrder = parsedOrder
     }
 
+    // Normalize category_id and brand_id: empty strings or falsy values become null
+    const resolvedCategoryId = category_id && String(category_id).trim() !== '' ? String(category_id).trim() : null
+    const resolvedBrandId = brand_id && String(brand_id).trim() !== '' ? String(brand_id).trim() : null
+
+    // For products without a brand, Category is required by existing business rules.
+    // When creating a brand product (brand_id is provided), Category is optional.
+    if (!resolvedBrandId && !resolvedCategoryId) {
+      return res.status(400).json({ error: 'Category is required for products without a brand.' })
+    }
+
     // Execute independent pre-insert lookups concurrently:
     // 1. Category check (slug verification for Attar requirements)
     // 2. Next display order (if not explicitly specified)
     // 3. Unique slug generation
-    const categoryPromise = category_id
-      ? supabase.from('categories').select('slug').eq('id', category_id).maybeSingle()
+    const categoryPromise = resolvedCategoryId
+      ? supabase.from('categories').select('slug').eq('id', resolvedCategoryId).maybeSingle()
       : Promise.resolve({ data: null, error: null })
 
     const orderPromise = explicitOrder !== undefined
@@ -730,7 +740,7 @@ async function createProduct(req, res) {
 
     // If the selected category is "Attar", brand is required
     const category = categoryRes.data
-    if (category && category.slug === 'attar' && !brand_id) {
+    if (category && category.slug === 'attar' && !resolvedBrandId) {
       return res.status(400).json({ error: 'Brand is required for Attar products.' })
     }
 
@@ -742,8 +752,8 @@ async function createProduct(req, res) {
       compare_at_price: compare_at_price ?? null,
       rating: rating ?? null,
       review_count: review_count ?? null,
-      category_id: category_id ?? null,
-      brand_id: brand_id ?? null,
+      category_id: resolvedCategoryId,
+      brand_id: resolvedBrandId,
       image: image ?? null,
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
@@ -828,11 +838,12 @@ async function updateProduct(req, res) {
     } = req.body
 
     // If the category is being updated to "Attar", brand is required
-    if (category_id !== undefined) {
+    const resolvedCategoryId = category_id && String(category_id).trim() !== '' ? String(category_id).trim() : null
+    if (category_id !== undefined && resolvedCategoryId) {
       const { data: category } = await supabase
         .from('categories')
         .select('slug')
-        .eq('id', category_id)
+        .eq('id', resolvedCategoryId)
         .maybeSingle()
       if (category && category.slug === 'attar' && !brand_id) {
         return res.status(400).json({ error: 'Brand is required for Attar products.' })
@@ -849,7 +860,7 @@ async function updateProduct(req, res) {
     if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
     if (rating !== undefined) updates.rating = rating
     if (review_count !== undefined) updates.review_count = review_count
-    if (category_id !== undefined) updates.category_id = category_id
+    if (category_id !== undefined) updates.category_id = resolvedCategoryId
     if (brand_id !== undefined) updates.brand_id = brand_id
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active

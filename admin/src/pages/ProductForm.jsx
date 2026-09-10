@@ -6,6 +6,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 // price comes from the brand's Bulk Pricing normal price). Pure helpers with
 // unit tests in utils/attarPriceSync.test.js.
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
+import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory } from '../utils/productValidation'
 import { compressProductImage } from '../utils/imageCompressor'
 import './ProductForm.css'
 
@@ -330,6 +331,11 @@ export default function ProductForm() {
     isAttarCategory && selectedBrand ? Number(selectedBrand.standard_price) : null
   const brandHasNormalPrice = Number.isFinite(brandNormalPrice) && brandNormalPrice > 0
 
+  const isBrandProduct = checkIsBrandProduct({
+    brandId: form.brand_id,
+    lockedBrandId,
+  })
+
   // ATTAR PRICE SYNC
   useEffect(() => {
     if (!shouldSyncAttarPrice({ isEdit, isAttarCategory, brandHasNormalPrice })) {
@@ -493,6 +499,17 @@ export default function ProductForm() {
     if (isSubmitting) return // Guard against rapid duplicate clicks
 
     setError('')
+
+    // Category is required when not a brand product
+    const categoryError = validateProductCategory({
+      categoryId: form.category_id,
+      brandId: form.brand_id,
+      lockedBrandId,
+    })
+    if (categoryError) {
+      setError(categoryError)
+      return
+    }
 
     // Validate brand is required for Attar category
     if (isAttarCategory && !form.brand_id) {
@@ -742,13 +759,15 @@ export default function ProductForm() {
 
         <div className="form-row form-row-2">
           <div className="form-field">
-            <label htmlFor="category_id">Category</label>
+            <label htmlFor="category_id">
+              {getCategoryLabel({ brandId: form.brand_id, lockedBrandId })}
+            </label>
             <select
               id="category_id"
               name="category_id"
               value={form.category_id}
               onChange={handleCategoryChange}
-              required
+              required={!isBrandProduct}
               disabled={isSubmitting}
             >
               <option value="">Select category</option>
