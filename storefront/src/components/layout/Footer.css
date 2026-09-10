@@ -73,7 +73,8 @@
   gap: 12px;
   min-width: 0;
 }
-.footer-col h4 {
+.footer-col h4,
+.footer-col-title {
   color: var(--gold);
   font-family: var(--font-body);
   font-size: 0.75rem; /* 12px — 11–12px */
@@ -109,6 +110,52 @@
   color: var(--gold);
 }
 a.footer-contact-row:hover { color: var(--gold-light); }
+
+/* ---------- WhatsApp CTA ---------- */
+.footer-whatsapp-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-top: 4px;
+  transition: color 0.2s ease;
+}
+.footer-whatsapp-cta:hover {
+  color: var(--gold-light);
+}
+.footer-whatsapp-arrow {
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+.footer-whatsapp-cta:hover .footer-whatsapp-arrow {
+  transform: translateX(3px);
+}
+
+/* ---------- Accordion trigger (base: styled like h4 on desktop if ever rendered) ---------- */
+.footer-accordion-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 8px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+}
+.footer-accordion-caret {
+  display: none;
+}
+.footer-accordion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 /* ---------- Bottom bar (compact) ---------- */
 .footer-bottom {
@@ -155,11 +202,212 @@ a.footer-contact-row:hover { color: var(--gold-light); }
 }
 
 /* ============================================================
-   Mobile (≤767px) — stacked, compact
+   Desktop & Tablet Safety (≥768px)
+   ============================================================ */
+@media (min-width: 768px) {
+  .footer-accordion-btn {
+    pointer-events: none;
+    cursor: default;
+  }
+  .footer-accordion-caret {
+    display: none !important;
+  }
+  .footer-accordion-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    max-height: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
+
+/* ============================================================
+   Mobile (≤767px) — clean, compact, luxury stacked accordions
    ============================================================ */
 @media (max-width: 767px) {
-  .footer-inner { padding: 32px 20px 28px; }
-  .footer-grid { gap: 26px; }
-  .footer-logo-img { width: 84px; }
-  .footer-bottom-inner { padding: 18px 20px; }
+  .footer-inner {
+    padding: 44px 20px 24px;
+  }
+
+  .footer-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* 1. BRAND AREA */
+  .footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .footer-logo-img {
+    width: 96px;
+    margin: 0 auto 16px;
+  }
+
+  .footer-description {
+    font-size: 0.85rem;
+    line-height: 1.65;
+    max-width: 320px;
+    margin: 0 auto 20px;
+    text-align: center;
+    color: rgba(232, 225, 214, 0.72);
+  }
+
+  .footer-social {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .footer-social a {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(184, 137, 56, 0.45);
+    border-radius: 50%;
+  }
+
+  /* 2. ACCORDION SECTIONS */
+  .footer-col {
+    border-bottom: 1px solid rgba(232, 225, 214, 0.08);
+    gap: 0;
+  }
+
+  .footer-col:first-of-type {
+    border-top: 1px solid rgba(232, 225, 214, 0.08);
+  }
+
+  .footer-accordion-btn {
+    min-height: 52px;
+    padding: 14px 4px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .footer-col-title {
+    color: var(--gold);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .footer-accordion-caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+  }
+
+  .footer-accordion-btn.is-open .footer-accordion-caret {
+    transform: rotate(180deg);
+  }
+
+  .footer-accordion-content {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding: 0 4px;
+    gap: 0;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.28s ease,
+                padding 0.32s ease,
+                visibility 0s 0.35s;
+  }
+
+  .footer-accordion-content.is-open {
+    max-height: 500px;
+    opacity: 1;
+    visibility: visible;
+    padding: 4px 4px 18px;
+    gap: 12px;
+    transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                padding 0.32s ease;
+  }
+
+  .footer-col a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: 0.88rem;
+    padding: 4px 0;
+    color: rgba(232, 225, 214, 0.78);
+  }
+
+  /* 3. CONTACT SECTION IN ACCORDION */
+  .footer-contact-row {
+    min-height: 44px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .footer-contact-row svg {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .footer-contact-row > span {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .footer-whatsapp-cta {
+    min-height: 44px;
+    padding: 8px 0;
+    margin-top: 4px;
+    font-size: 0.88rem;
+  }
+
+  /* 4. COPYRIGHT BOTTOM */
+  .footer-bottom {
+    border-top: 1px solid rgba(232, 225, 214, 0.08);
+    margin-top: 12px;
+  }
+
+  .footer-bottom-inner {
+    padding: 20px 20px 28px;
+  }
+
+  .footer-bottom p {
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: rgba(232, 225, 214, 0.5);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .footer-accordion-content,
+  .footer-accordion-caret,
+  .footer-whatsapp-arrow {
+    transition: none !important;
+  }
 }

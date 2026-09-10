@@ -17,15 +17,15 @@
 }
 .search-overlay.is-open { opacity: 1; visibility: visible; }
 
-/* Premium open: the panel fades (above) while its content rises in a
-   short stagger — shared fade-up keyframes from the animation system.
-   Results are never staggered per keystroke (search stays instant). */
+/* Premium open: the panel fades while its content rises in a short stagger */
 .js .search-overlay.is-open .search-overlay-head,
 .js .search-overlay.is-open .search-overlay-form,
-.js .search-overlay.is-open .search-overlay-results {
+.js .search-overlay.is-open .search-overlay-results,
+.js .search-overlay.is-open .search-results-context {
   animation: fade-up 0.4s ease-out both;
 }
 .js .search-overlay.is-open .search-overlay-form { animation-delay: 60ms; }
+.js .search-overlay.is-open .search-results-context { animation-delay: 90ms; }
 .js .search-overlay.is-open .search-overlay-results { animation-delay: 120ms; }
 
 .search-overlay-head {
@@ -38,6 +38,17 @@
 }
 .search-overlay-head .eyebrow { margin: 0; }
 
+.search-overlay-close {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
 .search-overlay-form {
   max-width: 720px;
   width: 100%;
@@ -48,6 +59,14 @@
   border-bottom: 1px solid var(--charcoal);
   padding: 6px 2px 12px;
   color: var(--gold-deep);
+  position: relative;
+}
+
+.search-overlay-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--gold-deep);
+  flex-shrink: 0;
 }
 
 .search-overlay-input {
@@ -64,6 +83,105 @@
 .search-overlay-input::placeholder { color: rgba(36, 31, 25, 0.7); }
 .search-overlay-input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
+.search-overlay-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--charcoal-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.search-overlay-clear:hover {
+  color: var(--charcoal);
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.search-results-context {
+  max-width: 720px;
+  width: 100%;
+  margin: 16px auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.search-results-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-results-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  line-height: 1.3;
+}
+.search-query-term {
+  color: var(--gold-deep);
+  font-style: italic;
+}
+
+.search-results-count {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  letter-spacing: 0.02em;
+}
+
+.search-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-filter-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.search-filter-select {
+  height: 34px;
+  padding: 0 26px 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(80, 60, 30, 0.2);
+  background: #ffffff;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(40, 30, 20, 0.04);
+}
+.search-filter-select:focus {
+  outline: none;
+  border-color: var(--gold-deep);
+}
+
+.search-select-arrow {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  font-size: 9px;
+  color: var(--gold-deep);
+}
+
 .search-overlay-results {
   max-width: 720px;
   width: 100%;
@@ -77,9 +195,7 @@
   padding: 24px 2px;
 }
 
-/* ---------- Results: shared ProductCard in a responsive grid ----------
-   Same card component and information hierarchy as every storefront grid.
-   2-up on mobile, 3-up once there is room, cards never overflow. */
+/* ---------- Results Grid: shared ProductCard ---------- */
 .search-overlay-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -87,5 +203,227 @@
   padding-bottom: 40px;
 }
 @media (min-width: 560px) {
-  .search-overlay-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .search-overlay-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* ---------- Empty State ---------- */
+.search-empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.search-empty-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0;
+}
+.search-empty-subtitle {
+  font-size: 0.88rem;
+  color: var(--charcoal-soft);
+  margin: 4px 0 12px;
+}
+.search-suggestions-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 320px;
+}
+.search-suggestion-chip {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(184, 137, 56, 0.4);
+  background: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.search-suggestion-chip:hover {
+  background: var(--gold-deep);
+  color: #ffffff;
+  border-color: var(--gold-deep);
+}
+
+/* ---------- Skeleton Loading State ---------- */
+.search-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding-bottom: 40px;
+}
+@media (min-width: 560px) {
+  .search-skeleton-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+.search-skeleton-card {
+  background: #ffffff;
+  border: 1px solid rgba(80, 60, 30, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.search-skeleton-media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(184, 137, 56, 0.08);
+}
+.search-skeleton-line {
+  height: 12px;
+  margin: 0 10px;
+  border-radius: 4px;
+  background: rgba(184, 137, 56, 0.08);
+}
+.search-skeleton-line.short { width: 45%; }
+.search-skeleton-line.title { width: 75%; height: 16px; }
+.search-skeleton-btn {
+  height: 40px;
+  margin: 6px 10px 0;
+  border-radius: 8px;
+  background: rgba(184, 137, 56, 0.12);
+}
+
+/* ============================================================
+   MOBILE-ONLY (<768px) SEARCH ENHANCEMENTS
+   ============================================================ */
+@media (max-width: 767px) {
+  .search-overlay {
+    padding: 12px 16px 28px;
+  }
+
+  /* Enclosed Search Input with 48-52px height */
+  .search-overlay-form {
+    height: 50px;
+    border: 1.5px solid rgba(184, 137, 56, 0.35);
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 0 12px;
+    margin: 12px auto 14px;
+    box-shadow: 0 2px 10px rgba(40, 30, 20, 0.04);
+    gap: 10px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .search-overlay-form:focus-within {
+    border-color: var(--gold-deep);
+    box-shadow: 0 0 0 3px rgba(184, 137, 56, 0.15);
+  }
+
+  .search-overlay-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .search-overlay-input {
+    font-size: 15.5px;
+    font-weight: 500;
+    height: 100%;
+  }
+
+  .search-overlay-clear {
+    width: 36px;
+    height: 36px;
+    margin-right: -4px;
+  }
+
+  /* Compact Results Context Header */
+  .search-results-context {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 8px 0 16px;
+  }
+
+  .search-results-title {
+    font-size: 0.98rem;
+  }
+
+  .search-filters-row {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .search-filter-wrap {
+    flex: 1;
+  }
+
+  .search-filter-select {
+    height: 38px;
+    font-size: 0.74rem;
+  }
+
+  /* 2-Column Mobile Product Grid Enhancements */
+  .search-overlay-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-bottom: 32px;
+  }
+
+  /* Target product cards inside the search overlay */
+  .search-overlay-grid .product-card {
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(40, 30, 20, 0.05);
+  }
+
+  .search-overlay-grid .product-card-media {
+    aspect-ratio: 1 / 1; /* More prominent image display */
+  }
+
+  .search-overlay-grid .product-card-body {
+    padding: 10px 10px 12px;
+    gap: 6px;
+  }
+
+  .search-overlay-grid .product-card-brand,
+  .search-overlay-grid .product-card-rating {
+    font-size: 11px;
+  }
+
+  .search-overlay-grid .product-card-name {
+    font-size: 14px;
+    line-height: 1.22;
+    min-height: 34px;
+  }
+
+  .search-overlay-grid .product-card-meta {
+    font-size: 10px;
+  }
+
+  .search-overlay-grid .product-card-btn {
+    height: 42px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    letter-spacing: 0.07em;
+  }
+
+  .search-overlay-grid .product-card-badge {
+    padding: 5px 8px;
+    font-size: 10px;
+    border-radius: 4px;
+  }
+}
+
+/* Desktop Safety (≥768px) */
+@media (min-width: 768px) {
+  .search-overlay-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
 }

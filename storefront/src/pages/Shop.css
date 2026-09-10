@@ -28,11 +28,10 @@
   grid-template-columns: 1fr;
 }
 
-/* --- Top bar --- */
 .shop-topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  width: 100%;
 }
 
 .shop-filter-btn {

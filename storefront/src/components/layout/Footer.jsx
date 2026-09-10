@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
 import { FOOTER, BUSINESS } from '../../data/content'
@@ -5,6 +6,27 @@ import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import Reveal from '../../animations/Reveal'
 import './Footer.css'
+
+const WHATSAPP_URL =
+  'https://wa.me/919840078909?text=Can%20I%20get%20more%20info%20about%20your%20products%3F'
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
 
 function PhoneIcon() {
   return (
@@ -54,6 +76,42 @@ export default function Footer() {
   const { brands } = useCart()
   const brandLinks = sortBrandsByDisplayOrder(brands)
 
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  )
+
+  const [openSections, setOpenSections] = useState({
+    Shop: false,
+    Company: false,
+    Contact: false,
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mql = window.matchMedia('(max-width: 767px)')
+    const handler = (e) => setIsMobile(e.matches)
+    if (mql.addEventListener) {
+      mql.addEventListener('change', handler)
+    } else if (mql.addListener) {
+      mql.addListener(handler)
+    }
+    setIsMobile(mql.matches)
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener('change', handler)
+      } else if (mql.removeListener) {
+        mql.removeListener(handler)
+      }
+    }
+  }, [])
+
+  const toggleSection = (heading) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [heading]: !prev[heading],
+    }))
+  }
+
   return (
     <footer className="footer">
       <div className="footer-inner">
@@ -63,56 +121,138 @@ export default function Footer() {
             <img src={IMAGES.logoLight} alt={BUSINESS.name} className="footer-logo-img" loading="lazy" />
             <p className="footer-description">{FOOTER.description}</p>
             <div className="footer-social" aria-label="Social media links">
-              {BUSINESS.social.map((social) => (
-                <a key={social.key} href={social.href} aria-label={social.label}>
-                  {SOCIAL_ICONS[social.key]}
-                </a>
-              ))}
+              {BUSINESS.social.map((social) => {
+                const href =
+                  social.key === 'whatsapp' && (!social.href || social.href === '#')
+                    ? WHATSAPP_URL
+                    : social.href
+                return (
+                  <a
+                    key={social.key}
+                    href={href}
+                    aria-label={social.label}
+                    {...(social.key === 'whatsapp' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  >
+                    {SOCIAL_ICONS[social.key]}
+                  </a>
+                )
+              })}
             </div>
           </div>
 
-          {/* Link columns — array-driven from content.js */}
-          {FOOTER.columns.map((column) => (
-            <nav key={column.heading} className="footer-col" aria-label={column.heading}>
-              <h4>{column.heading}</h4>
-              {column.links.map((link) => (
-                <Link key={link.to} to={link.to}>
-                  {link.label}
-                </Link>
-              ))}
-              {/* Shop column — the brand links come from the LIVE brand list
-                  (active brands, admin-ordered), never hard-coded copy. */}
-              {column.heading === 'Shop' &&
-                brandLinks.map((brand) => (
-                  <Link key={brand.slug} to={`/brand/${brand.slug}`}>
-                    {brand.name}
-                  </Link>
-                ))}
-            </nav>
-          ))}
+          {/* Link columns — Shop, Company */}
+          {FOOTER.columns.map((column) => {
+            const isOpen = !!openSections[column.heading]
+            const sectionId = `footer-section-${column.heading.toLowerCase()}`
+            const triggerId = `footer-trigger-${column.heading.toLowerCase()}`
+
+            return (
+              <nav key={column.heading} className="footer-col" aria-label={column.heading}>
+                {isMobile ? (
+                  <button
+                    type="button"
+                    id={triggerId}
+                    className={`footer-accordion-btn ${isOpen ? 'is-open' : ''}`}
+                    aria-expanded={isOpen}
+                    aria-controls={sectionId}
+                    onClick={() => toggleSection(column.heading)}
+                  >
+                    <span className="footer-col-title">{column.heading}</span>
+                    <span className="footer-accordion-caret" aria-hidden="true">
+                      <ChevronDownIcon />
+                    </span>
+                  </button>
+                ) : (
+                  <h4>{column.heading}</h4>
+                )}
+
+                <div
+                  id={sectionId}
+                  role={isMobile ? 'region' : undefined}
+                  aria-labelledby={isMobile ? triggerId : undefined}
+                  className={`footer-accordion-content ${isMobile && isOpen ? 'is-open' : ''}`}
+                >
+                  {column.links.map((link) => (
+                    <Link key={link.to} to={link.to}>
+                      {link.label}
+                    </Link>
+                  ))}
+                  {/* Shop column — the brand links come from the LIVE brand list
+                      (active brands, admin-ordered), never hard-coded copy. */}
+                  {column.heading === 'Shop' &&
+                    brandLinks.map((brand) => (
+                      <Link key={brand.slug} to={`/brand/${brand.slug}`}>
+                        {brand.name}
+                      </Link>
+                    ))}
+                </div>
+              </nav>
+            )
+          })}
 
           {/* Contact — single source of truth in BUSINESS */}
-          <div className="footer-col footer-contact">
-            <h4>Contact</h4>
-            <a className="footer-contact-row" href={`tel:${BUSINESS.phoneTel}`}>
-              <PhoneIcon />
-              <span>{BUSINESS.phoneDisplay}</span>
-            </a>
-            <a className="footer-contact-row" href={`mailto:${BUSINESS.email}`}>
-              <MailIcon />
-              <span>{BUSINESS.email}</span>
-            </a>
-            <p className="footer-contact-row">
-              <LocationIcon />
-              <span>{BUSINESS.address}</span>
-            </p>
-          </div>
+          {(() => {
+            const isContactOpen = !!openSections['Contact']
+            const contactSectionId = 'footer-section-contact'
+            const contactTriggerId = 'footer-trigger-contact'
+
+            return (
+              <div className="footer-col footer-contact">
+                {isMobile ? (
+                  <button
+                    type="button"
+                    id={contactTriggerId}
+                    className={`footer-accordion-btn ${isContactOpen ? 'is-open' : ''}`}
+                    aria-expanded={isContactOpen}
+                    aria-controls={contactSectionId}
+                    onClick={() => toggleSection('Contact')}
+                  >
+                    <span className="footer-col-title">Contact</span>
+                    <span className="footer-accordion-caret" aria-hidden="true">
+                      <ChevronDownIcon />
+                    </span>
+                  </button>
+                ) : (
+                  <h4>Contact</h4>
+                )}
+
+                <div
+                  id={contactSectionId}
+                  role={isMobile ? 'region' : undefined}
+                  aria-labelledby={isMobile ? contactTriggerId : undefined}
+                  className={`footer-accordion-content ${isMobile && isContactOpen ? 'is-open' : ''}`}
+                >
+                  <a className="footer-contact-row" href={`tel:${BUSINESS.phoneTel}`}>
+                    <PhoneIcon />
+                    <span>{BUSINESS.phoneDisplay}</span>
+                  </a>
+                  <a className="footer-contact-row" href={`mailto:${BUSINESS.email}`}>
+                    <MailIcon />
+                    <span>{BUSINESS.email}</span>
+                  </a>
+                  <p className="footer-contact-row">
+                    <LocationIcon />
+                    <span>{BUSINESS.address}</span>
+                  </p>
+                  <a
+                    className="footer-whatsapp-cta"
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span>Chat with us on WhatsApp</span>
+                    <span className="footer-whatsapp-arrow" aria-hidden="true">→</span>
+                  </a>
+                </div>
+              </div>
+            )
+          })()}
         </Reveal>
       </div>
 
       <div className="footer-bottom">
         <div className="footer-bottom-inner">
-          <p>{FOOTER.copyright}</p>
+          <p>© 2026 Arees & Dahab. All rights reserved.</p>
         </div>
       </div>
     </footer>

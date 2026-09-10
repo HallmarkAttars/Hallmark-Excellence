@@ -10,7 +10,7 @@ import { useEffect, useRef } from 'react'
 //   anything, so the site is 100% functional with animations disabled.
 // - Elements already in view reveal immediately; no scroll listener ever.
 // - prefers-reduced-motion is handled entirely in CSS (instant reveal).
-export default function Reveal({ as: Tag = 'div', delay = 0, className = '', children, ...rest }) {
+export default function Reveal({ as: Tag = 'div', delay = 0, className = '', children, style, ...rest }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -48,11 +48,13 @@ export default function Reveal({ as: Tag = 'div', delay = 0, className = '', chi
     return () => io.disconnect()
   }, [])
 
+  const combinedStyle = delay ? { transitionDelay: `${delay}ms`, ...style } : style
+
   return (
     <Tag
       ref={ref}
       className={`reveal ${className}`.trim()}
-      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+      style={combinedStyle}
       {...rest}
     >
       {children}

@@ -234,16 +234,52 @@
   min-height: 420px;
 }
 
-/* ---------- Mobile (≤767px) — single full-bleed image card ----------
-   The ENTIRE card is ONE product photograph: the image is an absolute
-   layer covering the whole card (never a top strip, never a solid dark
-   content box underneath) and a bottom dark gradient overlay keeps the
-   text readable while the product stays visible behind it. */
+/* ---------- Mobile (≤767px) — full-card presentation scroll transition ----------
+   Each card occupies the showcase viewport below the header (~78px sticky top).
+   Subsequent cards remain off-screen via a generous scroll buffer (margin-bottom)
+   until the user has scrolled through the current brand. When the incoming card arrives,
+   the current card recedes and smoothly fades to 0 so it is never visible behind it. */
 @media (max-width: 767px) {
+  .brands-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding-bottom: 24px;
+  }
+
+  .brands-showcase-cell {
+    position: -webkit-sticky;
+    position: sticky;
+    top: calc(var(--header-h, 68px) + 10px);
+    z-index: calc(var(--card-index, 0) + 1);
+    margin-bottom: clamp(160px, 32vh, 240px);
+    transform: translateY(var(--stack-y, 0px)) scale(var(--stack-scale, 1));
+    opacity: var(--stack-opacity, 1);
+    transform-origin: center top;
+    will-change: transform, opacity;
+  }
+
+  .brands-showcase-cell:last-child {
+    margin-bottom: 0;
+  }
+
+  /* On mobile, stack cells are immediately ready and rely on sticky/scroll depth */
+  .js .brands-showcase-cell.reveal {
+    opacity: var(--stack-opacity, 1);
+    transform: translateY(var(--stack-y, 0px)) scale(var(--stack-scale, 1));
+    transition: none;
+  }
+
   .brand-showcase-card {
+    height: calc(100svh - var(--header-h, 68px) - 24px);
+    min-height: 500px;
+    max-height: 680px;
+    aspect-ratio: auto;
     flex-direction: column;
     justify-content: flex-end; /* content sits inside the bottom gradient */
-    border-radius: 14px;
+    border-radius: 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
   }
   /* Image — full-card background layer */
   .brand-showcase-img {
@@ -252,6 +288,8 @@
     width: 100%;
     height: 100%;
     z-index: -2;
+    object-fit: cover;
+    object-position: center 25%;
   }
   /* Overlay — dark only over the LOWER portion of the image */
   .brand-showcase-overlay {
@@ -262,10 +300,10 @@
     height: auto;
     background: linear-gradient(
       180deg,
-      rgba(23, 20, 17, 0) 30%,
-      rgba(23, 20, 17, 0.4) 52%,
-      rgba(23, 20, 17, 0.78) 78%,
-      rgba(23, 20, 17, 0.92) 100%
+      rgba(23, 20, 17, 0) 25%,
+      rgba(23, 20, 17, 0.35) 48%,
+      rgba(23, 20, 17, 0.82) 74%,
+      rgba(23, 20, 17, 0.95) 100%
     );
   }
   /* Content — sits inside the bottom gradient area */
@@ -279,8 +317,21 @@
     gap: 8px;
   }
   .brand-showcase-title { font-size: clamp(1.4rem, 5.5vw, 1.7rem); }
-  .brand-showcase-desc { max-width: 300px; }
+  .brand-showcase-desc { max-width: 320px; font-size: 0.85rem; line-height: 1.5; }
   .brand-showcase-cta { margin-top: 10px; }
+}
+
+/* Tablet & Desktop guarantee — ensures cells are non-sticky grid items */
+@media (min-width: 768px) {
+  .brands-showcase-cell {
+    position: static;
+    top: auto;
+    z-index: auto;
+    margin-bottom: 0;
+    transform: none;
+    opacity: 1;
+    will-change: auto;
+  }
 }
 
 /* ---------- Tablet (768–1023px) — two-zone, reduced type ---------- */
@@ -377,5 +428,19 @@
   .brand-showcase-cta span {
     transition: none !important;
     transform: none !important;
+  }
+  .brands-showcase {
+    gap: 16px !important;
+    padding-bottom: 0 !important;
+  }
+  .brands-showcase-cell {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    margin-bottom: 0 !important;
+  }
+  .js .brands-showcase-cell.reveal {
+    transform: none !important;
+    opacity: 1 !important;
   }
 }

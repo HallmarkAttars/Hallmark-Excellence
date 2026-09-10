@@ -50,28 +50,13 @@ const SlidersIcon = () => (
 
 // ---------------------------------------------------------------------------
 // <FilterSortControl> — ONE premium "FILTER & SORT" experience on every
-// collection page (Categories + Brands). Single source of truth:
+// collection page (Categories + Brands + Shop).
+// Single source of truth:
 //   • mobile (<768px): full-width button → bottom sheet
 //   • desktop (≥768px): compact button → popover panel anchored under it
-// The parent owns the filter/sort STATE (filterValue / sortValue + the
-// onChange handlers) — this component only presents it. No business logic
-// lives here; the same state/handlers drive the sheet and the popover.
-//
-// Props:
-//   filterLabel    "Category" (brand pages) | "Brand" (category pages)
-//   filterOptions  [{ id, name }] present in the loaded products (or [])
-//   allLabel       display text for the reset option (e.g. "All Categories")
-//   filterValue    'all' | option id
-//   onFilterChange (id) => void  (receives 'all' or an option id)
-//   sortValue      one of SORT_OPTIONS values ('default' = Featured)
-//   onSortChange   (value) => void
-//   activeCount    number of active filters/sorts (drives the badge)
-//   label          optional text under the control (defaults to none)
-//
-// Alignment is fixed at the component level: the control is always
-// LEFT-aligned with the product grid on every page (no centering variant).
 // ---------------------------------------------------------------------------
 export default function FilterSortControl({
+  filterGroups,
   filterLabel = 'Category',
   filterOptions = [],
   allLabel = `All ${filterLabel}s`,
@@ -80,12 +65,29 @@ export default function FilterSortControl({
   sortValue = 'default',
   onSortChange = () => {},
   activeCount = 0,
+  btnAriaLabel = 'Filter & Sort',
+  dialogAriaLabel = 'Filter and sort',
 }) {
   const [panelOpen, setPanelOpen] = useState(false) // desktop popover
   const [sheetOpen, setSheetOpen] = useState(false) // mobile bottom sheet
   const sheetRef = useRef(null)
   const panelRef = useRef(null)
   const combinedBtnRef = useRef(null)
+
+  const groups =
+    filterGroups && filterGroups.length > 0
+      ? filterGroups
+      : filterOptions.length > 0
+      ? [
+          {
+            label: filterLabel,
+            options: filterOptions,
+            allLabel: allLabel || `All ${filterLabel}s`,
+            value: filterValue,
+            onChange: onFilterChange,
+          },
+        ]
+      : []
 
   // Close popover / bottom sheet on Escape
   useEffect(() => {
@@ -99,15 +101,11 @@ export default function FilterSortControl({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Lock body scroll while the mobile bottom sheet is open (overscroll-
-  // containment stops iOS rubber-banding from scrolling the page behind the
-  // sheet). If the viewport grows to desktop (>=768px) while open — where the
-  // sheet is hidden — close it so body scroll is never left locked with no
-  // visible sheet.
+  // Lock body scroll while the mobile bottom sheet is open
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? 'hidden' : ''
     document.body.style.overscrollBehavior = sheetOpen ? 'contain' : ''
-    if (!sheetOpen) return undefined
+    if (!sheetOpen || typeof window.matchMedia !== 'function') return undefined
     const mq = window.matchMedia('(min-width: 768px)')
     const onChange = (e) => {
       if (e.matches) setSheetOpen(false)
@@ -120,12 +118,9 @@ export default function FilterSortControl({
     }
   }, [sheetOpen])
 
-  // Close the desktop popover if the viewport shrinks to mobile (<768px),
-  // where the popover is hidden and the bottom sheet is the mobile surface.
-  // Keeps an open popover from floating over the mobile layout after a
-  // window resize.
+  // Close the desktop popover if the viewport shrinks to mobile (<768px)
   useEffect(() => {
-    if (!panelOpen) return undefined
+    if (!panelOpen || typeof window.matchMedia !== 'function') return undefined
     const mq = window.matchMedia('(max-width: 767px)')
     const onChange = (e) => {
       if (e.matches) setPanelOpen(false)
@@ -134,8 +129,7 @@ export default function FilterSortControl({
     return () => mq.removeEventListener('change', onChange)
   }, [panelOpen])
 
-  // Focus management: focus the close button of whichever surface is open
-  // (mobile sheet / desktop popover), restore focus to the trigger on close.
+  // Focus management
   useEffect(() => {
     if (sheetOpen && sheetRef.current) {
       sheetRef.current.querySelector('.filter-sort-sheet-close')?.focus()
@@ -148,10 +142,10 @@ export default function FilterSortControl({
 
   // ONE entry point: desktop opens the popover, mobile opens the bottom sheet.
   const openFilter = () => {
-    if (window.matchMedia('(min-width: 768px)').matches) {
-      setPanelOpen(true)
-    } else {
+    if (typeof window.matchMedia === 'function' && !window.matchMedia('(min-width: 768px)').matches) {
       setSheetOpen(true)
+    } else {
+      setPanelOpen(true)
     }
   }
   const closeAll = () => {
@@ -159,10 +153,9 @@ export default function FilterSortControl({
     setSheetOpen(false)
   }
 
-  const toggleFilter = (id) => onFilterChange(id)
   const toggleSort = (value) => onSortChange(value)
 
-  const hasFilterOptions = filterOptions.length > 0
+  const hasFilterOptions = groups.some((g) => g.options && g.options.length > 0)
 
   return (
     <div className="filter-sort-control">
@@ -173,6 +166,7 @@ export default function FilterSortControl({
         onClick={openFilter}
         aria-haspopup="dialog"
         aria-expanded={sheetOpen || panelOpen}
+        aria-label={btnAriaLabel}
       >
         <SlidersIcon />
         <span className="filter-sort-combined-label">
@@ -195,7 +189,7 @@ export default function FilterSortControl({
             className="filter-sort-panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Filter and sort"
+            aria-label={dialogAriaLabel}
           >
             <div className="filter-sort-panel-header">
               <h2>Filter &amp; Sort</h2>
@@ -213,28 +207,30 @@ export default function FilterSortControl({
               <section className="filter-sort-panel-section">
                 <h3>Filter</h3>
                 {hasFilterOptions ? (
-                  <div className="filter-sort-panel-group">
-                    <p className="filter-sort-panel-group-title">{filterLabel}</p>
-                    <div className="filter-sort-panel-options">
-                      <button
-                        type="button"
-                        className={filterValue === 'all' ? 'is-active' : ''}
-                        onClick={() => toggleFilter('all')}
-                      >
-                        {allLabel}
-                      </button>
-                      {filterOptions.map((o) => (
+                  groups.map((g, idx) => (
+                    <div key={g.label || idx} className="filter-sort-panel-group">
+                      <p className="filter-sort-panel-group-title">{g.label}</p>
+                      <div className="filter-sort-panel-options">
                         <button
                           type="button"
-                          key={o.id}
-                          className={filterValue === o.id ? 'is-active' : ''}
-                          onClick={() => toggleFilter(o.id)}
+                          className={g.value === 'all' ? 'is-active' : ''}
+                          onClick={() => g.onChange('all')}
                         >
-                          {o.name}
+                          {g.allLabel || `All ${g.label}s`}
                         </button>
-                      ))}
+                        {g.options.map((o) => (
+                          <button
+                            type="button"
+                            key={o.id}
+                            className={g.value === o.id ? 'is-active' : ''}
+                            onClick={() => g.onChange(o.id)}
+                          >
+                            {o.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ))
                 ) : (
                   <p className="filter-sort-panel-note">No {filterLabel.toLowerCase()} filters for this collection.</p>
                 )}
@@ -266,12 +262,7 @@ export default function FilterSortControl({
         </>
       )}
 
-      {/* Mobile bottom sheet — same options, premium drawer. Rendered through a
-          portal to <body> (same pattern as QuickView / toasts) so the sheet and
-          its full-screen backdrop escape every ancestor stacking context and
-          containing block (route animations, transforms, etc.). They are direct
-          children of <body> with their own z-index, so the navbar, footer and
-          WhatsApp button can never paint above the backdrop or the sheet. */}
+      {/* Mobile bottom sheet */}
       {createPortal(
         <>
           <div
@@ -280,7 +271,7 @@ export default function FilterSortControl({
             role="dialog"
             aria-modal="true"
             aria-hidden={!sheetOpen}
-            aria-label="Filter and sort"
+            aria-label={dialogAriaLabel}
           >
             <div className="filter-sort-sheet-header">
               <h2>Filter &amp; Sort</h2>
@@ -298,28 +289,30 @@ export default function FilterSortControl({
               <section className="filter-sort-sheet-section">
                 <h3>Filter</h3>
                 {hasFilterOptions ? (
-                  <div className="filter-sort-sheet-group">
-                    <p className="filter-sort-sheet-group-title">{filterLabel}</p>
-                    <div className="filter-sort-sheet-options">
-                      <button
-                        type="button"
-                        className={filterValue === 'all' ? 'is-active' : ''}
-                        onClick={() => toggleFilter('all')}
-                      >
-                        {allLabel}
-                      </button>
-                      {filterOptions.map((o) => (
+                  groups.map((g, idx) => (
+                    <div key={g.label || idx} className="filter-sort-sheet-group">
+                      <p className="filter-sort-sheet-group-title">{g.label}</p>
+                      <div className="filter-sort-sheet-options">
                         <button
                           type="button"
-                          key={o.id}
-                          className={filterValue === o.id ? 'is-active' : ''}
-                          onClick={() => toggleFilter(o.id)}
+                          className={g.value === 'all' ? 'is-active' : ''}
+                          onClick={() => g.onChange('all')}
                         >
-                          {o.name}
+                          {g.allLabel || `All ${g.label}s`}
                         </button>
-                      ))}
+                        {g.options.map((o) => (
+                          <button
+                            type="button"
+                            key={o.id}
+                            className={g.value === o.id ? 'is-active' : ''}
+                            onClick={() => g.onChange(o.id)}
+                          >
+                            {o.name}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ))
                 ) : (
                   <p className="filter-sort-sheet-note">No {filterLabel.toLowerCase()} filters for this collection.</p>
                 )}

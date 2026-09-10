@@ -1,11 +1,12 @@
 /* ============================================================
-   Follow Our Journey — real product photography strip
+   Follow Our Journey — atelier product photography strip & carousel
    ============================================================ */
 
 .social-section {
-  padding: 28px 0 32px; /* mobile — shared homepage rhythm */
+  padding: 32px 0 36px; /* mobile baseline */
   background: var(--cream);
   border-top: 1px solid var(--line-soft);
+  overflow: hidden; /* prevents carousel peek from causing page horizontal scroll */
 }
 @media (min-width: 768px) {
   .social-section { padding: 40px 0; } /* tablet */
@@ -16,62 +17,182 @@
 
 .social-head {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 24px;
+}
+@media (min-width: 768px) {
+  .social-head { margin-bottom: 36px; }
 }
 
-.social-head .section-title-upper { margin-bottom: 12px; }
+/* Atelier Decorative Eyebrow (Mobile-First) */
+.atelier-eyebrow-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.atelier-line {
+  height: 1px;
+  width: 28px;
+  background: var(--gold-deep);
+  opacity: 0.6;
+}
+.atelier-eyebrow {
+  color: var(--gold-deep);
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1;
+}
+
+.social-title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 6vw, 2.1rem);
+  font-weight: 600;
+  color: var(--charcoal);
+  line-height: 1.2;
+}
 
 .social-sub {
   color: var(--charcoal-soft);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
   margin: 0 auto;
-  max-width: 46ch;
+  max-width: 36ch;
 }
 
-/* Mobile: horizontal strip — bleeds to the viewport edge through the
-   16px container gutter, so the strip is edge-to-edge with no page-level
-   horizontal scroll. First and last tiles stay 16px from the viewport
-   edges — the same gap rhythm as the rest of the homepage. */
-.social-grid {
-  display: flex;
-  gap: 14px; /* shared homepage card rhythm — matches Our Brands */
-  margin: 0 -16px;
-  padding: 0 16px 8px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.social-grid::-webkit-scrollbar { display: none; }
+/* ============================================================
+   Mobile (≤767px) — horizontal swipe carousel with peeking cards
+   ============================================================ */
+@media (max-width: 767px) {
+  .social-grid {
+    display: flex;
+    gap: 14px;
+    margin: 26px -16px 0;
+    padding: 0 calc(10% - 7px) 10px; /* ~80% central card with 10% peek on both sides */
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .social-grid::-webkit-scrollbar { display: none; }
 
-.social-tile {
-  flex: 0 0 42%;
-  min-width: 132px;
-  aspect-ratio: 1;
-  scroll-snap-align: start;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--cream-deep);
-}
-.social-tile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.45s ease;
-}
-.social-tile:hover img { transform: scale(1.06); }
+  .social-tile {
+    flex: 0 0 80%;
+    max-width: 340px;
+    aspect-ratio: 1 / 1;
+    scroll-snap-align: center;
+    overflow: hidden;
+    border-radius: 16px;
+    background: var(--cream-deep);
+    box-shadow: 0 8px 24px rgba(40, 30, 20, 0.10);
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .social-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 
-/* Desktop: 6-column grid */
+  /* Pagination dots */
+  .social-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .social-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(80, 60, 30, 0.22);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background-color 0.25s ease, transform 0.25s ease;
+  }
+  .social-dot.is-active {
+    background: var(--gold-deep);
+    transform: scale(1.2);
+  }
+
+  /* Hide Instagram button on mobile per requirements */
+  .social-cta {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Desktop & Tablet Safety (≥768px)
+   Restore standard grid, uppercase typography, and CTA button
+   ============================================================ */
 @media (min-width: 768px) {
+  .atelier-eyebrow-wrap {
+    display: none;
+  }
+
+  .social-title {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+    margin-bottom: 12px;
+  }
+
+  .social-sub {
+    max-width: 46ch;
+    font-size: 0.95rem;
+  }
+
   .social-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 12px; /* shared homepage card rhythm — matches Our Brands */
+    gap: 12px;
     margin: 0;
     padding: 0;
     overflow: visible;
   }
-  .social-tile { min-width: 0; aspect-ratio: 1; }
+
+  .social-tile {
+    flex: none;
+    max-width: none;
+    min-width: 0;
+    aspect-ratio: 1;
+    border-radius: var(--radius);
+    background: var(--cream-deep);
+    box-shadow: none;
+  }
+  .social-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.45s ease;
+  }
+  .social-tile:hover img {
+    transform: scale(1.06);
+  }
+
+  .social-pagination {
+    display: none;
+  }
+
+  .social-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 36px;
+  }
+  .social-cta-btn {
+    min-width: 240px;
+  }
 }
 
 @media (max-width: 1023px) and (min-width: 768px) {
@@ -80,13 +201,17 @@
 }
 
 @media (min-width: 1024px) {
-  .social-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; } /* shared homepage card rhythm — matches Our Brands */
+  .social-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; }
 }
 
-.social-cta {
-  display: flex;
-  justify-content: center;
-  margin-top: 36px;
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .social-grid {
+    scroll-behavior: auto !important;
+  }
+  .social-tile,
+  .social-tile img,
+  .social-dot {
+    transition: none !important;
+  }
 }
-
-.social-cta-btn { min-width: 240px; }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Hero from '../components/home/Hero'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
@@ -12,6 +12,7 @@ import SkeletonSocialStrip from '../components/skeleton/SkeletonSocialStrip'
 import { getCategories, getBrands, getProducts } from '../services/mockApi'
 import { HOME_BRANDS } from '../data/content'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
+import { useMobileBrandStack } from '../hooks/useMobileBrandStack'
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -20,6 +21,9 @@ export default function Home() {
   // True until ALL three fetches have settled (success OR failure) — a single
   // failing endpoint must not leave the page stuck on skeletons forever.
   const [loading, setLoading] = useState(true)
+  const brandsShowcaseRef = useRef(null)
+
+  useMobileBrandStack(brandsShowcaseRef)
 
   useEffect(() => {
     // Individual loads — a failure just leaves that section hidden (no hang).
@@ -85,12 +89,13 @@ export default function Home() {
                 {/* Editorial grid — two large 50% cards, then three 33% cards,
                     repeating for every group of five brands. The Reveal wrapper
                     is the grid cell (variant controls its column span). */}
-                <div className="brands-showcase">
+                <div className="brands-showcase" ref={brandsShowcaseRef}>
                   {gridCards.map(({ brand, variant }, i) => (
                     <Reveal
                       key={brand.id}
                       delay={(i % 5) * 100}
                       className={`brands-showcase-cell brands-showcase-cell--${variant}`}
+                      style={{ '--card-index': i }}
                     >
                       <BrandShowcaseCard brand={brand} variant={variant} />
                     </Reveal>

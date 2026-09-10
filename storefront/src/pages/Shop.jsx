@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
+import FilterSortControl from '../components/filter/FilterSortControl'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
@@ -18,10 +19,10 @@ export default function Shop() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
-  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [brandFilter, setBrandFilter] = useState('all')
+  const [sort, setSort] = useState('default')
 
   useEffect(() => {
     setLoading(true)
@@ -43,29 +44,17 @@ export default function Shop() {
       })
   }, [reloadKey])
 
-  // Lock body scroll while drawer is open
-  useEffect(() => {
-    document.body.style.overflow = filtersOpen ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [filtersOpen])
-
-  // Close drawer on ESC
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') setFiltersOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
-
   const visibleProducts = useMemo(() => {
     let list = [...products]
     if (categoryFilter !== 'all') list = list.filter((p) => p.category_id === categoryFilter)
     if (brandFilter !== 'all') list = list.filter((p) => p.brand_id === brandFilter)
+    if (sort === 'newest') list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
+    if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
+    if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name))
+    if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
     return list
-  }, [products, categoryFilter, brandFilter])
+  }, [products, categoryFilter, brandFilter, sort])
 
   // Client-side pagination over the filtered results: FILTER → PAGINATE →
   // render (only the current page's ≤50 products are ever rendered). The
@@ -108,6 +97,11 @@ export default function Shop() {
     resetToFirstPage()
   }
 
+  const activeCount =
+    (categoryFilter !== 'all' ? 1 : 0) +
+    (brandFilter !== 'all' ? 1 : 0) +
+    (sort !== 'default' ? 1 : 0)
+
   return (
     <div className="shop-page">
       <div className="page-heading">
@@ -117,19 +111,38 @@ export default function Shop() {
       </div>
 
       <div className="container shop-layout">
-        {/* Top bar */}
+        {/* Top bar with Filter & Sort */}
         <div className="shop-topbar">
-          <button
-            className="shop-filter-btn"
-            onClick={() => setFiltersOpen(true)}
-            aria-haspopup="dialog"
-            aria-expanded={filtersOpen}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            Filters
-          </button>
+          <FilterSortControl
+            btnAriaLabel="Filters"
+            dialogAriaLabel="Product filters"
+            filterGroups={[
+              {
+                label: 'Category',
+                options: categories,
+                allLabel: 'All Categories',
+                value: categoryFilter,
+                onChange: toggleCategory,
+              },
+              ...(brands && brands.length > 0
+                ? [
+                    {
+                      label: 'Brand',
+                      options: brands,
+                      allLabel: 'All Brands',
+                      value: brandFilter,
+                      onChange: toggleBrand,
+                    },
+                  ]
+                : []),
+            ]}
+            sortValue={sort}
+            onSortChange={(value) => {
+              setSort(value)
+              resetToFirstPage()
+            }}
+            activeCount={activeCount}
+          />
         </div>
 
         <div id="shop-product-grid" className="shop-results">
@@ -147,69 +160,6 @@ export default function Shop() {
           />
         </div>
       </div>
-
-      {/* Backdrop */}
-      {filtersOpen && (
-        <div className="filter-backdrop" onClick={() => setFiltersOpen(false)} />
-      )}
-
-      {/* Filter Drawer */}
-      <aside
-        className={`filter-drawer ${filtersOpen ? 'is-open' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!filtersOpen}
-        aria-label="Product filters"
-      >
-        <div className="filter-drawer-header">
-          <h2 className="filter-drawer-title">Filters</h2>
-          <button
-            className="filter-drawer-close"
-            onClick={() => setFiltersOpen(false)}
-            aria-label="Close filters"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="filter-drawer-body">
-          {/* Category */}
-          <div className="filter-card">
-            <h3 className="filter-card-title">Category</h3>
-            <div className="filter-rows">
-              {categories.map((c) => (
-                <button
-                  type="button"
-                  key={c.id}
-                  className={`filter-row ${categoryFilter === c.id ? 'is-active' : ''}`}
-                  onClick={() => toggleCategory(c.id)}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Brand */}
-          <div className="filter-card">
-            <h3 className="filter-card-title">Brand</h3>
-            <div className="filter-rows">
-              {brands.map((b) => (
-                <button
-                  type="button"
-                  key={b.id}
-                  className={`filter-row ${brandFilter === b.id ? 'is-active' : ''}`}
-                  onClick={() => toggleBrand(b.id)}
-                >
-                  {b.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </aside>
     </div>
   )
 }
-

@@ -1,50 +1,66 @@
 /* ============================================================
    Hero — wide editorial composition
-   NOTE: .hero-content does NOT use the global .container class.
-   It carries its own width / max-width / margin / padding so the
-   global `.container { padding }` rule can never override it in
-   the cascade (index.css is injected after component CSS).
+   Responsive across all desktop, tablet, and mobile viewports.
    ============================================================ */
 
 .hero {
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 600px;
+  width: 100%;
+  min-height: clamp(580px, calc(100vh - var(--header-h, 68px)), 760px);
   background: var(--ink);
   overflow: hidden;
 }
 
-/* The hero image itself is injected inline from src/config/assets.js
-   (IMAGES.heroBackground) so it can be swapped from one place. Only the
-   positioning / scaling rules live here. */
+/* Picture container wrapping source + img */
+.hero-picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* The hero image itself — covers container and aligns to showcase products */
+.hero-img,
 .hero-bg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 85% 40%;
   background-size: cover;
-  background-position: center;
-  transform: scale(1.02);
+  background-position: 85% 40%;
+  background-repeat: no-repeat;
+  display: block;
 }
 
+/* Editorial dark overlay: keeps text readable on the left, reveals perfume on the right */
 .hero-overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
+  pointer-events: none;
   background: linear-gradient(
     100deg,
-    rgba(20, 17, 13, 0.86) 0%,
-    rgba(20, 17, 13, 0.62) 42%,
-    rgba(20, 17, 13, 0.28) 72%,
-    rgba(20, 17, 13, 0.55) 100%
+    rgba(20, 17, 13, 0.88) 0%,
+    rgba(20, 17, 13, 0.68) 42%,
+    rgba(20, 17, 13, 0.22) 72%,
+    rgba(20, 17, 13, 0.45) 100%
   );
 }
 
 .hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: 56px 32px; /* mirrors .container desktop gutters + 56px vertical */
+  padding: clamp(48px, 6vh, 64px) 32px;
   color: var(--cream);
   box-sizing: border-box;
 }
@@ -76,38 +92,72 @@
 
 .hero-btn-arrow { font-size: 1.05em; line-height: 1; }
 
-/* ---------- Primary CTA — "SHOP THE COLLECTION" ----------
-   Solid white fill with dark text, scoped to the hero only via
-   .hero-btn-primary. The shared .btn-gold (used on Cart, Contact,
-   TrackOrder, ViewOrder) is intentionally left untouched. All size /
-   padding / font / alignment come from .btn + .hero-btn — only the
-   fill and text color change here. */
+/* ---------- Primary CTA — "SHOP THE COLLECTION" ---------- */
 .hero-btn-primary {
   background: var(--white);
   color: var(--ink);
   border-color: var(--white);
 }
 .hero-btn-primary:hover {
-  background: #f5f1e8; /* soft warm cream — same hover as the brand CTA */
+  background: #f5f1e8; /* soft warm cream */
   border-color: #f5f1e8;
   color: var(--ink);
 }
 
-/* ---------- Tablet ---------- */
+/* ---------- Tablet (768px – 1023px) ---------- */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .hero { min-height: 560px; }
-  .hero-title { font-size: clamp(2.4rem, 4.4vw, 2.75rem); } /* 34–44px */
-  .hero-content { padding: 56px 24px; } /* mirrors .container tablet gutters */
+  .hero {
+    min-height: clamp(560px, 62vh, 680px);
+  }
+  .hero-img,
+  .hero-bg {
+    object-position: 78% center;
+    background-position: 78% center;
+  }
+  .hero-content {
+    max-width: 520px;
+    margin: 0;
+    padding: 56px 28px;
+  }
+  .hero-title {
+    font-size: clamp(2.4rem, 4.4vw, 2.75rem);
+  }
+  .hero-tagline {
+    max-width: 440px;
+  }
+  .hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .hero-btn {
+    width: auto;
+  }
 }
 
-/* ---------- Mobile ----------
-   Content-driven hero: height grows from content — no fixed height,
-   no vh units, no vertical centering, no absolute positioning.
-   Both CTAs sit in normal document flow with safe space below. */
+/* ---------- Mobile (<= 767px) ---------- */
 @media (max-width: 767px) {
   .hero {
-    display: block;   /* normal flow — the hero grows to fit its content */
-    min-height: 0;    /* never taller or shorter than its content */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: clamp(520px, 78svh, 620px);
+    padding: 0;
+  }
+
+  .hero-img,
+  .hero-bg {
+    object-position: 60% 35%;
+    background-position: 60% 35%;
+  }
+
+  .hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 12, 9, 0.90) 0%,
+      rgba(15, 12, 9, 0.78) 40%,
+      rgba(15, 12, 9, 0.48) 72%,
+      rgba(15, 12, 9, 0.85) 100%
+    );
   }
 
   .hero-content {
@@ -117,23 +167,27 @@
     flex-direction: column;
     width: 100%;
     max-width: none;
-    padding: clamp(48px, 10vw, 72px) 14px 28px; /* 28px safe space under the last CTA */
+    padding: clamp(52px, 10vw, 72px) 20px clamp(32px, 7vw, 42px);
+    box-sizing: border-box;
   }
 
   .hero-title {
     font-family: var(--font-display);
-    font-size: clamp(38px, 10vw, 48px);
+    font-size: clamp(34px, 9.2vw, 44px);
     font-weight: 500;
-    line-height: 1.05;
+    line-height: 1.08;
     max-width: none;
     margin: 0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
   }
 
   .hero-tagline {
-    margin: 22px 0 0;      /* natural spacing — no forced <br>, wraps freely */
-    font-size: 14px;
+    margin: 18px 0 0;
+    font-size: 14.5px;
     line-height: 1.55;
     max-width: 340px;
+    color: rgba(248, 243, 234, 0.95);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
   }
 
   /* CTAs: full-width column, both fully inside the hero */
@@ -142,13 +196,13 @@
     flex-direction: column;
     width: 100%;
     gap: 10px;
-    margin-top: 26px;
+    margin-top: 24px;
   }
 
   .hero-btn {
     width: 100%;
-    height: 46px;
-    min-height: 46px;
+    height: 48px;
+    min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -158,28 +212,31 @@
   }
 
   .hero-actions .btn-outline-light {
-    background: transparent;
-    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(15, 12, 9, 0.55);
+    border-color: rgba(255, 255, 255, 0.55);
     color: var(--white);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
 }
 
 /* ---------- Very small phones (≤360px): slightly tighter, never hidden ---------- */
 @media (max-width: 360px) {
-  .hero-title { font-size: clamp(36px, 10vw, 40px); }
-  .hero-tagline { font-size: 13.5px; }
+  .hero {
+    min-height: clamp(480px, 80svh, 540px);
+  }
+  .hero-title { font-size: clamp(30px, 9vw, 36px); }
+  .hero-tagline { font-size: 13px; }
   .hero-content { padding-left: 12px; padding-right: 12px; }
   .hero-btn { height: 44px; min-height: 44px; }
 }
 
-/* ---------- Landscape phones ----------
-   Content-driven like portrait — no vh units, so the hero can never
-   exceed the visible viewport on mobile browsers. */
+/* ---------- Landscape phones ---------- */
 @media (max-height: 480px) and (orientation: landscape) {
-  .hero { min-height: 0; }
-  .hero-content { padding-top: 24px; padding-bottom: 24px; }
-  .hero-title { font-size: clamp(1.75rem, 5vw, 2.2rem); margin-bottom: 12px; }
-  .hero-tagline { margin-bottom: 16px; }
-  .hero-actions { flex-direction: row; }
-  .hero-btn { width: auto; height: 44px; min-height: 44px; padding: 0 28px; }
+  .hero { min-height: 100svh; }
+  .hero-content { padding-top: 20px; padding-bottom: 20px; }
+  .hero-title { font-size: clamp(1.6rem, 4.5vw, 2rem); margin-bottom: 8px; }
+  .hero-tagline { margin-top: 8px; margin-bottom: 12px; font-size: 13px; }
+  .hero-actions { flex-direction: row; margin-top: 14px; }
+  .hero-btn { width: auto; height: 42px; min-height: 42px; padding: 0 24px; }
 }

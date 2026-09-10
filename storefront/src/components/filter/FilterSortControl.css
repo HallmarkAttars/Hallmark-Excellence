@@ -1,10 +1,8 @@
 /* ============================================================
    FilterSortControl — ONE premium "FILTER & SORT" experience,
-   shared by the Categories page and every Brand page.
+   shared by the Categories page, Brand pages, and Shop page.
    Mobile (<768px): full-width button → bottom sheet
    Desktop (≥768px): compact button → popover anchored below
-   Alignment is fixed: always LEFT-aligned with the product grid
-   (no centering variant anywhere — desktop, tablet or mobile).
    ============================================================ */
 
 .filter-sort-control {
@@ -25,20 +23,20 @@
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  height: 56px;
+  height: 52px;
   padding: 0 20px;
-  background: #f8f4ea;
+  background: #fcfaf6;
   border: 1px solid #d8cbb8;
   border-radius: 14px;
   color: #2a2622;
   font-family: var(--font-body);
-  font-size: 0.86rem; /* ~13.8px — 13–14px */
+  font-size: 0.86rem; /* ~13.8px */
   font-weight: 600;
   letter-spacing: 0.05em;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
-.filter-sort-combined-btn:active { background: #f1eadb; }
+.filter-sort-combined-btn:active { background: #f3ecde; }
 .filter-sort-combined-btn > svg { color: #9a6b1f; flex-shrink: 0; }
 .filter-sort-combined-btn > svg:last-child { transition: transform 0.2s ease; }
 .filter-sort-combined-btn[aria-expanded='true'] > svg:last-child { transform: rotate(180deg); }
@@ -72,9 +70,9 @@
 @media (min-width: 768px) {
   .filter-sort-combined-btn {
     width: auto;
-    min-width: 260px;
-    height: 50px;
-    padding: 0 18px;
+    min-width: 240px;
+    height: 48px;
+    padding: 0 20px;
     border-radius: 12px;
   }
   .filter-sort-combined-btn:hover {
@@ -89,35 +87,46 @@
   inset: 0;
   z-index: calc(var(--z-drawer-backdrop, 120) + 5);
 }
+
 .filter-sort-panel {
   position: absolute;
   top: calc(100% + 10px);
+  left: 0;
   z-index: calc(var(--z-drawer, 130) + 10);
-  width: min(460px, calc(100vw - 32px));
-  background: #fdfbf6;
+  width: min(480px, calc(100vw - 32px));
+  background: #fcfaf6;
   border: 1px solid #e8e1d6;
-  border-radius: 14px;
-  box-shadow: 0 18px 50px rgba(27, 24, 20, 0.16);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(27, 24, 20, 0.14);
+  overflow: hidden;
+  animation: filterPanelIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Anchored to the button's left edge — matches the control's left alignment. */
-.filter-sort-control .filter-sort-panel { left: 0; }
+
+@keyframes filterPanelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .filter-sort-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 18px 12px;
+  padding: 16px 22px 14px;
   border-bottom: 1px solid #e8e1d6;
+  background: #fcfaf6;
 }
+
 .filter-sort-panel-header h2 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  letter-spacing: 0.05em;
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.12rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #2a2622;
 }
+
 .filter-sort-panel-close {
   display: inline-flex;
   align-items: center;
@@ -126,91 +135,128 @@
   height: 32px;
   border: 1px solid #e8e1d6;
   border-radius: 50%;
-  background: var(--white);
+  background: #ffffff;
   color: #2a2622;
   font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.18s ease;
 }
-.filter-sort-panel-close:hover { background: #f1eadb; }
+.filter-sort-panel-close:hover {
+  background: #f4ecdc;
+  border-color: #9a6b1f;
+  color: #9a6b1f;
+}
 
-.filter-sort-panel-body { padding: 6px 18px 16px; max-height: 60vh; overflow-y: auto; }
-.filter-sort-panel-section { padding-top: 14px; }
-.filter-sort-panel-section + .filter-sort-panel-section { border-top: 1px solid #e8e1d6; }
+.filter-sort-panel-body {
+  padding: 12px 22px 18px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.filter-sort-panel-section {
+  padding-top: 14px;
+}
+.filter-sort-panel-section + .filter-sort-panel-section {
+  border-top: 1px solid #e8e1d6;
+  margin-top: 16px;
+}
+
 .filter-sort-panel-section h3 {
-  margin: 0;
+  margin: 0 0 10px;
   font-family: var(--font-body);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
+  font-weight: 700;
   text-transform: uppercase;
   color: #9a6b1f;
 }
+
 .filter-sort-panel-group-title {
   margin: 10px 0 8px;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: #2a2622;
 }
+
 .filter-sort-panel-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+
 .filter-sort-panel-options button {
-  padding: 10px 12px;
+  padding: 10px 14px;
   border: 1px solid #e8e1d6;
   border-radius: 10px;
-  background: var(--white);
+  background: #ffffff;
   font-family: var(--font-body);
   font-size: 0.84rem;
   font-weight: 500;
   color: #2a2622;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.15s ease;
 }
-.filter-sort-panel-options button:hover { border-color: #d8cbb8; }
+
+.filter-sort-panel-options button:hover {
+  border-color: #d8cbb8;
+  background: #faf7f2;
+}
+
 .filter-sort-panel-options button.is-active {
   border-color: #9a6b1f;
-  background: #f1e6d0;
-  color: #9a6b1f;
+  background: #f4ecdc;
+  color: #85591a;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(154, 107, 31, 0.08);
 }
-.filter-sort-panel-note { margin: 6px 0 0; font-size: 0.85rem; color: #756f66; }
+
+.filter-sort-panel-note {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #756f66;
+}
 
 .filter-sort-panel-footer {
-  padding: 12px 18px 16px;
+  padding: 14px 22px 18px;
   border-top: 1px solid #e8e1d6;
+  background: #fcfaf6;
 }
+
 .filter-sort-panel-apply {
   width: 100%;
-  height: 46px;
+  height: 48px;
   border: none;
   border-radius: 12px;
   background: #9a6b1f;
-  color: #fff;
+  color: #ffffff;
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 0.18s ease;
+  transition: background-color 0.18s ease, transform 0.1s ease;
 }
-.filter-sort-panel-apply:hover { background: #85591a; }
+.filter-sort-panel-apply:hover {
+  background: #85591a;
+}
+.filter-sort-panel-apply:active {
+  transform: scale(0.99);
+}
 
 /* ---------- Mobile bottom sheet ----------
-   Stacking (both are portaled to <body>, so these are absolute in the root
-   stacking context):
-     page content (auto) < WhatsApp (95) < navbar (100) < search (140)
+   Stacking:
+     page content < WhatsApp < navbar < search
      < sheet backdrop (150) < sheet (160) < QuickView (400) / toasts (450)
-   The backdrop covers the ENTIRE viewport — footer, header, products and the
-   WhatsApp button included — so nothing behind the sheet stays readable. */
+   The backdrop covers the ENTIRE viewport. */
 .filter-sort-sheet-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(27, 24, 20, 0.45);
   z-index: var(--z-backdrop);
 }
+
 .filter-sort-sheet {
   position: fixed;
   left: 0;
@@ -220,21 +266,21 @@
   display: flex;
   flex-direction: column;
   max-height: 85vh;
-  /* Fully opaque cream — never transparent/glass: page content behind the
-     sheet must never show through the panel. */
   background: #f8f4ea;
-  border-radius: 18px 18px 0 0;
+  border-radius: 20px 20px 0 0;
   border-top: 1px solid #d8cbb8;
-  box-shadow: 0 -8px 30px rgba(27, 24, 20, 0.16);
+  box-shadow: 0 -8px 32px rgba(27, 24, 20, 0.16);
   transform: translateY(100%);
   visibility: hidden;
   transition: transform 0.28s ease, visibility 0s linear 0.28s;
 }
+
 .filter-sort-sheet.is-open {
   transform: translateY(0);
   visibility: visible;
   transition: transform 0.28s ease;
 }
+
 @media (min-width: 768px) {
   .filter-sort-sheet { display: none; }
 }
@@ -244,17 +290,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 20px 12px;
+  padding: 18px 20px 14px;
   border-bottom: 1px solid #e8e1d6;
+  background: #fcfaf6;
 }
+
 .filter-sort-sheet-header h2 {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-display, Georgia, serif);
   font-size: 1.15rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #2a2622;
 }
+
 .filter-sort-sheet-close {
   display: inline-flex;
   align-items: center;
@@ -264,70 +313,91 @@
   height: 34px;
   border: 1px solid #e8e1d6;
   border-radius: 50%;
-  background: var(--white);
+  background: #ffffff;
   color: #2a2622;
   font-size: 0.9rem;
   cursor: pointer;
 }
-.filter-sort-sheet-close:active { background: #f1eadb; }
+.filter-sort-sheet-close:active { background: #f4ecdc; }
 
 .filter-sort-sheet-body {
   overflow-y: auto;
-  padding: 8px 20px 20px;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 20px 20px;
 }
-.filter-sort-sheet-section { padding-top: 16px; }
-.filter-sort-sheet-section + .filter-sort-sheet-section { border-top: 1px solid #e8e1d6; }
+
+.filter-sort-sheet-section {
+  padding-top: 16px;
+}
+.filter-sort-sheet-section + .filter-sort-sheet-section {
+  border-top: 1px solid #e8e1d6;
+  margin-top: 16px;
+}
+
 .filter-sort-sheet-section h3 {
-  margin: 0;
+  margin: 0 0 10px;
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
+  font-weight: 700;
   text-transform: uppercase;
   color: #9a6b1f;
 }
+
 .filter-sort-sheet-group-title {
   margin: 10px 0 8px;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: #2a2622;
 }
+
 .filter-sort-sheet-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+
 .filter-sort-sheet-options button {
-  padding: 11px 12px;
+  padding: 12px 14px;
   border: 1px solid #e8e1d6;
   border-radius: 10px;
-  background: var(--white);
+  background: #ffffff;
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 500;
   color: #2a2622;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition: all 0.15s ease;
 }
+
 .filter-sort-sheet-options button.is-active {
   border-color: #9a6b1f;
-  background: #f1e6d0;
-  color: #9a6b1f;
+  background: #f4ecdc;
+  color: #85591a;
   font-weight: 700;
+  box-shadow: 0 1px 4px rgba(154, 107, 31, 0.08);
 }
-.filter-sort-sheet-note { margin: 6px 0 0; font-size: 0.85rem; color: #756f66; }
+
+.filter-sort-sheet-note {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #756f66;
+}
 
 .filter-sort-sheet-footer {
-  padding: 12px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  padding: 14px 20px calc(18px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid #e8e1d6;
+  background: #fcfaf6;
 }
+
 .filter-sort-sheet-apply {
   width: 100%;
   height: 48px;
   border: none;
   border-radius: 12px;
   background: #9a6b1f;
-  color: #fff;
+  color: #ffffff;
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 700;
@@ -337,9 +407,7 @@
 }
 .filter-sort-sheet-apply:active { background: #85591a; }
 
-/* The popover is a DESKTOP surface only — never visible on mobile (the
-   bottom sheet is the mobile entry point). Hidden below 768px even if a
-   resize leaves it open (the JS resize guard also closes it). */
+/* The popover is a DESKTOP surface only */
 @media (max-width: 767px) {
   .filter-sort-panel,
   .filter-sort-panel-backdrop {

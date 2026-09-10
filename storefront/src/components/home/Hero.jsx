@@ -4,19 +4,22 @@ import { IMAGES } from '../../config/assets'
 import './Hero.css'
 
 export default function Hero() {
-  // Background image comes from assets.js (inline style overrides the CSS
-  // rule); the dark overlay + fallback ink background stay in CSS.
-  // Modern browsers pick the optimized WebP variant (88 KB); legacy browsers
-  // without WebP fall back to the original PNG — identical visuals.
-  const bgStyle = IMAGES.heroBackground
-    ? {
-        backgroundImage: `image-set(url(${IMAGES.heroBackgroundWebp}) type('image/webp') 1x, url(${IMAGES.heroBackground}) type('image/png') 1x)`,
-      }
-    : undefined
-
   return (
     <section className="hero">
-      <div className="hero-bg hero-bg-anim" style={bgStyle} role="img" aria-label="Amber attar bottle on a dark background" />
+      {IMAGES.heroBackground && (
+        <picture className="hero-picture">
+          {IMAGES.heroBackgroundWebp && (
+            <source type="image/webp" srcSet={IMAGES.heroBackgroundWebp} />
+          )}
+          <img
+            src={IMAGES.heroBackground}
+            alt="Hallmark luxury perfume and attar collection"
+            className="hero-img hero-bg hero-bg-anim"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </picture>
+      )}
       <div className="hero-overlay" aria-hidden="true" />
       <div className="hero-content">
         <h1 className="hero-title hero-reveal hero-reveal-1">
