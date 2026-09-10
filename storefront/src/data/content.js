@@ -79,8 +79,10 @@ export const HERO = {
 // HOMEPAGE — section headings for the shared category / featured grids
 // --------------------------------------------------------------------------
 export const HOME_CATEGORIES = {
+  eyebrow: 'EXPLORE OUR COLLECTION',
   title: 'Shop by Category',
-  viewAll: { label: 'View All', to: '/categories' },
+  subtitle: 'Discover your signature scent from our exclusive range',
+  viewAll: { label: 'VIEW ALL', to: '/categories' },
 }
 
 export const HOME_FEATURED = {
