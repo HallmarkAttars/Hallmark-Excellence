@@ -11,7 +11,7 @@ async function uploadImage(req, res) {
 
     const result = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'perfume-ecommerce' },
+        { folder: 'perfume-ecommerce', resource_type: 'image' },
         (error, uploadResult) => {
           if (error) reject(error)
           else resolve(uploadResult)

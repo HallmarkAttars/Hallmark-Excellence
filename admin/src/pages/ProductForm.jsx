@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
 import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantValidation'
@@ -6,6 +6,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 // price comes from the brand's Bulk Pricing normal price). Pure helpers with
 // unit tests in utils/attarPriceSync.test.js.
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
+import { compressProductImage } from '../utils/imageCompressor'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -243,12 +244,25 @@ export default function ProductForm() {
   const [existingImages, setExistingImages] = useState([])
   const [imagePreview, setImagePreview] = useState(null)
   const [imageFile, setImageFile] = useState(null)
+  const [isCompressingImage, setIsCompressingImage] = useState(false)
+  const compressionPromiseRef = useRef(null)
+  const previewUrlRef = useRef(null)
   const [loading, setLoading] = useState(isEdit)
   
-  // Submit phases: 'idle' | 'uploading' | 'saving' | 'success'
+  // Submit phases: 'idle' | 'preparing' | 'uploading' | 'saving' | 'success'
   const [submitPhase, setSubmitPhase] = useState('idle')
   const isSubmitting = submitPhase !== 'idle'
   const [error, setError] = useState('')
+
+  // Clean up object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+    }
+  }, [])
 
   // --- Variant state ------------------------------------------------------
   const [variants, setVariants] = useState([])
@@ -342,10 +356,40 @@ export default function ProductForm() {
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Revoke previous blob URL to prevent memory leaks
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
+
+    // Instant local preview without reading full base64 string
+    try {
+      const previewUrl = URL.createObjectURL(file)
+      previewUrlRef.current = previewUrl
+      setImagePreview(previewUrl)
+    } catch {
+      // Fallback
+    }
+
     setImageFile(file)
-    const reader = new FileReader()
-    reader.onload = () => setImagePreview(reader.result)
-    reader.readAsDataURL(file)
+    setIsCompressingImage(true)
+
+    // Pre-compress image client-side in background while user fills form
+    const promise = compressProductImage(file)
+      .then((optimizedFile) => {
+        setImageFile(optimizedFile)
+        setIsCompressingImage(false)
+        return optimizedFile
+      })
+      .catch((err) => {
+        console.warn('Image pre-compression warning:', err)
+        setImageFile(file)
+        setIsCompressingImage(false)
+        return file
+      })
+
+    compressionPromiseRef.current = promise
   }
 
   // Tracks which variants are expanded on mobile. Keyed by variant unique key.
@@ -466,8 +510,27 @@ export default function ProductForm() {
     try {
       let image = existingImages[0] || null
       if (imageFile) {
+        let fileToUpload = imageFile
+
+        // If background compression is still in progress when submit is clicked, wait for it
+        if (compressionPromiseRef.current && isCompressingImage) {
+          setSubmitPhase('preparing')
+          try {
+            fileToUpload = await compressionPromiseRef.current
+          } catch {
+            fileToUpload = imageFile
+          }
+        }
+
         setSubmitPhase('uploading')
-        image = await uploadImage(imageFile)
+        try {
+          image = await uploadImage(fileToUpload)
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr)
+          setError(uploadErr.message || 'Image upload failed. Please check your connection and try again.')
+          setSubmitPhase('idle')
+          return // Stop! Do NOT create product if upload failed
+        }
       }
 
       setSubmitPhase('saving')
@@ -516,6 +579,7 @@ export default function ProductForm() {
   }
 
   const submitButtonLabel = () => {
+    if (submitPhase === 'preparing') return 'Preparing image…'
     if (submitPhase === 'uploading') return 'Uploading image…'
     if (submitPhase === 'saving') return isEdit ? 'Saving changes…' : 'Creating product…'
     if (submitPhase === 'success') return isEdit ? 'Changes saved!' : 'Product created!'
@@ -743,6 +807,11 @@ export default function ProductForm() {
             onChange={handleImageChange}
             disabled={isSubmitting}
           />
+          {isCompressingImage && (
+            <small className="field-example" style={{ color: 'var(--color-gold, #c4974f)' }}>
+              Preparing image…
+            </small>
+          )}
           {imagePreview && (
             <div className="image-preview">
               <img src={imagePreview} alt="Preview" />

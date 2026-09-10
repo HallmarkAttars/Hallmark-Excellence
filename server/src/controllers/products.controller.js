@@ -684,31 +684,55 @@ async function createProduct(req, res) {
       return res.status(400).json({ error: 'name is required.' })
     }
 
-    // If the selected category is "Attar", brand is required
-    if (category_id) {
-      const { data: category } = await supabase
-        .from('categories')
-        .select('slug')
-        .eq('id', category_id)
-        .maybeSingle()
-      if (category && category.slug === 'attar' && !brand_id) {
-        return res.status(400).json({ error: 'Brand is required for Attar products.' })
+    // Validate variants upfront BEFORE creating any product in the database.
+    // This guarantees atomicity and prevents leaving behind orphaned products.
+    if (Array.isArray(variants) && variants.length > 0) {
+      const invalid = variants.map(validateVariant).find(Boolean)
+      if (invalid) {
+        return res.status(400).json({ error: invalid })
       }
     }
 
-    // Optional explicit position. When omitted, the new product is placed
-    // at the END (max display_order + 1) — never inserted alphabetically.
-    let order = display_order
-    if (order !== undefined) {
-      order = Number(order)
-      if (!Number.isInteger(order) || order < 0) {
+    // Optional explicit position validation
+    let explicitOrder
+    if (display_order !== undefined) {
+      const parsedOrder = Number(display_order)
+      if (!Number.isInteger(parsedOrder) || parsedOrder < 0) {
         return res.status(400).json({ error: 'Display position must be a whole number 0 or greater.' })
       }
-    } else {
-      order = await nextProductDisplayOrder()
+      explicitOrder = parsedOrder
     }
 
-    const uniqueSlug = await generateUniqueSlug(name)
+    // Execute independent pre-insert lookups concurrently:
+    // 1. Category check (slug verification for Attar requirements)
+    // 2. Next display order (if not explicitly specified)
+    // 3. Unique slug generation
+    const categoryPromise = category_id
+      ? supabase.from('categories').select('slug').eq('id', category_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+
+    const orderPromise = explicitOrder !== undefined
+      ? Promise.resolve(explicitOrder)
+      : nextProductDisplayOrder()
+
+    const slugPromise = generateUniqueSlug(name)
+
+    const [categoryRes, resolvedOrder, uniqueSlug] = await Promise.all([
+      categoryPromise,
+      orderPromise,
+      slugPromise,
+    ])
+
+    if (categoryRes.error) {
+      console.error('createProduct category lookup error:', categoryRes.error)
+      return res.status(500).json({ error: 'Failed to verify product category.' })
+    }
+
+    // If the selected category is "Attar", brand is required
+    const category = categoryRes.data
+    if (category && category.slug === 'attar' && !brand_id) {
+      return res.status(400).json({ error: 'Brand is required for Attar products.' })
+    }
 
     const payload = {
       name,
@@ -723,7 +747,7 @@ async function createProduct(req, res) {
       image: image ?? null,
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
-      display_order: order,
+      display_order: resolvedOrder,
     }
 
     const { data, error } = await withProductWriteRetry(
@@ -751,14 +775,16 @@ async function createProduct(req, res) {
     // Insert variants (if any) after the product exists.
     let inserted = []
     if (Array.isArray(variants) && variants.length > 0) {
-      const invalid = variants.map(validateVariant).find(Boolean)
-      if (invalid) {
-        return res.status(400).json({ error: invalid })
-      }
       try {
         inserted = await insertVariants(data.id, variants)
       } catch (varErr) {
         console.error('createProduct insertVariants error:', varErr)
+        // Clean up orphaned product row if variants failed
+        try {
+          await supabase.from('products').delete().eq('id', data.id)
+        } catch (cleanupErr) {
+          console.error('Failed to cleanup orphaned product:', cleanupErr)
+        }
         return res.status(500).json({
           error: varErr.message || 'Failed to create product variants.',
           code: varErr.code,
