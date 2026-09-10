@@ -14,20 +14,20 @@ export default function CategoryGrid({ categories }) {
     <Reveal as="section" className="section category-section">
       <div className="container">
         <div className="category-section-head">
-          <div className="category-head-main">
+          <div className="category-head-text">
             {HOME_CATEGORIES.eyebrow && (
               <p className="category-eyebrow">{HOME_CATEGORIES.eyebrow}</p>
             )}
-            <div className="category-title-row">
-              <h2 className="category-title">{HOME_CATEGORIES.title}</h2>
-              <Link to={HOME_CATEGORIES.viewAll.to} className="category-view-all">
-                <span className="category-view-all-text">{HOME_CATEGORIES.viewAll.label}</span>
-                <span className="category-view-all-arrow" aria-hidden="true">→</span>
-              </Link>
-            </div>
+            <h2 className="category-title">{HOME_CATEGORIES.title}</h2>
             {HOME_CATEGORIES.subtitle && (
               <p className="category-subtitle">{HOME_CATEGORIES.subtitle}</p>
             )}
+          </div>
+          <div className="category-head-action">
+            <Link to={HOME_CATEGORIES.viewAll.to} className="category-view-all">
+              <span className="category-view-all-text">{HOME_CATEGORIES.viewAll.label}</span>
+              <span className="category-view-all-arrow" aria-hidden="true">→</span>
+            </Link>
           </div>
         </div>
 
