@@ -13,12 +13,33 @@ function readToken() {
   }
 }
 
+// Master-data memory cache (Categories and Brands rarely change during an
+// admin session). Fast 5-minute TTL with explicit cache invalidations on
+// any mutations (create / update / delete).
+const MASTER_CACHE_TTL = 5 * 60 * 1000
+
+let categoriesCache = null
+let categoriesCacheTime = 0
+
+let brandsCache = null
+let brandsCacheTime = 0
+
+export function invalidateCategoriesCache() {
+  categoriesCache = null
+  categoriesCacheTime = 0
+}
+
+export function invalidateBrandsCache() {
+  brandsCache = null
+  brandsCacheTime = 0
+}
+
 // --- Products ------------------------------------------------------------
 // Admin views must see ALL products (active + inactive), so these hit the
 // /api/admin/* routes rather than the public /api/products ones.
 export async function getProducts() {
   const data = await adminApi.get('/api/admin/products', readToken())
-  return data.products ?? []
+  return data?.products ?? []
 }
 
 export async function getProductsByBrand(brandSlug) {
@@ -31,17 +52,17 @@ export async function getProductsByBrand(brandSlug) {
 
 export async function getProduct(id) {
   const data = await adminApi.get(`/api/admin/products/${id}`, readToken())
-  return data.product ?? data ?? null
+  return data?.product ?? data ?? null
 }
 
 export async function createProduct(data) {
   const res = await adminApi.post('/api/admin/products', data, readToken())
-  return res.product ?? res ?? null
+  return res?.product ?? res ?? null
 }
 
 export async function updateProduct(id, data) {
   const res = await adminApi.patch(`/api/admin/products/${id}`, data, readToken())
-  return res.product ?? res ?? null
+  return res?.product ?? res ?? null
 }
 
 export async function deleteProduct(id) {
@@ -53,7 +74,7 @@ export async function deleteProduct(id) {
 // the backend only exposes a plain PATCH, not a dedicated toggle route.
 export async function toggleProductStatus(id, currentIsActive) {
   const res = await adminApi.patch(`/api/admin/products/${id}`, { is_active: !currentIsActive }, readToken())
-  return res.product ?? res ?? null
+  return res?.product ?? res ?? null
 }
 
 // Uploads an image file to Cloudinary via the backend and returns the
@@ -64,23 +85,33 @@ export async function uploadImage(file) {
 }
 
 // --- Categories ------------------------------------------------------------
-export async function getCategories() {
+export async function getCategories({ force = false } = {}) {
+  const now = Date.now()
+  if (!force && categoriesCache && now - categoriesCacheTime < MASTER_CACHE_TTL) {
+    return categoriesCache
+  }
   const data = await adminApi.get('/api/admin/categories', readToken())
-  return data.categories ?? []
+  const list = data?.categories ?? []
+  categoriesCache = list
+  categoriesCacheTime = Date.now()
+  return list
 }
 
 export async function createCategory(data) {
   const res = await adminApi.post('/api/admin/categories', data, readToken())
-  return res.category ?? res ?? null
+  invalidateCategoriesCache()
+  return res?.category ?? res ?? null
 }
 
 export async function updateCategory(id, data) {
   const res = await adminApi.patch(`/api/admin/categories/${id}`, data, readToken())
-  return res.category ?? res ?? null
+  invalidateCategoriesCache()
+  return res?.category ?? res ?? null
 }
 
 export async function deleteCategory(id) {
   await adminApi.del(`/api/admin/categories/${id}`, readToken())
+  invalidateCategoriesCache()
   return { success: true }
 }
 
@@ -89,51 +120,61 @@ export async function deleteCategory(id) {
 // brand management screen can edit/reactivate any brand. Falls back to the
 // public endpoint if the deployed server hasn't been updated yet (404), so the
 // admin never breaks during a rolling deploy.
-export async function getBrands() {
+export async function getBrands({ force = false } = {}) {
+  const now = Date.now()
+  if (!force && brandsCache && now - brandsCacheTime < MASTER_CACHE_TTL) {
+    return brandsCache
+  }
+  let list = []
   try {
     const data = await adminApi.get('/api/admin/brands', readToken())
-    return data.brands ?? []
+    list = data?.brands ?? []
   } catch {
     const data = await adminApi.get('/api/brands', readToken())
-    return data.brands ?? []
+    list = data?.brands ?? []
   }
+  brandsCache = list
+  brandsCacheTime = Date.now()
+  return list
 }
 
 // Updates the STOREFRONT MANAGEMENT fields (copy, imagery, position, display
 // type, active state).
 export async function updateBrandDetails(id, data) {
   const res = await adminApi.put(`/api/admin/brands/${id}`, data, readToken())
-  return res.brand ?? res ?? null
+  invalidateBrandsCache()
+  return res?.brand ?? res ?? null
 }
 
 // Updates the BRAND-LEVEL BULK PRICING config (bulk_enabled /
 // standard_price / bulk_unit_price / bulk_min_qty). One rule per brand.
 export async function updateBrandBulkPricing(id, data) {
   const res = await adminApi.patch(`/api/admin/brands/${id}/bulk-pricing`, data, readToken())
-  return res.brand ?? res ?? null
+  invalidateBrandsCache()
+  return res?.brand ?? res ?? null
 }
 
 // --- Orders ------------------------------------------------------------------
 export async function getOrders() {
   const data = await adminApi.get('/api/admin/orders', readToken())
-  return data.orders ?? []
+  return data?.orders ?? []
 }
 
 export async function getOrder(id) {
   const data = await adminApi.get(`/api/admin/orders/${id}`, readToken())
-  return data.order ?? data ?? null
+  return data?.order ?? data ?? null
 }
 
 export async function updateOrderStatus(id, status) {
   const res = await adminApi.patch(`/api/admin/orders/${id}/status`, { status }, readToken())
-  return res.order ?? res ?? null
+  return res?.order ?? res ?? null
 }
 
 // Staff payment confirmation (no payment gateway): marks an order Paid after
 // the payment was actually received, or resets it back to Pending.
 export async function updateOrderPaymentStatus(id, status) {
   const res = await adminApi.patch(`/api/admin/orders/${id}/payment-status`, { status }, readToken())
-  return res.order ?? res ?? null
+  return res?.order ?? res ?? null
 }
 
 export async function deleteOrder(id) {
@@ -145,11 +186,11 @@ export async function deleteOrder(id) {
 export async function getDashboardStats() {
   const data = await adminApi.get('/api/admin/stats', readToken())
   return {
-    totalProducts: data.total_products,
-    totalOrders: data.total_orders,
-    totalCustomers: data.total_customers,
-    revenue: data.total_revenue,
-    recentOrders: data.recent_orders ?? [],
+    totalProducts: data?.total_products,
+    totalOrders: data?.total_orders,
+    totalCustomers: data?.total_customers,
+    revenue: data?.total_revenue,
+    recentOrders: data?.recent_orders ?? [],
   }
 }
 

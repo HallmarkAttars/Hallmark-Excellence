@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { getProduct, createProduct, updateProduct, getCategories, getBrands, uploadImage } from '../services/mockApi'
 import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantValidation'
@@ -16,9 +16,213 @@ const EMPTY = {
   display_order: '',
 }
 
-// Variant validation rules + unit canonicalization live in
-// utils/variantValidation.js (unit-tested there) and mirror the backend
-// exactly — the dropdown offers ONLY ML, Gram, Pieces.
+// Formats the live compact summary for mobile collapsed headers:
+// e.g. "100 ML • ₹45/unit • Total ₹4,500"
+function getVariantSummary(v) {
+  const hasQty = v.quantity_value !== '' && v.quantity_value != null && !isNaN(Number(v.quantity_value))
+  const hasPpu = v.price_per_unit !== '' && v.price_per_unit != null && !isNaN(Number(v.price_per_unit))
+  const hasTotal = v.total_price !== '' && v.total_price != null && !isNaN(Number(v.total_price))
+
+  const qtyPart = hasQty ? `${v.quantity_value} ${v.quantity_unit || 'ML'}` : '— ML'
+  const ppuPart = hasPpu ? `₹${Number(v.price_per_unit).toLocaleString('en-IN')}/unit` : '₹—/unit'
+  const totalPart = hasTotal ? `Total ₹${Number(v.total_price).toLocaleString('en-IN')}` : 'Total ₹—'
+
+  return `${qtyPart} • ${ppuPart} • ${totalPart}`
+}
+
+// Memoized individual variant card to eliminate render stutter with 10-20+ variants.
+// Only the variant being actively edited re-renders on keystroke.
+const VariantCardItem = React.memo(function VariantCardItem({
+  variant: v,
+  index,
+  isExpanded,
+  hasError,
+  summaryText,
+  unitOptions,
+  onToggle,
+  onUpdate,
+  onRemove,
+  onSetDefault,
+  disabled,
+}) {
+  const itemKey = v._key || `var_${index}`
+
+  return (
+    <div
+      id={`variant-card-${itemKey}`}
+      className={`variant-card${v.is_default ? ' is-default' : ''}${isExpanded ? ' is-expanded' : ' is-collapsed'}${hasError ? ' has-incomplete-fields' : ''}`}
+    >
+      <div
+        className="variant-card-head"
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-controls={`variant-body-${itemKey}`}
+        aria-label={`Variant ${index + 1}${v.is_default ? ' Default' : ''}, ${isExpanded ? 'collapse details' : 'expand details'}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
+      >
+        <div className="variant-head-main">
+          <div className="variant-title-row">
+            <span className="variant-title">
+              Variant {index + 1}
+              {v.is_default && <span className="variant-default-badge">Default</span>}
+              {hasError && (
+                <span className="variant-error-indicator" title="This variant has incomplete or invalid fields">
+                  ⚠️ Incomplete
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="variant-mobile-summary" aria-hidden="true">
+            {summaryText}
+          </div>
+        </div>
+
+        <div className="variant-head-actions">
+          <button
+            type="button"
+            className="variant-delete"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRemove(index)
+            }}
+            title="Delete variant"
+            aria-label={`Delete Variant ${index + 1}`}
+            disabled={disabled}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <line x1="10" y1="11" x2="10" y2="17" />
+              <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className="variant-chevron-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle()
+            }}
+            aria-expanded={isExpanded}
+            aria-controls={`variant-body-${itemKey}`}
+            aria-label={`Toggle Variant ${index + 1} details`}
+            tabIndex={-1}
+          >
+            <svg
+              className={`variant-chevron-icon ${isExpanded ? 'is-expanded' : ''}`}
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id={`variant-body-${itemKey}`} className="variant-card-body">
+        <div className="variant-grid">
+          <div className="form-field">
+            <label htmlFor={`qty-${index}`}>Quantity</label>
+            <input
+              id={`qty-${index}`}
+              type="number"
+              min="1"
+              step="any"
+              placeholder="e.g. 100"
+              value={v.quantity_value}
+              onChange={(e) => onUpdate(index, 'quantity_value', e.target.value)}
+              disabled={disabled}
+            />
+            <small className="field-example">Example: 100</small>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor={`unit-${index}`}>Unit</label>
+            <select
+              id={`unit-${index}`}
+              value={v.quantity_unit || 'ML'}
+              onChange={(e) => onUpdate(index, 'quantity_unit', e.target.value)}
+              disabled={disabled}
+            >
+              {unitOptions.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+            <small className="field-example">ML, Gram or Pieces</small>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
+            <input
+              id={`per-unit-${index}`}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={v.price_per_unit}
+              onChange={(e) => onUpdate(index, 'price_per_unit', e.target.value)}
+              disabled={disabled}
+            />
+            <small className="field-example">e.g. ₹45 for one piece</small>
+          </div>
+        </div>
+
+        {/* Variant Total Price — READ-ONLY, always auto-calculated as
+            Quantity × Price Per Unit. The admin never types it. */}
+        <div className="form-field variant-total-field">
+          <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
+          <div className="variant-total-input-row">
+            <input
+              id={`total-price-${index}`}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="—"
+              value={v.total_price === '' ? '' : Number(v.total_price)}
+              readOnly
+              tabIndex={-1}
+              aria-readonly="true"
+              className="variant-total-readonly"
+            />
+            <span className="variant-total-lock" title="Calculated automatically" aria-hidden="true">
+              🔒
+            </span>
+          </div>
+          <small className="field-example variant-total-formula">
+            Automatically calculated: {String(v.quantity_value ?? '').trim() || '—'} × ₹{String(v.price_per_unit ?? '').trim() || '—'}
+          </small>
+        </div>
+
+        <div className="variant-default">
+          <label className="default-radio">
+            <input
+              type="radio"
+              name="default-variant"
+              checked={v.is_default}
+              onChange={() => onSetDefault(index)}
+              disabled={disabled}
+            />
+            <span>Default Variant</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+})
 
 export default function ProductForm() {
   const { id } = useParams()
@@ -40,28 +244,22 @@ export default function ProductForm() {
   const [imagePreview, setImagePreview] = useState(null)
   const [imageFile, setImageFile] = useState(null)
   const [loading, setLoading] = useState(isEdit)
-  const [saving, setSaving] = useState(false)
+  
+  // Submit phases: 'idle' | 'uploading' | 'saving' | 'success'
+  const [submitPhase, setSubmitPhase] = useState('idle')
+  const isSubmitting = submitPhase !== 'idle'
   const [error, setError] = useState('')
 
   // --- Variant state ------------------------------------------------------
-  // Each variant carries EXACTLY: quantity_value + quantity_unit +
-  // total_price (Variant Total Price — the amount the customer pays for one
-  // selected variant) + price_per_unit (informational display) + is_default.
-  // No stock, no bulk pricing, no package pricing.
   const [variants, setVariants] = useState([])
-  // The variant the price sync drives — the default variant's per-piece
-  // price. Tracked so switching which variant is default re-runs the sync.
   const defaultVariantIndex = variants.findIndex((v) => v.is_default)
-  // Tracks the brand whose bulk normal price was last auto-synced into the
-  // default variant's per-piece price. Lets the form re-sync when the admin
-  // switches brands (AREES → DAHAB updates the price) while NEVER overwriting
-  // a price the admin typed by hand, and never touching saved prices in edit
-  // mode (historical products keep their exact stored data).
   const [priceSyncedBrand, setPriceSyncedBrand] = useState(null)
 
   useEffect(() => {
+    // Both master resources resolve from cache or fast parallel network
     getCategories().then(setCategories)
     getBrands().then(setBrands)
+    
     // Pre-select the locked brand for brand-scoped "Add Product" flows.
     if (lockedBrandId) {
       setForm((f) => ({ ...f, brand_id: lockedBrandId }))
@@ -79,9 +277,6 @@ export default function ProductForm() {
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
-          // Load existing variants (if any) returned by the backend. Legacy
-          // variants (pre-total-price) fall back to their old `price` value
-          // so editing an old product never loses its data.
           if (Array.isArray(p.variants) && p.variants.length > 0) {
             setVariants(
               p.variants.map((v) => ({
@@ -95,36 +290,33 @@ export default function ProductForm() {
           }
         }
         setLoading(false)
+      }).catch((err) => {
+        setError(err.message || 'Failed to load product.')
+        setLoading(false)
       })
     }
-  }, [id, isEdit])
+  }, [id, isEdit, lockedBrandId])
 
-  const handleCategoryChange = (e) => {
+  const handleCategoryChange = useCallback((e) => {
     const categoryId = e.target.value
-    // Keep existing brand selection when changing categories — only clear it
-    // if the brand was locked via URL params and the lock should persist.
-    // Brand is now selectable for ALL categories (optional for non-Attar,
-    // required for Attar). The admin's brand choice carries across changes.
     setForm((f) => ({ ...f, category_id: categoryId }))
-  }
+  }, [])
 
-  const selectedCategory = categories.find((c) => String(c.id) === String(form.category_id))
+  const selectedCategory = useMemo(
+    () => categories.find((c) => String(c.id) === String(form.category_id)),
+    [categories, form.category_id]
+  )
   const isAttarCategory = selectedCategory?.slug === 'attar' || selectedCategory?.name === 'Attar'
 
-  // The brand whose Bulk Pricing configuration drives Attar prices. Only the
-  // Attar category uses brand pricing — every other category is untouched.
-  const selectedBrand = brands.find((b) => String(b.id) === String(form.brand_id))
+  const selectedBrand = useMemo(
+    () => brands.find((b) => String(b.id) === String(form.brand_id)),
+    [brands, form.brand_id]
+  )
   const brandNormalPrice =
     isAttarCategory && selectedBrand ? Number(selectedBrand.standard_price) : null
   const brandHasNormalPrice = Number.isFinite(brandNormalPrice) && brandNormalPrice > 0
 
-  // ATTAR PRICE SYNC — the product's per-piece price automatically comes from
-  // the selected brand's Bulk Pricing normal price:
-  //   • Pick Category = Attar + a Brand → the default variant's Price Per Unit
-  //     is filled with the brand's normal price (admin never types it again).
-  //   • Change the brand (AREES → DAHAB) → the price updates to the new brand.
-  //   • A price the admin typed by hand is respected (never clobbered).
-  //   • Edit mode never auto-syncs — existing products keep their saved data.
+  // ATTAR PRICE SYNC
   useEffect(() => {
     if (!shouldSyncAttarPrice({ isEdit, isAttarCategory, brandHasNormalPrice })) {
       setPriceSyncedBrand(null)
@@ -142,10 +334,11 @@ export default function ProductForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, isAttarCategory, form.brand_id, selectedBrand, variants.length, defaultVariantIndex, priceSyncedBrand])
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target
+    setForm((f) => ({ ...f, [name]: value }))
+  }, [])
 
-  // Only preview locally here — the actual Cloudinary upload happens on
-  // submit, so we don't upload a file the admin might still cancel out of.
   const handleImageChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -155,35 +348,17 @@ export default function ProductForm() {
     reader.readAsDataURL(file)
   }
 
-  // Tracks which variants are expanded on mobile. Keyed by variant unique key or index.
+  // Tracks which variants are expanded on mobile. Keyed by variant unique key.
   const [expandedMap, setExpandedMap] = useState({})
 
-  const toggleVariant = (key) => {
+  const toggleVariant = useCallback((key) => {
     setExpandedMap((prev) => ({
       ...prev,
       [key]: !prev[key],
     }))
-  }
+  }, [])
 
-  // --- Variant helpers -----------------------------------------------------
-  const hasVariants = variants.length > 0
-
-  // Formats the live compact summary for mobile collapsed headers:
-  // e.g. "100 ML • ₹45/unit • Total ₹4,500"
-  const getVariantSummary = (v) => {
-    const hasQty = v.quantity_value !== '' && v.quantity_value != null && !isNaN(Number(v.quantity_value))
-    const hasPpu = v.price_per_unit !== '' && v.price_per_unit != null && !isNaN(Number(v.price_per_unit))
-    const hasTotal = v.total_price !== '' && v.total_price != null && !isNaN(Number(v.total_price))
-
-    const qtyPart = hasQty ? `${v.quantity_value} ${v.quantity_unit || 'ML'}` : '— ML'
-    const ppuPart = hasPpu ? `₹${Number(v.price_per_unit).toLocaleString('en-IN')}/unit` : '₹—/unit'
-    const totalPart = hasTotal ? `Total ₹${Number(v.total_price).toLocaleString('en-IN')}` : 'Total ₹—'
-
-    return `${qtyPart} • ${ppuPart} • ${totalPart}`
-  }
-
-  // Detects if a variant is missing required fields or has invalid values
-  const isVariantIncomplete = (v, index) => {
+  const isVariantIncomplete = useCallback((v, index) => {
     const q = String(v.quantity_value ?? '').trim()
     const u = String(v.quantity_unit ?? '').trim()
     const p = v.price_per_unit
@@ -205,14 +380,9 @@ export default function ProductForm() {
     if (duplicate) return true
 
     return false
-  }
+  }, [variants])
 
-  // Variant Total Price is ALWAYS computed automatically: Quantity × Price
-  // Per Unit (e.g. 60 × ₹45 = ₹2,700). Returns '' while either input is
-  // missing/invalid so the read-only field never shows a fabricated number.
-  // (computeVariantTotal lives in utils/attarPriceSync.js — unit-tested.)
-
-  const addVariant = () => {
+  const addVariant = useCallback(() => {
     const newKey = `var_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     setVariants((prev) => [
       ...prev,
@@ -225,65 +395,59 @@ export default function ProductForm() {
         is_default: prev.length === 0, // first variant is default by default
       },
     ])
-    // Automatically expand the newly added variant so the user can immediately enter its details
     setExpandedMap((prev) => ({
       ...prev,
       [newKey]: true,
     }))
-    // Smoothly scroll the newly added variant into view
-    setTimeout(() => {
+    // Use requestAnimationFrame for immediate smooth scrolling
+    requestAnimationFrame(() => {
       const el = document.getElementById(`variant-card-${newKey}`)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
-    }, 60)
-  }
+    })
+  }, [])
 
-  const updateVariant = (index, field, value) => {
+  const updateVariant = useCallback((index, field, value) => {
     setVariants((prev) =>
       prev.map((v, i) => {
         if (i !== index) return v
         const next = { ...v, [field]: value }
-        // Recompute the read-only Variant Total Price whenever Quantity or
-        // Price Per Unit changes.
         if (field === 'quantity_value' || field === 'price_per_unit') {
           next.total_price = computeVariantTotal(next.quantity_value, next.price_per_unit)
         }
         return next
       })
     )
-  }
+  }, [])
 
-  const removeVariant = (index) => {
+  const removeVariant = useCallback((index) => {
     setVariants((prev) => {
       const removedWasDefault = prev[index]?.is_default
       const next = prev.filter((_, i) => i !== index)
-      // If the removed variant was the default, make the first remaining one default.
       if (removedWasDefault && next.length > 0 && !next.some((v) => v.is_default)) {
         next[0] = { ...next[0], is_default: true }
       }
       return next
     })
-  }
+  }, [])
 
-  const setDefaultVariant = (index) => {
+  const setDefaultVariant = useCallback((index) => {
     setVariants((prev) => prev.map((v, i) => ({ ...v, is_default: i === index })))
-  }
+  }, [])
 
-  // The unit dropdown for one variant: the standard options (ML / Gram /
-  // Pieces) plus the variant's own saved unit when it is not one of them, so
-  // existing products keep their exact unit (e.g. "GM").
-  const unitOptionsFor = (index) => {
-    const v = variants[index]
+  const unitOptionsFor = useCallback((v) => {
     const current = v?.quantity_unit?.trim()
     if (current && !UNIT_OPTIONS.includes(current)) {
       return [...UNIT_OPTIONS, current]
     }
     return UNIT_OPTIONS
-  }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (isSubmitting) return // Guard against rapid duplicate clicks
+
     setError('')
 
     // Validate brand is required for Attar category
@@ -299,16 +463,16 @@ export default function ProductForm() {
       return
     }
 
-    setSaving(true)
     try {
       let image = existingImages[0] || null
       if (imageFile) {
+        setSubmitPhase('uploading')
         image = await uploadImage(imageFile)
       }
 
-      // Build the variants payload for the backend — ONLY quantity value,
-      // unit, variant total price, price per unit and default flag
-      // (no stock / no bulk / no packs).
+      setSubmitPhase('saving')
+
+      // Build the variants payload for the backend
       const variantsPayload = variants.map((v) => ({
         quantity_value: Number(v.quantity_value),
         quantity_unit: v.quantity_unit.trim(),
@@ -318,9 +482,6 @@ export default function ProductForm() {
         is_default: Boolean(v.is_default),
       }))
 
-      // The purchasable price comes ONLY from the product variants (the
-      // backend derives the product-level price from the default variant's
-      // total). No product-level price or MRP is sent anymore.
       const payload = {
         name: form.name,
         description: form.description,
@@ -331,8 +492,6 @@ export default function ProductForm() {
         brand_id: form.brand_id || null,
         image,
         variants: variantsPayload,
-        // Optional explicit position; empty = new products go to the end,
-        // existing products keep their current position.
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
 
@@ -341,7 +500,10 @@ export default function ProductForm() {
       } else {
         await createProduct(payload)
       }
-      // Brand-scoped add flows return to that brand's product page.
+
+      setSubmitPhase('success')
+
+      // Immediate navigation to destination
       if (!isEdit && lockedBrandSlug) {
         navigate(`/admin/brands/${lockedBrandSlug}`)
       } else {
@@ -349,8 +511,15 @@ export default function ProductForm() {
       }
     } catch (err) {
       setError(err.message || 'Failed to save product. Please try again.')
-      setSaving(false)
+      setSubmitPhase('idle')
     }
+  }
+
+  const submitButtonLabel = () => {
+    if (submitPhase === 'uploading') return 'Uploading image…'
+    if (submitPhase === 'saving') return isEdit ? 'Saving changes…' : 'Creating product…'
+    if (submitPhase === 'success') return isEdit ? 'Changes saved!' : 'Product created!'
+    return isEdit ? 'Save Changes' : 'Add Product'
   }
 
   if (loading) return <div className="loading-state">Loading product…</div>
@@ -365,12 +534,27 @@ export default function ProductForm() {
       <form className="card product-form" onSubmit={handleSubmit}>
         <div className="form-field">
           <label htmlFor="name">Name</label>
-          <input id="name" name="name" value={form.name} onChange={handleChange} required />
+          <input
+            id="name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting}
+          />
         </div>
 
         <div className="form-field">
           <label htmlFor="description">Description</label>
-          <textarea id="description" name="description" rows={4} value={form.description} onChange={handleChange} required />
+          <textarea
+            id="description"
+            name="description"
+            rows={4}
+            value={form.description}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting}
+          />
         </div>
 
         <div className="form-field featured-field">
@@ -380,6 +564,7 @@ export default function ProductForm() {
               name="is_featured"
               checked={form.is_featured}
               onChange={(e) => setForm((f) => ({ ...f, is_featured: e.target.checked }))}
+              disabled={isSubmitting}
             />
             <span className="featured-switch" aria-hidden="true" />
             <span className="featured-toggle-text">
@@ -389,7 +574,7 @@ export default function ProductForm() {
           </label>
         </div>
 
-        {/* -------- Ratings (shown on the storefront cards only when set) -------- */}
+        {/* Ratings */}
         <div className="form-row form-row-2">
           <div className="form-field">
             <label htmlFor="rating">Rating (0–5)</label>
@@ -403,6 +588,7 @@ export default function ProductForm() {
               placeholder="e.g. 4.8"
               value={form.rating}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
             <small className="field-example">Displayed as “★ 4.8” on the storefront cards.</small>
           </div>
@@ -417,16 +603,22 @@ export default function ProductForm() {
               placeholder="e.g. 81"
               value={form.review_count}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
             <small className="field-example">Displayed as “| (81)” next to the rating.</small>
           </div>
         </div>
 
-        {/* -------- Product Variants section (optional) -------- */}
+        {/* Product Variants section */}
         <div className="variants-section">
           <div className="variants-header">
             <h3>Product Variants</h3>
-            <button type="button" className="btn btn-outline btn-sm" onClick={addVariant}>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={addVariant}
+              disabled={isSubmitting}
+            >
               + Add Variant
             </button>
           </div>
@@ -444,177 +636,23 @@ export default function ProductForm() {
             const isExpanded = Boolean(expandedMap[itemKey])
             const hasError = isVariantIncomplete(v, index)
             const summaryText = getVariantSummary(v)
+            const unitOptions = unitOptionsFor(v)
 
             return (
-              <div
-                id={`variant-card-${itemKey}`}
-                className={`variant-card${v.is_default ? ' is-default' : ''}${isExpanded ? ' is-expanded' : ' is-collapsed'}${hasError ? ' has-incomplete-fields' : ''}`}
+              <VariantCardItem
                 key={itemKey}
-              >
-                <div
-                  className="variant-card-head"
-                  onClick={() => toggleVariant(itemKey)}
-                  role="button"
-                  tabIndex={0}
-                  aria-expanded={isExpanded}
-                  aria-controls={`variant-body-${itemKey}`}
-                  aria-label={`Variant ${index + 1}${v.is_default ? ' Default' : ''}, ${isExpanded ? 'collapse details' : 'expand details'}`}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      toggleVariant(itemKey)
-                    }
-                  }}
-                >
-                  <div className="variant-head-main">
-                    <div className="variant-title-row">
-                      <span className="variant-title">
-                        Variant {index + 1}
-                        {v.is_default && <span className="variant-default-badge">Default</span>}
-                        {hasError && (
-                          <span className="variant-error-indicator" title="This variant has incomplete or invalid fields">
-                            ⚠️ Incomplete
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="variant-mobile-summary" aria-hidden="true">
-                      {summaryText}
-                    </div>
-                  </div>
-
-                  <div className="variant-head-actions">
-                    <button
-                      type="button"
-                      className="variant-delete"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeVariant(index)
-                      }}
-                      title="Delete variant"
-                      aria-label={`Delete Variant ${index + 1}`}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="variant-chevron-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleVariant(itemKey)
-                      }}
-                      aria-expanded={isExpanded}
-                      aria-controls={`variant-body-${itemKey}`}
-                      aria-label={`Toggle Variant ${index + 1} details`}
-                      tabIndex={-1}
-                    >
-                      <svg
-                        className={`variant-chevron-icon ${isExpanded ? 'is-expanded' : ''}`}
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div id={`variant-body-${itemKey}`} className="variant-card-body">
-                  <div className="variant-grid">
-                    <div className="form-field">
-                      <label htmlFor={`qty-${index}`}>Quantity</label>
-                      <input
-                        id={`qty-${index}`}
-                        type="number"
-                        min="1"
-                        step="any"
-                        placeholder="e.g. 100"
-                        value={v.quantity_value}
-                        onChange={(e) => updateVariant(index, 'quantity_value', e.target.value)}
-                      />
-                      <small className="field-example">Example: 100</small>
-                    </div>
-
-                    <div className="form-field">
-                      <label htmlFor={`unit-${index}`}>Unit</label>
-                      <select
-                        id={`unit-${index}`}
-                        value={v.quantity_unit || 'ML'}
-                        onChange={(e) => updateVariant(index, 'quantity_unit', e.target.value)}
-                      >
-                        {unitOptionsFor(index).map((u) => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                      </select>
-                      <small className="field-example">ML, Gram or Pieces</small>
-                    </div>
-
-                    <div className="form-field">
-                      <label htmlFor={`per-unit-${index}`}>Price Per Unit (₹)</label>
-                      <input
-                        id={`per-unit-${index}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={v.price_per_unit}
-                        onChange={(e) => updateVariant(index, 'price_per_unit', e.target.value)}
-                      />
-                      <small className="field-example">e.g. ₹45 for one piece</small>
-                    </div>
-                  </div>
-
-                  {/* Variant Total Price — READ-ONLY, always auto-calculated as
-                      Quantity × Price Per Unit. The admin never types it. */}
-                  <div className="form-field variant-total-field">
-                    <label htmlFor={`total-price-${index}`}>Variant Total Price (₹)</label>
-                    <div className="variant-total-input-row">
-                      <input
-                        id={`total-price-${index}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="—"
-                        value={v.total_price === '' ? '' : Number(v.total_price)}
-                        readOnly
-                        tabIndex={-1}
-                        aria-readonly="true"
-                        className="variant-total-readonly"
-                      />
-                      <span className="variant-total-lock" title="Calculated automatically" aria-hidden="true">
-                        🔒
-                      </span>
-                    </div>
-                    <small className="field-example variant-total-formula">
-                      Automatically calculated: {String(v.quantity_value ?? '').trim() || '—'} × ₹{String(v.price_per_unit ?? '').trim() || '—'}
-                    </small>
-                  </div>
-
-                  <div className="variant-default">
-                    <label className="default-radio">
-                      <input
-                        type="radio"
-                        name="default-variant"
-                        checked={v.is_default}
-                        onChange={() => setDefaultVariant(index)}
-                      />
-                      <span>Default Variant</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
+                variant={v}
+                index={index}
+                isExpanded={isExpanded}
+                hasError={hasError}
+                summaryText={summaryText}
+                unitOptions={unitOptions}
+                onToggle={() => toggleVariant(itemKey)}
+                onUpdate={updateVariant}
+                onRemove={removeVariant}
+                onSetDefault={setDefaultVariant}
+                disabled={isSubmitting}
+              />
             )
           })}
         </div>
@@ -630,6 +668,7 @@ export default function ProductForm() {
             placeholder="End of list"
             value={form.display_order}
             onChange={handleChange}
+            disabled={isSubmitting}
           />
           <small className="field-example">
             Products appear on the storefront in this exact order (1 = first,
@@ -640,7 +679,14 @@ export default function ProductForm() {
         <div className="form-row form-row-2">
           <div className="form-field">
             <label htmlFor="category_id">Category</label>
-            <select id="category_id" name="category_id" value={form.category_id} onChange={handleCategoryChange} required>
+            <select
+              id="category_id"
+              name="category_id"
+              value={form.category_id}
+              onChange={handleCategoryChange}
+              required
+              disabled={isSubmitting}
+            >
               <option value="">Select category</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -649,10 +695,6 @@ export default function ProductForm() {
             <label htmlFor="brand_id">
               Brand{isAttarCategory ? ' *' : ' (optional)'}
             </label>
-            {/* Brand is selectable for ALL categories:
-                - Required for Attar category
-                - Optional for all other categories
-                - Disabled only when locked via URL params */}
             <div className={`brand-select-wrap${lockedBrandId ? ' is-locked' : ''}`}>
               <select
                 id="brand_id"
@@ -660,7 +702,7 @@ export default function ProductForm() {
                 value={form.brand_id}
                 onChange={handleChange}
                 required={isAttarCategory}
-                disabled={Boolean(lockedBrandId)}
+                disabled={Boolean(lockedBrandId) || isSubmitting}
                 className={lockedBrandId ? 'brand-locked-select' : ''}
               >
                 <option value="">Select brand</option>
@@ -670,24 +712,16 @@ export default function ProductForm() {
                 <span className="brand-lock-icon" aria-hidden="true">🔒</span>
               )}
             </div>
-            {/* Locked-brand context (added from a brand page) — never editable. */}
             {lockedBrandId && (
               <small className="brand-lock-hint">
                 🔒 Brand locked to {lockedBrandName || 'this brand'} — added from its product page
               </small>
             )}
-            {/* Only a real hint when Attar is selected AND no brand is chosen
-                yet — never shown as a false error once a brand is picked. */}
             {isAttarCategory && !form.brand_id && !lockedBrandId && (
               <small className="brand-required-hint">
                 Brand is required for Attar products
               </small>
             )}
-            {/* Attar price sync helper — the normal price is pulled straight
-                from the brand's Bulk Pricing config, so the admin never types
-                it again. Shown only when ADDING an Attar product with a brand
-                that has a configured normal price — never in edit mode, where
-                the saved price is deliberately preserved (not re-synced). */}
             {!isEdit && isAttarCategory && form.brand_id && selectedBrand && (
               <small className="attar-price-sync-hint">
                 {brandHasNormalPrice ? (
@@ -702,7 +736,13 @@ export default function ProductForm() {
 
         <div className="form-field">
           <label htmlFor="image">Product Image</label>
-          <input id="image" type="file" accept="image/*" onChange={handleImageChange} />
+          <input
+            id="image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={isSubmitting}
+          />
           {imagePreview && (
             <div className="image-preview">
               <img src={imagePreview} alt="Preview" />
@@ -712,8 +752,12 @@ export default function ProductForm() {
 
         {error && <p className="login-error">{error}</p>}
 
-        <button className="btn btn-gold" type="submit" disabled={saving}>
-          {saving ? (imageFile ? 'Uploading image…' : 'Saving…') : isEdit ? 'Save Changes' : 'Add Product'}
+        <button
+          className="btn btn-gold"
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {submitButtonLabel()}
         </button>
       </form>
     </div>

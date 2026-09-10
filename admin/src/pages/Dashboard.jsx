@@ -92,7 +92,7 @@ const STATUS_META = [
     tone: 'cancelled',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="12" r="9" /><path d="M15 9l-6 6M9 9l6 6" />
+        <path d="M15 9l-6 6M9 9l6 6" />
       </svg>
     ),
   },
@@ -140,28 +140,54 @@ export default function Dashboard() {
   const { can } = useAuth()
   const [orders, setOrders] = useState([])
   const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [productsLoading, setProductsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState('7d')
   const mountedRef = useRef(true)
 
   const load = useCallback(async () => {
     try {
-      const [o, p] = await Promise.all([getOrders(), getProducts()])
-      if (!mountedRef.current) return
-      setOrders(o)
-      setProducts(p)
-      setError(null)
-    } catch (err) {
-      console.error('[dashboard] load failed:', err)
-      if (mountedRef.current) setError(err?.message || 'Unable to load dashboard data.')
-    } finally {
-      if (mountedRef.current) setLoading(false)
-    }
-  }, [])
+      // Concurrently load independent streams: progressive rendering
+      const ordersPromise = getOrders()
+        .then((o) => {
+          if (mountedRef.current) {
+            setOrders(o)
+            setInitialLoading(false)
+          }
+          return o
+        })
+        .catch((err) => {
+          console.error('[dashboard] orders load failed:', err)
+          throw err
+        })
 
-  // One refresh loop (interval + focus), cleaned up on unmount — no duplicate
-  // listeners, no leaks.
+      const productsPromise = getProducts()
+        .then((p) => {
+          if (mountedRef.current) {
+            setProducts(p)
+            setProductsLoading(false)
+          }
+          return p
+        })
+        .catch((err) => {
+          console.error('[dashboard] products load failed:', err)
+          if (mountedRef.current) setProductsLoading(false)
+          return []
+        })
+
+      await Promise.allSettled([ordersPromise, productsPromise])
+      if (mountedRef.current) setError(null)
+    } catch (err) {
+      if (mountedRef.current && orders.length === 0) {
+        setError(err?.message || 'Unable to load dashboard data.')
+      }
+    } finally {
+      if (mountedRef.current) setInitialLoading(false)
+    }
+  }, [orders.length])
+
+  // One refresh loop (interval + focus), cleaned up on unmount
   useEffect(() => {
     mountedRef.current = true
     load()
@@ -176,7 +202,7 @@ export default function Dashboard() {
   }, [load])
 
   const retry = () => {
-    setLoading(true)
+    setInitialLoading(true)
     setError(null)
     load()
   }
@@ -210,9 +236,9 @@ export default function Dashboard() {
   // Compute average order value from real data.
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
 
-  if (loading) return <DashboardSkeleton />
+  if (initialLoading && orders.length === 0) return <DashboardSkeleton />
 
-  if (error) {
+  if (error && orders.length === 0) {
     return (
       <div className="dashboard-page">
         <div className="page-header"><h1>Dashboard</h1></div>
@@ -284,9 +310,9 @@ export default function Dashboard() {
         />
         <StatCard
           label="Total Products"
-          value={products.length}
+          value={productsLoading ? '…' : products.length}
           icon={ICONS.products}
-          sub={`${productsMonth} added this month`}
+          sub={productsLoading ? 'Loading products…' : `${productsMonth} added this month`}
         />
       </div>
 

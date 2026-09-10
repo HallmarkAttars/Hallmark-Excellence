@@ -32,15 +32,34 @@ export default function BrandProductsAdmin({ brandSlug }) {
 
   const categoryName = (id) => categories.find((c) => c.id === id)?.name || '—'
 
+  const [actionError, setActionError] = useState('')
+
   const handleToggle = async (product) => {
-    const updated = await toggleProductStatus(product.id, product.is_active)
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)))
+    setActionError('')
+    const prevProducts = products
+    setProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, is_active: !p.is_active } : p))
+    )
+    try {
+      const updated = await toggleProductStatus(product.id, product.is_active)
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)))
+    } catch (err) {
+      setProducts(prevProducts)
+      setActionError(err.message || 'Failed to update product status.')
+    }
   }
 
   const handleDelete = async (id) => {
-    await deleteProduct(id)
+    setActionError('')
+    const prevProducts = products
     setProducts((prev) => prev.filter((p) => p.id !== id))
     setConfirmDelete(null)
+    try {
+      await deleteProduct(id)
+    } catch (err) {
+      setProducts(prevProducts)
+      setActionError(err.message || 'Failed to delete product.')
+    }
   }
 
   const visibleProducts = useMemo(() => {
@@ -84,6 +103,8 @@ export default function BrandProductsAdmin({ brandSlug }) {
         <Link to="/admin/brands" className="btn btn-outline btn-sm">Back to Brands</Link>
         <Link to={addProductUrl} className="btn btn-gold">Add Product</Link>
       </div>
+
+      {actionError && <p className="login-error">{actionError}</p>}
 
       {/* Search + filters — operate on THIS brand's products only */}
       <div className="card brand-products-tools">

@@ -67,15 +67,37 @@ export default function Products() {
     return <span className="products-price-cell">₹{Number(p.price ?? 0).toLocaleString('en-IN')}</span>
   }
 
+  const [actionError, setActionError] = useState('')
+
   const handleToggle = async (product) => {
-    const updated = await toggleProductStatus(product.id, product.is_active)
-    setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)))
+    setActionError('')
+    const prevProducts = products
+    // Optimistically update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, is_active: !p.is_active } : p))
+    )
+    try {
+      const updated = await toggleProductStatus(product.id, product.is_active)
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? updated : p)))
+    } catch (err) {
+      // Rollback
+      setProducts(prevProducts)
+      setActionError(err.message || 'Failed to update product status.')
+    }
   }
 
   const handleDelete = async (id) => {
-    await deleteProduct(id)
+    setActionError('')
+    const prevProducts = products
     setProducts((prev) => prev.filter((p) => p.id !== id))
     setConfirmDelete(null)
+    try {
+      await deleteProduct(id)
+    } catch (err) {
+      // Rollback
+      setProducts(prevProducts)
+      setActionError(err.message || 'Failed to delete product.')
+    }
   }
 
   return (
@@ -84,6 +106,8 @@ export default function Products() {
         <h1>Products</h1>
         {can('products.create') && <Link to="/admin/products/new" className="btn btn-gold">Add Product</Link>}
       </div>
+
+      {actionError && <p className="login-error">{actionError}</p>}
 
       {/* Search + category filter toolbar — mirrors the Orders toolbar */}
       <div className="card products-toolbar">
