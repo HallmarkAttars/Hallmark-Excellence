@@ -1,5 +1,5 @@
 /* ============================================================
-   Admin Dashboard — real-data overview (existing design system)
+   Admin Dashboard — premium responsive layout
    ============================================================ */
 
 .dashboard-page {
@@ -20,11 +20,50 @@
   gap: 10px;
 }
 
+/* ---------- Alert banner ---------- */
+.dash-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(184, 134, 43, 0.08);
+  border: 1px solid rgba(184, 134, 43, 0.25);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--gold);
+}
+.dash-alert-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(184, 134, 43, 0.15);
+  color: var(--gold-deep);
+  flex-shrink: 0;
+}
+.dash-alert-text {
+  flex: 1;
+  font-size: 13.5px;
+  color: var(--ink);
+  min-width: 0;
+}
+.dash-alert-text strong { display: block; }
+.dash-alert-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-deep);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dash-alert-action:hover { text-decoration: underline; }
+
 /* ---------- KPI cards ---------- */
 .dash-kpis {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 @media (min-width: 640px) { .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .dash-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -54,6 +93,10 @@
 .dash-section-head--split { align-items: flex-end; }
 
 /* ---------- Order status overview ---------- */
+.dash-status-scroll {
+  overflow: visible;
+}
+
 .dash-status-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -70,7 +113,9 @@
   border-radius: var(--radius);
   background: var(--white);
   min-width: 0;
+  transition: box-shadow 0.2s ease;
 }
+.dash-status-card:hover { box-shadow: var(--shadow-soft); }
 .dash-status-icon {
   width: 34px;
   height: 34px;
@@ -110,6 +155,7 @@
   height: 100%;
   border-radius: 999px;
   background: var(--gold);
+  transition: width 0.4s ease;
 }
 .dash-status-card--processing .dash-status-bar span { background: #5b9bd5; }
 .dash-status-card--shipped .dash-status-bar span { background: #9b8cff; }
@@ -224,6 +270,7 @@
 .dash-attention-link:hover { text-decoration: underline; }
 
 /* ---------- Recent orders ---------- */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .dash-recent-table td { vertical-align: middle; }
 
 /* Recent orders table — FIXED layout so it never overflows its grid
@@ -321,7 +368,9 @@
   border-radius: var(--radius);
   background: var(--white);
   min-width: 0;
+  transition: box-shadow 0.15s ease;
 }
+.dash-top-list li:hover { box-shadow: var(--shadow-soft); }
 .dash-top-rank {
   width: 26px;
   height: 26px;
@@ -361,6 +410,11 @@
   text-overflow: ellipsis;
 }
 .dash-top-meta { font-size: 12px; color: rgba(20, 17, 13, 0.55); }
+
+/* ---------- Mobile FAB ---------- */
+.dash-fab {
+  display: none;
+}
 
 /* ---------- Empty / error ---------- */
 .dash-empty {
@@ -424,17 +478,76 @@
 }
 
 @media (max-width: 767px) {
+  .dashboard-page { gap: 14px; }
   .dash-page-header { flex-direction: column; align-items: flex-start; }
   .dash-quick-actions { width: 100%; }
   .dash-quick-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+  /* Alert banner compact */
+  .dash-alert-banner {
+    padding: 12px 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .dash-alert-icon { width: 30px; height: 30px; }
+  .dash-alert-text { font-size: 13px; }
+
+  /* Section heads */
   .dash-section-head--split { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .dash-section { padding: 16px; }
+
+  /* Period tabs full-width */
   .dash-period-tabs { width: 100%; }
   .dash-period-tabs button { flex: 1; text-align: center; padding: 8px 6px; }
+
+  /* Status chips — horizontal scroll on mobile */
+  .dash-status-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .dash-status-scroll::-webkit-scrollbar { display: none; }
+  .dash-status-grid {
+    display: flex;
+    gap: 10px;
+    min-width: max-content;
+  }
+  .dash-status-card {
+    min-width: 130px;
+    flex-shrink: 0;
+    padding: 13px;
+  }
+  .dash-status-count { font-size: 19px; }
+
+  /* Recent orders: table hidden, cards shown */
   .dash-recent-table { display: none; }
   .dash-recent-cards { display: block; }
-  .dash-status-grid { gap: 10px; }
-  .dash-status-card { padding: 13px; }
-  .dash-status-count { font-size: 19px; }
+
+  /* FAB — mobile only */
+  .dash-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--ink);
+    box-shadow: 0 6px 20px rgba(184, 134, 43, 0.35), 0 2px 6px rgba(20, 17, 13, 0.12);
+    z-index: 40;
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .dash-fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 12px rgba(184, 134, 43, 0.3);
+  }
 }
 
 /* Reduced motion — disable the skeleton shimmer */

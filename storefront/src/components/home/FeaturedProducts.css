@@ -4,16 +4,13 @@
    ============================================================ */
 
 .featured-section {
+  position: relative;
+  z-index: 10;
   background: var(--cream);
+  padding: 36px 0 44px; /* mobile baseline with comfortable rhythm */
 }
-
-/* ---------- Scoped section rhythm ----------
-   Matches the shared homepage rhythm: ~48–64px gaps between sections on
-   mobile, ~80px on tablet, ~96px on desktop. Container gutters come from
-   the shared homepage container rule in index.css (20 / 32 / 48 / 60px). */
-.featured-section { padding: 28px 0 32px; } /* mobile */
-@media (min-width: 768px) { .featured-section { padding: 40px 0; } } /* tablet */
-@media (min-width: 1024px) { .featured-section { padding: 48px 0; } } /* desktop */
+@media (min-width: 768px) { .featured-section { padding: 44px 0 48px; } } /* tablet */
+@media (min-width: 1024px) { .featured-section { padding: 52px 0 56px; } } /* desktop */
 
 /* ---------- Scoped header — centered heading, VIEW ALL top-right ----------
    Same header treatment as Shop by Category: heading centered, VIEW ALL
@@ -35,12 +32,20 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;                  /* heading → VIEW ALL */
-    margin-bottom: 28px;
+    gap: 10px;                  /* heading → VIEW ALL */
+    margin-bottom: 24px;
+  }
+  .featured-section .section-title-upper {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: clamp(1.6rem, 5.5vw, 1.95rem);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--charcoal, #1d1914);
+    margin: 0;
+    text-transform: none; /* Keep natural Title Case */
   }
   .featured-section .view-all {
-    position: static;
-    transform: none;
+    display: none; /* Mobile displays the intentional continuation link below the cards */
   }
 }
 
@@ -61,6 +66,19 @@
   grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile 2-up */
   gap: 14px; /* shared homepage card rhythm — matches Our Brands */
 }
+
+/* Mobile-only odd product centering:
+   When an odd number of products is present (e.g. 5 products), the 5th card
+   is centered across the grid with the exact same width as a single column.
+   This avoids stretching the card and eliminates the empty void on the right. */
+@media (max-width: 767px) {
+  .featured-track.has-odd-items > .product-card:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 7px);
+  }
+}
+
 @media (min-width: 768px) {
   .featured-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } /* tablet 3-up */
 }
@@ -75,4 +93,79 @@
   .featured-track .product-card-body { padding: 12px 14px 14px; }
   .featured-track .product-card-name { font-size: 18px; }
   .featured-track .product-card-btn { font-size: 12.5px; letter-spacing: 0.05em; }
+}
+
+/* ---------- Mobile continuation treatment ---------- */
+.featured-continuation {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .featured-continuation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 22px;
+  }
+
+  .featured-continuation-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 999px;
+    background: rgba(184, 137, 56, 0.08);
+    border: 1px solid rgba(184, 137, 56, 0.28);
+    color: #85591a;
+    font-family: var(--font-body);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .featured-continuation-link:hover,
+  .featured-continuation-link:active {
+    background: #85591a;
+    border-color: #85591a;
+    color: #ffffff;
+  }
+
+  .featured-continuation-link .continuation-arrow {
+    font-size: 0.95rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+  }
+
+  .featured-continuation-link:hover .continuation-arrow,
+  .featured-continuation-link:active .continuation-arrow {
+    transform: translateX(3px);
+  }
+}
+
+/* ---------- Subtle luxury transition divider before Follow Our Journey ---------- */
+.featured-section-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 36px;
+}
+
+.featured-divider-line {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(184, 137, 56, 0.38), transparent);
+}
+
+@media (min-width: 768px) {
+  .featured-section-divider {
+    margin-top: 48px;
+  }
+  .featured-divider-line {
+    max-width: 360px;
+  }
 }

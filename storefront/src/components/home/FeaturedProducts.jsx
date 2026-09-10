@@ -15,14 +15,14 @@ export default function FeaturedProducts({ products }) {
   // All only when more than 6 featured products actually exist. Data is
   // sliced here — no products are deleted or modified.
   const visibleItems = items.slice(0, 6)
-  const hasMoreFeatured = items.length > 6
+  const isOddOnMobile = visibleItems.length % 2 !== 0
 
   return (
     <Reveal as="section" className="section featured-section">
       <div className="container">
         <div className="section-head">
           <h2 className="section-title-upper">{HOME_FEATURED.title}</h2>
-          {hasMoreFeatured && (
+          {HOME_FEATURED.viewAll && (
             <Link to={HOME_FEATURED.viewAll.to} className="view-all">
               {HOME_FEATURED.viewAll.label}
               <span className="view-all-arrow" aria-hidden="true">→</span>
@@ -30,10 +30,25 @@ export default function FeaturedProducts({ products }) {
           )}
         </div>
 
-        <div className="featured-track stagger-fade">
+        <div className={`featured-track stagger-fade ${isOddOnMobile ? 'has-odd-items' : ''}`}>
           {visibleItems.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
+        </div>
+
+        {/* Mobile continuation treatment for odd items */}
+        {isOddOnMobile && (
+          <div className="featured-continuation">
+            <Link to={HOME_FEATURED.viewAll?.to || '/shop'} className="featured-continuation-link">
+              <span>Explore All Fragrances</span>
+              <span className="continuation-arrow" aria-hidden="true">→</span>
+            </Link>
+          </div>
+        )}
+
+        {/* Subtle transition divider before Follow Our Journey */}
+        <div className="featured-section-divider" aria-hidden="true">
+          <span className="featured-divider-line" />
         </div>
       </div>
     </Reveal>

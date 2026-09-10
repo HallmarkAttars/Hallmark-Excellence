@@ -3,13 +3,15 @@
    ============================================================ */
 
 .social-section {
-  padding: 32px 0 36px; /* mobile baseline */
+  position: relative;
+  z-index: 10;
+  padding: 36px 0 40px; /* mobile baseline with comfortable breathing room */
   background: var(--cream);
-  border-top: 1px solid var(--line-soft);
+  border-top: none; /* Transition handled cleanly by Featured Products luxury divider */
   overflow: hidden; /* prevents carousel peek from causing page horizontal scroll */
 }
 @media (min-width: 768px) {
-  .social-section { padding: 40px 0; } /* tablet */
+  .social-section { padding: 44px 0; } /* tablet */
 }
 @media (min-width: 1024px) {
   .social-section { padding: 48px 0; } /* desktop */
@@ -18,9 +20,10 @@
 .social-head {
   text-align: center;
   margin-bottom: 24px;
+  padding: 0 16px;
 }
 @media (min-width: 768px) {
-  .social-head { margin-bottom: 36px; }
+  .social-head { margin-bottom: 36px; padding: 0; }
 }
 
 /* Atelier Decorative Eyebrow (Mobile-First) */
@@ -62,7 +65,7 @@
   font-size: 0.9rem;
   line-height: 1.55;
   margin: 0 auto;
-  max-width: 36ch;
+  max-width: 32ch;
 }
 
 /* ============================================================

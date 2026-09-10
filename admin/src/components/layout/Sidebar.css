@@ -1,3 +1,7 @@
+/* ============================================================
+   Admin Sidebar — dark charcoal, gold active states, nav icons
+   ============================================================ */
+
 .sidebar {
   position: fixed;
   top: 0; left: 0; bottom: 0;
@@ -6,62 +10,146 @@
   color: var(--cream);
   display: flex;
   flex-direction: column;
-  padding: 28px 16px;
+  padding: 0;
   z-index: 200;
   transform: translateX(-100%);
-  transition: transform 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .sidebar.is-open { transform: translateX(0); }
 
-.sidebar-brand { display: flex; align-items: center; padding: 0 12px 28px; }
+/* -------- Brand area -------- */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px 24px;
+  border-bottom: 1px solid rgba(250, 247, 241, 0.08);
+  flex-shrink: 0;
+}
 
 .sidebar-logo-img {
-  height: 110px;
+  height: 80px;
   width: auto;
   object-fit: contain;
   display: block;
 }
 
-@media (max-width: 768px) {
-  .sidebar-logo-img { height: 45px; }
+/* -------- Navigation -------- */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  padding: 16px 12px;
 }
-
-@media (max-width: 480px) {
-  .sidebar-logo-img { height: 90px; }
-}
-
-.sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
 .sidebar-link {
-  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
   border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1;
-  color: rgba(250,247,241,0.75);
+  color: rgba(250, 247, 241, 0.65);
   background: none;
   border: none;
   text-align: left;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  text-decoration: none;
+  min-height: 42px;
 }
-.sidebar-link:hover { background: rgba(250,247,241,0.06); color: var(--cream); }
-.sidebar-link.is-active { background: var(--gold); color: var(--ink); font-weight: 600; }
+.sidebar-link:hover {
+  background: rgba(250, 247, 241, 0.06);
+  color: var(--cream);
+}
+.sidebar-link.is-active {
+  background: rgba(198, 161, 91, 0.15);
+  color: var(--gold);
+  font-weight: 600;
+  position: relative;
+}
+/* Gold accent bar on left for active item */
+.sidebar-link.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--gold);
+}
 
+.sidebar-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.sidebar-link.is-active .sidebar-link-icon { opacity: 1; }
+.sidebar-link:hover .sidebar-link-icon { opacity: 1; }
+
+.sidebar-link-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -------- Logout -------- */
 .sidebar-logout {
-  color: rgba(250,247,241,0.6);
-  margin-top: 12px;
-  border-top: 1px solid rgba(250,247,241,0.1);
-  padding-top: 16px;
+  margin: 0 12px 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(250, 247, 241, 0.08);
+  color: rgba(250, 247, 241, 0.5);
 }
 .sidebar-logout:hover { color: var(--cream); }
 
+/* -------- Backdrop scrim -------- */
 .sidebar-scrim {
   position: fixed; inset: 0;
-  background: rgba(20,17,13,0.5);
+  background: rgba(20, 17, 13, 0.55);
   z-index: 150;
+  animation: sidebarScrimIn 0.22s ease forwards;
+}
+@keyframes sidebarScrimIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* -------- Desktop: sidebar always visible -------- */
 @media (min-width: 1024px) {
-  .sidebar { transform: translateX(0); }
+  .sidebar {
+    transform: translateX(0);
+    padding: 0;
+  }
   .sidebar-scrim { display: none; }
+}
+
+/* -------- Mobile refinements -------- */
+@media (max-width: 767px) {
+  .sidebar-logo-img { height: 60px; }
+  .sidebar-brand { padding: 20px 16px; }
+  .sidebar-nav { padding: 12px 10px; }
+  .sidebar-link {
+    padding: 12px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* Reduced motion — no slide animation */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+  .sidebar-scrim { animation: none; }
 }

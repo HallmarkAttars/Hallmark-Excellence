@@ -57,6 +57,11 @@ export default function Topbar({ onMenuClick }) {
         </svg>
       </button>
 
+      {/* Mobile logo — centered between hamburger and actions */}
+      <div className="topbar-mobile-logo" aria-hidden="true">
+        <img src="/HE white Logo.png" alt="" className="topbar-mobile-logo-img" />
+      </div>
+
       <div className="topbar-search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />

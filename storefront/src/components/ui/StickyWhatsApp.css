@@ -80,7 +80,7 @@
 }
 
 /* Keyboard focus — visible ring. The pulse animation is paused here too so
-   the animated box-shadow never overrides the focus glow. */
+    the animated box-shadow never overrides the focus glow. */
 .sticky-whatsapp:focus-visible {
   animation: none;
   outline: 2px solid #1fbd5d;
@@ -88,17 +88,18 @@
   box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.25);
 }
 
-/* Mobile — tighter offsets + safe-area, slightly smaller touch target */
+/* Mobile — tighter offsets + safe-area, compact & unobtrusive footprint */
 @media (max-width: 767px) {
   .sticky-whatsapp {
-    right: calc(16px + env(safe-area-inset-right, 0px));
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    width: 52px;      /* mobile (50–54px) */
-    height: 52px;
+    right: calc(14px + env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    width: 48px;      /* mobile (46–50px) */
+    height: 48px;
+    box-shadow: 0 4px 14px rgba(31, 120, 72, 0.32);
   }
   .sticky-whatsapp svg {
-    width: 28px;
-    height: 28px;
+    width: 25px;
+    height: 25px;
   }
 }
 

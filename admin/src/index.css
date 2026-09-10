@@ -170,3 +170,23 @@ tbody tr:last-child { border-bottom: none; }
   gap: 16px;
   margin-bottom: 24px;
 }
+
+.page-subtitle {
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.55);
+  font-weight: 400;
+  margin: 0;
+}
+
+/* Horizontal table overflow wrapper */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Utility to hide scrollbar visually */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }

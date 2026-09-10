@@ -207,6 +207,9 @@ export default function Dashboard() {
     : ''
   const revenueTone = mom && mom.pct != null ? (mom.pct >= 0 ? 'up' : 'down') : 'neutral'
 
+  // Compute average order value from real data.
+  const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0
+
   if (loading) return <DashboardSkeleton />
 
   if (error) {
@@ -243,13 +246,29 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Alert banner — dynamic, based on real pending order count */}
+      {pendingCount > 0 && (
+        <div className="dash-alert-banner" role="alert">
+          <span className="dash-alert-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 3 2 21h20L12 3z" /><path d="M12 10v4M12 17.5v.5" />
+            </svg>
+          </span>
+          <span className="dash-alert-text">
+            <strong>{pendingCount} {pendingCount === 1 ? 'order' : 'orders'} awaiting confirmation</strong>
+          </span>
+          <Link to="/admin/orders" className="dash-alert-action">Review Orders →</Link>
+        </div>
+      )}
+
       {/* KPI cards */}
       <div className="dash-kpis">
         <StatCard
-          label="Total Products"
-          value={products.length}
-          icon={ICONS.products}
-          sub={`${productsMonth} added this month`}
+          label="Total Revenue"
+          value={formatINR(totalRevenue)}
+          icon={ICONS.revenue}
+          sub={revenueSub}
+          subTone={revenueTone}
         />
         <StatCard
           label="Total Orders"
@@ -258,18 +277,16 @@ export default function Dashboard() {
           sub={`${todayCount} today`}
         />
         <StatCard
-          label="Pending Orders"
-          value={pendingCount}
+          label="Avg. Order Value"
+          value={formatINR(avgOrderValue)}
           icon={ICONS.pending}
-          sub={pendingCount > 0 ? 'Needs attention' : 'All caught up'}
-          subTone={pendingCount > 0 ? 'gold' : 'neutral'}
+          sub={totalOrders > 0 ? `Based on ${totalOrders} orders` : 'No orders yet'}
         />
         <StatCard
-          label="Total Revenue"
-          value={formatINR(totalRevenue)}
-          icon={ICONS.revenue}
-          sub={revenueSub}
-          subTone={revenueTone}
+          label="Total Products"
+          value={products.length}
+          icon={ICONS.products}
+          sub={`${productsMonth} added this month`}
         />
       </div>
 
@@ -279,27 +296,29 @@ export default function Dashboard() {
           <h2>Order Status Overview</h2>
           <span className="dash-section-sub">Live counts across all orders</span>
         </div>
-        <div className="dash-status-grid">
-          {STATUS_META.map((s) => {
-            const count = counts[s.key] ?? 0
-            const pct = totalOrders ? Math.round((count / totalOrders) * 100) : 0
-            return (
-              <div className={`dash-status-card dash-status-card--${s.tone}`} key={s.key}>
-                <span className="dash-status-icon" aria-hidden="true">{s.icon}</span>
-                <div className="dash-status-text">
-                  <span className="dash-status-label">{s.key}</span>
-                  <strong className="dash-status-count">{count}</strong>
+        <div className="dash-status-scroll">
+          <div className="dash-status-grid">
+            {STATUS_META.map((s) => {
+              const count = counts[s.key] ?? 0
+              const pct = totalOrders ? Math.round((count / totalOrders) * 100) : 0
+              return (
+                <div className={`dash-status-card dash-status-card--${s.tone}`} key={s.key}>
+                  <span className="dash-status-icon" aria-hidden="true">{s.icon}</span>
+                  <div className="dash-status-text">
+                    <span className="dash-status-label">{s.key}</span>
+                    <strong className="dash-status-count">{count}</strong>
+                  </div>
+                  <div className="dash-status-bar" aria-hidden="true">
+                    <span style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="dash-status-bar" aria-hidden="true">
-                  <span style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Revenue Overview + Needs Attention */}
+      {/* Revenue Overview + Top Selling Products */}
       <div className="dash-row">
         <section className="card dash-section">
           <div className="dash-section-head dash-section-head--split">
@@ -465,6 +484,15 @@ export default function Dashboard() {
           )}
         </section>
       </div>
+
+      {/* Mobile FAB — quick Add Product */}
+      {can('products.create') && (
+        <Link to="/admin/products/new" className="dash-fab" aria-label="Add new product">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </Link>
+      )}
     </div>
   )
 }

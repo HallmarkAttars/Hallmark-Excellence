@@ -101,15 +101,11 @@ export default function ProductForm() {
 
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value
-    const selectedCat = categories.find((c) => String(c.id) === categoryId)
-    // If changing from Attar to a non-Attar category, clear the brand selection
-    // — UNLESS the brand is locked (brand-scoped "Add Product"): the lock must
-    // survive a category change so the product can never lose its brand.
-    if (selectedCat && selectedCat.slug !== 'attar' && selectedCat.name !== 'Attar') {
-      setForm((f) => ({ ...f, category_id: categoryId, brand_id: lockedBrandId || '' }))
-    } else {
-      setForm((f) => ({ ...f, category_id: categoryId }))
-    }
+    // Keep existing brand selection when changing categories — only clear it
+    // if the brand was locked via URL params and the lock should persist.
+    // Brand is now selectable for ALL categories (optional for non-Attar,
+    // required for Attar). The admin's brand choice carries across changes.
+    setForm((f) => ({ ...f, category_id: categoryId }))
   }
 
   const selectedCategory = categories.find((c) => String(c.id) === String(form.category_id))
@@ -650,29 +646,40 @@ export default function ProductForm() {
             </select>
           </div>
           <div className="form-field">
-            <label htmlFor="brand_id">Brand</label>
-            <select
-              id="brand_id"
-              name="brand_id"
-              value={form.brand_id}
-              onChange={handleChange}
-              required={isAttarCategory}
-              disabled={!isAttarCategory || Boolean(lockedBrandId)}
-              style={!isAttarCategory || lockedBrandId ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
-            >
-              <option value="">Select Brand</option>
-              {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
+            <label htmlFor="brand_id">
+              Brand{isAttarCategory ? ' *' : ' (optional)'}
+            </label>
+            {/* Brand is selectable for ALL categories:
+                - Required for Attar category
+                - Optional for all other categories
+                - Disabled only when locked via URL params */}
+            <div className={`brand-select-wrap${lockedBrandId ? ' is-locked' : ''}`}>
+              <select
+                id="brand_id"
+                name="brand_id"
+                value={form.brand_id}
+                onChange={handleChange}
+                required={isAttarCategory}
+                disabled={Boolean(lockedBrandId)}
+                className={lockedBrandId ? 'brand-locked-select' : ''}
+              >
+                <option value="">Select brand</option>
+                {brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              {lockedBrandId && (
+                <span className="brand-lock-icon" aria-hidden="true">🔒</span>
+              )}
+            </div>
             {/* Locked-brand context (added from a brand page) — never editable. */}
             {lockedBrandId && (
-              <small style={{ color: '#1e7a46', display: 'block', marginTop: 4, fontWeight: 600 }}>
+              <small className="brand-lock-hint">
                 🔒 Brand locked to {lockedBrandName || 'this brand'} — added from its product page
               </small>
             )}
             {/* Only a real hint when Attar is selected AND no brand is chosen
                 yet — never shown as a false error once a brand is picked. */}
             {isAttarCategory && !form.brand_id && !lockedBrandId && (
-              <small style={{ color: '#b8860b', display: 'block', marginTop: 4 }}>
+              <small className="brand-required-hint">
                 Brand is required for Attar products
               </small>
             )}

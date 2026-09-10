@@ -280,6 +280,50 @@
   font-weight: 600;
 }
 
+/* -------- Brand selector — lock indicator and states -------- */
+.brand-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.brand-select-wrap select {
+  width: 100%;
+}
+.brand-select-wrap.is-locked select {
+  opacity: 0.55;
+  cursor: not-allowed;
+  padding-right: 38px;
+}
+.brand-lock-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+}
+.brand-lock-hint {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: rgba(30, 122, 70, 0.08);
+  border: 1px solid rgba(30, 122, 70, 0.2);
+  color: #1e7a46;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.brand-required-hint {
+  display: block;
+  margin-top: 4px;
+  color: #b8860b;
+  font-size: 0.74rem;
+  font-weight: 500;
+}
+.brand-locked-select {
+  background: #faf8f2 !important;
+}
+
 .unit-combobox input {
   width: 100%;
   padding: 10px 12px;
