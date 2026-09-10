@@ -56,10 +56,21 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  background: transparent;
+  border: none;
   border-bottom: 1px solid var(--charcoal);
+  border-radius: 0;
+  box-shadow: none;
   padding: 6px 2px 12px;
   color: var(--gold-deep);
   position: relative;
+  transition: border-bottom-color 0.2s ease;
+}
+
+.search-overlay-form:focus-within {
+  border-bottom-color: var(--charcoal);
+  box-shadow: none;
+  outline: none;
 }
 
 .search-overlay-icon {
@@ -75,10 +86,23 @@
   background: transparent;
   border: none;
   outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
   font-family: var(--font-display);
   font-size: clamp(1.3rem, 4vw, 1.9rem);
   color: var(--charcoal);
   letter-spacing: 0.01em;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+}
+.search-overlay-input:focus,
+.search-overlay-input:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 .search-overlay-input::placeholder { color: rgba(36, 31, 25, 0.7); }
 .search-overlay-input::-webkit-search-cancel-button { -webkit-appearance: none; }
@@ -307,21 +331,21 @@
     padding: 12px 16px 28px;
   }
 
-  /* Enclosed Search Input with 48-52px height */
   .search-overlay-form {
-    height: 50px;
-    border: 1.5px solid rgba(184, 137, 56, 0.35);
-    border-radius: 12px;
-    background: #ffffff;
-    padding: 0 12px;
+    height: auto;
+    border: none;
+    border-bottom: 1px solid var(--charcoal);
+    border-radius: 0;
+    background: transparent;
+    padding: 6px 2px 10px;
     margin: 12px auto 14px;
-    box-shadow: 0 2px 10px rgba(40, 30, 20, 0.04);
+    box-shadow: none;
     gap: 10px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .search-overlay-form:focus-within {
-    border-color: var(--gold-deep);
-    box-shadow: 0 0 0 3px rgba(184, 137, 56, 0.15);
+    border-bottom-color: var(--charcoal);
+    box-shadow: none;
+    outline: none;
   }
 
   .search-overlay-icon {
@@ -330,9 +354,25 @@
   }
 
   .search-overlay-input {
-    font-size: 15.5px;
+    font-size: clamp(1.15rem, 4.5vw, 1.35rem);
     font-weight: 500;
-    height: 100%;
+    height: auto;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+  .search-overlay-input:focus,
+  .search-overlay-input:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
 
   .search-overlay-clear {

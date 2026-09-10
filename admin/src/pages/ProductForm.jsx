@@ -336,7 +336,13 @@ export default function ProductForm() {
     lockedBrandId,
   })
 
-  // ATTAR PRICE SYNC
+  // ATTAR PRICE SYNC — the product's per-piece price automatically comes from
+  // the selected brand's Bulk Pricing normal price:
+  //   • Pick Category = Attar + a Brand → the default variant's Price Per Unit
+  //     is filled with the brand's normal price (admin never types it again).
+  //   • Change the brand (AREES → DAHAB) → the price updates to the new brand.
+  //   • A price the admin typed by hand is respected (never clobbered).
+  //   • Edit mode never auto-syncs — existing products keep their saved data.
   useEffect(() => {
     if (!shouldSyncAttarPrice({ isEdit, isAttarCategory, brandHasNormalPrice })) {
       setPriceSyncedBrand(null)

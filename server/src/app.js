@@ -33,6 +33,7 @@ const allowedOrigins = [
   'https://areesperfumes.in',
   'https://www.areesperfumes.in',
   process.env.ADMIN_URL,
+  'https://admin3210.areesperfumes.in',
 ].filter(Boolean)
 
 // Vercel preview deployments get random subdomains (e.g.
