@@ -35,8 +35,6 @@ export function cartLineKey(item) {
 // The line's normal per-piece price is what the customer saw on the first
 // addition.
 //
-// Quantity-based lines (category products / non-piece variants): quantities
-// add up and the price refreshes to the most recently added selection.
 // Whether a cart line can be stepper-adjusted by exact piece count: explicit
 // piece-based lines (brand bulk adds — `pieces` stored on the line) always;
 // legacy Pieces-unit single-unit lines too. Brand ML/Gram lines and category
@@ -49,20 +47,45 @@ export function isPieceAdjustableLine(item) {
   return unit === 'pieces' && Number(item.quantity ?? 1) === 1
 }
 
+// Resolves the lower-bound minimum quantity for a cart line.
+// Piece-adjustable lines derive their minimum from min_quantity / min_qty,
+// or fallback to the variant's original minimum quantity / 1.
+export function getLineMinQuantity(item) {
+  if (item == null) return 1
+  const min = item.min_quantity ?? item.min_qty
+  if (min != null && Number.isFinite(Number(min)) && Number(min) >= 1) {
+    return Math.max(1, Math.floor(Number(min)))
+  }
+  return 1
+}
+
 // The next piece count for `delta` (+1 / −1) on a piece-adjustable line.
+// Respects:
+//   minimumQuantity <= currentQuantity <= availableStock
 // Returns the UPDATED line (quantity 1, exact piece count, repriced from the
 // stored per-piece price so the normal/bulk math stays consistent) or null
-// when the line cannot be adjusted or the count would not change (floor 1).
+// when the line cannot be adjusted or the count would violate bounds (below
+// minimumQuantity or above availableStock).
 export function adjustLinePieces(item, delta) {
   if (!isPieceAdjustableLine(item)) return null
   const current = item.pieces != null
     ? Math.floor(Number(item.pieces) || 0)
     : linePieces(item)
-  let next = Math.max(1, current + Math.floor(Number(delta) || 0))
+  const minQty = getLineMinQuantity(item)
+  const d = Math.floor(Number(delta) || 0)
+  if (d === 0) return null
+
+  const next = current + d
+  // Decrement blocked when newQuantity < minimumQuantity
+  if (next < minQty) return null
+
+  // Increment blocked when newQuantity > availableStock
   if (item.stock != null && Number(item.stock) > 0) {
-    next = Math.min(next, Number(item.stock))
+    const maxStock = Math.floor(Number(item.stock))
+    if (next > maxStock) return null
   }
   if (next === current) return null
+
   const ppu = Number(item.variant_price_per_unit ?? lineNormalPerPiece(item))
   const total = Number.isFinite(ppu) && ppu > 0
     ? ppu * next
@@ -73,6 +96,7 @@ export function adjustLinePieces(item, delta) {
     pieces: next,
     quantity: 1,
     quantity_value: next,
+    min_quantity: minQty,
     variant_label: `${next} ${unit}`.trim(),
     selected_price: total,
     variant_total_price: total,
@@ -105,11 +129,16 @@ export function mergeCartLines(items) {
       const mergedTotal = Number.isFinite(ppu) && ppu > 0
         ? round2(ppu * combined)
         : Number(existing.selected_price ?? 0) + Number(item.selected_price ?? 0)
+      const existingMin = getLineMinQuantity(existing)
+      const addMin = getLineMinQuantity(item)
+      const minQty = Math.min(existingMin, addMin)
+
       out[idx] = {
         ...existing,
         pieces: combined,
         quantity: 1,
         quantity_value: combined,
+        min_quantity: minQty,
         variant_label: `${combined} ${unit}`.trim(),
         selected_price: mergedTotal,
         variant_total_price: mergedTotal,
@@ -125,6 +154,7 @@ export function mergeCartLines(items) {
     out[idx] = {
       ...existing,
       quantity: Math.max(1, Number(existing.quantity ?? 1) + Number(item.quantity ?? 1)),
+      min_quantity: Math.min(getLineMinQuantity(existing), getLineMinQuantity(item)),
       // Refresh price/variant info on re-add — a legacy line must pick up the
       // current variant total price.
       selected_price: Number(item.selected_price ?? item.price ?? existing.selected_price ?? 0),

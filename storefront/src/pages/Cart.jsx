@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
-import { cartLineKey } from '../utils/cartLines'
+import { cartLineKey, getLineMinQuantity } from '../utils/cartLines'
 import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { LockIcon, TrashIcon } from '../components/icons'
@@ -38,6 +38,7 @@ function CartLine({ item, inGroup }) {
   const isPiecesUnit = unitLower === 'pieces'
   // The line's exact piece count (brand piece lines) or null.
   const pieces = item.pieces ?? null
+  const minQuantity = getLineMinQuantity(item)
   // Struck-through NORMAL per piece on bulk piece lines — derived from the
   // resolved normal line total ÷ pieces (the brand's standard price). Never
   // shown for ML/Gram lines or non-bulk lines.
@@ -128,7 +129,7 @@ function CartLine({ item, inGroup }) {
               type="button"
               className="qty-control-btn"
               onClick={() => updateLinePieces(key, -1)}
-              disabled={item.pieces <= 1}
+              disabled={pieces <= minQuantity}
               aria-label="Decrease quantity"
             >
               −

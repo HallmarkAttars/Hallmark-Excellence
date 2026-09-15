@@ -3,7 +3,13 @@
 // Run with:  npm test  (storefront)
 
 import { describe, expect, it } from 'vitest'
-import { adjustLinePieces, cartLineKey, isPieceAdjustableLine, mergeCartLines } from './cartLines'
+import {
+  adjustLinePieces,
+  cartLineKey,
+  getLineMinQuantity,
+  isPieceAdjustableLine,
+  mergeCartLines,
+} from './cartLines'
 
 // A brand (piece-based) cart line.
 const brandLine = (productId, pieces, { pricePerPiece = 45, brandId = 'brand-arees' } = {}) => ({
@@ -150,6 +156,88 @@ describe('isPieceAdjustableLine / adjustLinePieces (cart stepper)', () => {
     expect(adjustLinePieces(brandLine('pink-musk', 160), 0)).toBeNull()
   })
 
+  it('enforces minimum quantity = 6 with stock = 100 exactly (decrement blocked at 6, allowed above 6)', () => {
+    const line6 = { ...brandLine('pink-musk', 6), min_quantity: 6, stock: 100 }
+    // 6 → "-" → blocked
+    expect(adjustLinePieces(line6, -1)).toBeNull()
+
+    // 6 → "+" → 7
+    const line7 = adjustLinePieces(line6, 1)
+    expect(line7).not.toBeNull()
+    expect(line7.pieces).toBe(7)
+    expect(line7.min_quantity).toBe(6)
+
+    // 7 → "-" → 6
+    const backTo6 = adjustLinePieces(line7, -1)
+    expect(backTo6).not.toBeNull()
+    expect(backTo6.pieces).toBe(6)
+
+    // 12 → "-" → 11 → ... → 6
+    let current = { ...brandLine('pink-musk', 12), min_quantity: 6, stock: 100 }
+    expect(current.pieces).toBe(12)
+
+    current = adjustLinePieces(current, -1) // 12 → 11
+    expect(current.pieces).toBe(11)
+
+    current = adjustLinePieces(current, -1) // 11 → 10
+    expect(current.pieces).toBe(10)
+
+    current = adjustLinePieces(current, -1) // 10 → 9
+    expect(current.pieces).toBe(9)
+
+    current = adjustLinePieces(current, -1) // 9 → 8
+    expect(current.pieces).toBe(8)
+
+    current = adjustLinePieces(current, -1) // 8 → 7
+    expect(current.pieces).toBe(7)
+
+    current = adjustLinePieces(current, -1) // 7 → 6
+    expect(current.pieces).toBe(6)
+
+    // 6 → "-" → blocked
+    expect(adjustLinePieces(current, -1)).toBeNull()
+  })
+
+  it('enforces minimum quantity = 12 with stock = 100 (decrement blocked at 12, allowed above 12)', () => {
+    const line12 = { ...brandLine('pink-musk', 12), min_quantity: 12, stock: 100 }
+    // 12 → "-" → blocked
+    expect(adjustLinePieces(line12, -1)).toBeNull()
+
+    // 12 → "+" → 13
+    const line13 = adjustLinePieces(line12, 1)
+    expect(line13).not.toBeNull()
+    expect(line13.pieces).toBe(13)
+
+    // 13 → "-" → 12
+    const backTo12 = adjustLinePieces(line13, -1)
+    expect(backTo12).not.toBeNull()
+    expect(backTo12.pieces).toBe(12)
+
+    // 20 → "-" → 19 → ... → 12
+    let current = { ...brandLine('pink-musk', 20), min_quantity: 12, stock: 100 }
+    for (let expected = 19; expected >= 12; expected--) {
+      current = adjustLinePieces(current, -1)
+      expect(current).not.toBeNull()
+      expect(current.pieces).toBe(expected)
+    }
+    // At 12: 12 → "-" → blocked
+    expect(adjustLinePieces(current, -1)).toBeNull()
+  })
+
+  it('enforces stock upper bounds (min = 6, stock = 20 & min = 12, stock = 50)', () => {
+    const line20 = { ...brandLine('pink-musk', 20), min_quantity: 6, stock: 20 }
+    // 20 → "+" → blocked at max stock
+    expect(adjustLinePieces(line20, 1)).toBeNull()
+    // 20 → "-" → 19 allowed
+    expect(adjustLinePieces(line20, -1)?.pieces).toBe(19)
+
+    const line50 = { ...brandLine('pink-musk', 50), min_quantity: 12, stock: 50 }
+    // 50 → "+" → blocked at max stock
+    expect(adjustLinePieces(line50, 1)).toBeNull()
+    // 50 → "-" → 49 allowed
+    expect(adjustLinePieces(line50, -1)?.pieces).toBe(49)
+  })
+
   it('is NOT adjustable for brand ML/Gram lines (raw line has no pieces)', () => {
     const ml = { product_id: 'p', brand_id: 'brand-arees', quantity: 2, quantity_value: 10, quantity_unit: 'ML', variant_total_price: 150, selected_price: 150 }
     expect(isPieceAdjustableLine(ml)).toBe(false)
@@ -195,5 +283,24 @@ describe('mergeCartLines — load normalization', () => {
   it('tolerates null/undefined inputs', () => {
     expect(mergeCartLines(null)).toEqual([])
     expect(mergeCartLines([])).toEqual([])
+  })
+})
+
+describe('getLineMinQuantity', () => {
+  it('returns min_quantity when positive integer present', () => {
+    expect(getLineMinQuantity({ min_quantity: 6 })).toBe(6)
+    expect(getLineMinQuantity({ min_quantity: 12 })).toBe(12)
+  })
+
+  it('falls back to min_qty when present', () => {
+    expect(getLineMinQuantity({ min_qty: 6 })).toBe(6)
+  })
+
+  it('defaults to 1 when absent or invalid', () => {
+    expect(getLineMinQuantity(null)).toBe(1)
+    expect(getLineMinQuantity({})).toBe(1)
+    expect(getLineMinQuantity({ min_quantity: 0 })).toBe(1)
+    expect(getLineMinQuantity({ min_quantity: -5 })).toBe(1)
+    expect(getLineMinQuantity({ min_quantity: 'invalid' })).toBe(1)
   })
 })

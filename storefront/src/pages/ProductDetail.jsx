@@ -430,6 +430,10 @@ export default function ProductDetail() {
           variant_label: variantLabel(selectedVariant),
           quantity_value: selectedVariant.quantity_value,
           quantity_unit: selectedVariant.quantity_unit,
+          min_quantity:
+            selectedVariant.min_quantity ??
+            selectedVariant.min_qty ??
+            (pieceMode ? pieceMin : 1),
           total_price: Number(selectedVariant.total_price ?? selectedVariant.price),
           price_per_unit: Number(selectedVariant.price_per_unit ?? selectedVariant.price),
           stock: selectedVariant.stock != null ? Number(selectedVariant.stock) : null,

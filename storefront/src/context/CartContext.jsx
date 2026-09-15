@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { cartTotal, lineUnitPrice } from '../utils/variantPricing'
 import { getBrands } from '../services/mockApi'
-import { adjustLinePieces, cartLineKey, mergeCartLines } from '../utils/cartLines'
+import { adjustLinePieces, cartLineKey, getLineMinQuantity, mergeCartLines } from '../utils/cartLines'
 import {
   buildBrandBulk,
   buildBrandPieces,
@@ -25,12 +25,20 @@ function readStoredCart() {
 // Normalize a stored cart item into the canonical shape used everywhere.
 function normalizeItem(raw) {
   const variant = raw.variant_id != null
+  const minQuantity = raw.min_quantity != null
+    ? Math.max(1, Math.floor(Number(raw.min_quantity)))
+    : (raw.min_qty != null
+        ? Math.max(1, Math.floor(Number(raw.min_qty)))
+        : (raw.pieces != null || String(raw.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
+            ? Math.max(1, Math.floor(Number(raw.quantity_value ?? raw.pieces ?? 1)))
+            : 1))
   return {
     product_id: raw.product_id ?? raw.id,
     name: raw.name,
     image: raw.image,
     stock: raw.stock != null ? Number(raw.stock) : null,
     quantity: Number(raw.quantity ?? raw.qty ?? 1),
+    min_quantity: minQuantity,
     // Exact piece count for brand bulk lines (quantity stays 1; the line
     // represents `pieces` pieces of the brand).
     ...(raw.pieces != null ? { pieces: Number(raw.pieces) } : {}),
@@ -46,6 +54,7 @@ function normalizeItem(raw) {
           variant_label: raw.variant_label,
           quantity_value: raw.quantity_value,
           quantity_unit: raw.quantity_unit,
+          min_quantity: minQuantity,
           // Legacy stored carts may predate the new pricing fields — fall
           // back to the stored selected price so old carts keep working.
           variant_total_price:
@@ -148,6 +157,22 @@ export function CartProvider({ children }) {
           : Number(product.price)
       }
 
+      const minQuantity = hasVariant
+        ? Math.max(
+            1,
+            Math.floor(
+              Number(
+                variant.min_quantity ??
+                  variant.min_qty ??
+                  (explicitPieces != null ||
+                  String(variant.quantity_unit || '').trim().toLowerCase() === 'pieces'
+                    ? variant.quantity_value
+                    : 1)
+              ) || 1
+            )
+          )
+        : Math.max(1, Math.floor(Number(product.min_quantity ?? product.min_qty) || 1))
+
       const newItem = {
         product_id: product.id,
         name: product.name,
@@ -156,6 +181,7 @@ export function CartProvider({ children }) {
           ? (variant.stock != null ? Number(variant.stock) : null)
           : (product.stock != null ? Number(product.stock) : null),
         quantity: explicitPieces != null ? 1 : quantity,
+        min_quantity: minQuantity,
         // Exact piece count (brand bulk lines only).
         ...(explicitPieces != null ? { pieces: explicitPieces } : {}),
         selected_price,
@@ -171,6 +197,7 @@ export function CartProvider({ children }) {
                   : variant.variant_label,
               quantity_value: explicitPieces != null ? explicitPieces : variant.quantity_value,
               quantity_unit: variant.quantity_unit,
+              min_quantity: minQuantity,
               variant_total_price: selected_price,
               variant_price_per_unit: Number.isFinite(normalPerPiece) && normalPerPiece > 0
                 ? normalPerPiece
@@ -257,6 +284,7 @@ export function CartProvider({ children }) {
       const pricing = bulk ? lineBulkPricing(i, bulk) : null
       return {
         ...i,
+        min_quantity: getLineMinQuantity(i),
         unit_price: pricing ? pricing.unitPrice : baseUnit,
         normal_unit_price: pricing ? pricing.normalUnitPrice : baseUnit,
         bulk_active: pricing ? pricing.useBulk : false,
