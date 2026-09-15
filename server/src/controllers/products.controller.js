@@ -9,7 +9,7 @@ const {
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured,
+  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -21,7 +21,7 @@ const PRODUCT_SELECT = `
 // yet. is_featured is kept because the column already exists in the
 // production schema.
 const PRODUCT_SELECT_BASE = `
-  id, name, description, price, is_featured,
+  id, name, description, price, is_featured, stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -31,7 +31,7 @@ const PRODUCT_SELECT_BASE = `
 // by migration_add_display_order.sql) so the admin list can show a position
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured,
+  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock,
   category_id, brand_id, image, is_active, created_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -132,7 +132,7 @@ async function nextProductDisplayOrder() {
 
 const VARIANT_SELECT = `
   id, product_id, quantity_value, quantity_unit, display_label, price,
-  total_price, price_per_unit, is_default
+  total_price, price_per_unit, is_default, stock
 `
 
 // Fallback variant select for databases where the variant total-pricing
@@ -140,7 +140,7 @@ const VARIANT_SELECT = `
 // price_per_unit) has not been applied yet. The legacy `price` column drives
 // the fallbacks so nothing breaks before the migration runs.
 const VARIANT_SELECT_BASE = `
-  id, product_id, quantity_value, quantity_unit, display_label, price, is_default
+  id, product_id, quantity_value, quantity_unit, display_label, price, is_default, stock
 `
 
 // The authoritative purchasable amount for ONE selected variant. Legacy
@@ -205,6 +205,7 @@ function toVariant(v) {
     total_price: variantTotalPrice(v),
     price_per_unit: variantPerUnitPrice(v),
     is_default: v.is_default ?? false,
+    stock: Number.isFinite(Number(v?.stock)) ? Math.max(0, Math.floor(Number(v.stock))) : 0,
   }
 }
 
@@ -264,6 +265,7 @@ function flattenProduct(row) {
   const { categories, brands, ...rest } = row
   return {
     ...rest,
+    stock: Number.isFinite(Number(row?.stock)) ? Math.max(0, Math.floor(Number(row.stock))) : 0,
     category_name: categories?.name || null,
     category_slug: categories?.slug || null,
     brand_name: brands?.name || null,
@@ -610,6 +612,12 @@ function validateVariant(v) {
   if (v.price_per_unit === '' || v.price_per_unit == null || !Number.isFinite(perUnit) || perUnit < 0) {
     return 'Variant price per unit must be a number >= 0.'
   }
+  if (v.stock !== undefined && v.stock !== null && v.stock !== '') {
+    const s = Number(v.stock)
+    if (!Number.isFinite(s) || s < 0 || !Number.isInteger(s)) {
+      return 'Variant stock must be a whole number 0 or greater.'
+    }
+  }
   return null
 }
 
@@ -624,6 +632,7 @@ function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
   return variants.map((v) => {
     const total = v.total_price != null ? v.total_price : v.price
+    const stockVal = v.stock != null && v.stock !== '' ? Number(v.stock) : 0
     return {
       quantity_value: v.quantity_value ?? 0,
       quantity_unit: v.quantity_unit ?? 'ML',
@@ -632,6 +641,7 @@ function normalizeVariants(variants) {
       total_price: total,
       price_per_unit: v.price_per_unit != null ? v.price_per_unit : v.price,
       is_default: v.is_default ?? false,
+      stock: Number.isFinite(stockVal) && stockVal >= 0 ? Math.floor(stockVal) : 0,
     }
   })
 }
@@ -672,7 +682,7 @@ async function createProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order
+      display_order, stock
     } = req.body
 
     // Only the name is strictly required. The purchasable price now comes
@@ -739,16 +749,20 @@ async function createProduct(req, res) {
     }
 
     // If the selected category is "Attar", brand is required
-    const category = categoryRes.data
-    if (category && category.slug === 'attar' && !resolvedBrandId) {
+    if (categoryRes.data && categoryRes.data.slug === 'attar' && !resolvedBrandId) {
       return res.status(400).json({ error: 'Brand is required for Attar products.' })
     }
+
+    const productStock = stock !== undefined && stock !== null && stock !== ''
+      ? Math.max(0, Math.floor(Number(stock)))
+      : 0
 
     const payload = {
       name,
       slug: uniqueSlug,
       description: description ?? null,
       price: price ?? 0,
+      stock: productStock,
       compare_at_price: compare_at_price ?? null,
       rating: rating ?? null,
       review_count: review_count ?? null,
@@ -834,7 +848,7 @@ async function updateProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order
+      display_order, stock
     } = req.body
 
     // If the category is being updated to "Attar", brand is required
@@ -857,6 +871,13 @@ async function updateProduct(req, res) {
     }
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
+    if (stock !== undefined && stock !== null && stock !== '') {
+      const s = Number(stock)
+      if (!Number.isFinite(s) || s < 0 || !Number.isInteger(s)) {
+        return res.status(400).json({ error: 'Stock must be a whole number 0 or greater.' })
+      }
+      updates.stock = s
+    }
     if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
     if (rating !== undefined) updates.rating = rating
     if (review_count !== undefined) updates.review_count = review_count

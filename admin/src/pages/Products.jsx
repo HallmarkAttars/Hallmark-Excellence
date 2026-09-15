@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import AdminProductCard from '../components/ui/AdminProductCard'
 import { resolveProductImage, handleProductImageError } from '../utils/productImage'
 import { perUnitDisplay } from '../utils/variantValidation'
+import { getStockStatus, normalizeStock } from '../utils/stock'
 import './Products.css'
 
 export default function Products() {
@@ -68,6 +69,34 @@ export default function Products() {
   }
 
   const [actionError, setActionError] = useState('')
+
+  // STOCK column: shows per-variant stock list when variants exist,
+  // or single stock count + status badge when no variants exist.
+  const renderStockCell = (p) => {
+    if (Array.isArray(p.variants) && p.variants.length > 0) {
+      return (
+        <div className="stock-variants-list">
+          {p.variants.map((v) => {
+            const s = getStockStatus(v.stock)
+            return (
+              <div key={v.id || v.variant_name} className="stock-variant-item">
+                <span className="stock-variant-label">{v.variant_name}:</span>
+                <span className="stock-variant-num">{normalizeStock(v.stock)}</span>
+                <span className={`stock-status-badge ${s.badgeClass}`}>{s.label}</span>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+    const s = getStockStatus(p.stock)
+    return (
+      <div className="stock-simple-cell">
+        <span className="stock-simple-num">{normalizeStock(p.stock)}</span>
+        <span className={`stock-status-badge ${s.badgeClass}`}>{s.label}</span>
+      </div>
+    )
+  }
 
   const handleToggle = async (product) => {
     setActionError('')
@@ -194,7 +223,7 @@ export default function Products() {
             <table>
               <thead>
                 <tr>
-                  <th></th><th>Pos</th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th>
+                  <th></th><th>Pos</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -208,6 +237,7 @@ export default function Products() {
                     </td>
                     <td>{categoryName(p.category_id)}</td>
                     <td>{renderPriceCell(p)}</td>
+                    <td>{renderStockCell(p)}</td>
                     <td>
                       <button
                         className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}

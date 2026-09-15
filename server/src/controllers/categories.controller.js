@@ -4,6 +4,10 @@ const {
   applyProductOrder,
   isMissingOrderColumnError,
 } = require('../utils/displayOrder')
+const {
+  attachVariants,
+  fetchVariantsByProducts,
+} = require('./products.controller')
 
 // Builds { category_id: count } from the products table.
 // `activeOnly` controls whether inactive products count toward the total.
@@ -80,7 +84,7 @@ async function getCategoryProducts(req, res) {
 
     const categoryProductSelect = `
       id, name, description, price, compare_at_price,
-      rating, review_count, is_featured, image,
+      rating, review_count, is_featured, image, stock,
       category_id, brand_id, is_active, created_at,
       brands ( id, name, slug )
     `
@@ -110,11 +114,19 @@ async function getCategoryProducts(req, res) {
 
     const flattened = products.map(({ brands, ...rest }) => ({
       ...rest,
+      stock: Number.isFinite(Number(rest?.stock)) ? Math.max(0, Math.floor(Number(rest.stock))) : 0,
       brand_name: brands?.name || null,
       brand_slug: brands?.slug || null,
     }))
 
-    return res.json({ category, products: flattened })
+    let variantsByProduct = {}
+    try {
+      variantsByProduct = await fetchVariantsByProducts(flattened.map((r) => r.id))
+    } catch (varErr) {
+      console.error('getCategoryProducts fetchVariants error:', varErr)
+    }
+
+    return res.json({ category, products: attachVariants(flattened, variantsByProduct) })
   } catch (err) {
     console.error('getCategoryProducts error:', err)
     return res.status(500).json({ error: 'Internal server error' })

@@ -220,11 +220,20 @@
 @media (min-width: 560px) {
   .variant-grid { grid-template-columns: 1fr 1fr; }
 }
-@media (min-width: 720px) {
-  .variant-grid { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 780px) {
+  .variant-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .variant-grid .form-field { margin-bottom: 0; }
+
+.product-stock-field {
+  margin-top: 10px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: rgba(20, 17, 13, 0.02);
+  border: 1px solid var(--line);
+}
 
 /* -------- Variant Total Price — read-only, auto-calculated -------- */
 .variant-total-field { margin-top: 14px; }

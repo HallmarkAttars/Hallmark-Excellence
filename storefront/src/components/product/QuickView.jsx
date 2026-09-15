@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
+import { getStockStatus, resolveCurrentStock } from '../../utils/stock'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -39,6 +40,11 @@ export default function QuickView({ product, onClose, onNavigate }) {
   // A variant product shows its price ONLY after the customer explicitly
   // selects a variant. Variant-less products show their price immediately.
   const variantSelected = hasVariants ? Boolean(selectedVariant) : true
+
+  // Stock resolution
+  const currentStock = resolveCurrentStock(product, selectedVariant)
+  const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
+  const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
 
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
   const ratingDisplay = hasRating
@@ -133,6 +139,12 @@ export default function QuickView({ product, onClose, onNavigate }) {
             </div>
           )}
 
+          {stockInfo != null && (
+            <p className={`quickview-stock ${stockInfo.badgeClass}`}>
+              {stockInfo.isOutOfStock ? '✕ Out of stock' : `✓ ${stockInfo.label}`}
+            </p>
+          )}
+
           {product.description && (
             <p className="quickview-desc">{product.description}</p>
           )}
@@ -164,8 +176,9 @@ export default function QuickView({ product, onClose, onNavigate }) {
               type="button"
               className="quickview-add"
               onClick={handleAdd}
+              disabled={isOutOfStock}
             >
-              Add to Cart
+              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
             </button>
           </div>
 
@@ -183,3 +196,4 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
   return createPortal(modal, document.body)
 }
+

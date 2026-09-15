@@ -94,7 +94,7 @@ async function getBrandProducts(req, res) {
         .from('products')
         .select(`
           id, name, description, price, compare_at_price,
-          rating, review_count, is_featured, image,
+          rating, review_count, is_featured, image, stock,
           category_id, brand_id, is_active, created_at,
           categories ( id, name, slug )
         `)
@@ -123,6 +123,7 @@ async function getBrandProducts(req, res) {
 
     const flattened = products.map(({ categories, ...rest }) => ({
       ...rest,
+      stock: Number.isFinite(Number(rest?.stock)) ? Math.max(0, Math.floor(Number(rest.stock))) : 0,
       category_name: categories?.name || null,
       category_slug: categories?.slug || null,
     }))

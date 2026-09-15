@@ -82,6 +82,13 @@ describe('validateVariants — the 4-field variant rules', () => {
     expect(validateVariants([variant({ price_per_unit: '-0.01', is_default: true })])).toMatch(/Price Per Unit/)
   })
 
+  it('validates variant stock >= 0 integer', () => {
+    expect(validateVariants([variant({ stock: '100', is_default: true })])).toBe('')
+    expect(validateVariants([variant({ stock: '0', is_default: true })])).toBe('')
+    expect(validateVariants([variant({ stock: '-1', is_default: true })])).toMatch(/Variant stock/)
+    expect(validateVariants([variant({ stock: '12.5', is_default: true })])).toMatch(/Variant stock/)
+  })
+
   it('rejects duplicate quantity + unit combinations', () => {
     const variants = [
       variant({ is_default: true }),

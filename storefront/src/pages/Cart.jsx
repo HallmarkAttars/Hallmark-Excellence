@@ -140,6 +140,7 @@ function CartLine({ item, inGroup }) {
               type="button"
               className="qty-control-btn"
               onClick={() => updateLinePieces(key, 1)}
+              disabled={item.stock != null && item.stock > 0 && item.pieces >= item.stock}
               aria-label="Increase quantity"
             >
               +

@@ -29,6 +29,7 @@ function normalizeItem(raw) {
     product_id: raw.product_id ?? raw.id,
     name: raw.name,
     image: raw.image,
+    stock: raw.stock != null ? Number(raw.stock) : null,
     quantity: Number(raw.quantity ?? raw.qty ?? 1),
     // Exact piece count for brand bulk lines (quantity stays 1; the line
     // represents `pieces` pieces of the brand).
@@ -151,6 +152,9 @@ export function CartProvider({ children }) {
         product_id: product.id,
         name: product.name,
         image: product.image,
+        stock: hasVariant
+          ? (variant.stock != null ? Number(variant.stock) : null)
+          : (product.stock != null ? Number(product.stock) : null),
         quantity: explicitPieces != null ? 1 : quantity,
         // Exact piece count (brand bulk lines only).
         ...(explicitPieces != null ? { pieces: explicitPieces } : {}),

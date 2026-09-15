@@ -58,7 +58,10 @@ export function adjustLinePieces(item, delta) {
   const current = item.pieces != null
     ? Math.floor(Number(item.pieces) || 0)
     : linePieces(item)
-  const next = Math.max(1, current + Math.floor(Number(delta) || 0))
+  let next = Math.max(1, current + Math.floor(Number(delta) || 0))
+  if (item.stock != null && Number(item.stock) > 0) {
+    next = Math.min(next, Number(item.stock))
+  }
   if (next === current) return null
   const ppu = Number(item.variant_price_per_unit ?? lineNormalPerPiece(item))
   const total = Number.isFinite(ppu) && ppu > 0
@@ -112,6 +115,7 @@ export function mergeCartLines(items) {
         variant_total_price: mergedTotal,
         variant_price_per_unit: ppu || item.variant_price_per_unit,
         variant_is_default: existing.variant_is_default === true,
+        stock: item.stock ?? existing.stock,
         brand_id: item.brand_id ?? existing.brand_id,
         brand_name: item.brand_name ?? existing.brand_name,
       }
@@ -134,6 +138,7 @@ export function mergeCartLines(items) {
       variant_price_per_unit:
         item.variant_price_per_unit ?? existing.variant_price_per_unit,
       variant_is_default: item.variant_is_default === true,
+      stock: item.stock ?? existing.stock,
       brand_id: item.brand_id ?? existing.brand_id,
       brand_name: item.brand_name ?? existing.brand_name,
     }

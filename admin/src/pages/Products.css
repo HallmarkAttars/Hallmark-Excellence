@@ -61,6 +61,69 @@
 }
 .status-toggle.is-active { background: var(--success-bg); color: var(--success); }
 
+/* -------- Stock cell and status badges -------- */
+.stock-simple-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-simple-num {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--charcoal);
+}
+
+.stock-variants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stock-variant-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-variant-label {
+  color: rgba(20, 17, 13, 0.6);
+  font-weight: 500;
+}
+
+.stock-variant-num {
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.stock-status-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.stock-status-badge.stock-badge-in {
+  background: var(--success-bg, rgba(46, 125, 50, 0.12));
+  color: #2e7d32;
+}
+
+.stock-status-badge.stock-badge-low {
+  background: rgba(230, 81, 0, 0.12);
+  color: #e65100;
+}
+
+.stock-status-badge.stock-badge-out {
+  background: var(--danger-bg, rgba(198, 40, 40, 0.12));
+  color: #c62828;
+}
+
 /* Small info box below the products list — explains that the price shown is
    the DEFAULT variant's Price Per Unit, and that Variant Total Price is
    auto-calculated (Quantity × Price Per Unit). Visible on desktop AND mobile. */

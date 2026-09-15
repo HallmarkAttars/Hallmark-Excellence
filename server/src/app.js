@@ -32,6 +32,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://areesperfumes.in',
   'https://www.areesperfumes.in',
+  'https://admin3210.areesperfumes.in',
   process.env.ADMIN_URL,
   'https://admin3210.areesperfumes.in',
 ].filter(Boolean)

@@ -16,6 +16,11 @@ const {
   stringifyOrderNotes,
   recordStatusTimestamp,
 } = require('../utils/orderStatusHistory')
+const {
+  validateItemsStock,
+  deductOrderStock,
+  restoreOrderStock,
+} = require('../utils/stockDeduction')
 
 function generateOrderNumber() {
   const randomSixDigits = Math.floor(100000 + Math.random() * 900000)
@@ -335,17 +340,17 @@ async function createOrder(req, res) {
     }
 
     let productSelect =
-      'id, name, price, image, compare_at_price, brand_id'
+      'id, name, price, image, compare_at_price, brand_id, stock'
     let dbProducts
     let prodError
     ;({ data: dbProducts, error: prodError } = await supabase
       .from('products')
       .select(productSelect)
       .in('id', productIds))
-    // The compare_at_price column may not exist yet (pre-migration DB) —
+    // The compare_at_price / stock columns fallback (pre-migration DB) —
     // retry with the minimal select so checkout keeps working.
     if (prodError && /does not exist|could not find/i.test(prodError.message)) {
-      console.warn('[createOrder] compare_at_price column missing — checkout running with base product fields.')
+      console.warn('[createOrder] optional product columns missing — checkout running with base product fields.')
       ;({ data: dbProducts, error: prodError } = await supabase
         .from('products')
         .select('id, name, price, image')
@@ -363,11 +368,20 @@ async function createOrder(req, res) {
 
     let dbVariants = []
     if (variantIds.length > 0) {
-      const { data: vs, error: vErr } = await supabase
+      let { data: vs, error: vErr } = await supabase
         .from('product_variants')
-        .select('id, product_id, price, total_price, price_per_unit, display_label, quantity_value, quantity_unit, is_default')
+        .select('id, product_id, price, total_price, price_per_unit, display_label, quantity_value, quantity_unit, is_default, stock')
         .in('product_id', productIds)
         .order('quantity_value', { ascending: true })
+
+      if (vErr && /does not exist|could not find/i.test(vErr.message)) {
+        ;({ data: vs, error: vErr } = await supabase
+          .from('product_variants')
+          .select('id, product_id, price, total_price, price_per_unit, display_label, quantity_value, quantity_unit, is_default')
+          .in('product_id', productIds)
+          .order('quantity_value', { ascending: true }))
+      }
+
       if (vErr) {
         console.error('[createOrder] variants fetch error:', vErr.message)
         return res.status(500).json({ error: 'Failed to validate product variants. Please try again.' })
@@ -377,6 +391,12 @@ async function createOrder(req, res) {
 
     const productMap = new Map(dbProducts.map((p) => [String(p.id), p]))
     const variantMap = new Map(dbVariants.map((v) => [String(v.id), v]))
+
+    // --- Validate Stock Before Order Creation ---
+    const stockValidationError = validateItemsStock(items, productMap, variantMap)
+    if (stockValidationError) {
+      return res.status(400).json({ error: stockValidationError })
+    }
 
     // Brand display names + brand-level bulk rules for the order snapshot.
     // Prices NEVER come from the brands table — product/variant rows are the
@@ -723,7 +743,20 @@ async function createOrder(req, res) {
       })
     }
 
-    // --- ORDER IS SAVED. Only now are the Brevo emails sent. ----------------
+    // --- DEDUCT STOCK ATOMICALLY ---
+    // Prevent overselling: deduct exact quantity for each product/variant.
+    // If deduction fails due to concurrent checkout, cancel the order row and fail cleanly.
+    const stockDeductResult = await deductOrderStock(normalizedItems, supabase)
+    if (!stockDeductResult.success) {
+      console.error('[createOrder] Stock deduction failed (oversell prevention):', stockDeductResult.error)
+      // Roll back the order row
+      await supabase.from('orders').delete().eq('id', data.id)
+      return res.status(400).json({
+        error: stockDeductResult.error || 'Unable to place order due to stock limits. Please try again.',
+      })
+    }
+
+    // --- ORDER IS SAVED & STOCK DEDUCTED. Only now are the Brevo emails sent. ---
     // Both emails use the same params object built from THIS saved order row.
     // Email failures are handled independently and never fail the order.
     console.log('[createOrder] Order created successfully:', data.id, data.order_number)
@@ -883,11 +916,27 @@ async function updateOrderStatus(req, res) {
       console.error('updateOrderStatus read hint:', readError.hint)
       return res.status(500).json({ error: 'Failed to update order status.' })
     }
-    if (!existing) {
-      return res.status(404).json({ error: 'Order not found.' })
+    const prevStatus = (existing.order_status || '').toLowerCase()
+    const newStatusLower = matched.toLowerCase()
+    let parsedNotes = parseOrderNotes(existing)
+
+    // Handle Restocking Inventory when order is Cancelled or Returned
+    if (['cancelled', 'returned'].includes(newStatusLower) && !['cancelled', 'returned'].includes(prevStatus)) {
+      if (!parsedNotes.stock_restocked) {
+        const orderItems = Array.isArray(parsedNotes.items) ? parsedNotes.items : (Array.isArray(existing.items) ? existing.items : [])
+        await restoreOrderStock(orderItems, supabase)
+        parsedNotes.stock_restocked = true
+      }
+    } else if (!['cancelled', 'returned'].includes(newStatusLower) && ['cancelled', 'returned'].includes(prevStatus)) {
+      // If moved back from Cancelled/Returned to an active status, re-deduct stock
+      if (parsedNotes.stock_restocked === true) {
+        const orderItems = Array.isArray(parsedNotes.items) ? parsedNotes.items : (Array.isArray(existing.items) ? existing.items : [])
+        await deductOrderStock(orderItems, supabase)
+        parsedNotes.stock_restocked = false
+      }
     }
 
-    const mergedNotes = recordStatusTimestamp(parseOrderNotes(existing), matched)
+    const mergedNotes = recordStatusTimestamp(parsedNotes, matched)
 
     const { data, error } = await supabase
       .from('orders')

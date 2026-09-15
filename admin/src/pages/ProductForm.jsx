@@ -8,6 +8,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
 import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory } from '../utils/productValidation'
 import { compressProductImage } from '../utils/imageCompressor'
+import { LOW_STOCK_THRESHOLD, normalizeStock, formatVariantStockBadge } from '../utils/stock'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -16,6 +17,7 @@ const EMPTY = {
   is_featured: false,
   category_id: '', brand_id: '',
   display_order: '',
+  stock: '',
 }
 
 // Formats the live compact summary for mobile collapsed headers:
@@ -181,6 +183,22 @@ const VariantCardItem = React.memo(function VariantCardItem({
             />
             <small className="field-example">e.g. ₹45 for one piece</small>
           </div>
+
+          <div className="form-field">
+            <label htmlFor={`stock-${index}`}>Stock</label>
+            <input
+              id={`stock-${index}`}
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 100"
+              value={v.stock ?? ''}
+              onChange={(e) => onUpdate(index, 'stock', e.target.value)}
+              disabled={disabled}
+              required
+            />
+            <small className="field-example">Inventory units for this variant</small>
+          </div>
         </div>
 
         {/* Variant Total Price — READ-ONLY, always auto-calculated as
@@ -289,6 +307,7 @@ export default function ProductForm() {
             review_count: p.review_count ?? '',
             is_featured: Boolean(p.is_featured),
             display_order: p.display_order ?? '',
+            stock: p.stock != null ? p.stock : '',
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
@@ -299,6 +318,7 @@ export default function ProductForm() {
                 quantity_unit: normalizeUnit(v.quantity_unit) || 'ML',
                 total_price: v.total_price != null ? v.total_price : (v.price ?? ''),
                 price_per_unit: v.price_per_unit != null ? v.price_per_unit : (v.price ?? ''),
+                stock: v.stock != null ? v.stock : '',
                 is_default: Boolean(v.is_default),
               }))
             )
@@ -414,16 +434,45 @@ export default function ProductForm() {
     }))
   }, [])
 
+  // --- Variant helpers -----------------------------------------------------
+  const hasVariants = variants.length > 0
+
+  // Formats the live compact summary for mobile collapsed headers:
+  // e.g. "100 Pieces • ₹42/unit • Stock 250 • Total ₹4,200"
+  // Low stock: "100 Pieces • ₹42/unit • ⚠ 8 left"
+  // Out of stock: "100 Pieces • ₹42/unit • OUT OF STOCK"
+  const getVariantSummary = useCallback((v) => {
+    const hasQty = v.quantity_value !== '' && v.quantity_value != null && !isNaN(Number(v.quantity_value))
+    const hasPpu = v.price_per_unit !== '' && v.price_per_unit != null && !isNaN(Number(v.price_per_unit))
+    const hasTotal = v.total_price !== '' && v.total_price != null && !isNaN(Number(v.total_price))
+
+    const qtyPart = hasQty ? `${v.quantity_value} ${v.quantity_unit || 'ML'}` : '— ML'
+    const ppuPart = hasPpu ? `₹${Number(v.price_per_unit).toLocaleString('en-IN')}/unit` : '₹—/unit'
+    const totalPart = hasTotal ? `Total ₹${Number(v.total_price).toLocaleString('en-IN')}` : 'Total ₹—'
+    const nStock = normalizeStock(v.stock)
+
+    if (nStock <= 0) {
+      return `${qtyPart} • ${ppuPart} • OUT OF STOCK`
+    }
+    if (nStock <= LOW_STOCK_THRESHOLD) {
+      return `${qtyPart} • ${ppuPart} • ⚠ ${nStock} left`
+    }
+    return `${qtyPart} • ${ppuPart} • Stock ${nStock} • ${totalPart}`
+  }, [])
+
+  // Detects if a variant is missing required fields or has invalid values
   const isVariantIncomplete = useCallback((v, index) => {
     const q = String(v.quantity_value ?? '').trim()
     const u = String(v.quantity_unit ?? '').trim()
     const p = v.price_per_unit
     const t = v.total_price
+    const s = v.stock
 
     if (!q || isNaN(Number(q)) || Number(q) <= 0) return true
     if (!u || !UNIT_OPTIONS.includes(u)) return true
     if (p === '' || p == null || isNaN(Number(p)) || Number(p) < 0) return true
     if (t === '' || t == null || isNaN(Number(t)) || Number(t) < 0) return true
+    if (s === '' || s == null || isNaN(Number(s)) || Number(s) < 0 || !Number.isInteger(Number(s))) return true
 
     // Check duplicate quantity + unit with other variants
     const key = `${q.toUpperCase()}|${u.toUpperCase()}`
@@ -448,6 +497,7 @@ export default function ProductForm() {
         quantity_unit: 'ML',
         total_price: '',
         price_per_unit: '',
+        stock: '',
         is_default: prev.length === 0, // first variant is default by default
       },
     ])
@@ -523,6 +573,14 @@ export default function ProductForm() {
       return
     }
 
+    // Validate product stock for products without variants
+    if (variants.length === 0) {
+      if (form.stock === '' || form.stock == null || isNaN(Number(form.stock)) || Number(form.stock) < 0 || !Number.isInteger(Number(form.stock))) {
+        setError('Stock must be a whole number 0 or greater.')
+        return
+      }
+    }
+
     // Validate variants (optional — empty variant list is allowed)
     const variantError = validateVariants(variants)
     if (variantError) {
@@ -558,13 +616,15 @@ export default function ProductForm() {
 
       setSubmitPhase('saving')
 
-      // Build the variants payload for the backend
+      // Build the variants payload for the backend — quantity value,
+      // unit, variant total price, price per unit, stock and default flag.
       const variantsPayload = variants.map((v) => ({
         quantity_value: Number(v.quantity_value),
         quantity_unit: v.quantity_unit.trim(),
         display_label: `${v.quantity_value} ${v.quantity_unit}`.trim(),
         total_price: Number(v.total_price),
         price_per_unit: Number(v.price_per_unit),
+        stock: Math.max(0, Math.floor(Number(v.stock) || 0)),
         is_default: Boolean(v.is_default),
       }))
 
@@ -577,6 +637,7 @@ export default function ProductForm() {
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
         image,
+        stock: variants.length === 0 ? Math.max(0, Math.floor(Number(form.stock) || 0)) : 0,
         variants: variantsPayload,
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
@@ -711,10 +772,26 @@ export default function ProductForm() {
           </div>
 
           {variants.length === 0 && (
+            <div className="form-field product-stock-field">
+              <label htmlFor="stock">Stock</label>
+              <input
+                id="stock"
+                name="stock"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="e.g. 100"
+                value={form.stock}
+                onChange={handleChange}
+                required
+              />
+              <small className="field-example">Available inventory units for this product.</small>
+            </div>
+          )}
+
+          {variants.length === 0 && (
             <p className="variants-empty">
-              No variants yet. Add a variant (e.g. 100 Pieces → ₹1000 total, ₹10
-              per piece) to offer pack/size options. Products are sold by their
-              variants.
+              No variants yet. (Product uses product-level stock above). Add variants to offer size/pack options with per-variant stock.
             </p>
           )}
 

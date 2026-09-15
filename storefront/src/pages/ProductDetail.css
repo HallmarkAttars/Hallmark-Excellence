@@ -543,6 +543,38 @@
   color: #b26a00;
 }
 
+/* Stock status badge */
+.product-detail-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+.product-detail-stock.in-stock {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+}
+.product-detail-stock.low-stock {
+  background: rgba(230, 81, 0, 0.12);
+  color: #e65100;
+}
+.product-detail-stock.out-of-stock {
+  background: rgba(198, 40, 40, 0.12);
+  color: #c62828;
+}
+
+.pd-add-btn.is-out-of-stock,
+.pd-add-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Subtle fade-up when the price appears after variant selection */
 .price-reveal {
   animation: fade-up 0.45s ease-out both;

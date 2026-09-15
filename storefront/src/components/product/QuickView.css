@@ -179,6 +179,31 @@
   overflow: hidden;
 }
 
+.quickview-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+.quickview-stock.in-stock {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+}
+.quickview-stock.low-stock {
+  background: rgba(230, 81, 0, 0.12);
+  color: #e65100;
+}
+.quickview-stock.out-of-stock {
+  background: rgba(198, 40, 40, 0.12);
+  color: #c62828;
+}
+
 /* ---------- Variants ---------- */
 .quickview-variants {
   width: 100%;

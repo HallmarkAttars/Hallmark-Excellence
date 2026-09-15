@@ -12,6 +12,7 @@ import {
   pieceWord,
   productPageBrandPieces,
 } from '../utils/brandBulk'
+import { getStockStatus, normalizeStock, resolveCurrentStock } from '../utils/stock'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -179,6 +180,11 @@ export default function ProductDetail() {
   // The default variant marks cart lines (is_default flag).
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
 
+  // Stock resolution: per-variant for variant products (when selected), or product-level
+  const currentStock = resolveCurrentStock(product, selectedVariant)
+  const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
+  const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
+
   // --- Brand-level bulk pricing (brand products only) ----------------------
   // `brandRule` is the brand's valid bulk rule when this product belongs to a
   // brand that has one configured. Category products and brands without a
@@ -222,6 +228,7 @@ export default function ProductDetail() {
     setVariantHint(false)
     // A new variant is a NEW selection — it has not been added to the cart.
     setSelectionInCart(false)
+    const vStock = normalizeStock(v.stock)
     if (
       isBrandProduct &&
       String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
@@ -229,7 +236,12 @@ export default function ProductDetail() {
     ) {
       // Same `|| 1` guard as pieceBandRange so a corrupt (non-numeric)
       // quantity_value can never leave the quantity at NaN.
-      setQty(Math.max(1, Math.floor(Number(v.quantity_value) || 1)))
+      const initialQty = Math.max(1, Math.floor(Number(v.quantity_value) || 1))
+      setQty(vStock > 0 ? Math.min(initialQty, vStock) : initialQty)
+    } else {
+      if (vStock > 0 && qty > vStock) {
+        setQty(vStock)
+      }
     }
   }
 
@@ -340,31 +352,20 @@ export default function ProductDetail() {
   // Stepper disable states. The + button stays enabled at a band's max when
   // a NEXT band exists — the existing auto-advance (handleIncrease →
   // nextVariant) must stay reachable; it is disabled only on the last band's
-  // max.
-  const canDecrease = pieceMode ? qty > pieceMin : qty > 1
-  const canIncrease =
-    pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true
+  // max. Also respects available stock limit.
+  const canDecrease = isOutOfStock ? false : (pieceMode ? qty > pieceMin : qty > 1)
+  const canIncrease = isOutOfStock
+    ? false
+    : currentStock != null
+      ? (pieceMode && pieceMax != null && !nextVariant
+          ? qty < Math.min(pieceMax, currentStock)
+          : qty < currentStock)
+      : (pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true)
   // Bulk card progress + per-piece savings.
   const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
   const bulkSavingsPerPiece = bulkApplied
     ? Math.max(0, Number(normalPerPiece) - bulkPerPiece)
     : 0
-  // Stock status — the DB currently has no stock column, so this renders only
-  // when the API provides real stock data (defensive, never invented).
-  const stockClass =
-    product.stock == null
-      ? ''
-      : Number(product.stock) <= 0
-        ? 'out-of-stock'
-        : Number(product.stock) <= 10
-          ? 'low-stock'
-          : 'in-stock'
-  const stockLabel =
-    stockClass === 'out-of-stock'
-      ? 'Out of stock'
-      : stockClass === 'low-stock'
-        ? 'Low stock'
-        : 'In stock'
 
   // One-piece-at-a-time stepping within the selected band (bulk-brand Pieces
   // variants); the existing ±1 behaviour everywhere else.
@@ -372,6 +373,7 @@ export default function ProductDetail() {
   // line already in the cart, so the preview must count it again.
   const markSelectionChanged = () => setSelectionInCart(false)
   const handleDecrease = () => {
+    if (isOutOfStock) return
     markSelectionChanged()
     if (pieceMode) {
       setQty((q) => Math.max(pieceMin, q - 1))
@@ -380,6 +382,7 @@ export default function ProductDetail() {
     }
   }
   const handleIncrease = () => {
+    if (isOutOfStock) return
     markSelectionChanged()
     if (pieceMode) {
       if (pieceMax != null && qty >= pieceMax) {
@@ -387,9 +390,9 @@ export default function ProductDetail() {
         if (nextVariant) handleVariantSelect(nextVariant)
         return
       }
-      setQty((q) => q + 1)
+      setQty((q) => (currentStock != null ? Math.min(currentStock, q + 1) : q + 1))
     } else {
-      setQty((q) => q + 1)
+      setQty((q) => (currentStock != null ? Math.min(currentStock, q + 1) : q + 1))
     }
   }
 
@@ -417,7 +420,7 @@ export default function ProductDetail() {
       return
     }
     setVariantHint(false)
-    if (adding || addingRef.current) return
+    if (isOutOfStock || adding || addingRef.current) return
 
     // Build the complete selected variant info for the cart item so the cart
     // and checkout show the exact variant and price the customer picked.
@@ -429,6 +432,7 @@ export default function ProductDetail() {
           quantity_unit: selectedVariant.quantity_unit,
           total_price: Number(selectedVariant.total_price ?? selectedVariant.price),
           price_per_unit: Number(selectedVariant.price_per_unit ?? selectedVariant.price),
+          stock: selectedVariant.stock != null ? Number(selectedVariant.stock) : null,
           is_default: String(selectedVariant.id) === String(defaultVariant?.id),
         }
       : null
@@ -447,6 +451,7 @@ export default function ProductDetail() {
           name: product.name,
           price: Number(product.price),
           image: product.image,
+          stock: product.stock != null ? Number(product.stock) : null,
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
         },
@@ -520,9 +525,11 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Stock — only when the API supplies real stock data */}
-          {product.stock != null && (
-            <p className={`product-detail-stock ${stockClass}`}>✓ {stockLabel}</p>
+          {/* Stock status — shows for product or selected variant */}
+          {stockInfo != null && (
+            <p className={`product-detail-stock ${stockInfo.badgeClass}`}>
+              {stockInfo.isOutOfStock ? '✕ Out of stock' : `✓ ${stockInfo.label}`}
+            </p>
           )}
 
           {/* Description with a "Read more" toggle for longer copy */}
@@ -667,11 +674,11 @@ export default function ProductDetail() {
           {/* Primary action + wishlist */}
           <div className="product-detail-actions">
             <button
-              className="btn btn-primary pd-add-btn"
+              className={`btn btn-primary pd-add-btn ${isOutOfStock ? 'is-out-of-stock' : ''}`}
               onClick={handleAdd}
-              disabled={adding}
+              disabled={adding || isOutOfStock}
             >
-              <BagIcon /> {adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
+              <BagIcon /> {isOutOfStock ? 'Out of Stock' : adding ? 'Adding…' : added ? 'Added ✓' : 'Add to Cart'}
             </button>
             <button
               type="button"
