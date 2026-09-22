@@ -612,12 +612,6 @@ function validateVariant(v) {
   if (v.price_per_unit === '' || v.price_per_unit == null || !Number.isFinite(perUnit) || perUnit < 0) {
     return 'Variant price per unit must be a number >= 0.'
   }
-  if (v.stock !== undefined && v.stock !== null && v.stock !== '') {
-    const s = Number(v.stock)
-    if (!Number.isFinite(s) || s < 0 || !Number.isInteger(s)) {
-      return 'Variant stock must be a whole number 0 or greater.'
-    }
-  }
   return null
 }
 
@@ -628,11 +622,11 @@ function validateVariant(v) {
 // with the variant's total price. New flows read total_price / price_per_unit;
 // pre-migration flows (or any legacy reader) read `price` and get the same
 // authoritative total, so an insert can never violate the NOT NULL constraint.
+// Stock belongs strictly to the parent product (products.stock).
 function normalizeVariants(variants) {
   if (!Array.isArray(variants) || variants.length === 0) return []
   return variants.map((v) => {
     const total = v.total_price != null ? v.total_price : v.price
-    const stockVal = v.stock != null && v.stock !== '' ? Number(v.stock) : 0
     return {
       quantity_value: v.quantity_value ?? 0,
       quantity_unit: v.quantity_unit ?? 'ML',
@@ -641,7 +635,7 @@ function normalizeVariants(variants) {
       total_price: total,
       price_per_unit: v.price_per_unit != null ? v.price_per_unit : v.price,
       is_default: v.is_default ?? false,
-      stock: Number.isFinite(stockVal) && stockVal >= 0 ? Math.floor(stockVal) : 0,
+      stock: 0,
     }
   })
 }

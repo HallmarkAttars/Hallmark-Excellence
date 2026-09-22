@@ -180,8 +180,8 @@ export default function ProductDetail() {
   // The default variant marks cart lines (is_default flag).
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
 
-  // Stock resolution: per-variant for variant products (when selected), or product-level
-  const currentStock = resolveCurrentStock(product, selectedVariant)
+  // Stock resolution: product-level overall stock (single source of truth)
+  const currentStock = resolveCurrentStock(product)
   const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
   const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
 
@@ -228,7 +228,7 @@ export default function ProductDetail() {
     setVariantHint(false)
     // A new variant is a NEW selection — it has not been added to the cart.
     setSelectionInCart(false)
-    const vStock = normalizeStock(v.stock)
+    const pStock = normalizeStock(product?.stock)
     if (
       isBrandProduct &&
       String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
@@ -237,10 +237,10 @@ export default function ProductDetail() {
       // Same `|| 1` guard as pieceBandRange so a corrupt (non-numeric)
       // quantity_value can never leave the quantity at NaN.
       const initialQty = Math.max(1, Math.floor(Number(v.quantity_value) || 1))
-      setQty(vStock > 0 ? Math.min(initialQty, vStock) : initialQty)
+      setQty(pStock > 0 ? Math.min(initialQty, pStock) : initialQty)
     } else {
-      if (vStock > 0 && qty > vStock) {
-        setQty(vStock)
+      if (pStock > 0 && qty > pStock) {
+        setQty(pStock)
       }
     }
   }
@@ -436,7 +436,6 @@ export default function ProductDetail() {
             (pieceMode ? pieceMin : 1),
           total_price: Number(selectedVariant.total_price ?? selectedVariant.price),
           price_per_unit: Number(selectedVariant.price_per_unit ?? selectedVariant.price),
-          stock: selectedVariant.stock != null ? Number(selectedVariant.stock) : null,
           is_default: String(selectedVariant.id) === String(defaultVariant?.id),
         }
       : null

@@ -183,22 +183,6 @@ const VariantCardItem = React.memo(function VariantCardItem({
             />
             <small className="field-example">e.g. ₹45 for one piece</small>
           </div>
-
-          <div className="form-field">
-            <label htmlFor={`stock-${index}`}>Stock</label>
-            <input
-              id={`stock-${index}`}
-              type="number"
-              min="0"
-              step="1"
-              placeholder="e.g. 100"
-              value={v.stock ?? ''}
-              onChange={(e) => onUpdate(index, 'stock', e.target.value)}
-              disabled={disabled}
-              required
-            />
-            <small className="field-example">Inventory units for this variant</small>
-          </div>
         </div>
 
         {/* Variant Total Price — READ-ONLY, always auto-calculated as
@@ -318,7 +302,6 @@ export default function ProductForm() {
                 quantity_unit: normalizeUnit(v.quantity_unit) || 'ML',
                 total_price: v.total_price != null ? v.total_price : (v.price ?? ''),
                 price_per_unit: v.price_per_unit != null ? v.price_per_unit : (v.price ?? ''),
-                stock: v.stock != null ? v.stock : '',
                 is_default: Boolean(v.is_default),
               }))
             )
@@ -332,11 +315,6 @@ export default function ProductForm() {
     }
   }, [id, isEdit, lockedBrandId])
 
-  const handleCategoryChange = useCallback((e) => {
-    const categoryId = e.target.value
-    setForm((f) => ({ ...f, category_id: categoryId }))
-  }, [])
-
   const selectedCategory = useMemo(
     () => categories.find((c) => String(c.id) === String(form.category_id)),
     [categories, form.category_id]
@@ -349,20 +327,26 @@ export default function ProductForm() {
   )
   const brandNormalPrice =
     isAttarCategory && selectedBrand ? Number(selectedBrand.standard_price) : null
-  const brandHasNormalPrice = Number.isFinite(brandNormalPrice) && brandNormalPrice > 0
+  const brandHasNormalPrice =
+    Number.isFinite(brandNormalPrice) && brandNormalPrice > 0
 
-  const isBrandProduct = checkIsBrandProduct({
-    brandId: form.brand_id,
-    lockedBrandId,
-  })
+  // If a brand is locked (from URL query param ?brand=uuid), lock the category to Attar
+  // and pre-fill brand_id.
+  useEffect(() => {
+    if (lockedBrandId) {
+      const attarCat = categories.find((c) => c.slug === 'attar' || c.name === 'Attar')
+      setForm((f) => ({
+        ...f,
+        brand_id: lockedBrandId,
+        category_id: attarCat ? attarCat.id : f.category_id,
+      }))
+    }
+  }, [lockedBrandId, categories])
 
-  // ATTAR PRICE SYNC — the product's per-piece price automatically comes from
-  // the selected brand's Bulk Pricing normal price:
-  //   • Pick Category = Attar + a Brand → the default variant's Price Per Unit
-  //     is filled with the brand's normal price (admin never types it again).
-  //   • Change the brand (AREES → DAHAB) → the price updates to the new brand.
-  //   • A price the admin typed by hand is respected (never clobbered).
-  //   • Edit mode never auto-syncs — existing products keep their saved data.
+  // Attar price auto-fill (Category = Attar + Brand chosen → default variant's
+  // price comes from the brand's Bulk Pricing normal price). Pure helpers in
+  // attarPriceSync.js; synced when switching to Attar/brand on a new product,
+  // never overwriting on edit unless brand is changed.
   useEffect(() => {
     if (!shouldSyncAttarPrice({ isEdit, isAttarCategory, brandHasNormalPrice })) {
       setPriceSyncedBrand(null)
@@ -377,70 +361,36 @@ export default function ProductForm() {
       })
     )
     setPriceSyncedBrand(form.brand_id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, isAttarCategory, form.brand_id, selectedBrand, variants.length, defaultVariantIndex, priceSyncedBrand])
+  }, [isEdit, isAttarCategory, form.brand_id, selectedBrand, variants.length, defaultVariantIndex, priceSyncedBrand, brandHasNormalPrice, brandNormalPrice])
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target
-    setForm((f) => ({ ...f, [name]: value }))
+  // Clear brand selection when switching AWAY from Attar category
+  useEffect(() => {
+    if (!isAttarCategory && form.brand_id && !lockedBrandId) {
+      setForm((f) => ({ ...f, brand_id: '' }))
+    }
+  }, [isAttarCategory, form.brand_id, lockedBrandId])
+
+  // Category label contextual helper
+  const isBrandProduct = checkIsBrandProduct({ brandId: form.brand_id, lockedBrandId })
+
+  // Non-attar products (Roll-on, etc.): allowed units depend on product type
+  const unitOptionsFor = useCallback((v) => {
+    return UNIT_OPTIONS
   }, [])
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Revoke previous blob URL to prevent memory leaks
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current)
-      previewUrlRef.current = null
-    }
-
-    // Instant local preview without reading full base64 string
-    try {
-      const previewUrl = URL.createObjectURL(file)
-      previewUrlRef.current = previewUrl
-      setImagePreview(previewUrl)
-    } catch {
-      // Fallback
-    }
-
-    setImageFile(file)
-    setIsCompressingImage(true)
-
-    // Pre-compress image client-side in background while user fills form
-    const promise = compressProductImage(file)
-      .then((optimizedFile) => {
-        setImageFile(optimizedFile)
-        setIsCompressingImage(false)
-        return optimizedFile
-      })
-      .catch((err) => {
-        console.warn('Image pre-compression warning:', err)
-        setImageFile(file)
-        setIsCompressingImage(false)
-        return file
-      })
-
-    compressionPromiseRef.current = promise
-  }
+  const handleChange = useCallback((e) => {
+    const { name, value, type, checked } = e.target
+    setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }))
+  }, [])
 
   // Tracks which variants are expanded on mobile. Keyed by variant unique key.
   const [expandedMap, setExpandedMap] = useState({})
-
-  const toggleVariant = useCallback((key) => {
-    setExpandedMap((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }))
-  }, [])
 
   // --- Variant helpers -----------------------------------------------------
   const hasVariants = variants.length > 0
 
   // Formats the live compact summary for mobile collapsed headers:
-  // e.g. "100 Pieces • ₹42/unit • Stock 250 • Total ₹4,200"
-  // Low stock: "100 Pieces • ₹42/unit • ⚠ 8 left"
-  // Out of stock: "100 Pieces • ₹42/unit • OUT OF STOCK"
+  // e.g. "100 Pieces • ₹42/unit • Total ₹4,200"
   const getVariantSummary = useCallback((v) => {
     const hasQty = v.quantity_value !== '' && v.quantity_value != null && !isNaN(Number(v.quantity_value))
     const hasPpu = v.price_per_unit !== '' && v.price_per_unit != null && !isNaN(Number(v.price_per_unit))
@@ -449,15 +399,8 @@ export default function ProductForm() {
     const qtyPart = hasQty ? `${v.quantity_value} ${v.quantity_unit || 'ML'}` : '— ML'
     const ppuPart = hasPpu ? `₹${Number(v.price_per_unit).toLocaleString('en-IN')}/unit` : '₹—/unit'
     const totalPart = hasTotal ? `Total ₹${Number(v.total_price).toLocaleString('en-IN')}` : 'Total ₹—'
-    const nStock = normalizeStock(v.stock)
 
-    if (nStock <= 0) {
-      return `${qtyPart} • ${ppuPart} • OUT OF STOCK`
-    }
-    if (nStock <= LOW_STOCK_THRESHOLD) {
-      return `${qtyPart} • ${ppuPart} • ⚠ ${nStock} left`
-    }
-    return `${qtyPart} • ${ppuPart} • Stock ${nStock} • ${totalPart}`
+    return `${qtyPart} • ${ppuPart} • ${totalPart}`
   }, [])
 
   // Detects if a variant is missing required fields or has invalid values
@@ -466,13 +409,11 @@ export default function ProductForm() {
     const u = String(v.quantity_unit ?? '').trim()
     const p = v.price_per_unit
     const t = v.total_price
-    const s = v.stock
 
     if (!q || isNaN(Number(q)) || Number(q) <= 0) return true
     if (!u || !UNIT_OPTIONS.includes(u)) return true
     if (p === '' || p == null || isNaN(Number(p)) || Number(p) < 0) return true
     if (t === '' || t == null || isNaN(Number(t)) || Number(t) < 0) return true
-    if (s === '' || s == null || isNaN(Number(s)) || Number(s) < 0 || !Number.isInteger(Number(s))) return true
 
     // Check duplicate quantity + unit with other variants
     const key = `${q.toUpperCase()}|${u.toUpperCase()}`
@@ -488,7 +429,7 @@ export default function ProductForm() {
   }, [variants])
 
   const addVariant = useCallback(() => {
-    const newKey = `var_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const newKey = `v_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     setVariants((prev) => [
       ...prev,
       {
@@ -497,7 +438,6 @@ export default function ProductForm() {
         quantity_unit: 'ML',
         total_price: '',
         price_per_unit: '',
-        stock: '',
         is_default: prev.length === 0, // first variant is default by default
       },
     ])
@@ -529,9 +469,9 @@ export default function ProductForm() {
 
   const removeVariant = useCallback((index) => {
     setVariants((prev) => {
-      const removedWasDefault = prev[index]?.is_default
       const next = prev.filter((_, i) => i !== index)
-      if (removedWasDefault && next.length > 0 && !next.some((v) => v.is_default)) {
+      // If we removed the default variant, promote the first remaining one to default
+      if (prev[index]?.is_default && next.length > 0) {
         next[0] = { ...next[0], is_default: true }
       }
       return next
@@ -539,17 +479,49 @@ export default function ProductForm() {
   }, [])
 
   const setDefaultVariant = useCallback((index) => {
-    setVariants((prev) => prev.map((v, i) => ({ ...v, is_default: i === index })))
+    setVariants((prev) =>
+      prev.map((v, i) => ({
+        ...v,
+        is_default: i === index,
+      }))
+    )
   }, [])
 
-  const unitOptionsFor = useCallback((v) => {
-    const current = v?.quantity_unit?.trim()
-    if (current && !UNIT_OPTIONS.includes(current)) {
-      return [...UNIT_OPTIONS, current]
-    }
-    return UNIT_OPTIONS
+  const toggleVariant = useCallback((key) => {
+    setExpandedMap((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
   }, [])
 
+  // --- Image handling with instant background compression ------------------
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Show instant local preview immediately so the admin sees the picture
+    const localUrl = URL.createObjectURL(file)
+    setImagePreview(localUrl)
+    setImageFile(file)
+    setIsCompressingImage(true)
+
+    // Start compression in background immediately without blocking UI
+    const compPromise = compressProductImage(file)
+      .then((compressed) => {
+        setImageFile(compressed)
+        setIsCompressingImage(false)
+        return compressed
+      })
+      .catch((err) => {
+        console.warn('Background image compression failed, using original file:', err)
+        setIsCompressingImage(false)
+        return file
+      })
+
+    compressionPromiseRef.current = compPromise
+  }
+
+  // --- Form submission -----------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (isSubmitting) return // Guard against rapid duplicate clicks
@@ -573,12 +545,10 @@ export default function ProductForm() {
       return
     }
 
-    // Validate product stock for products without variants
-    if (variants.length === 0) {
-      if (form.stock === '' || form.stock == null || isNaN(Number(form.stock)) || Number(form.stock) < 0 || !Number.isInteger(Number(form.stock))) {
-        setError('Stock must be a whole number 0 or greater.')
-        return
-      }
+    // Validate product stock for ALL products (single source of truth)
+    if (form.stock === '' || form.stock == null || isNaN(Number(form.stock)) || Number(form.stock) < 0 || !Number.isInteger(Number(form.stock))) {
+      setError('Stock must be a whole number 0 or greater.')
+      return
     }
 
     // Validate variants (optional — empty variant list is allowed)
@@ -617,14 +587,14 @@ export default function ProductForm() {
       setSubmitPhase('saving')
 
       // Build the variants payload for the backend — quantity value,
-      // unit, variant total price, price per unit, stock and default flag.
+      // unit, variant total price, price per unit and default flag.
       const variantsPayload = variants.map((v) => ({
         quantity_value: Number(v.quantity_value),
         quantity_unit: v.quantity_unit.trim(),
         display_label: `${v.quantity_value} ${v.quantity_unit}`.trim(),
         total_price: Number(v.total_price),
         price_per_unit: Number(v.price_per_unit),
-        stock: Math.max(0, Math.floor(Number(v.stock) || 0)),
+        stock: 0,
         is_default: Boolean(v.is_default),
       }))
 
@@ -637,7 +607,7 @@ export default function ProductForm() {
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
         image,
-        stock: variants.length === 0 ? Math.max(0, Math.floor(Number(form.stock) || 0)) : 0,
+        stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
         variants: variantsPayload,
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
@@ -757,6 +727,24 @@ export default function ProductForm() {
           </div>
         </div>
 
+        {/* Product Stock (Single source of truth for inventory) */}
+        <div className="form-field product-stock-field">
+          <label htmlFor="stock">Product Stock</label>
+          <input
+            id="stock"
+            name="stock"
+            type="number"
+            min="0"
+            step="1"
+            placeholder="e.g. 1000"
+            value={form.stock}
+            onChange={handleChange}
+            required
+            disabled={isSubmitting}
+          />
+          <small className="field-example">Pieces available for this product.</small>
+        </div>
+
         {/* Product Variants section */}
         <div className="variants-section">
           <div className="variants-header">
@@ -772,26 +760,8 @@ export default function ProductForm() {
           </div>
 
           {variants.length === 0 && (
-            <div className="form-field product-stock-field">
-              <label htmlFor="stock">Stock</label>
-              <input
-                id="stock"
-                name="stock"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="e.g. 100"
-                value={form.stock}
-                onChange={handleChange}
-                required
-              />
-              <small className="field-example">Available inventory units for this product.</small>
-            </div>
-          )}
-
-          {variants.length === 0 && (
             <p className="variants-empty">
-              No variants yet. (Product uses product-level stock above). Add variants to offer size/pack options with per-variant stock.
+              No variants yet. (Product uses product-level stock above). Add variants to offer size/pack options and pricing.
             </p>
           )}
 
@@ -849,7 +819,7 @@ export default function ProductForm() {
               id="category_id"
               name="category_id"
               value={form.category_id}
-              onChange={handleCategoryChange}
+              onChange={handleChange}
               required={!isBrandProduct}
               disabled={isSubmitting}
             >

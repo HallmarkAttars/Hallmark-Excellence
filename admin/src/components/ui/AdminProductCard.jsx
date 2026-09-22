@@ -56,28 +56,13 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
 
       <div className="product-card-stock">
         <div className="product-card-stock-content">
-          {Array.isArray(product.variants) && product.variants.length > 0 ? (
-            <div className="stock-variants-list">
-              {product.variants.map((v) => {
-                const s = getStockStatus(v.stock)
-                return (
-                  <div key={v.id || v.variant_name} className="stock-variant-item">
-                    <span className="stock-variant-label">{v.variant_name}:</span>
-                    <span className="stock-variant-num">{normalizeStock(v.stock)}</span>
-                    <span className={`stock-status-badge ${s.badgeClass}`}>{s.label}</span>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="stock-simple-cell">
-              <span className="product-card-stock-label">Stock:</span>
-              <span className="stock-simple-num">{normalizeStock(product.stock)}</span>
-              <span className={`stock-status-badge ${getStockStatus(product.stock).badgeClass}`}>
-                {getStockStatus(product.stock).label}
-              </span>
-            </div>
-          )}
+          <div className="stock-simple-cell">
+            <span className="product-card-stock-label">Stock:</span>
+            <span className="stock-simple-num">{normalizeStock(product.stock).toLocaleString('en-IN')} Pieces</span>
+            <span className={`stock-status-badge ${getStockStatus(product.stock).badgeClass}`}>
+              ● {getStockStatus(product.stock).label}
+            </span>
+          </div>
         </div>
 
         <button

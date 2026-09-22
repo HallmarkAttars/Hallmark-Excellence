@@ -46,16 +46,12 @@ export function getStockStatus(stock) {
 }
 
 /**
- * Resolves current stock for a product & optional selected variant:
- * - If product has variants: returns selectedVariant.stock (or null if no variant selected)
- * - If product has NO variants: returns product.stock
+ * Resolves current stock for a product:
+ * Stock belongs strictly to the product (products.stock) as the single source of truth.
+ * Variants represent packaging/quantity/pricing options and do not have individual stock.
  */
-export function resolveCurrentStock(product, selectedVariant = null) {
+export function resolveCurrentStock(product) {
   if (!product) return null
-  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0
-  if (hasVariants) {
-    if (!selectedVariant) return null
-    return normalizeStock(selectedVariant.stock)
-  }
   return normalizeStock(product.stock)
 }
+

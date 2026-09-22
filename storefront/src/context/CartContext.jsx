@@ -177,9 +177,7 @@ export function CartProvider({ children }) {
         product_id: product.id,
         name: product.name,
         image: product.image,
-        stock: hasVariant
-          ? (variant.stock != null ? Number(variant.stock) : null)
-          : (product.stock != null ? Number(product.stock) : null),
+        stock: product.stock != null ? Number(product.stock) : null,
         quantity: explicitPieces != null ? 1 : quantity,
         min_quantity: minQuantity,
         // Exact piece count (brand bulk lines only).

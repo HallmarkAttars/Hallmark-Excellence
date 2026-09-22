@@ -41,8 +41,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
   // selects a variant. Variant-less products show their price immediately.
   const variantSelected = hasVariants ? Boolean(selectedVariant) : true
 
-  // Stock resolution
-  const currentStock = resolveCurrentStock(product, selectedVariant)
+  // Stock resolution (single product-level stock)
+  const currentStock = resolveCurrentStock(product)
   const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
   const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
 

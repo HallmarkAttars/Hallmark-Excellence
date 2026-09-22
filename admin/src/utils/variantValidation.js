@@ -90,12 +90,6 @@ export function validateVariants(variants) {
     if (v.price_per_unit === '' || v.price_per_unit == null || Number.isNaN(Number(v.price_per_unit)) || Number(v.price_per_unit) < 0) {
       return 'Price Per Unit must be a number >= 0.'
     }
-    if (v.stock !== undefined && v.stock !== null && v.stock !== '') {
-      const numStock = Number(v.stock)
-      if (Number.isNaN(numStock) || numStock < 0 || !Number.isInteger(numStock)) {
-        return 'Variant stock must be a whole number 0 or greater.'
-      }
-    }
     const key = `${q.toUpperCase()}|${u.toUpperCase()}`
     if (seen.has(key)) {
       return 'Duplicate variant: Quantity + Unit combination already exists.'

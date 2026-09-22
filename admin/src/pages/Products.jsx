@@ -70,30 +70,13 @@ export default function Products() {
 
   const [actionError, setActionError] = useState('')
 
-  // STOCK column: shows per-variant stock list when variants exist,
-  // or single stock count + status badge when no variants exist.
+  // STOCK column: shows single product stock count + status badge.
   const renderStockCell = (p) => {
-    if (Array.isArray(p.variants) && p.variants.length > 0) {
-      return (
-        <div className="stock-variants-list">
-          {p.variants.map((v) => {
-            const s = getStockStatus(v.stock)
-            return (
-              <div key={v.id || v.variant_name} className="stock-variant-item">
-                <span className="stock-variant-label">{v.variant_name}:</span>
-                <span className="stock-variant-num">{normalizeStock(v.stock)}</span>
-                <span className={`stock-status-badge ${s.badgeClass}`}>{s.label}</span>
-              </div>
-            )
-          })}
-        </div>
-      )
-    }
     const s = getStockStatus(p.stock)
     return (
       <div className="stock-simple-cell">
-        <span className="stock-simple-num">{normalizeStock(p.stock)}</span>
-        <span className={`stock-status-badge ${s.badgeClass}`}>{s.label}</span>
+        <span className="stock-simple-num">{normalizeStock(p.stock).toLocaleString('en-IN')} Pieces</span>
+        <span className={`stock-status-badge ${s.badgeClass}`}>● {s.label}</span>
       </div>
     )
   }

@@ -46,20 +46,16 @@ describe('storefront stock utils', () => {
 
     const variantProduct = {
       id: 2,
-      stock: 100, // should be ignored in favor of variant stock
+      stock: 1000,
       variants: [
-        { id: 10, stock: 25 },
-        { id: 11, stock: 0 },
+        { id: 10, display_label: '6 Pieces' },
+        { id: 11, display_label: '12 Pieces' },
       ],
     }
 
-    // When no variant is selected
-    expect(resolveCurrentStock(variantProduct, null)).toBeNull()
-
-    // When variant 10 is selected
-    expect(resolveCurrentStock(variantProduct, variantProduct.variants[0])).toBe(25)
-
-    // When variant 11 is selected
-    expect(resolveCurrentStock(variantProduct, variantProduct.variants[1])).toBe(0)
+    // Always resolves to product stock regardless of variant selection
+    expect(resolveCurrentStock(variantProduct, null)).toBe(1000)
+    expect(resolveCurrentStock(variantProduct, variantProduct.variants[0])).toBe(1000)
+    expect(resolveCurrentStock(variantProduct, variantProduct.variants[1])).toBe(1000)
   })
 })
