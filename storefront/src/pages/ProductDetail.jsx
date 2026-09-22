@@ -12,7 +12,7 @@ import {
   pieceWord,
   productPageBrandPieces,
 } from '../utils/brandBulk'
-import { getStockStatus, normalizeStock, resolveCurrentStock } from '../utils/stock'
+import { getStockStatus, isProductInStock } from '../utils/stock'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import './ProductDetail.css'
@@ -180,10 +180,10 @@ export default function ProductDetail() {
   // The default variant marks cart lines (is_default flag).
   const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
 
-  // Stock resolution: product-level overall stock (single source of truth)
-  const currentStock = resolveCurrentStock(product)
-  const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
-  const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
+  // Stock resolution: product-level boolean availability (single source of truth)
+  const isInStock = isProductInStock(product)
+  const stockInfo = getStockStatus(isInStock)
+  const isOutOfStock = !isInStock
 
   // --- Brand-level bulk pricing (brand products only) ----------------------
   // `brandRule` is the brand's valid bulk rule when this product belongs to a
@@ -228,7 +228,6 @@ export default function ProductDetail() {
     setVariantHint(false)
     // A new variant is a NEW selection — it has not been added to the cart.
     setSelectionInCart(false)
-    const pStock = normalizeStock(product?.stock)
     if (
       isBrandProduct &&
       String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
@@ -237,11 +236,7 @@ export default function ProductDetail() {
       // Same `|| 1` guard as pieceBandRange so a corrupt (non-numeric)
       // quantity_value can never leave the quantity at NaN.
       const initialQty = Math.max(1, Math.floor(Number(v.quantity_value) || 1))
-      setQty(pStock > 0 ? Math.min(initialQty, pStock) : initialQty)
-    } else {
-      if (pStock > 0 && qty > pStock) {
-        setQty(pStock)
-      }
+      setQty(initialQty)
     }
   }
 
@@ -352,15 +347,11 @@ export default function ProductDetail() {
   // Stepper disable states. The + button stays enabled at a band's max when
   // a NEXT band exists — the existing auto-advance (handleIncrease →
   // nextVariant) must stay reachable; it is disabled only on the last band's
-  // max. Also respects available stock limit.
+  // max. The business has unlimited stock while product is available.
   const canDecrease = isOutOfStock ? false : (pieceMode ? qty > pieceMin : qty > 1)
   const canIncrease = isOutOfStock
     ? false
-    : currentStock != null
-      ? (pieceMode && pieceMax != null && !nextVariant
-          ? qty < Math.min(pieceMax, currentStock)
-          : qty < currentStock)
-      : (pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true)
+    : (pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true)
   // Bulk card progress + per-piece savings.
   const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
   const bulkSavingsPerPiece = bulkApplied
@@ -528,10 +519,10 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {/* Stock status — shows for product or selected variant */}
+          {/* Stock status — shows for product */}
           {stockInfo != null && (
             <p className={`product-detail-stock ${stockInfo.badgeClass}`}>
-              {stockInfo.isOutOfStock ? '✕ Out of stock' : `✓ ${stockInfo.label}`}
+              {stockInfo.badgeText}
             </p>
           )}
 
@@ -615,11 +606,11 @@ export default function ProductDetail() {
                     <button
                       key={v.id}
                       type="button"
-                      className={`variant-option ${active ? 'is-active' : ''}`}
+                      className={`variant-option ${active ? 'is-active' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
                       onClick={() => handleVariantSelect(v)}
                       aria-pressed={active}
                     >
-                      {variantLabel(v)}
+                      {variantLabel(v)} {isOutOfStock ? '(Out of Stock)' : ''}
                     </button>
                   )
                 })}

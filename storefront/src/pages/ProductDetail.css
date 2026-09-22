@@ -324,6 +324,12 @@
   color: var(--cream);
   box-shadow: 0 4px 14px rgba(29, 25, 20, 0.2);
 }
+.variant-option.is-out-of-stock {
+  opacity: 0.65;
+  background: rgba(20, 17, 13, 0.04);
+  border-color: rgba(20, 17, 13, 0.18);
+  color: rgba(20, 17, 13, 0.6);
+}
 
 /* ---------- Quantity ---------- */
 .pd-quantity { margin-top: 24px; }

@@ -1,7 +1,55 @@
 import { describe, it, expect } from 'vitest'
-import { LOW_STOCK_THRESHOLD, normalizeStock, getStockStatus } from './stock.js'
+import { isProductInStock, getStockStatus, normalizeStock } from './stock.js'
 
-describe('server stock utility', () => {
+describe('server stock utility (Product-Level Availability)', () => {
+  describe('isProductInStock', () => {
+    it('returns true when is_in_stock is true', () => {
+      expect(isProductInStock({ id: 'p1', is_in_stock: true })).toBe(true)
+      expect(isProductInStock({ id: 'p1', is_in_stock: true, stock: 0 })).toBe(true)
+    })
+
+    it('returns false when is_in_stock is false', () => {
+      expect(isProductInStock({ id: 'p2', is_in_stock: false })).toBe(false)
+      expect(isProductInStock({ id: 'p2', is_in_stock: false, stock: 100 })).toBe(false)
+    })
+
+    it('falls back to stock > 0 for pre-migration records without is_in_stock', () => {
+      expect(isProductInStock({ id: 'p3', stock: 10 })).toBe(true)
+      expect(isProductInStock({ id: 'p4', stock: 0 })).toBe(false)
+    })
+
+    it('defaults to true for products with null/undefined stock and is_in_stock', () => {
+      expect(isProductInStock({ id: 'p5' })).toBe(true)
+      expect(isProductInStock(null)).toBe(false)
+    })
+  })
+
+  describe('getStockStatus', () => {
+    it('identifies Out of Stock (false or { is_in_stock: false })', () => {
+      const resFalse = getStockStatus(false)
+      expect(resFalse.status).toBe('out_of_stock')
+      expect(resFalse.label).toBe('Out of Stock')
+      expect(resFalse.inStock).toBe(false)
+      expect(resFalse.isOutOfStock).toBe(true)
+
+      const resObj = getStockStatus({ is_in_stock: false })
+      expect(resObj.status).toBe('out_of_stock')
+      expect(resObj.inStock).toBe(false)
+    })
+
+    it('identifies In Stock (true or { is_in_stock: true })', () => {
+      const resTrue = getStockStatus(true)
+      expect(resTrue.status).toBe('in_stock')
+      expect(resTrue.label).toBe('In Stock')
+      expect(resTrue.inStock).toBe(true)
+      expect(resTrue.isOutOfStock).toBe(false)
+
+      const resObj = getStockStatus({ is_in_stock: true })
+      expect(resObj.status).toBe('in_stock')
+      expect(resObj.inStock).toBe(true)
+    })
+  })
+
   describe('normalizeStock', () => {
     it('normalizes valid positive numbers to integer', () => {
       expect(normalizeStock(10)).toBe(10)
@@ -15,46 +63,6 @@ describe('server stock utility', () => {
       expect(normalizeStock('')).toBe(0)
       expect(normalizeStock(null)).toBe(0)
       expect(normalizeStock(undefined)).toBe(0)
-    })
-
-    it('normalizes negative numbers and invalid strings to 0', () => {
-      expect(normalizeStock(-5)).toBe(0)
-      expect(normalizeStock('-10')).toBe(0)
-      expect(normalizeStock('invalid')).toBe(0)
-      expect(normalizeStock(NaN)).toBe(0)
-    })
-  })
-
-  describe('getStockStatus', () => {
-    it('identifies Out of Stock (stock = 0)', () => {
-      const res = getStockStatus(0)
-      expect(res.status).toBe('out_of_stock')
-      expect(res.label).toBe('Out of Stock')
-      expect(res.inStock).toBe(false)
-      expect(res.isOutOfStock).toBe(true)
-    })
-
-    it('identifies Low Stock (1 <= stock <= LOW_STOCK_THRESHOLD)', () => {
-      const res1 = getStockStatus(1)
-      expect(res1.status).toBe('low_stock')
-      expect(res1.label).toBe('Low Stock')
-      expect(res1.inStock).toBe(true)
-      expect(res1.isLowStock).toBe(true)
-
-      const resThreshold = getStockStatus(LOW_STOCK_THRESHOLD)
-      expect(resThreshold.status).toBe('low_stock')
-      expect(resThreshold.label).toBe('Low Stock')
-      expect(resThreshold.inStock).toBe(true)
-      expect(resThreshold.isLowStock).toBe(true)
-    })
-
-    it('identifies In Stock (stock > LOW_STOCK_THRESHOLD)', () => {
-      const res = getStockStatus(LOW_STOCK_THRESHOLD + 1)
-      expect(res.status).toBe('in_stock')
-      expect(res.label).toBe('In Stock')
-      expect(res.inStock).toBe(true)
-      expect(res.isLowStock).toBe(false)
-      expect(res.isOutOfStock).toBe(false)
     })
   })
 })

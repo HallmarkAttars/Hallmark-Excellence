@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
+import { isProductInStock } from '../../utils/stock'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -52,6 +53,7 @@ function EyeIcon() {
 export default function ProductCard({ product, onNavigate, bulkUnlocked = false }) {
   const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
+  const isInStock = isProductInStock(product)
 
   // Surface the default variant's size/label when the product has variants.
   const variants = Array.isArray(product.variants) ? product.variants : []
@@ -127,16 +129,15 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           />
         </Link>
 
-        {/* Status badge (Featured only). Driven by real product data;
-            nothing is ever invented. The brand's bulk-pricing state stays
-            fully active everywhere it is shown (product page, cart,
-            checkout) — it is simply no longer displayed as a badge on
-            product cards. */}
-        {product.is_featured === true && (
-          <div className="product-card-badges">
+        {/* Status badges. Driven by real product data. */}
+        <div className="product-card-badges">
+          {!isInStock && (
+            <span className="product-card-badge is-soldout">Out of Stock</span>
+          )}
+          {product.is_featured === true && (
             <span className="product-card-badge is-featured">Featured</span>
-          </div>
-        )}
+          )}
+        </div>
 
         <button
           type="button"
@@ -183,12 +184,13 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
 
         <button
           type="button"
-          className="btn product-card-btn"
-          onClick={handleAdd}
-          aria-label={`Add ${product.name} to cart`}
+          className={`btn product-card-btn ${!isInStock ? 'is-soldout' : ''}`}
+          onClick={isInStock ? handleAdd : undefined}
+          disabled={!isInStock}
+          aria-label={isInStock ? `Add ${product.name} to cart` : `${product.name} is out of stock`}
         >
-          <BagIcon />
-          Add to Cart
+          {isInStock && <BagIcon />}
+          {isInStock ? 'Add to Cart' : 'OUT OF STOCK'}
         </button>
       </div>
 

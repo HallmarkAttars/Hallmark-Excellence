@@ -79,11 +79,6 @@ export function adjustLinePieces(item, delta) {
   // Decrement blocked when newQuantity < minimumQuantity
   if (next < minQty) return null
 
-  // Increment blocked when newQuantity > availableStock
-  if (item.stock != null && Number(item.stock) > 0) {
-    const maxStock = Math.floor(Number(item.stock))
-    if (next > maxStock) return null
-  }
   if (next === current) return null
 
   const ppu = Number(item.variant_price_per_unit ?? lineNormalPerPiece(item))

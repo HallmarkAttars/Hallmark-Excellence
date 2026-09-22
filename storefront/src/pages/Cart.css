@@ -671,3 +671,29 @@
   .cart-item-subtotal { font-size: 1.05rem; }
   .cart-head-count { font-size: 0.68rem; padding: 0 11px; }
 }
+
+.cart-item-out-of-stock-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #FFEBEE;
+  color: #C62828;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.cart-checkout-error {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #FFEBEE;
+  border: 1px solid #FFCDD2;
+  color: #C62828;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+}

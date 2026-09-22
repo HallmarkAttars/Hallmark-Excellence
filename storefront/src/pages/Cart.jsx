@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { cartLineKey, getLineMinQuantity } from '../utils/cartLines'
+import { isProductInStock } from '../utils/stock'
 import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { LockIcon, TrashIcon } from '../components/icons'
@@ -100,6 +101,9 @@ function CartLine({ item, inGroup }) {
           )}
         </h3>
         {label && <p className="cart-item-variant">{label}</p>}
+        {!isProductInStock(item) && (
+          <span className="cart-item-out-of-stock-tag">Out of Stock</span>
+        )}
         <div className="cart-item-price-row">
           {showStruck && struckPerPiece != null && (
             <s className="cart-item-struck">₹{struckPerPiece.toLocaleString('en-IN')}</s>
@@ -141,7 +145,6 @@ function CartLine({ item, inGroup }) {
               type="button"
               className="qty-control-btn"
               onClick={() => updateLinePieces(key, 1)}
-              disabled={item.stock != null && item.stock > 0 && item.pieces >= item.stock}
               aria-label="Increase quantity"
             >
               +
@@ -175,6 +178,7 @@ function CartLine({ item, inGroup }) {
 export default function Cart() {
   const { pricedItems, total, itemCount, brandBulk, brands } = useCart()
   const navigate = useNavigate()
+  const [checkoutError, setCheckoutError] = useState('')
 
   // Group cart lines by brand (brand items) with the ADMIN-defined brand
   // order (display_order, never alphabetical — same rule as the header
@@ -230,6 +234,12 @@ export default function Cart() {
   }, [pricedItems, brandBulk, brands])
 
   const handleCheckout = () => {
+    const unavailable = pricedItems.find((it) => !isProductInStock(it))
+    if (unavailable) {
+      setCheckoutError(`${unavailable.name || 'This product'} is currently out of stock.`)
+      return
+    }
+    setCheckoutError('')
     // The resolved snapshot travels to the checkout page — the server still
     // recomputes everything authoritatively from the database.
     navigate('/checkout', { state: { checkoutItems: pricedItems, total } })
@@ -364,6 +374,12 @@ export default function Cart() {
             <span>Total</span>
             <span>₹{Number(total).toLocaleString('en-IN')}</span>
           </div>
+
+          {checkoutError && (
+            <p className="cart-checkout-error" role="alert">
+              {checkoutError}
+            </p>
+          )}
 
           <button className="btn btn-primary cart-checkout-btn" onClick={handleCheckout}>
             <LockIcon size={15} /> Confirm Order

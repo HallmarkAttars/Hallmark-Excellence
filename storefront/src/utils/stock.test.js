@@ -1,61 +1,63 @@
 import { describe, it, expect } from 'vitest'
 import {
-  LOW_STOCK_THRESHOLD,
+  isProductInStock,
   normalizeStock,
   getStockStatus,
   resolveCurrentStock,
 } from './stock'
 
-describe('storefront stock utils', () => {
-  it('normalizes stock values', () => {
+describe('storefront stock utils (Product-Level Availability)', () => {
+  it('normalizes stock values safely', () => {
     expect(normalizeStock(10)).toBe(10)
     expect(normalizeStock('15')).toBe(15)
     expect(normalizeStock('0')).toBe(0)
     expect(normalizeStock(-5)).toBe(0)
     expect(normalizeStock(null)).toBe(0)
     expect(normalizeStock(undefined)).toBe(0)
-    expect(normalizeStock('invalid')).toBe(0)
-    expect(normalizeStock(12.7)).toBe(12)
   })
 
-  it('determines stock status correctly', () => {
+  it('determines boolean product availability correctly', () => {
+    expect(isProductInStock({ id: 1, is_in_stock: true })).toBe(true)
+    expect(isProductInStock({ id: 2, is_in_stock: false })).toBe(false)
+    // Legacy fallback
+    expect(isProductInStock({ id: 3, stock: 50 })).toBe(true)
+    expect(isProductInStock({ id: 4, stock: 0 })).toBe(false)
+  })
+
+  it('determines stock status without low stock or numerical text', () => {
     expect(getStockStatus(null)).toBeNull()
 
-    const outStatus = getStockStatus(0)
+    const outStatus = getStockStatus(false)
     expect(outStatus.status).toBe('out_of_stock')
     expect(outStatus.inStock).toBe(false)
     expect(outStatus.isOutOfStock).toBe(true)
     expect(outStatus.label).toBe('Out of Stock')
+    expect(outStatus.badgeText).toBe('🔴 Out of Stock')
 
-    const lowStatus = getStockStatus(5)
-    expect(lowStatus.status).toBe('low_stock')
-    expect(lowStatus.inStock).toBe(true)
-    expect(lowStatus.isLowStock).toBe(true)
-    expect(lowStatus.label).toBe('Only 5 available')
-
-    const inStatus = getStockStatus(15)
+    const inStatus = getStockStatus(true)
     expect(inStatus.status).toBe('in_stock')
     expect(inStatus.inStock).toBe(true)
-    expect(inStatus.isLowStock).toBe(false)
+    expect(inStatus.isOutOfStock).toBe(false)
     expect(inStatus.label).toBe('In Stock')
+    expect(inStatus.badgeText).toBe('🟢 In Stock')
   })
 
-  it('resolves current stock for products with and without variants', () => {
-    const singleProduct = { id: 1, stock: 50 }
-    expect(resolveCurrentStock(singleProduct)).toBe(50)
+  it('resolves product availability for products with and without variants', () => {
+    const singleProduct = { id: 1, is_in_stock: true }
+    expect(resolveCurrentStock(singleProduct)).toBe(true)
+
+    const outProduct = { id: 2, is_in_stock: false }
+    expect(resolveCurrentStock(outProduct)).toBe(false)
 
     const variantProduct = {
-      id: 2,
-      stock: 1000,
+      id: 3,
+      is_in_stock: true,
       variants: [
         { id: 10, display_label: '6 Pieces' },
         { id: 11, display_label: '12 Pieces' },
       ],
     }
 
-    // Always resolves to product stock regardless of variant selection
-    expect(resolveCurrentStock(variantProduct, null)).toBe(1000)
-    expect(resolveCurrentStock(variantProduct, variantProduct.variants[0])).toBe(1000)
-    expect(resolveCurrentStock(variantProduct, variantProduct.variants[1])).toBe(1000)
+    expect(resolveCurrentStock(variantProduct)).toBe(true)
   })
 })

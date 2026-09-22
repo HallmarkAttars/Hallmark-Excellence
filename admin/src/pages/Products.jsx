@@ -20,6 +20,7 @@ export default function Products() {
   // call fires per keystroke.
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [stockFilter, setStockFilter] = useState('all')
 
   const load = () => {
     setLoading(true)
@@ -34,22 +35,27 @@ export default function Products() {
 
   const categoryName = (id) => categories.find((c) => c.id === id)?.name || '—'
 
-  const hasActiveFilters = search.trim() !== '' || categoryFilter !== 'all'
+  const hasActiveFilters = search.trim() !== '' || categoryFilter !== 'all' || stockFilter !== 'all'
 
-  // Filtered view = category match AND name search. Pure function of state —
+  // Filtered view = category match AND stock match AND name search. Pure function of state —
   // the source of truth stays the `products` array loaded once from the API.
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase()
     return products.filter((p) => {
       const matchesCategory = categoryFilter === 'all' || String(p.category_id) === categoryFilter
+      const inStock = p.is_in_stock !== false && (p.stock == null || Number(p.stock) > 0)
+      const matchesStock = stockFilter === 'all'
+        || (stockFilter === 'in_stock' && inStock)
+        || (stockFilter === 'out_of_stock' && !inStock)
       const matchesSearch = term === '' || String(p.name || '').toLowerCase().includes(term)
-      return matchesCategory && matchesSearch
+      return matchesCategory && matchesStock && matchesSearch
     })
-  }, [products, search, categoryFilter])
+  }, [products, search, categoryFilter, stockFilter])
 
   const clearFilters = () => {
     setSearch('')
     setCategoryFilter('all')
+    setStockFilter('all')
   }
 
   // PRICE column shows the DEFAULT variant's PRICE PER UNIT with the unit
@@ -70,13 +76,12 @@ export default function Products() {
 
   const [actionError, setActionError] = useState('')
 
-  // STOCK column: shows single product stock count + status badge.
+  // STOCK column: shows single availability status badge.
   const renderStockCell = (p) => {
-    const s = getStockStatus(p.stock)
+    const s = getStockStatus(p)
     return (
       <div className="stock-simple-cell">
-        <span className="stock-simple-num">{normalizeStock(p.stock).toLocaleString('en-IN')} Pieces</span>
-        <span className={`stock-status-badge ${s.badgeClass}`}>● {s.label}</span>
+        <span className={`stock-status-badge ${s.badgeClass}`}>{s.badgeText}</span>
       </div>
     )
   }
@@ -169,6 +174,20 @@ export default function Products() {
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
+          </select>
+        </div>
+
+        <div className="products-filter">
+          <label className="products-filter-label" htmlFor="products-stock-filter">Stock</label>
+          <select
+            id="products-stock-filter"
+            className="products-filter-select"
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="in_stock">In Stock</option>
+            <option value="out_of_stock">Out of Stock</option>
           </select>
         </div>
       </div>

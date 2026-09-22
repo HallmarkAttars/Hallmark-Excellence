@@ -224,16 +224,16 @@ describe('isPieceAdjustableLine / adjustLinePieces (cart stepper)', () => {
     expect(adjustLinePieces(current, -1)).toBeNull()
   })
 
-  it('enforces stock upper bounds (min = 6, stock = 20 & min = 12, stock = 50)', () => {
-    const line20 = { ...brandLine('pink-musk', 20), min_quantity: 6, stock: 20 }
-    // 20 → "+" → blocked at max stock
-    expect(adjustLinePieces(line20, 1)).toBeNull()
+  it('allows unlimited quantity increments while product is available', () => {
+    const line20 = { ...brandLine('pink-musk', 20), min_quantity: 6 }
+    // 20 → "+" → 21 allowed
+    expect(adjustLinePieces(line20, 1)?.pieces).toBe(21)
     // 20 → "-" → 19 allowed
     expect(adjustLinePieces(line20, -1)?.pieces).toBe(19)
 
-    const line50 = { ...brandLine('pink-musk', 50), min_quantity: 12, stock: 50 }
-    // 50 → "+" → blocked at max stock
-    expect(adjustLinePieces(line50, 1)).toBeNull()
+    const line50 = { ...brandLine('pink-musk', 50), min_quantity: 12 }
+    // 50 → "+" → 51 allowed
+    expect(adjustLinePieces(line50, 1)?.pieces).toBe(51)
     // 50 → "-" → 49 allowed
     expect(adjustLinePieces(line50, -1)?.pieces).toBe(49)
   })

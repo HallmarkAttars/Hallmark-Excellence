@@ -520,4 +520,73 @@
   }
 }
 
+/* -------- Product Availability section -------- */
+.product-availability-section {
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(246, 241, 234, 0.5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.product-availability-section h3 {
+  margin: 0 0 14px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.availability-field {
+  margin-bottom: 0;
+}
+
+.availability-field > label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 8px;
+}
+
+.stock-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid transparent;
+}
+
+.stock-toggle-btn.is-on {
+  background: #E8F5E9;
+  color: #1E4620;
+  border-color: #A5D6A7;
+}
+
+.stock-toggle-btn.is-on:hover {
+  background: #D5E8D4;
+}
+
+.stock-toggle-btn.is-off {
+  background: #FFEBEE;
+  color: #8C1D18;
+  border-color: #EF9A9A;
+}
+
+.stock-toggle-btn.is-off:hover {
+  background: #FFCDD2;
+}
+
+.availability-helper {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: rgba(20, 17, 13, 0.6);
+}
+
+
 

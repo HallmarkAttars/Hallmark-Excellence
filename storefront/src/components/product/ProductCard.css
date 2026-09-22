@@ -255,6 +255,10 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+.product-card-btn.is-soldout {
+  background: #2C2620;
+  color: rgba(255, 255, 255, 0.75);
+}
 
 /* Quantity control (replaces the button once the item is in cart) */
 .product-card-qty {

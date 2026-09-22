@@ -57,10 +57,8 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
       <div className="product-card-stock">
         <div className="product-card-stock-content">
           <div className="stock-simple-cell">
-            <span className="product-card-stock-label">Stock:</span>
-            <span className="stock-simple-num">{normalizeStock(product.stock).toLocaleString('en-IN')} Pieces</span>
-            <span className={`stock-status-badge ${getStockStatus(product.stock).badgeClass}`}>
-              ● {getStockStatus(product.stock).label}
+            <span className={`stock-status-badge ${getStockStatus(product).badgeClass}`}>
+              {getStockStatus(product).badgeText}
             </span>
           </div>
         </div>

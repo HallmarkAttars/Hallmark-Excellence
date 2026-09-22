@@ -9,7 +9,7 @@ const {
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock,
+  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -21,7 +21,7 @@ const PRODUCT_SELECT = `
 // yet. is_featured is kept because the column already exists in the
 // production schema.
 const PRODUCT_SELECT_BASE = `
-  id, name, description, price, is_featured, stock,
+  id, name, description, price, is_featured, stock, is_in_stock,
   category_id, brand_id, image, is_active, created_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -31,7 +31,7 @@ const PRODUCT_SELECT_BASE = `
 // by migration_add_display_order.sql) so the admin list can show a position
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock,
+  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
   category_id, brand_id, image, is_active, created_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -177,7 +177,7 @@ function sortVariants(variants) {
 // is applied. These are stripped from writes on pre-migration databases so
 // admin saves keep working; the values simply stay dormant until the
 // columns exist.
-const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count']
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count', 'is_in_stock']
 
 // Runs an insert/update against the full payload, retrying without the
 // optional (migration-dependent) fields when their columns are missing.
@@ -263,9 +263,13 @@ function attachVariants(rows, variantsByProduct) {
 function flattenProduct(row) {
   if (!row) return null
   const { categories, brands, ...rest } = row
+  const isInStock = row.is_in_stock !== undefined && row.is_in_stock !== null
+    ? Boolean(row.is_in_stock)
+    : (row.stock != null ? Number(row.stock) > 0 : true)
   return {
     ...rest,
-    stock: Number.isFinite(Number(row?.stock)) ? Math.max(0, Math.floor(Number(row.stock))) : 0,
+    is_in_stock: isInStock,
+    stock: isInStock ? 1 : 0,
     category_name: categories?.name || null,
     category_slug: categories?.slug || null,
     brand_name: brands?.name || null,
@@ -676,7 +680,7 @@ async function createProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order, stock
+      display_order, stock, is_in_stock
     } = req.body
 
     // Only the name is strictly required. The purchasable price now comes
@@ -747,16 +751,17 @@ async function createProduct(req, res) {
       return res.status(400).json({ error: 'Brand is required for Attar products.' })
     }
 
-    const productStock = stock !== undefined && stock !== null && stock !== ''
-      ? Math.max(0, Math.floor(Number(stock)))
-      : 0
+    const isInStock = is_in_stock !== undefined && is_in_stock !== null
+      ? Boolean(is_in_stock)
+      : (stock !== undefined && stock !== null && stock !== '' ? Number(stock) > 0 : true)
 
     const payload = {
       name,
       slug: uniqueSlug,
       description: description ?? null,
       price: price ?? 0,
-      stock: productStock,
+      stock: isInStock ? 1 : 0,
+      is_in_stock: isInStock,
       compare_at_price: compare_at_price ?? null,
       rating: rating ?? null,
       review_count: review_count ?? null,
@@ -842,7 +847,7 @@ async function updateProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order, stock
+      display_order, stock, is_in_stock
     } = req.body
 
     // If the category is being updated to "Attar", brand is required
@@ -865,12 +870,14 @@ async function updateProduct(req, res) {
     }
     if (description !== undefined) updates.description = description
     if (price !== undefined) updates.price = price
-    if (stock !== undefined && stock !== null && stock !== '') {
-      const s = Number(stock)
-      if (!Number.isFinite(s) || s < 0 || !Number.isInteger(s)) {
-        return res.status(400).json({ error: 'Stock must be a whole number 0 or greater.' })
-      }
-      updates.stock = s
+    if (is_in_stock !== undefined) {
+      const boolVal = Boolean(is_in_stock)
+      updates.is_in_stock = boolVal
+      updates.stock = boolVal ? 1 : 0
+    } else if (stock !== undefined && stock !== null && stock !== '') {
+      const boolVal = Number(stock) > 0
+      updates.is_in_stock = boolVal
+      updates.stock = boolVal ? 1 : 0
     }
     if (compare_at_price !== undefined) updates.compare_at_price = compare_at_price
     if (rating !== undefined) updates.rating = rating

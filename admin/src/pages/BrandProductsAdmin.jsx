@@ -18,6 +18,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [stockFilter, setStockFilter] = useState('all')
 
   const load = () => {
     setLoading(true)
@@ -70,11 +71,14 @@ export default function BrandProductsAdmin({ brandSlug }) {
       if (statusFilter === 'active' && p.is_active === false) return false
       if (statusFilter === 'inactive' && p.is_active !== false) return false
       if (categoryFilter !== 'all' && p.category_id !== categoryFilter) return false
+      const inStock = p.is_in_stock !== false && (p.stock == null || Number(p.stock) > 0)
+      if (stockFilter === 'in_stock' && !inStock) return false
+      if (stockFilter === 'out_of_stock' && inStock) return false
       return true
     })
-  }, [products, query, statusFilter, categoryFilter])
+  }, [products, query, statusFilter, categoryFilter, stockFilter])
 
-  const hasFilters = query.trim() !== '' || statusFilter !== 'all' || categoryFilter !== 'all'
+  const hasFilters = query.trim() !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || stockFilter !== 'all'
 
   // PRICE column shows the DEFAULT variant's Price Per Unit + its unit
   // ("₹45 / piece") — mirrors the main Products list.
@@ -91,13 +95,12 @@ export default function BrandProductsAdmin({ brandSlug }) {
     return <span className="products-price-cell">₹{Number(p.price ?? 0).toLocaleString('en-IN')}</span>
   }
 
-  // STOCK column: shows single product stock count + status badge.
+  // STOCK column: shows single availability status badge.
   const renderStockCell = (p) => {
-    const s = getStockStatus(p.stock)
+    const s = getStockStatus(p)
     return (
       <div className="stock-simple-cell">
-        <span className="stock-simple-num">{normalizeStock(p.stock).toLocaleString('en-IN')} Pieces</span>
-        <span className={`stock-status-badge ${s.badgeClass}`}>● {s.label}</span>
+        <span className={`stock-status-badge ${s.badgeClass}`}>{s.badgeText}</span>
       </div>
     )
   }
@@ -141,6 +144,11 @@ export default function BrandProductsAdmin({ brandSlug }) {
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
+          <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} aria-label="Filter by stock">
+            <option value="all">All Stock</option>
+            <option value="in_stock">In Stock</option>
+            <option value="out_of_stock">Out of Stock</option>
+          </select>
           {hasFilters && (
             <button
               type="button"
@@ -149,6 +157,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
                 setQuery('')
                 setStatusFilter('all')
                 setCategoryFilter('all')
+                setStockFilter('all')
               }}
             >
               Clear
@@ -165,7 +174,7 @@ export default function BrandProductsAdmin({ brandSlug }) {
         ) : visibleProducts.length === 0 ? (
           <div className="empty-state">
             No products match your filters.
-            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); }}>
+            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); setStockFilter('all'); }}>
               Clear Search
             </button>
           </div>

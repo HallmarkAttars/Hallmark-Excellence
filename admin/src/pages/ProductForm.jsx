@@ -8,7 +8,6 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
 import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory } from '../utils/productValidation'
 import { compressProductImage } from '../utils/imageCompressor'
-import { LOW_STOCK_THRESHOLD, normalizeStock, formatVariantStockBadge } from '../utils/stock'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -17,7 +16,7 @@ const EMPTY = {
   is_featured: false,
   category_id: '', brand_id: '',
   display_order: '',
-  stock: '',
+  is_in_stock: true,
 }
 
 // Formats the live compact summary for mobile collapsed headers:
@@ -291,7 +290,9 @@ export default function ProductForm() {
             review_count: p.review_count ?? '',
             is_featured: Boolean(p.is_featured),
             display_order: p.display_order ?? '',
-            stock: p.stock != null ? p.stock : '',
+            is_in_stock: p.is_in_stock !== undefined && p.is_in_stock !== null
+              ? Boolean(p.is_in_stock)
+              : (p.stock != null ? Number(p.stock) > 0 : true),
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
@@ -545,12 +546,6 @@ export default function ProductForm() {
       return
     }
 
-    // Validate product stock for ALL products (single source of truth)
-    if (form.stock === '' || form.stock == null || isNaN(Number(form.stock)) || Number(form.stock) < 0 || !Number.isInteger(Number(form.stock))) {
-      setError('Stock must be a whole number 0 or greater.')
-      return
-    }
-
     // Validate variants (optional — empty variant list is allowed)
     const variantError = validateVariants(variants)
     if (variantError) {
@@ -607,7 +602,8 @@ export default function ProductForm() {
         category_id: form.category_id || null,
         brand_id: form.brand_id || null,
         image,
-        stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
+        is_in_stock: Boolean(form.is_in_stock),
+        stock: form.is_in_stock ? 1 : 0,
         variants: variantsPayload,
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
@@ -727,22 +723,28 @@ export default function ProductForm() {
           </div>
         </div>
 
-        {/* Product Stock (Single source of truth for inventory) */}
-        <div className="form-field product-stock-field">
-          <label htmlFor="stock">Product Stock</label>
-          <input
-            id="stock"
-            name="stock"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="e.g. 1000"
-            value={form.stock}
-            onChange={handleChange}
-            required
-            disabled={isSubmitting}
-          />
-          <small className="field-example">Pieces available for this product.</small>
+        {/* Product Availability (Product-Level Stock Status) */}
+        <div className="product-availability-section">
+          <h3>Product Availability</h3>
+          <div className="form-field availability-field">
+            <label>Stock Status</label>
+            <div className="stock-toggle-row">
+              <button
+                type="button"
+                className={`stock-toggle-btn ${form.is_in_stock ? 'is-on' : 'is-off'}`}
+                onClick={() => setForm((f) => ({ ...f, is_in_stock: !f.is_in_stock }))}
+                disabled={isSubmitting}
+                aria-pressed={form.is_in_stock}
+              >
+                <span className="stock-toggle-text">
+                  {form.is_in_stock ? '🟢 ON — In Stock' : '🔴 OFF — Out of Stock'}
+                </span>
+              </button>
+            </div>
+            <small className="field-example availability-helper">
+              When OFF, this product and all its variants will be unavailable to customers.
+            </small>
+          </div>
         </div>
 
         {/* Product Variants section */}

@@ -340,20 +340,20 @@ async function createOrder(req, res) {
     }
 
     let productSelect =
-      'id, name, price, image, compare_at_price, brand_id, stock'
+      'id, name, price, image, compare_at_price, brand_id, stock, is_in_stock'
     let dbProducts
     let prodError
     ;({ data: dbProducts, error: prodError } = await supabase
       .from('products')
       .select(productSelect)
       .in('id', productIds))
-    // The compare_at_price / stock columns fallback (pre-migration DB) —
+    // The compare_at_price / stock / is_in_stock columns fallback (pre-migration DB) —
     // retry with the minimal select so checkout keeps working.
     if (prodError && /does not exist|could not find/i.test(prodError.message)) {
       console.warn('[createOrder] optional product columns missing — checkout running with base product fields.')
       ;({ data: dbProducts, error: prodError } = await supabase
         .from('products')
-        .select('id, name, price, image')
+        .select('id, name, price, image, stock')
         .in('id', productIds))
     }
 
@@ -743,20 +743,8 @@ async function createOrder(req, res) {
       })
     }
 
-    // --- DEDUCT STOCK ATOMICALLY ---
-    // Prevent overselling: deduct exact quantity for each product/variant.
-    // If deduction fails due to concurrent checkout, cancel the order row and fail cleanly.
-    const stockDeductResult = await deductOrderStock(normalizedItems, supabase)
-    if (!stockDeductResult.success) {
-      console.error('[createOrder] Stock deduction failed (oversell prevention):', stockDeductResult.error)
-      // Roll back the order row
-      await supabase.from('orders').delete().eq('id', data.id)
-      return res.status(400).json({
-        error: stockDeductResult.error || 'Unable to place order due to stock limits. Please try again.',
-      })
-    }
-
-    // --- ORDER IS SAVED & STOCK DEDUCTED. Only now are the Brevo emails sent. ---
+    // --- ORDER IS SAVED. Only now are the Brevo emails sent. ---
+    // Under Product-Level ON/OFF Availability, stock is not numerically deducted.
     // Both emails use the same params object built from THIS saved order row.
     // Email failures are handled independently and never fail the order.
     console.log('[createOrder] Order created successfully:', data.id, data.order_number)
@@ -916,26 +904,7 @@ async function updateOrderStatus(req, res) {
       console.error('updateOrderStatus read hint:', readError.hint)
       return res.status(500).json({ error: 'Failed to update order status.' })
     }
-    const prevStatus = (existing.order_status || '').toLowerCase()
-    const newStatusLower = matched.toLowerCase()
-    let parsedNotes = parseOrderNotes(existing)
-
-    // Handle Restocking Inventory when order is Cancelled or Returned
-    if (['cancelled', 'returned'].includes(newStatusLower) && !['cancelled', 'returned'].includes(prevStatus)) {
-      if (!parsedNotes.stock_restocked) {
-        const orderItems = Array.isArray(parsedNotes.items) ? parsedNotes.items : (Array.isArray(existing.items) ? existing.items : [])
-        await restoreOrderStock(orderItems, supabase)
-        parsedNotes.stock_restocked = true
-      }
-    } else if (!['cancelled', 'returned'].includes(newStatusLower) && ['cancelled', 'returned'].includes(prevStatus)) {
-      // If moved back from Cancelled/Returned to an active status, re-deduct stock
-      if (parsedNotes.stock_restocked === true) {
-        const orderItems = Array.isArray(parsedNotes.items) ? parsedNotes.items : (Array.isArray(existing.items) ? existing.items : [])
-        await deductOrderStock(orderItems, supabase)
-        parsedNotes.stock_restocked = false
-      }
-    }
-
+    const parsedNotes = parseOrderNotes(existing)
     const mergedNotes = recordStatusTimestamp(parsedNotes, matched)
 
     const { data, error } = await supabase

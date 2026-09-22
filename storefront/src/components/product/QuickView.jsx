@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
-import { getStockStatus, resolveCurrentStock } from '../../utils/stock'
+import { getStockStatus, isProductInStock } from '../../utils/stock'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -41,10 +41,10 @@ export default function QuickView({ product, onClose, onNavigate }) {
   // selects a variant. Variant-less products show their price immediately.
   const variantSelected = hasVariants ? Boolean(selectedVariant) : true
 
-  // Stock resolution (single product-level stock)
-  const currentStock = resolveCurrentStock(product)
-  const stockInfo = currentStock != null ? getStockStatus(currentStock) : null
-  const isOutOfStock = stockInfo ? stockInfo.isOutOfStock : false
+  // Stock resolution (Product-Level Boolean Availability)
+  const isInStock = isProductInStock(product)
+  const stockInfo = getStockStatus(isInStock)
+  const isOutOfStock = !isInStock
 
   const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
   const ratingDisplay = hasRating
@@ -141,7 +141,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
           {stockInfo != null && (
             <p className={`quickview-stock ${stockInfo.badgeClass}`}>
-              {stockInfo.isOutOfStock ? '✕ Out of stock' : `✓ ${stockInfo.label}`}
+              {stockInfo.badgeText}
             </p>
           )}
 
