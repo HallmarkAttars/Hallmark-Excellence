@@ -12,6 +12,7 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import OrderInvoice from '../components/invoice/OrderInvoice'
 import { InvoiceDownloadButton, InvoicePrintButton } from '../components/invoice/InvoiceActions'
+import SEO from '../components/seo/SEO'
 import './ViewOrder.css'
 
 export default function ViewOrder() {
@@ -27,6 +28,11 @@ export default function ViewOrder() {
 
   return (
     <div>
+      <SEO
+        title="Order Details | Arees Perfumes"
+        robots="noindex,nofollow"
+        canonical="/view-order"
+      />
       <div className="page-heading">
         <p className="eyebrow">Order</p>
         <h1>Order #{orderId}</h1>

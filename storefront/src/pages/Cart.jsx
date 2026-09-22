@@ -6,6 +6,7 @@ import { isProductInStock } from '../utils/stock'
 import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { LockIcon, TrashIcon } from '../components/icons'
+import SEO from '../components/seo/SEO'
 import './Cart.css'
 
 // One cart line — compact card: image | info (name, size, per-piece price) |
@@ -248,6 +249,7 @@ export default function Cart() {
   if (pricedItems.length === 0) {
     return (
       <div className="cart-empty">
+        <SEO title="Shopping Cart | Arees Perfumes" robots="noindex,nofollow" canonical="/cart" />
         <span className="cart-empty-icon" aria-hidden="true">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
@@ -264,6 +266,7 @@ export default function Cart() {
 
   return (
     <div className="container cart-page">
+      <SEO title="Shopping Cart | Arees Perfumes" robots="noindex,nofollow" canonical="/cart" />
       <div className="cart-head">
         <div className="cart-head-text">
           <h1>Your Cart</h1>

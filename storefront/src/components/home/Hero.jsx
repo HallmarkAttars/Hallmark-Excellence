@@ -13,7 +13,7 @@ export default function Hero() {
           )}
           <img
             src={IMAGES.heroBackground}
-            alt="Hallmark luxury perfume and attar collection"
+            alt="Arees Perfumes — Hallmark luxury perfume and attar collection"
             className="hero-img hero-bg hero-bg-anim"
             fetchpriority="high"
             decoding="async"

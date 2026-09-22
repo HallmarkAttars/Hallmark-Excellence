@@ -122,7 +122,7 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
         >
           <img
             src={cloudinarySrc(product.image, { width: 600 })}
-            alt={product.name}
+            alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
             loading="lazy"
             decoding="async"
             onError={handleImgError}

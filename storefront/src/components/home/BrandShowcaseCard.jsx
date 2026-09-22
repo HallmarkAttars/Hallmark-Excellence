@@ -37,7 +37,7 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
         <img
           className="brand-showcase-img"
           src={image}
-          alt={brand.name}
+          alt={`${brand.name} Perfumes & Attars Collection`}
           loading="lazy"
         />
       ) : (

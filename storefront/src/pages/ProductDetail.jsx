@@ -15,6 +15,8 @@ import {
 import { getStockStatus, isProductInStock } from '../utils/stock'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
+import SEO from '../components/seo/SEO'
+import { buildProductSchema, buildBreadcrumbsSchema } from '../utils/seo'
 import './ProductDetail.css'
 
 // Display unit for the per-unit price (e.g. "₹10 / piece").
@@ -470,15 +472,85 @@ export default function ProductDetail() {
     }
   }
 
+  const brandTitle = product.brand_name || 'Arees Perfumes'
+  const seoTitle = `${product.name} | ${brandTitle} | Arees Perfumes`
+  const seoDesc = product.description
+    ? (product.description.length > 155
+        ? `${product.description.slice(0, 152)}...`
+        : product.description)
+    : `Shop ${product.name} from Arees Perfumes. Explore premium attars, oud and fragrances with delivery across India.`
+  const ogImg = cloudinarySrc(product.image, { width: 1200 }) || product.image
+
+  const breadcrumbItems = [
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' },
+  ]
+  if (product.brand_name) {
+    breadcrumbItems.push({
+      name: product.brand_name,
+      path: `/brand/${product.brand_slug || 'arees'}`,
+    })
+  }
+  if (product.category_name) {
+    breadcrumbItems.push({
+      name: product.category_name,
+      path: `/categories/${product.category_slug || 'attars'}`,
+    })
+  }
+  breadcrumbItems.push({
+    name: product.name,
+    path: `/product/${product.id}`,
+  })
+
+  const productSchema = [
+    buildProductSchema(product),
+    buildBreadcrumbsSchema(breadcrumbItems),
+  ].filter(Boolean)
+
   return (
     <div className="container product-detail">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        canonical={`/product/${product.id}`}
+        image={ogImg}
+        type="product"
+        schema={productSchema}
+      />
+
+      {/* Visible Breadcrumbs */}
+      <nav className="pd-breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/">Home</Link>
+        <span className="pd-breadcrumb-sep">/</span>
+        <Link to="/shop">Shop</Link>
+        {product.brand_name && (
+          <>
+            <span className="pd-breadcrumb-sep">/</span>
+            <Link to={`/brand/${product.brand_slug || 'arees'}`}>{product.brand_name}</Link>
+          </>
+        )}
+        {product.category_name && (
+          <>
+            <span className="pd-breadcrumb-sep">/</span>
+            <Link to={`/categories/${product.category_slug || 'attars'}`}>{product.category_name}</Link>
+          </>
+        )}
+        <span className="pd-breadcrumb-sep">/</span>
+        <span className="pd-breadcrumb-current" aria-current="page">{product.name}</span>
+      </nav>
+
       <div className="product-detail-layout">
         {/* One main product image — the only image access on the page
             (the thumbnail/gallery navigation was removed). */}
         <div className="product-detail-gallery">
           <div className="product-detail-main-image">
             {/* Main (LCP) product image — eager, optimized Cloudinary size */}
-            <img src={cloudinarySrc(product.image, { width: 900 })} alt={product.name} decoding="async" fetchPriority="high" />
+            <img
+              src={cloudinarySrc(product.image, { width: 900 })}
+              alt={`${product.name} - ${brandTitle} attar`}
+              decoding="async"
+              fetchPriority="high"
+            />
           </div>
         </div>
 

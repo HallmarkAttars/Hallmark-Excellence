@@ -21,6 +21,8 @@ import {
   UpiIcon,
 } from '../components/icons'
 import { BUSINESS, CONTACT } from '../data/content'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './Contact.css'
 
 // Format the order's STORED Supabase timestamp for the customer, in
@@ -492,6 +494,7 @@ export default function Contact() {
 
     return (
       <div className="order-success-wrapper">
+        <SEO title="Order Received | Arees Perfumes" robots="noindex,nofollow" />
         <div className="order-success-card">
           {/* role="status" announces the confirmation to screen readers the
               moment it appears after the real order creation succeeds. */}
@@ -610,6 +613,23 @@ export default function Contact() {
   // --- Contact / Checkout view -------------------------------------------
   return (
     <div>
+      {isCheckout ? (
+        <SEO
+          title="Checkout | Arees Perfumes"
+          robots="noindex,nofollow"
+          canonical="/checkout"
+        />
+      ) : (
+        <SEO
+          title="Contact Arees Perfumes | Chennai"
+          description="Contact Arees Perfumes in Mannadi, George Town, Chennai. Get in touch for enquiries, bulk orders, and fragrance consultations."
+          canonical="/contact"
+          schema={buildBreadcrumbsSchema([
+            { name: 'Home', path: '/' },
+            { name: 'Contact Us', path: '/contact' },
+          ])}
+        />
+      )}
       <div className={`page-heading ${isCheckout ? 'page-heading--checkout' : 'page-heading--contact'}`}>
         <p className="eyebrow">{isCheckout ? CONTACT.checkout.eyebrow : CONTACT.eyebrow}</p>
         <h1>{isCheckout ? CONTACT.checkout.title : CONTACT.title}</h1>

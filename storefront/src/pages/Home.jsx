@@ -13,6 +13,12 @@ import { getCategories, getBrands, getProducts } from '../services/mockApi'
 import { HOME_BRANDS } from '../data/content'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { useMobileBrandStack } from '../hooks/useMobileBrandStack'
+import SEO from '../components/seo/SEO'
+import {
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+  buildLocalBusinessSchema,
+} from '../utils/seo'
 
 export default function Home() {
   const [categories, setCategories] = useState([])
@@ -52,8 +58,20 @@ export default function Home() {
   // fetched above.
   const featuredProducts = products.filter((p) => p.is_featured === true)
 
+  const homeSchema = [
+    buildOrganizationSchema(),
+    buildWebSiteSchema(),
+    buildLocalBusinessSchema(),
+  ]
+
   return (
     <div>
+      <SEO
+        title="Arees Perfumes | Premium Attars, Oud & Fragrances in Chennai"
+        description="Discover Arees Perfumes and premium attars, oud, musk and traditional fragrances. Shop authentic perfume oils and fragrances with delivery across India."
+        canonical="/"
+        schema={homeSchema}
+      />
       {/* Hero is static/local content (no fetch dependency) — it always
           renders immediately and is never wrapped in a loading condition.
           Only the data-driven sections below swap to skeletons. */}

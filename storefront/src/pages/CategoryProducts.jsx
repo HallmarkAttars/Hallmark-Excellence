@@ -5,6 +5,8 @@ import FilterSortControl from '../components/filter/FilterSortControl'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
 import { getCategoryBySlug, getProductsByCategory } from '../services/mockApi'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './CategoryProducts.css'
 
 export default function CategoryProducts() {
@@ -81,8 +83,23 @@ export default function CategoryProducts() {
   // Active-state badge on the combined control — purely presentational.
   const activeCount = (brandFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
 
+  const catName = category?.name || 'Category'
+  const seoTitle = `${catName} | Attars & Perfumes | Arees Perfumes`
+  const seoDesc = `Shop ${catName} attars and perfumes from Arees Perfumes. Pure, long-lasting fragrances delivered across India.`
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' },
+    { name: catName, path: `/categories/${slug}` },
+  ]
+
   return (
     <div className="category-page">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        canonical={`/categories/${slug}`}
+        schema={buildBreadcrumbsSchema(breadcrumbs)}
+      />
       {/* Premium category header — back link + large serif title */}
       <header className="category-hero">
         <Link to="/categories" className="category-hero-back">

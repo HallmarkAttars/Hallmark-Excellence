@@ -1,10 +1,21 @@
 import { ABOUT } from '../data/content'
 import { IMAGES } from '../config/assets'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './About.css'
 
 export default function About() {
   return (
     <div>
+      <SEO
+        title="About Arees Perfumes | Hallmark of Excellence"
+        description="With 30 years of perfumery experience, Arees Perfumes offers authentic attars, oud oils, and fine fragrances crafted with excellence in Chennai."
+        canonical="/about"
+        schema={buildBreadcrumbsSchema([
+          { name: 'Home', path: '/' },
+          { name: 'About Us', path: '/about' },
+        ])}
+      />
       <div className="page-heading">
         <p className="eyebrow">{ABOUT.eyebrow}</p>
         <h1>{ABOUT.title}</h1>

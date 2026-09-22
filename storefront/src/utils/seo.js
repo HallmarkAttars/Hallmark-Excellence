@@ -1,31 +1,30 @@
 // ============================================================================
-// SEO helpers — sitemap.xml / robots.txt generation
+// SEO helpers — sitemap.xml / robots.txt generation & Schema.org JSON-LD builders
 //
-// Pure functions shared by the Vercel serverless functions (api/sitemap.js and
-// api/robots.js). Kept free of any browser/DOM or Vercel API surface so they
-// are trivially unit-testable and safe to import from both the functions and
-// the vitest suite.
+// Pure functions shared by:
+//   - Vercel serverless functions (api/sitemap.js and api/robots.js)
+//   - Storefront SEO component (src/components/seo/SEO.jsx)
+//   - Unit tests (src/utils/seo.test.js)
 //
-// The sitemap is DYNAMIC: it is built from the live records returned by the
-// public API (/api/products, /api/categories, /api/brands — active records
-// only), so new/edited products, brands and categories appear automatically
-// without touching the storefront code.
+// Kept free of any direct DOM manipulation so they are 100% unit-testable.
 // ============================================================================
 
+import { isProductInStock } from './stock'
+
 // --------------------------------------------------------------------------
-// Canonical domain
+// Canonical domain & Brand Identity
 // --------------------------------------------------------------------------
-// ONE canonical storefront domain: the apex (https://areesperfumes.in). The
-// www host (and any other host) must NEVER appear in generated URLs, so
-// sitemap.xml / robots.txt always point search engines at the single
-// canonical host — regardless of which host the request actually arrived on.
+// ONE canonical storefront domain: the apex (https://areesperfumes.in).
 export const CANONICAL_ORIGIN = 'https://areesperfumes.in'
+export const DEFAULT_BRAND = 'Arees Perfumes'
+export const DEFAULT_TITLE = 'Arees Perfumes | Premium Attars, Oud & Fragrances in Chennai'
+export const DEFAULT_DESCRIPTION =
+  'Discover Arees Perfumes and premium attars, oud, musk and traditional fragrances. Shop authentic perfume oils and fragrances with delivery across India.'
+export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
 
 const WWW_HOST = 'www.areesperfumes.in'
 const APEX_HOST = 'areesperfumes.in'
 
-// Rewrite the www host to the apex. Exact-match only — preview hosts like
-// *.vercel.app pass through untouched.
 function normalizeHost(host) {
   return String(host).toLowerCase() === WWW_HOST ? APEX_HOST : host
 }
@@ -33,20 +32,8 @@ function normalizeHost(host) {
 // --------------------------------------------------------------------------
 // Site URL resolution
 // --------------------------------------------------------------------------
-// The canonical base URL is resolved at request time:
-//   1. SITE_URL env var (set in the Vercel project settings) wins when present
-//      — this is the way to pin a fixed canonical domain.
-//   2. Otherwise the request's own host is used (x-forwarded-host, which
-//      Vercel always sets), so the custom domain AND *.vercel.app previews
-//      always emit URLs for the domain the request actually arrived on.
-//      Production hosts are never localhost, so no localhost URL can leak.
-// In BOTH paths a www.areesperfumes.in host is normalized to the apex, so
-// generated URLs can never carry www.
-// Throws when neither is available (never happens on Vercel).
 export function resolveSiteUrl(siteUrl, headers = {}) {
   if (siteUrl) {
-    // Normalize a www SITE_URL to the apex (http/https, case-insensitive),
-    // preserving any path, then strip trailing slashes.
     const normalized = String(siteUrl).replace(
       /^https?:\/\/www\.areesperfumes\.in(?=(\/|$))/i,
       CANONICAL_ORIGIN
@@ -54,15 +41,13 @@ export function resolveSiteUrl(siteUrl, headers = {}) {
     return normalized.replace(/\/+$/, '')
   }
   const proto = headers['x-forwarded-proto'] || 'https'
-  // Vercel may send a comma-separated host list; the first entry is the
-  // request's own host.
   const host = String(headers['x-forwarded-host'] || headers['host'] || '').split(',')[0].trim()
   if (!host) throw new Error('Cannot resolve the site URL: no host header and no SITE_URL configured.')
   return `${proto}://${normalizeHost(host)}`
 }
 
 // --------------------------------------------------------------------------
-// XML escaping
+// XML escaping & lastmod formatting
 // --------------------------------------------------------------------------
 export function xmlEscape(value) {
   return String(value ?? '')
@@ -73,7 +58,6 @@ export function xmlEscape(value) {
     .replace(/'/g, '&apos;')
 }
 
-// ISO date (YYYY-MM-DD) from a created_at timestamp, or null when absent.
 function lastmodFromTimestamp(createdAt) {
   const match = /^\d{4}-\d{2}-\d{2}/.exec(String(createdAt ?? ''))
   return match ? match[0] : null
@@ -82,17 +66,13 @@ function lastmodFromTimestamp(createdAt) {
 // --------------------------------------------------------------------------
 // Sitemap
 // --------------------------------------------------------------------------
-// Public indexable pages only. The transactional / private routes (/cart,
-// /checkout, /view-order) are deliberately NOT included.
-export const STATIC_PAGES = ['/', '/shop', '/categories', '/about', '/contact', '/track-order']
+// Public indexable commercial pages only.
+// Utility/transactional routes (/cart, /checkout, /track-order, /view-order)
+// are deliberately NOT included in sitemap.
+export const STATIC_PAGES = ['/', '/shop', '/categories', '/about', '/contact']
 
-// Build the full sitemap.xml document from DB-shaped records:
-//   categories: { slug, created_at }
-//   brands:     { slug, created_at }
-//   products:   { id, created_at }
-// Rows without a usable slug/id are skipped (never emit broken URLs).
 export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = [], brands = [], products = [] }) {
-  const base = String(baseUrl || '').replace(/\/+$/, '')
+  const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')
 
   const entries = []
   for (const path of pages) {
@@ -129,14 +109,8 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
 // --------------------------------------------------------------------------
 // Robots
 // --------------------------------------------------------------------------
-// Allow crawling of all public pages; block only the routes that do not exist
-// publicly or must not be indexed. Disallowed paths reflect the storefront's
-// ACTUAL routes (see App.jsx): /cart and /checkout are transactional,
-// /view-order exposes a specific order's details, and /api/ + /admin/ guard
-// the API surface. No /login, /register, /account or /search rules exist
-// because those routes do not exist in this app.
 export function buildRobotsTxt(baseUrl) {
-  const base = String(baseUrl || '').replace(/\/+$/, '')
+  const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')
   return [
     'User-agent: *',
     'Allow: /',
@@ -145,9 +119,151 @@ export function buildRobotsTxt(baseUrl) {
     'Disallow: /admin/',
     'Disallow: /cart',
     'Disallow: /checkout',
+    'Disallow: /track-order',
     'Disallow: /view-order',
+    'Disallow: /account',
     '',
     `Sitemap: ${base}/sitemap.xml`,
     '',
   ].join('\n')
+}
+
+// --------------------------------------------------------------------------
+// Schema.org JSON-LD Structured Data Builders
+// --------------------------------------------------------------------------
+
+// 1. Organization Schema
+export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Arees Perfumes',
+    alternateName: ['Arees & Dahab', 'Hallmark of Excellence'],
+    url: origin,
+    logo: `${origin}/HE%20color%20Logo.png`,
+    email: 'hikmaexports@gmail.com',
+    telephone: '+919840750467',
+    sameAs: ['https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'],
+  }
+}
+
+// 2. WebSite Schema (SearchAction ready)
+export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Arees Perfumes',
+    url: origin,
+    description: DEFAULT_DESCRIPTION,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Arees Perfumes',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${origin}/HE%20color%20Logo.png`,
+      },
+    },
+  }
+}
+
+// 3. LocalBusiness Schema (Exact Chennai location from BUSINESS)
+export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': `${origin}/#localbusiness`,
+    name: 'Arees Perfumes',
+    alternateName: 'Arees Attars & Perfumes',
+    image: `${origin}/Hero.webp`,
+    url: origin,
+    telephone: '+919840750467',
+    email: 'hikmaexports@gmail.com',
+    priceRange: '₹₹',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '83 & 84, Moore St, Mannadi, George Town',
+      addressLocality: 'Chennai',
+      addressRegion: 'Tamil Nadu',
+      postalCode: '600001',
+      addressCountry: 'IN',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: 13.0927,
+      longitude: 80.2872,
+    },
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '10:00',
+        closes: '21:00',
+      },
+    ],
+  }
+}
+
+// 4. Product Schema (with Binary Stock Availability: InStock / OutOfStock)
+export function buildProductSchema(product, origin = CANONICAL_ORIGIN) {
+  if (!product) return null
+
+  const inStock = isProductInStock(product)
+  const availability = inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+  const brandName = product.brand_name || 'Arees Perfumes'
+  const price = Number(product.price || 0)
+  const productUrl = `${origin}/product/${product.id}`
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.image ? [product.image] : [`${origin}/Hero.webp`],
+    description:
+      product.description ||
+      `Shop ${product.name} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
+    brand: {
+      '@type': 'Brand',
+      name: brandName,
+    },
+    category: product.category_name || 'Attars',
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'INR',
+      price: price > 0 ? price : 0,
+      availability,
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+  }
+
+  if (product.rating != null && Number(product.rating) > 0) {
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: Number(product.rating),
+      reviewCount: Math.max(1, Number(product.review_count || 1)),
+    }
+  }
+
+  return schema
+}
+
+// 5. BreadcrumbList Schema
+export function buildBreadcrumbsSchema(crumbs = [], origin = CANONICAL_ORIGIN) {
+  if (!Array.isArray(crumbs) || crumbs.length === 0) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((crumb, index) => {
+      const itemUrl = crumb.path.startsWith('http')
+        ? crumb.path
+        : `${origin}${crumb.path.startsWith('/') ? crumb.path : `/${crumb.path}`}`
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: crumb.name,
+        item: itemUrl,
+      }
+    }),
+  }
 }

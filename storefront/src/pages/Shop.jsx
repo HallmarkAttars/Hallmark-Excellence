@@ -7,6 +7,8 @@ import FilterSortControl from '../components/filter/FilterSortControl'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './Shop.css'
 
 export default function Shop() {
@@ -104,6 +106,15 @@ export default function Shop() {
 
   return (
     <div className="shop-page">
+      <SEO
+        title="Shop Premium Attars, Oud & Perfumes | Arees Perfumes"
+        description="Shop premium attars, oud, perfumes and traditional fragrance oils from Arees Perfumes. Discover long-lasting, alcohol-free scents crafted in Chennai."
+        canonical="/shop"
+        schema={buildBreadcrumbsSchema([
+          { name: 'Home', path: '/' },
+          { name: 'Shop', path: '/shop' },
+        ])}
+      />
       <div className="page-heading">
         <p className="eyebrow">{SHOP_PAGE.eyebrow}</p>
         <h1>{SHOP_PAGE.title}</h1>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /track-order
+Disallow: /view-order
+Disallow: /account
+
+Sitemap: https://areesperfumes.in/sitemap.xml

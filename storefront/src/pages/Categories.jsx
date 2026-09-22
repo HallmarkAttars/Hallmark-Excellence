@@ -7,6 +7,8 @@ import { CATEGORIES_PAGE } from '../data/content'
 // CategoryGrid imports the same file, so both surfaces stay consistent.
 import '../components/home/CategoryGrid.css'
 import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './Categories.css'
 
 export default function Categories() {
@@ -19,6 +21,15 @@ export default function Categories() {
 
   return (
     <div>
+      <SEO
+        title="All Fragrance Categories | Arees Perfumes"
+        description="Explore all fragrance categories at Arees Perfumes. Discover pure attars, oud oils, musk, and traditional perfumes crafted with excellence in Chennai."
+        canonical="/categories"
+        schema={buildBreadcrumbsSchema([
+          { name: 'Home', path: '/' },
+          { name: 'Categories', path: '/categories' },
+        ])}
+      />
       <div className="page-heading">
         <p className="eyebrow">{CATEGORIES_PAGE.eyebrow}</p>
         <h1>{CATEGORIES_PAGE.title}</h1>

@@ -9,6 +9,7 @@ import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { TRACK_ORDER_PAGE } from '../data/content'
 import { paymentMethodLabel } from '../utils/invoice'
+import SEO from '../components/seo/SEO'
 import './TrackOrder.css'
 
 // Canonical admin workflow — the tracker only ever reflects the EXISTING
@@ -628,6 +629,11 @@ export default function TrackOrder() {
 
   return (
     <div>
+      <SEO
+        title="Track Your Order | Arees Perfumes"
+        robots="noindex,nofollow"
+        canonical="/track-order"
+      />
       <div className="page-heading">
         <p className="eyebrow">{TRACK_ORDER_PAGE.eyebrow}</p>
         <h1>{TRACK_ORDER_PAGE.title}</h1>

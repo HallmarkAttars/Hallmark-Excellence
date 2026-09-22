@@ -110,7 +110,11 @@ export default function QuickView({ product, onClose, onNavigate }) {
         </button>
 
         <div className="quickview-media">
-          <img src={cloudinarySrc(product.image, { width: 700 })} alt={product.name} decoding="async" />
+          <img
+            src={cloudinarySrc(product.image, { width: 700 })}
+            alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
+            decoding="async"
+          />
         </div>
 
         <div className="quickview-info">

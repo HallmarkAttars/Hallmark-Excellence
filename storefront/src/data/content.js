@@ -68,9 +68,9 @@ export const NAV_LINKS = [
 // HERO — homepage hero section
 // --------------------------------------------------------------------------
 export const HERO = {
-  title: ['The Art of', 'Hallmark', 'Attars'],
+  title: ['The Art of', 'Arees', 'Perfumes'],
   subtitle:
-    'CRAFTING FRAGRANCE. CREATING IDENTITY.From captivating scents to beautiful bottles, discover the world of perfumery products.',
+    'CRAFTING FRAGRANCE. CREATING IDENTITY. Discover the world of Arees perfumes, premium attars, oud, and traditional fragrance oils.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories/attars' },
 }

@@ -6,6 +6,8 @@ import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { brandHeroImage } from '../data/content'
+import SEO from '../components/seo/SEO'
+import { buildBreadcrumbsSchema } from '../utils/seo'
 import './BrandProducts.css'
 
 export default function BrandProducts() {
@@ -82,15 +84,42 @@ export default function BrandProducts() {
     error,
   })
 
-  const brandName = brand?.name || 'Brand'
+  const isArees = String(slug || '').toLowerCase() === 'arees'
+  const brandName = brand?.name || (isArees ? 'Arees Perfumes' : 'Brand')
+  const seoTitle = isArees
+    ? 'Arees Perfumes & Attars | Shop Arees Fragrances'
+    : `${brandName} Perfumes & Attars | Arees Perfumes`
+  const seoDesc = isArees
+    ? 'Discover the complete Arees Perfumes & Attars collection. Handcrafted attars, long-lasting perfume oils, and traditional fragrances delivered across India.'
+    : `Discover the complete ${brandName} fragrance collection at Arees Perfumes.`
+  const h1Title = isArees ? 'Arees Perfumes & Attars' : brandName
+  const headerLabel = isArees ? 'Arees Perfumes Collection' : `${brandName} Collection`
+  const headerDesc =
+    brand?.tagline ||
+    (isArees
+      ? 'Discover the complete Arees Perfumes collection — authentic, alcohol-free attars, oud, musk and traditional fragrance oils crafted with heritage in Chennai.'
+      : `Discover the complete ${brandName} fragrance collection.`)
+
   // Active-state badge on the combined control — purely presentational.
   const activeCount = (categoryFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
   // Brand hero banner background — resolved from the brand name (see
   // content.js BRAND_HERO_IMAGES). null keeps the plain dark header.
   const heroImage = brandHeroImage(brandName)
 
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' },
+    { name: brandName, path: `/brand/${slug}` },
+  ]
+
   return (
     <div className="brand-page">
+      <SEO
+        title={seoTitle}
+        description={seoDesc}
+        canonical={`/brand/${slug}`}
+        schema={buildBreadcrumbsSchema(breadcrumbs)}
+      />
       {/* Compact premium collection header — the brand's hero image fills the
           background (subtle dark overlay keeps the text readable); the plain
           dark header remains when the brand has no image. */}
@@ -100,10 +129,10 @@ export default function BrandProducts() {
       >
         {brand && (
           <>
-            <p className="brand-header-label">{brandName} Collection</p>
-            <h1>{brandName}</h1>
+            <p className="brand-header-label">{headerLabel}</p>
+            <h1>{h1Title}</h1>
             <p className="brand-header-desc">
-              {brand?.tagline || `Discover the complete ${brandName} fragrance collection.`}
+              {headerDesc}
             </p>
           </>
         )}
