@@ -282,7 +282,12 @@ export default function SearchOverlay({ open, onClose }) {
         ) : (
           <div className="search-overlay-grid">
             {results.map((p) => (
-              <ProductCard key={p.id} product={p} onNavigate={onClose} />
+              <ProductCard
+                key={p.id}
+                product={p}
+                onNavigate={onClose}
+                showPrice={false}
+              />
             ))}
           </div>
         )}

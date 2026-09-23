@@ -370,3 +370,108 @@
   .product-card:hover .product-card-image-link img { transform: none; }
   .product-card:active { transform: none; }
 }
+
+/* ============================================================
+   Search Results card variant (no large image)
+   ============================================================ */
+.product-card--no-image {
+  height: 100%;
+}
+
+.product-card--no-image .product-card-body {
+  padding: 16px 14px 14px;
+  gap: 7px;
+}
+
+.product-card-badges.is-inline {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 2px;
+  max-width: 100%;
+}
+
+.product-card-stock {
+  margin: 3px 0 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-card-stock.in-stock {
+  color: #1E4A2E;
+}
+
+.product-card-stock.out-of-stock {
+  color: #c62828;
+}
+
+.product-card-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(80, 60, 30, 0.08);
+}
+
+.product-card-quickview-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.product-card-quickview-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.product-card-quickview-btn:hover {
+  color: #7A5A1F;
+}
+
+.product-card-details-link {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.product-card-details-link:hover {
+  color: var(--charcoal);
+  text-decoration: underline;
+}
+
+@media (max-width: 360px) {
+  .product-card--no-image .product-card-body {
+    padding: 12px 10px 12px;
+  }
+  .product-card-footer-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+

@@ -23,9 +23,11 @@ export function useMobileBrandStack(containerRef) {
     const container = containerRef?.current
     if (!container) return
 
-    const isMobile = () => window.innerWidth < 768
+    const isMobile = () => (typeof window !== 'undefined' ? window.innerWidth < 768 : false)
     const prefersReducedMotion = () =>
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false
 
     let isObserving = false
     let isTicking = false

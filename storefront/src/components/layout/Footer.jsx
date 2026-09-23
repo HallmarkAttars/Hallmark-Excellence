@@ -87,8 +87,9 @@ export default function Footer() {
   })
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
     const mql = window.matchMedia('(max-width: 767px)')
+    if (!mql) return
     const handler = (e) => setIsMobile(e.matches)
     if (mql.addEventListener) {
       mql.addEventListener('change', handler)

@@ -29,7 +29,7 @@
 .js .search-overlay.is-open .search-overlay-results { animation-delay: 120ms; }
 
 .search-overlay-head {
-  max-width: 720px;
+  max-width: 960px;
   width: 100%;
   margin: 0 auto;
   display: flex;
@@ -50,7 +50,7 @@
 }
 
 .search-overlay-form {
-  max-width: 720px;
+  max-width: 960px;
   width: 100%;
   margin: 24px auto 8px;
   display: flex;
@@ -128,7 +128,7 @@
 }
 
 .search-results-context {
-  max-width: 720px;
+  max-width: 960px;
   width: 100%;
   margin: 16px auto 16px;
   display: flex;
@@ -207,7 +207,7 @@
 }
 
 .search-overlay-results {
-  max-width: 720px;
+  max-width: 960px;
   width: 100%;
   margin: 0 auto;
   flex: 1;
@@ -219,17 +219,27 @@
   padding: 24px 2px;
 }
 
-/* ---------- Results Grid: shared ProductCard ---------- */
+/* ---------- Results Grid: shared ProductCard ----------
+   Desktop: 3 per row
+   Tablet:  2 per row
+   Mobile:  1 per row
+   ------------------------------------------------------ */
 .search-overlay-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
   padding-bottom: 40px;
 }
-@media (min-width: 560px) {
+@media (min-width: 600px) {
+  .search-overlay-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+@media (min-width: 900px) {
   .search-overlay-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
   }
 }
 
@@ -283,14 +293,20 @@
 /* ---------- Skeleton Loading State ---------- */
 .search-skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
   padding-bottom: 40px;
 }
-@media (min-width: 560px) {
+@media (min-width: 600px) {
+  .search-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+@media (min-width: 900px) {
   .search-skeleton-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
   }
 }
 .search-skeleton-card {
@@ -408,21 +424,24 @@
     font-size: 0.74rem;
   }
 
-  /* 2-Column Mobile Product Grid Enhancements */
+  /* Mobile Product Grid (<600px): 1 card per row */
   .search-overlay-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 14px;
     padding-bottom: 32px;
+  }
+
+  @media (min-width: 600px) {
+    .search-overlay-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
   }
 
   /* Target product cards inside the search overlay */
   .search-overlay-grid .product-card {
     border-radius: 14px;
     box-shadow: 0 4px 16px rgba(40, 30, 20, 0.05);
-  }
-
-  .search-overlay-grid .product-card-media {
-    aspect-ratio: 1 / 1; /* More prominent image display */
   }
 
   .search-overlay-grid .product-card-body {
@@ -460,10 +479,18 @@
   }
 }
 
-/* Desktop Safety (≥768px) */
-@media (min-width: 768px) {
+/* Tablet (768px – 899px): 2 cards per row */
+@media (min-width: 768px) and (max-width: 899px) {
+  .search-overlay-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Desktop (≥900px): 3 cards per row */
+@media (min-width: 900px) {
   .search-overlay-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
   }
 }

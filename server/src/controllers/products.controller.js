@@ -226,17 +226,23 @@ async function selectVariants(build) {
 async function fetchVariantsByProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length === 0) return {}
 
-  const { data, error } = await selectVariants((select) =>
-    supabase
-      .from('product_variants')
-      .select(select)
-      .in('product_id', productIds)
-  )
+  const CHUNK_SIZE = 50
+  let allVariants = []
 
-  if (error) throw error
+  for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
+    const chunk = productIds.slice(i, i + CHUNK_SIZE)
+    const { data, error } = await selectVariants((select) =>
+      supabase
+        .from('product_variants')
+        .select(select)
+        .in('product_id', chunk)
+    )
+    if (error) throw error
+    if (data) allVariants.push(...data)
+  }
 
   const grouped = {}
-  for (const v of data || []) {
+  for (const v of allVariants) {
     if (!grouped[v.product_id]) grouped[v.product_id] = []
     grouped[v.product_id].push(toVariant(v))
   }

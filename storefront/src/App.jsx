@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import StickyWhatsApp from './components/ui/StickyWhatsApp'
+import ErrorBoundary from './components/ui/ErrorBoundary'
 
 // Route-level code splitting: each page ships as its own chunk and is only
 // downloaded when its route is visited. The first visit to a route shows the
@@ -30,7 +31,13 @@ const ViewOrder = lazy(() => import('./pages/ViewOrder'))
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      } catch {
+        window.scrollTo(0, 0)
+      }
+    }
   }, [pathname])
   return null
 }
@@ -82,22 +89,24 @@ function PageContent() {
 
 export default function App() {
   return (
-    <CartProvider>
-      <ToastProvider>
+    <ErrorBoundary>
+      <CartProvider>
+        <ToastProvider>
           <BrowserRouter>
             <ScrollToTop />
             {/* Per-route canonical URL — always the apex domain, never www. */}
             <CanonicalLink />
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Navbar />
-          <PageContent />
-          <Footer />
-          {/* Floating WhatsApp contact — rendered once at the storefront
-              root so it appears on every customer-facing page. The admin app
-              is a separate build, so it never appears there. */}
-          <StickyWhatsApp />
-        </BrowserRouter>
-      </ToastProvider>
-    </CartProvider>
+            <PageContent />
+            <Footer />
+            {/* Floating WhatsApp contact — rendered once at the storefront
+                root so it appears on every customer-facing page. The admin app
+                is a separate build, so it never appears there. */}
+            <StickyWhatsApp />
+          </BrowserRouter>
+        </ToastProvider>
+      </CartProvider>
+    </ErrorBoundary>
   )
 }

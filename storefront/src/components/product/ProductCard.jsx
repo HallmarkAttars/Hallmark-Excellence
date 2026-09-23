@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
-import { isProductInStock } from '../../utils/stock'
+import { isProductInStock, getStockStatus } from '../../utils/stock'
+import { getDefaultVariant } from '../../utils/productPricing'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -50,14 +51,21 @@ function EyeIcon() {
   )
 }
 
-export default function ProductCard({ product, onNavigate, bulkUnlocked = false }) {
+export default function ProductCard({
+  product,
+  onNavigate,
+  bulkUnlocked = false,
+  hideImage = false,
+  showPrice = false,
+}) {
   const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
   const isInStock = isProductInStock(product)
+  const stockInfo = getStockStatus(isInStock)
 
   // Surface the default variant's size/label when the product has variants.
   const variants = Array.isArray(product.variants) ? product.variants : []
-  const defaultVariant = variants.find((v) => v.is_default) || variants[0]
+  const defaultVariant = getDefaultVariant(product) || variants.find((v) => v.is_default) || variants[0]
   const variantLabel = defaultVariant
     ? defaultVariant.display_label ||
       (defaultVariant.quantity_value != null && defaultVariant.quantity_unit
@@ -112,44 +120,57 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
   }
 
   return (
-    <div className="product-card">
-      <div className="product-card-media">
-        <Link
-          to={`/product/${product.id}`}
-          className="product-card-image-link"
-          onClick={handleNavigate}
-          aria-label={`View ${product.name}`}
-        >
-          <img
-            src={cloudinarySrc(product.image, { width: 600 })}
-            alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
-            loading="lazy"
-            decoding="async"
-            onError={handleImgError}
-          />
-        </Link>
+    <div className={`product-card ${hideImage ? 'product-card--no-image' : ''}`}>
+      {!hideImage && (
+        <div className="product-card-media">
+          <Link
+            to={`/product/${product.id}`}
+            className="product-card-image-link"
+            onClick={handleNavigate}
+            aria-label={`View ${product.name}`}
+          >
+            <img
+              src={cloudinarySrc(product.image, { width: 600 })}
+              alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
+              loading="lazy"
+              decoding="async"
+              onError={handleImgError}
+            />
+          </Link>
 
-        {/* Status badges. Driven by real product data. */}
-        <div className="product-card-badges">
-          {!isInStock && (
-            <span className="product-card-badge is-soldout">Out of Stock</span>
-          )}
-          {product.is_featured === true && (
-            <span className="product-card-badge is-featured">Featured</span>
-          )}
+          {/* Status badges. Driven by real product data. */}
+          <div className="product-card-badges">
+            {!isInStock && (
+              <span className="product-card-badge is-soldout">Out of Stock</span>
+            )}
+            {product.is_featured === true && (
+              <span className="product-card-badge is-featured">Featured</span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="product-card-quickview"
+            onClick={() => setQuickViewOpen(true)}
+            aria-label="Quick view"
+          >
+            <EyeIcon />
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="product-card-quickview"
-          onClick={() => setQuickViewOpen(true)}
-          aria-label="Quick view"
-        >
-          <EyeIcon />
-        </button>
-      </div>
+      )}
 
       <div className="product-card-body">
+        {hideImage && (product.is_featured === true || !isInStock) && (
+          <div className="product-card-badges is-inline">
+            {product.is_featured === true && (
+              <span className="product-card-badge is-featured">Featured</span>
+            )}
+            {!isInStock && (
+              <span className="product-card-badge is-soldout">Out of Stock</span>
+            )}
+          </div>
+        )}
+
         {(cardLabel || hasRating) && (
           <div className="product-card-topline">
             {cardLabel && (
@@ -182,6 +203,12 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           </p>
         )}
 
+        {hideImage && stockInfo != null && (
+          <p className={`product-card-stock ${stockInfo.badgeClass}`}>
+            {stockInfo.badgeText}
+          </p>
+        )}
+
         <button
           type="button"
           className={`btn product-card-btn ${!isInStock ? 'is-soldout' : ''}`}
@@ -192,6 +219,28 @@ export default function ProductCard({ product, onNavigate, bulkUnlocked = false 
           {isInStock && <BagIcon />}
           {isInStock ? 'Add to Cart' : 'OUT OF STOCK'}
         </button>
+
+        {hideImage && (
+          <div className="product-card-footer-links">
+            <button
+              type="button"
+              className="product-card-quickview-btn"
+              onClick={() => setQuickViewOpen(true)}
+              aria-label={`Quick view ${product.name}`}
+            >
+              <EyeIcon />
+              <span>Quick View</span>
+            </button>
+            <Link
+              to={`/product/${product.id}`}
+              className="product-card-details-link"
+              onClick={handleNavigate}
+              aria-label={`View full details for ${product.name}`}
+            >
+              <span>Full Details →</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {quickViewOpen && (

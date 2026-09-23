@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
 import { getStockStatus, isProductInStock } from '../../utils/stock'
+import { getDefaultVariant, getDisplayPrice } from '../../utils/productPricing'
 import './QuickView.css'
 
 // Lightweight Quick View modal — opens over the product card using the SAME
@@ -21,25 +22,29 @@ export default function QuickView({ product, onClose, onNavigate }) {
   const navigate = useNavigate()
   const closeRef = useRef(null)
 
-  const variants = Array.isArray(product.variants) ? product.variants : []
+  const variants = Array.isArray(product?.variants) ? product.variants : []
   const hasVariants = variants.length > 0
-  // Initial state: NO variant selected, NO price shown — the customer must
-  // explicitly click a variant before the real price appears.
-  const [selectedVariant, setSelectedVariant] = useState(null)
+  const defaultVar = getDefaultVariant(product)
+  // Initial state: automatically select the default active variant so its price displays immediately.
+  const [selectedVariant, setSelectedVariant] = useState(() => defaultVar)
+
+  useEffect(() => {
+    setSelectedVariant(getDefaultVariant(product))
+  }, [product])
+
+  const activeVariant = selectedVariant ?? defaultVar
 
   // The selected variant's TOTAL price is the authoritative amount paid for
   // ONE unit of it; price-per-unit is display only. Variant-less products
   // keep their product-level price.
   const totalPrice = hasVariants
-    ? Number(selectedVariant?.total_price ?? selectedVariant?.price ?? product.price)
-    : Number(product.price)
-  const perUnit = hasVariants
-    ? Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0)
+    ? (activeVariant ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) : getDisplayPrice(product))
+    : Number(product?.price || 0)
+  const perUnit = hasVariants && activeVariant
+    ? Number(activeVariant.price_per_unit ?? activeVariant.price ?? 0)
     : null
-  const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
-  // A variant product shows its price ONLY after the customer explicitly
-  // selects a variant. Variant-less products show their price immediately.
-  const variantSelected = hasVariants ? Boolean(selectedVariant) : true
+  const selectedUnit = hasVariants && activeVariant ? activeVariant.quantity_unit : null
+  const variantSelected = hasVariants ? Boolean(activeVariant) : true
 
   // Stock resolution (Product-Level Boolean Availability)
   const isInStock = isProductInStock(product)
@@ -82,7 +87,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
   const handleAdd = () => {
     onClose()
     if (onNavigate) onNavigate()
-    navigate(`/product/${product.id}`)
+    const target = activeVariant?.id ? `/product/${product.id}?variant=${activeVariant.id}` : `/product/${product.id}`
+    navigate(target)
   }
 
   const handleViewDetails = () => {
@@ -158,7 +164,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
               <p className="quickview-variants-title">Select Quantity</p>
               <div className="quickview-variant-options">
                 {variants.map((v) => {
-                  const active = selectedVariant?.id === v.id
+                  const active = activeVariant ? String(activeVariant.id) === String(v.id) : false
                   return (
                     <button
                       key={v.id}
@@ -187,7 +193,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
           </div>
 
           <Link
-            to={`/product/${product.id}`}
+            to={activeVariant?.id ? `/product/${product.id}?variant=${activeVariant.id}` : `/product/${product.id}`}
             className="quickview-details-link"
             onClick={handleViewDetails}
           >

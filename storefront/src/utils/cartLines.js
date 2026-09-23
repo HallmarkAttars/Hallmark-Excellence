@@ -19,10 +19,12 @@ import { lineNormalPerPiece, linePieces, round2 } from './brandBulk'
 // The stable identity used for merging and removal. Two lines with the same
 // key are the same cart line and must never coexist as separate rows.
 export function cartLineKey(item) {
-  if (item.brand_id != null) return `p-${item.product_id}`
+  if (!item || typeof item !== 'object') return ''
+  const pid = item.product_id ?? item.id ?? ''
+  if (item.brand_id != null) return `p-${pid}`
   return item.variant_id != null
-    ? `${item.product_id}-v${item.variant_id}`
-    : `${item.product_id}-`
+    ? `${pid}-v${item.variant_id}`
+    : `${pid}-`
 }
 
 // Combine duplicate lines (same cartLineKey) into one, adding quantities or
@@ -101,8 +103,10 @@ export function adjustLinePieces(item, delta) {
 export function mergeCartLines(items) {
   const out = []
   for (const raw of items || []) {
+    if (!raw || typeof raw !== 'object') continue
     const item = raw
     const key = cartLineKey(item)
+    if (!key) continue
     const idx = out.findIndex((i) => cartLineKey(i) === key)
     if (idx === -1) {
       out.push(item)

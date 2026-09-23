@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
 import { cloudinarySrc } from '../utils/productImage'
 import { useCart } from '../context/CartContext'
@@ -13,6 +13,7 @@ import {
   productPageBrandPieces,
 } from '../utils/brandBulk'
 import { getStockStatus, isProductInStock } from '../utils/stock'
+import { getDefaultVariant } from '../utils/productPricing'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
@@ -64,14 +65,15 @@ function BagIcon() {
 
 export default function ProductDetail() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const variantParam = searchParams.get('variant')
   const { addItem, brandPieces, bulkRules } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
-  // Initial state: NO variant is selected and NO price is shown. The
-  // customer must explicitly click a variant before the real price appears.
+  // Automatically select the default active variant upon product load.
   const [selectedVariant, setSelectedVariant] = useState(null)
   // "Please select a variant" hint when Add to Cart is clicked too early.
   const [variantHint, setVariantHint] = useState(false)
@@ -108,8 +110,6 @@ export default function ProductDetail() {
     setLoading(true)
     setError(null)
     setAdded(false)
-    // Deliberately NOT auto-selecting a variant: the customer must choose
-    // one explicitly before any price is revealed.
     setSelectedVariant(null)
     setVariantHint(false)
     setQty(1)
@@ -123,6 +123,27 @@ export default function ProductDetail() {
         setProduct(p)
         setLoading(false)
         if (p) {
+          const variants = Array.isArray(p.variants) ? p.variants : []
+          let activeVar = null
+          if (variantParam && variants.length > 0) {
+            activeVar = variants.find((v) => String(v.id) === String(variantParam))
+          }
+          if (!activeVar) {
+            activeVar = getDefaultVariant(p)
+          }
+
+          if (activeVar) {
+            setSelectedVariant(activeVar)
+            if (
+              p.brand_id != null &&
+              String(activeVar.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
+              activeVar.quantity_value != null
+            ) {
+              setQty(Math.max(1, Math.floor(Number(activeVar.quantity_value) || 1)))
+            } else {
+              setQty(1)
+            }
+          }
           getRelatedProducts(p).then(setRelated).catch(() => {})
         }
       })
@@ -130,7 +151,7 @@ export default function ProductDetail() {
         setError(err.message || 'Failed to load product.')
         setLoading(false)
       })
-  }, [id, reloadKey])
+  }, [id, reloadKey, variantParam])
 
   if (error) {
     return (
@@ -180,7 +201,7 @@ export default function ProductDetail() {
     v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
 
   // The default variant marks cart lines (is_default flag).
-  const defaultVariant = variants.length ? variants.find((v) => v.is_default) || variants[0] : null
+  const defaultVariant = getDefaultVariant(product) || (variants.length ? variants.find((v) => v.is_default) || variants[0] : null)
 
   // Stock resolution: product-level boolean availability (single source of truth)
   const isInStock = isProductInStock(product)

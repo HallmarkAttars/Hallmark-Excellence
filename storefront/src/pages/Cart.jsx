@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { cartLineKey, getLineMinQuantity } from '../utils/cartLines'
+import { lineUnitPrice } from '../utils/variantPricing'
 import { isProductInStock } from '../utils/stock'
 import { brandSavings } from '../utils/brandBulk'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
@@ -14,6 +15,7 @@ import './Cart.css'
 // brand group header above it already shows the brand (no repetition).
 // All pricing/quantity behaviour is unchanged — this is presentation only.
 function CartLine({ item, inGroup }) {
+  if (!item) return null
   const { removeItem, updateLinePieces } = useCart()
   const key = cartLineKey(item)
   const label = item.variant_label
@@ -24,7 +26,7 @@ function CartLine({ item, inGroup }) {
   // unit_price is the amount charged per ONE unit of this line: the selected
   // variant's TOTAL price, or the product price for variant-less lines.
   // Bulk lines carry the brand's bulk rate (never above normal).
-  const unitPrice = item.unit_price
+  const unitPrice = Number(item.unit_price ?? lineUnitPrice(item) ?? 0)
   const isBulkLine = item.bulk_active === true
   // The resolved per-piece price: the brand's bulk rate when the line is
   // bulk-unlocked, else the resolved normal per-piece price (the brand's
@@ -35,11 +37,12 @@ function CartLine({ item, inGroup }) {
     : (item.normal_per_piece != null
         ? item.normal_per_piece
         : item.variant_price_per_unit)
-  const subtotal = unitPrice * item.quantity
+  const quantity = Math.max(1, Number(item.quantity) || 1)
+  const subtotal = unitPrice * quantity
   const unitLower = String(item.quantity_unit || '').toLowerCase()
   const isPiecesUnit = unitLower === 'pieces'
   // The line's exact piece count (brand piece lines) or null.
-  const pieces = item.pieces ?? null
+  const pieces = item.pieces != null ? Number(item.pieces) : null
   const minQuantity = getLineMinQuantity(item)
   // Struck-through NORMAL per piece on bulk piece lines — derived from the
   // resolved normal line total ÷ pieces (the brand's standard price). Never
@@ -49,7 +52,7 @@ function CartLine({ item, inGroup }) {
       ? Number(item.normal_unit_price) / pieces
       : null
   const showStruck =
-    struckPerPiece != null && Math.abs(Number(perUnit) - struckPerPiece) > 0.005
+    struckPerPiece != null && Math.abs(Number(perUnit || 0) - struckPerPiece) > 0.005
   // Every cart line carries its product id — the exact product this line was
   // added from. The image + name link to that product's details page (never
   // the shop/brand page); the rest of the card stays non-navigating.
@@ -140,7 +143,7 @@ function CartLine({ item, inGroup }) {
               −
             </button>
             <span className="qty-control-input" aria-live="polite">
-              {item.pieces.toLocaleString('en-IN')}
+              {Number(pieces || 0).toLocaleString('en-IN')}
             </span>
             <button
               type="button"
@@ -152,21 +155,21 @@ function CartLine({ item, inGroup }) {
             </button>
           </div>
         ) : (
-          item.quantity > 1 && (
-            <p className="cart-item-qty-static">× {item.quantity}</p>
+          quantity > 1 && (
+            <p className="cart-item-qty-static">× {quantity}</p>
           )
         )}
         <div className="cart-item-total-col">
-          <p className="cart-item-subtotal">₹{subtotal.toLocaleString('en-IN')}</p>
+          <p className="cart-item-subtotal">₹{Number(subtotal || 0).toLocaleString('en-IN')}</p>
           <p className="cart-item-sub">
             {isPiecesUnit && pieces != null ? (
               <>
                 ₹{Number(perUnit ?? unitPrice).toLocaleString('en-IN')} ×{' '}
-                {pieces.toLocaleString('en-IN')} pieces
+                {Number(pieces || 0).toLocaleString('en-IN')} pieces
               </>
             ) : (
               <>
-                ₹{unitPrice.toLocaleString('en-IN')} × {item.quantity}
+                ₹{Number(unitPrice || 0).toLocaleString('en-IN')} × {quantity}
               </>
             )}
           </p>
@@ -177,7 +180,7 @@ function CartLine({ item, inGroup }) {
 }
 
 export default function Cart() {
-  const { pricedItems, total, itemCount, brandBulk, brands } = useCart()
+  const { pricedItems = [], total = 0, itemCount = 0, brandBulk = {}, brands = [] } = useCart() || {}
   const navigate = useNavigate()
   const [checkoutError, setCheckoutError] = useState('')
 
@@ -191,7 +194,8 @@ export default function Cart() {
     const byId = new Map()
     const idOrder = []
     const categoryItems = []
-    for (const i of pricedItems) {
+    for (const i of pricedItems || []) {
+      if (!i) continue
       if (i.brand_id == null) {
         categoryItems.push(i)
         continue
@@ -220,8 +224,8 @@ export default function Cart() {
       ...known.filter((r) => !sortedIds.has(r.id)),
     ]
     const groups = ordered.map(({ id, row }) => {
-      const state = brandBulk[id] || null
-      const items = byId.get(id)
+      const state = brandBulk?.[id] || null
+      const items = byId.get(id) || []
       return {
         id,
         name: state?.name || row?.name || items[0]?.brand_name || 'Brand',
@@ -235,7 +239,7 @@ export default function Cart() {
   }, [pricedItems, brandBulk, brands])
 
   const handleCheckout = () => {
-    const unavailable = pricedItems.find((it) => !isProductInStock(it))
+    const unavailable = (pricedItems || []).find((it) => it && !isProductInStock(it))
     if (unavailable) {
       setCheckoutError(`${unavailable.name || 'This product'} is currently out of stock.`)
       return
