@@ -1,151 +1,553 @@
 /* ============================================================
-   Featured Products — premium responsive grid
-   5 / 5 / 4 / 3 / 2 / 2 / 1 columns · no carousel, no overflow
+   Arees Perfumes — Cinematic Orbit Featured Products Section
+   A luxury perfume presentation stage with continuous 3D elliptical
+   orbit, illuminated pedestal platform, and upright bottles.
    ============================================================ */
 
-.featured-section {
+.featured-orbit-section {
   position: relative;
   z-index: 10;
-  background: var(--cream);
-  padding: 36px 0 44px; /* mobile baseline with comfortable rhythm */
+  background: var(--cream, #fbf9f5);
+  padding: 44px 0 54px;
+  overflow: hidden; /* Prevents any horizontal scrollbars on all screens */
+  width: 100%;
 }
-@media (min-width: 768px) { .featured-section { padding: 44px 0 48px; } } /* tablet */
-@media (min-width: 1024px) { .featured-section { padding: 52px 0 56px; } } /* desktop */
 
-/* ---------- Scoped header — centered heading, VIEW ALL top-right ----------
-   Same header treatment as Shop by Category: heading centered, VIEW ALL
-   pinned to the right content edge; stacked below the heading on mobile. */
-.featured-section .section-head {
-  position: relative;
-  display: block;
-  text-align: center;
-  margin-bottom: 32px;          /* header → cards */
+@media (min-width: 768px) {
+  .featured-orbit-section {
+    padding: 56px 0 64px;
+  }
 }
-.featured-section .view-all {
+
+@media (min-width: 1024px) {
+  .featured-orbit-section {
+    padding: 68px 0 76px;
+  }
+}
+
+/* ---------- Header ---------- */
+.featured-orbit-head {
+  text-align: center;
+  position: relative;
+  margin-bottom: 24px;
+  max-width: 820px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featured-orbit-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #b88938;
+  margin: 0 0 10px;
+}
+
+.featured-orbit-eyebrow .eyebrow-sparkle {
+  font-size: 0.85rem;
+  color: #d4af37;
+  opacity: 0.9;
+}
+
+.featured-orbit-title {
+  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-size: clamp(1.4rem, 4.2vw, 2.2rem);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.015em;
+  color: var(--charcoal, #1d1914);
+  margin: 0;
+  padding: 0 16px;
+}
+
+.featured-orbit-view-all {
+  display: none; /* Desktop header subtle anchor */
   position: absolute;
   right: 0;
   top: 50%;
   transform: translateY(-50%);
+  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #85591a;
+  text-decoration: none;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
-@media (max-width: 767px) {
-  .featured-section .section-head {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;                  /* heading → VIEW ALL */
-    margin-bottom: 24px;
+
+@media (min-width: 1024px) {
+  .featured-orbit-view-all {
+    display: inline-flex;
   }
-  .featured-section .section-title-upper {
-    font-family: var(--font-display, Georgia, serif);
-    font-size: clamp(1.6rem, 5.5vw, 1.95rem);
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    color: var(--charcoal, #1d1914);
-    margin: 0;
-    text-transform: none; /* Keep natural Title Case */
-  }
-  .featured-section .view-all {
-    display: none; /* Mobile displays the intentional continuation link below the cards */
+  .featured-orbit-view-all:hover {
+    color: #b88938;
+    transform: translateY(-50%) translateX(2px);
   }
 }
 
-/* Tablet heading kept inside the 26–30px band (global clamp runs hot at ~34px) */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .featured-section .section-title-upper {
-    font-size: clamp(1.65rem, 3.2vw, 1.9rem);
-  }
+/* ---------- 3D Orbit Stage ---------- */
+.featured-orbit-stage {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  height: 330px; /* Mobile baseline height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: pan-y;
+  cursor: grab;
 }
 
-/* ---------- Product grid ----------
-   The homepage slices featured products to 6 in JSX; these rules cap the
-   layout at 6 columns / ONE row on desktop, 3-up on tablet, 2×3 on mobile —
-   no wrapping, no overflow, no horizontal scroll. minmax(0, 1fr) keeps cards
-   from overflowing their track on very narrow screens. */
-.featured-track {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* mobile 2-up */
-  gap: 14px; /* shared homepage card rhythm — matches Our Brands */
+.featured-orbit-stage:active {
+  cursor: grabbing;
 }
 
-/* Mobile-only odd product centering:
-   When an odd number of products is present (e.g. 5 products), the 5th card
-   is centered across the grid with the exact same width as a single column.
-   This avoids stretching the card and eliminates the empty void on the right. */
-@media (max-width: 767px) {
-  .featured-track.has-odd-items > .product-card:last-child {
-    grid-column: 1 / -1;
-    justify-self: center;
-    width: calc(50% - 7px);
+@media (min-width: 480px) {
+  .featured-orbit-stage {
+    height: 380px;
   }
 }
 
 @media (min-width: 768px) {
-  .featured-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } /* tablet 3-up */
+  .featured-orbit-stage {
+    height: 440px;
+  }
 }
+
 @media (min-width: 1024px) {
-  .featured-track { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; } /* laptop 4-up */
-}
-@media (min-width: 1200px) {
-  .featured-track { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; } /* desktop: 6 columns / 1 row */
-  /* 6-up showcase: the SAME shared card, tuned for ~190px tracks so the
-     full-width ADD TO CART button, name and price stay comfortable and the
-     4/3 image stage never feels cramped. Structure/design unchanged. */
-  .featured-track .product-card-body { padding: 12px 14px 14px; }
-  .featured-track .product-card-name { font-size: 18px; }
-  .featured-track .product-card-btn { font-size: 12.5px; letter-spacing: 0.05em; }
-}
-
-/* ---------- Mobile continuation treatment ---------- */
-.featured-continuation {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .featured-continuation {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 22px;
-  }
-
-  .featured-continuation-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 20px;
-    border-radius: 999px;
-    background: rgba(184, 137, 56, 0.08);
-    border: 1px solid rgba(184, 137, 56, 0.28);
-    color: #85591a;
-    font-family: var(--font-body);
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    text-decoration: none;
-    transition: all 0.2s ease;
-  }
-
-  .featured-continuation-link:hover,
-  .featured-continuation-link:active {
-    background: #85591a;
-    border-color: #85591a;
-    color: #ffffff;
-  }
-
-  .featured-continuation-link .continuation-arrow {
-    font-size: 0.95rem;
-    line-height: 1;
-    transition: transform 0.2s ease;
-  }
-
-  .featured-continuation-link:hover .continuation-arrow,
-  .featured-continuation-link:active .continuation-arrow {
-    transform: translateX(3px);
+  .featured-orbit-stage {
+    height: 490px;
   }
 }
 
-/* ---------- Subtle luxury transition divider before Follow Our Journey ---------- */
+/* ---------- Ambient Gold Atmosphere & Radial Glow ---------- */
+.featured-orbit-ambient-glow {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(780px, 92vw);
+  height: min(340px, 60vw);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(212, 175, 55, 0.14) 0%,
+    rgba(235, 214, 168, 0.08) 42%,
+    transparent 72%
+  );
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(20px);
+}
+
+/* ---------- Illuminated Luxury Elliptical Platform / Dais ---------- */
+.featured-orbit-platform {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(740px, 86vw);
+  height: min(200px, 32vw);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Outer glowing gold rim */
+.platform-glow-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 137, 56, 0.38);
+  box-shadow:
+    0 0 35px rgba(212, 175, 55, 0.18),
+    inset 0 0 30px rgba(212, 175, 55, 0.15),
+    0 18px 45px rgba(50, 35, 15, 0.05);
+}
+
+/* Concentric inner glass reflective surface */
+.platform-glass-surface {
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(250, 246, 238, 0.55) 45%,
+    rgba(236, 224, 203, 0.28) 75%,
+    transparent 100%
+  );
+  border: 1px dashed rgba(184, 137, 56, 0.22);
+}
+
+/* Pedestal spotlight reflection directly beneath front bottle */
+.platform-pedestal-light {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48%;
+  height: 42%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(212, 175, 55, 0.28) 0%,
+    rgba(184, 137, 56, 0.12) 48%,
+    transparent 70%
+  );
+  filter: blur(10px);
+}
+
+/* ---------- Orbiting Items Track ---------- */
+.featured-orbit-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 5;
+}
+
+/* Individual product item moving along the orbit */
+.featured-orbit-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 140px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity, filter;
+  transition: filter 0.25s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+@media (min-width: 480px) {
+  .featured-orbit-item {
+    width: 160px;
+    height: 220px;
+  }
+}
+
+@media (min-width: 768px) {
+  .featured-orbit-item {
+    width: 190px;
+    height: 260px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .featured-orbit-item {
+    width: 220px;
+    height: 290px;
+  }
+}
+
+.featured-orbit-item:focus-visible .orbit-item-card {
+  outline: 2px solid #b88938;
+  outline-offset: 4px;
+}
+
+.orbit-item-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+}
+
+/* Soft ground shadow physically beneath each bottle */
+.orbit-item-ground-shadow {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 65%;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(40, 25, 10, 0.24) 0%,
+    rgba(70, 50, 25, 0.1) 45%,
+    transparent 75%
+  );
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+/* Bottle wrapper — keeps the perfume bottle upright and crisp */
+.orbit-item-bottle-wrap {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.featured-orbit-item:hover .orbit-item-bottle-wrap {
+  transform: translateY(-4px);
+}
+
+.orbit-item-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* Premium drop shadow on the perfume bottle */
+  filter: drop-shadow(0 14px 22px rgba(50, 35, 15, 0.16));
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Status badge */
+.orbit-item-badge {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(184, 137, 56, 0.92);
+  color: #ffffff;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(184, 137, 56, 0.35);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---------- Navigation Arrow Buttons ---------- */
+.featured-orbit-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(184, 137, 56, 0.42);
+  color: #85591a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(184, 137, 56, 0.16);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.22s ease;
+  outline: none;
+}
+
+.featured-orbit-nav-btn:hover {
+  background: #b88938;
+  border-color: #b88938;
+  color: #ffffff;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 6px 20px rgba(184, 137, 56, 0.32);
+}
+
+.featured-orbit-nav-btn:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.featured-orbit-nav-btn.is-prev {
+  left: clamp(8px, 3.5vw, 36px);
+}
+
+.featured-orbit-nav-btn.is-next {
+  right: clamp(8px, 3.5vw, 36px);
+}
+
+@media (min-width: 768px) {
+  .featured-orbit-nav-btn {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* ---------- Center Product Details Card ---------- */
+.featured-orbit-details {
+  position: relative;
+  text-align: center;
+  max-width: 580px;
+  margin: 18px auto 0;
+  padding: 0 16px;
+  z-index: 20;
+}
+
+.orbit-details-card {
+  animation: orbitDetailsFade 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes orbitDetailsFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.orbit-details-brand {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #85591a;
+  margin: 0 0 6px;
+}
+
+.orbit-details-title {
+  margin: 0 0 4px;
+}
+
+.orbit-details-title a {
+  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-size: clamp(1.35rem, 3.4vw, 1.95rem);
+  font-weight: 500;
+  color: var(--charcoal, #1d1914);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+
+.orbit-details-title a:hover {
+  color: #b88938;
+}
+
+.orbit-details-category {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.86rem;
+  color: #6d665b;
+  margin: 0 0 18px;
+}
+
+.orbit-details-stock.is-soldout {
+  color: #b33927;
+  font-weight: 600;
+}
+
+/* Action Buttons (Explore Fragrance + Quick View) */
+.orbit-details-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.orbit-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #b88938;
+  border: 1px solid #b88938;
+  color: #ffffff;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(184, 137, 56, 0.28);
+  transition: all 0.22s ease;
+}
+
+.orbit-cta-btn:hover {
+  background: #9e732a;
+  border-color: #9e732a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(184, 137, 56, 0.38);
+}
+
+.orbit-cta-btn .cta-arrow {
+  font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+
+.orbit-cta-btn:hover .cta-arrow {
+  transform: translateX(3px);
+}
+
+.orbit-quickview-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(184, 137, 56, 0.38);
+  color: #4a4136;
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.orbit-quickview-btn:hover {
+  background: #ffffff;
+  border-color: #b88938;
+  color: #b88938;
+}
+
+/* ---------- Dot Indicators ---------- */
+.featured-orbit-dots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.orbit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(184, 137, 56, 0.28);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.orbit-dot:hover {
+  background: rgba(184, 137, 56, 0.65);
+}
+
+.orbit-dot.is-active {
+  width: 26px;
+  background: #b88938;
+  box-shadow: 0 2px 8px rgba(184, 137, 56, 0.35);
+}
+
+/* ---------- Subtle luxury transition divider ---------- */
 .featured-section-divider {
   display: flex;
   justify-content: center;
@@ -156,7 +558,7 @@
 .featured-divider-line {
   display: block;
   width: 100%;
-  max-width: 260px;
+  max-width: 280px;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(184, 137, 56, 0.38), transparent);
 }
@@ -166,6 +568,20 @@
     margin-top: 48px;
   }
   .featured-divider-line {
-    max-width: 360px;
+    max-width: 380px;
+  }
+}
+
+/* ---------- Accessibility / Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .featured-orbit-item {
+    transition: none !important;
+  }
+  .orbit-details-card {
+    animation: none !important;
+  }
+  .orbit-cta-btn:hover,
+  .featured-orbit-nav-btn:hover {
+    transform: none !important;
   }
 }

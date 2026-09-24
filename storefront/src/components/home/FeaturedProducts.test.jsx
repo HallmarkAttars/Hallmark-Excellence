@@ -6,14 +6,14 @@ import { CartProvider } from '../../context/CartContext'
 import FeaturedProducts from './FeaturedProducts'
 
 const mockFeaturedProducts = [
-  { id: 1, name: 'Own Main show', is_featured: true, price: 500 },
-  { id: 2, name: 'Sumaiya', is_featured: true, price: 600 },
-  { id: 3, name: 'Sports Polo', is_featured: true, price: 700 },
-  { id: 4, name: 'Cr7', is_featured: true, price: 800 },
-  { id: 5, name: 'X -MAN', is_featured: true, price: 900 },
+  { id: 1, name: 'Own Main show', is_featured: true, price: 500, category_name: 'Attar' },
+  { id: 2, name: 'Sumaiya', is_featured: true, price: 600, category_name: 'Attar' },
+  { id: 3, name: 'Sports Polo', is_featured: true, price: 700, category_name: 'Roll On Perfume' },
+  { id: 4, name: 'Cr7', is_featured: true, price: 800, category_name: 'Attar' },
+  { id: 5, name: 'X -MAN', is_featured: true, price: 900, category_name: 'Attar' },
 ]
 
-describe('FeaturedProducts Component', () => {
+describe('FeaturedProducts Component — Cinematic Orbit', () => {
   afterEach(() => cleanup())
 
   it('returns null when empty or no products', () => {
@@ -25,7 +25,7 @@ describe('FeaturedProducts Component', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders section title and 5 product cards', () => {
+  it('renders section title, eyebrow, and view all link', () => {
     render(
       <CartProvider>
         <MemoryRouter>
@@ -34,15 +34,12 @@ describe('FeaturedProducts Component', () => {
       </CartProvider>
     )
 
-    expect(screen.getByRole('heading', { name: /featured products/i })).toBeTruthy()
-    expect(screen.getByText('Own Main show')).toBeTruthy()
-    expect(screen.getByText('Sumaiya')).toBeTruthy()
-    expect(screen.getByText('Sports Polo')).toBeTruthy()
-    expect(screen.getByText('Cr7')).toBeTruthy()
-    expect(screen.getByText('X-Man')).toBeTruthy()
+    expect(screen.getByText(/FEATURED PRODUCTS/i)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Scents, made by hand/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /view all/i })).toBeTruthy()
   })
 
-  it('applies has-odd-items class and renders continuation link when count is odd', () => {
+  it('renders the illuminated platform and circular orbit stage with nav controls', () => {
     const { container } = render(
       <CartProvider>
         <MemoryRouter>
@@ -51,12 +48,45 @@ describe('FeaturedProducts Component', () => {
       </CartProvider>
     )
 
-    const track = container.querySelector('.featured-track')
-    expect(track.classList.contains('has-odd-items')).toBe(true)
+    const stage = container.querySelector('.featured-orbit-stage')
+    expect(stage).toBeTruthy()
 
-    const continuation = screen.getByRole('link', { name: /explore all fragrances/i })
-    expect(continuation).toBeTruthy()
-    expect(continuation.getAttribute('href')).toBe('/shop')
+    const platform = container.querySelector('.featured-orbit-platform')
+    expect(platform).toBeTruthy()
+
+    const prevBtn = screen.getByRole('button', { name: /previous fragrance/i })
+    const nextBtn = screen.getByRole('button', { name: /next fragrance/i })
+    expect(prevBtn).toBeTruthy()
+    expect(nextBtn).toBeTruthy()
+  })
+
+  it('renders orbit product items and dot indicators', () => {
+    const { container } = render(
+      <CartProvider>
+        <MemoryRouter>
+          <FeaturedProducts products={mockFeaturedProducts} />
+        </MemoryRouter>
+      </CartProvider>
+    )
+
+    const items = container.querySelectorAll('.featured-orbit-item')
+    expect(items.length).toBeGreaterThanOrEqual(5)
+
+    const dots = container.querySelectorAll('.orbit-dot')
+    expect(dots.length).toBe(5)
+  })
+
+  it('renders active product showcase details with explore fragrance cta', () => {
+    render(
+      <CartProvider>
+        <MemoryRouter>
+          <FeaturedProducts products={mockFeaturedProducts} />
+        </MemoryRouter>
+      </CartProvider>
+    )
+
+    expect(screen.getByRole('link', { name: /explore fragrance/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /quick view/i })).toBeTruthy()
   })
 
   it('renders the subtle section divider', () => {
