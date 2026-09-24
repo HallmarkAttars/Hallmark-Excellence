@@ -1,0 +1,505 @@
+/* ==========================================================================
+   Arees Perfumes Admin Panel — Cinematic Premium Loading Screen
+   ========================================================================== */
+
+.admin-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 36%, #FFFFFF 0%, #FAF7F1 45%, #F3ECE0 100%);
+  padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  overflow: hidden;
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition: opacity 550ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 550ms cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 550ms;
+  will-change: opacity, transform, visibility;
+  user-select: none;
+}
+
+.admin-loader-overlay.admin-loader--fading-out {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(1.015);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Ambient Atmosphere: Architectural Arch, Cinematic Lighting, Floating Motes
+   -------------------------------------------------------------------------- */
+.admin-loader-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Soft centered cinematic lighting pulse */
+.admin-loader-light-spotlight {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 95vw);
+  height: min(460px, 85vh);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(198, 161, 91, 0.14) 0%, rgba(198, 161, 91, 0.03) 55%, transparent 75%);
+  animation: pulseSpotlight 7s ease-in-out infinite;
+}
+
+/* Subtle Arabian Architectural Arch */
+.admin-loader-arch {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -51%);
+  width: min(440px, 90vw);
+  height: auto;
+  max-height: 82vh;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: archSubtleBreathe 8s ease-in-out infinite;
+}
+
+/* Ambient Golden Dust Motes */
+.admin-loader-mote {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #C6A15B;
+  box-shadow: 0 0 6px rgba(198, 161, 91, 0.65);
+  opacity: 0;
+  animation: moteFloat 7s ease-in-out infinite;
+}
+.mote-1 { top: 28%; left: 32%; animation-delay: 0s; }
+.mote-2 { top: 62%; left: 68%; animation-delay: 2.2s; width: 2px; height: 2px; }
+.mote-3 { top: 40%; left: 72%; animation-delay: 4.4s; }
+.mote-4 { top: 70%; left: 28%; animation-delay: 1.5s; width: 2px; height: 2px; }
+
+/* Subtle Fragrance Petals */
+.admin-loader-petal {
+  position: absolute;
+  bottom: 12%;
+  width: 14px;
+  height: 14px;
+  color: #C6A15B;
+  opacity: 0;
+  animation: petalDrift 9s cubic-bezier(0.3, 0, 0.7, 1) infinite;
+}
+.admin-loader-petal svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   Center Container & Branding Elements
+   -------------------------------------------------------------------------- */
+.admin-loader-center {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+}
+
+/* Logo & Halo */
+.admin-loader-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.admin-loader-halo {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 170px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(198, 161, 91, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+  animation: haloBreathe 5s ease-in-out infinite;
+}
+
+.admin-loader-logo-container {
+  position: relative;
+  overflow: hidden;
+  padding: 6px 14px;
+  border-radius: 4px;
+  animation: logoEntrance 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.admin-loader-logo {
+  height: 56px;
+  width: auto;
+  max-width: min(210px, 75vw);
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 4px 14px rgba(198, 161, 91, 0.22));
+}
+
+/* Soft gold shimmer pass across the logo */
+.admin-loader-shimmer-sweep {
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 45%,
+    rgba(247, 239, 219, 0.6) 55%,
+    transparent 100%
+  );
+  transform: skewX(-24deg);
+  animation: shimmerSweep 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Subtitle */
+.admin-loader-subtitle {
+  font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #7A6546;
+  margin-top: 14px;
+  opacity: 0.95;
+  animation: fadeIn 900ms ease-out 200ms both;
+}
+
+/* Luxury Divider: ────────────◆──────────── */
+.admin-loader-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 190px;
+  margin: 0 auto 20px;
+  opacity: 0.75;
+}
+
+.admin-loader-divider-line {
+  flex: 1;
+  height: 1px;
+}
+.admin-loader-divider-line:first-child {
+  background: linear-gradient(90deg, transparent, rgba(198, 161, 91, 0.6));
+}
+.admin-loader-divider-line:last-child {
+  background: linear-gradient(90deg, rgba(198, 161, 91, 0.6), transparent);
+}
+
+.admin-loader-divider-diamond {
+  font-size: 8px;
+  color: #C6A15B;
+  padding: 0 10px;
+  line-height: 1;
+  transform: translateY(-0.5px);
+  text-shadow: 0 0 5px rgba(198, 161, 91, 0.4);
+}
+
+/* Continuous Progress Track & Champagne Shimmer Beam */
+.admin-loader-progress-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.admin-loader-progress-track {
+  width: 220px;
+  max-width: 65vw;
+  height: 2px;
+  border-radius: 99px;
+  background: rgba(198, 161, 91, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-loader-progress-beam {
+  position: absolute;
+  top: 0;
+  left: -40%;
+  height: 100%;
+  width: 45%;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #C6A15B 45%,
+    #F8F2E2 70%,
+    #C6A15B 90%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px rgba(198, 161, 91, 0.45);
+  animation: progressBeam 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Rotating Status Text */
+.admin-loader-text-wrap {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-loader-text {
+  margin: 0;
+  font-family: var(--font-body, 'Manrope', sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(20, 17, 13, 0.65);
+  animation: statusFade 400ms ease-out both;
+}
+
+/* --------------------------------------------------------------------------
+   Graceful Error State (Prevents Infinite Stuck Loading)
+   -------------------------------------------------------------------------- */
+.admin-loader-error-card {
+  background: var(--white, #FFFFFF);
+  border: 1px solid rgba(198, 161, 91, 0.35);
+  border-radius: var(--radius, 8px);
+  padding: 32px 28px;
+  box-shadow: 0 12px 32px rgba(20, 17, 13, 0.08);
+  max-width: 360px;
+  width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 350ms ease-out;
+}
+
+.admin-loader-error-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FDF4E3;
+  color: #B5842A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.admin-loader-error-title {
+  font-family: var(--font-display, 'Cormorant Garamond', Georgia, serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink, #14110D);
+  margin: 0 0 8px;
+}
+
+.admin-loader-error-desc {
+  font-family: var(--font-body, 'Manrope', sans-serif);
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.65);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.admin-loader-reload-btn {
+  min-width: 140px;
+}
+
+/* --------------------------------------------------------------------------
+   Keyframe Animations (Pure CSS, 60fps GPU-composited)
+   -------------------------------------------------------------------------- */
+@keyframes logoEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmerSweep {
+  0%, 15% {
+    left: -120%;
+  }
+  45%, 100% {
+    left: 140%;
+  }
+}
+
+@keyframes haloBreathe {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes pulseSpotlight {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes archSubtleBreathe {
+  0%, 100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 0.98;
+  }
+}
+
+@keyframes progressBeam {
+  0% {
+    left: -45%;
+  }
+  100% {
+    left: 105%;
+  }
+}
+
+@keyframes statusFade {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes moteFloat {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  25% {
+    opacity: 0.65;
+  }
+  75% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(12px, -35px);
+  }
+}
+
+@keyframes petalDrift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  20% {
+    opacity: 0.35;
+  }
+  80% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(24px, -65px, 0) rotate(32deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile Optimizations (iPhone Safari, Android Chrome, safe-area insets)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .admin-loader-logo {
+    height: 46px;
+  }
+
+  .admin-loader-subtitle {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    margin-top: 12px;
+  }
+
+  .admin-loader-divider {
+    width: 150px;
+    margin-bottom: 16px;
+  }
+
+  .admin-loader-progress-track {
+    width: 180px;
+  }
+
+  .admin-loader-text {
+    font-size: 12px;
+  }
+
+  .admin-loader-petal {
+    display: none; /* Reduce visual noise on small mobile screens */
+  }
+
+  .admin-loader-arch {
+    width: 95vw;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility: prefers-reduced-motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .admin-loader-overlay {
+    transition: opacity 250ms ease, visibility 250ms;
+  }
+
+  .admin-loader-logo-container,
+  .admin-loader-subtitle,
+  .admin-loader-text,
+  .admin-loader-error-card {
+    animation: none !important;
+  }
+
+  .admin-loader-shimmer-sweep,
+  .admin-loader-light-spotlight,
+  .admin-loader-halo,
+  .admin-loader-arch,
+  .admin-loader-mote,
+  .admin-loader-petal {
+    display: none !important;
+    animation: none !important;
+  }
+
+  .admin-loader-progress-beam {
+    animation: none !important;
+    width: 100% !important;
+    left: 0 !important;
+    background: #C6A15B !important;
+  }
+}

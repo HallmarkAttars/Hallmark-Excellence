@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { AdminLoaderProvider, useAdminLoader } from './context/AdminLoaderContext'
+import AdminAppLoader from './components/ui/AdminAppLoader'
 import ProtectedRoute from './components/ProtectedRoute'
 import RequirePermission from './components/RequirePermission'
 import AdminLayout from './components/layout/AdminLayout'
@@ -14,9 +16,18 @@ import BrandProductsPage from './pages/BrandProductsPage'
 import BrandForm from './pages/BrandForm'
 import BulkPricing from './pages/BulkPricing'
 
-export default function App() {
+function AdminRoot() {
+  const { isReady, initError, hasBootstrapped, handleFadeComplete } = useAdminLoader()
+
   return (
-    <AuthProvider>
+    <>
+      {!hasBootstrapped && (
+        <AdminAppLoader
+          isReady={isReady}
+          error={initError}
+          onFadeComplete={handleFadeComplete}
+        />
+      )}
       <BrowserRouter>
         <Routes>
           <Route path="/admin/login" element={<Login />} />
@@ -72,6 +83,16 @@ export default function App() {
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AdminLoaderProvider>
+        <AdminRoot />
+      </AdminLoaderProvider>
     </AuthProvider>
   )
 }

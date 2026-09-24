@@ -5,6 +5,7 @@ import AdminStatusBadge from '../components/ui/AdminStatusBadge'
 import RevenueChart from '../components/dashboard/RevenueChart'
 import { getOrders, getProducts } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
+import { useAdminLoader } from '../context/AdminLoaderContext'
 import { formatINR, formatOrderDate, formatOrderTime, formatItemsCount } from '../utils/format'
 import {
   PERIOD_OPTIONS,
@@ -138,6 +139,7 @@ function DashboardSkeleton() {
 // ---------------------------------------------------------------- dashboard
 export default function Dashboard() {
   const { can } = useAuth()
+  const { markReady } = useAdminLoader() || {}
   const [orders, setOrders] = useState([])
   const [products, setProducts] = useState([])
   const [initialLoading, setInitialLoading] = useState(true)
@@ -154,6 +156,7 @@ export default function Dashboard() {
           if (mountedRef.current) {
             setOrders(o)
             setInitialLoading(false)
+            if (markReady) markReady()
           }
           return o
         })
@@ -183,9 +186,12 @@ export default function Dashboard() {
         setError(err?.message || 'Unable to load dashboard data.')
       }
     } finally {
-      if (mountedRef.current) setInitialLoading(false)
+      if (mountedRef.current) {
+        setInitialLoading(false)
+        if (markReady) markReady()
+      }
     }
-  }, [orders.length])
+  }, [orders.length, markReady])
 
   // One refresh loop (interval + focus), cleaned up on unmount
   useEffect(() => {
