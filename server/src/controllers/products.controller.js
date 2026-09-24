@@ -517,7 +517,6 @@ async function getAdminProductById(req, res) {
 }
 
 // GET /api/admin/products
-// GET /api/admin/products
 // Protected. ALL products (active + inactive), newest first. Supports ?page=1&limit=25.
 async function getAdminProducts(req, res) {
   try {
