@@ -763,19 +763,30 @@ async function createOrder(req, res) {
 }
 
 // GET /api/admin/orders
-// Protected. Newest first.
+// Protected. Newest first. Supports ?page=1&limit=25.
 async function getOrders(req, res) {
   try {
     const { status, search } = req.query
+    const pageNum = req.query.page ? Math.max(1, parseInt(req.query.page, 10) || 1) : null
+    const limitNum = req.query.limit ? Math.max(1, parseInt(req.query.limit, 10) || 25) : null
 
-    let query = supabase.from('orders').select('*').order('created_at', { ascending: false })
+    let query = supabase
+      .from('orders')
+      .select('*', { count: pageNum ? 'exact' : undefined })
+      .order('created_at', { ascending: false })
 
     if (status) query = query.eq('order_status', status)
     // customer_name is not a column on the live orders table — it lives inside
     // the notes JSON text, so search notes instead of a phantom column.
     if (search) query = query.or(`order_number.ilike.%${search}%,notes.ilike.%${search}%`)
 
-    const { data, error } = await query
+    if (pageNum && limitNum) {
+      const from = (pageNum - 1) * limitNum
+      const to = from + limitNum - 1
+      query = query.range(from, to)
+    }
+
+    const { data, error, count } = await query
 
     if (error) {
       console.error('getOrders error:', error)
@@ -807,6 +818,17 @@ async function getOrders(req, res) {
         payment_code: notesInfo.payment_code || o.payment_method || '',
       }
     })
+
+    if (pageNum && limitNum) {
+      const total = count != null ? count : enriched.length
+      return res.json({
+        orders: enriched,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.max(1, Math.ceil(total / limitNum)),
+      })
+    }
 
     return res.json({ orders: enriched })
   } catch (err) {

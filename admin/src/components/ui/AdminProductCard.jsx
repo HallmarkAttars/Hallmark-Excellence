@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { resolveProductImage, handleProductImageError } from '../../utils/productImage'
 import { perUnitDisplay } from '../../utils/variantValidation'
 import { getStockStatus, normalizeStock } from '../../utils/stock'
+import { ImageWithSkeleton } from './Skeleton'
 import './AdminProductCard.css'
 
 // Shared mobile product card used by ALL admin product-management pages
@@ -26,7 +27,13 @@ export default function AdminProductCard({ product, category, onToggle, onDelete
       <div className="product-card-top">
         <div className="product-card-image">
           {image ? (
-            <img src={image} alt={product.name} loading="lazy" onError={handleProductImageError} />
+            <ImageWithSkeleton
+              src={image}
+              alt={product.name}
+              width={72}
+              height={72}
+              radius={4}
+            />
           ) : (
             <span className="product-card-image-placeholder" aria-hidden="true">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">

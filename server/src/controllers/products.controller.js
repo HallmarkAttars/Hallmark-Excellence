@@ -517,9 +517,49 @@ async function getAdminProductById(req, res) {
 }
 
 // GET /api/admin/products
-// Protected. ALL products (active + inactive), newest first.
+// GET /api/admin/products
+// Protected. ALL products (active + inactive), newest first. Supports ?page=1&limit=25.
 async function getAdminProducts(req, res) {
   try {
+    const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10) || 1) : null
+    const limit = req.query.limit ? Math.max(1, parseInt(req.query.limit, 10) || 25) : null
+
+    if (page && limit) {
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+
+      const { data, count, error } = await selectAdminProducts((select, useDisplayOrder) => {
+        let q = applyProductOrder(
+          supabase.from('products').select(select, { count: 'exact' }),
+          useDisplayOrder
+        )
+        return q.range(from, to)
+      })
+
+      if (error) {
+        console.error('getAdminProducts error:', error)
+        return res.status(500).json({ error: 'Failed to fetch products.' })
+      }
+
+      const rows = (data || []).map(flattenProduct)
+
+      let variantsByProduct = {}
+      try {
+        variantsByProduct = await fetchVariantsByProducts(rows.map((r) => r.id))
+      } catch (varErr) {
+        console.error('getAdminProducts fetchVariants error:', varErr)
+      }
+
+      const total = count ?? rows.length
+      return res.json({
+        products: attachVariants(rows, variantsByProduct),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      })
+    }
+
     const { data, error } = await selectAdminProducts((select, useDisplayOrder) =>
       applyProductOrder(
         supabase.from('products').select(select),
@@ -532,7 +572,7 @@ async function getAdminProducts(req, res) {
       return res.status(500).json({ error: 'Failed to fetch products.' })
     }
 
-    const rows = data.map(flattenProduct)
+    const rows = (data || []).map(flattenProduct)
 
     let variantsByProduct = {}
     try {

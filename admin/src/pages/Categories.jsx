@@ -3,6 +3,7 @@ import { getCategories, createCategory, updateCategory, deleteCategory, getProdu
 import { useAuth } from '../context/AuthContext'
 import { moveItem } from '../utils/order'
 import Modal from '../components/ui/Modal'
+import { CategoryGridSkeleton, ImageWithSkeleton, Skeleton } from '../components/ui/Skeleton'
 import './Categories.css'
 
 const EMPTY = { name: '', slug: '', display_order: '' }
@@ -259,12 +260,19 @@ export default function Categories() {
       )}
 
       {loading ? (
-        <div className="loading-state">Loading categories…</div>
+        <CategoryGridSkeleton count={6} />
       ) : (
         <div className="categories-admin-grid">
           {categories.map((cat) => (
             <div key={cat.id} className="card categories-admin-card">
-              <img src={cat.image} alt="" className="categories-admin-thumb" />
+              <ImageWithSkeleton
+                src={cat.image}
+                alt={cat.name}
+                width={70}
+                height={70}
+                radius="50%"
+                imgClassName="categories-admin-thumb"
+              />
               <h3>{cat.name}</h3>
               <p>{productCounts[cat.id] || 0} products</p>
               <div className="categories-admin-actions">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getBrands, getProducts } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
+import { BrandGridSkeleton, ImageWithSkeleton } from '../components/ui/Skeleton'
 import './Brands.css'
 
 // The storefront's exact five brands — the management screen is scoped to
@@ -73,7 +74,7 @@ export default function Brands() {
       {error && <p className="login-error brands-error">{error}</p>}
 
       {loading ? (
-        <div className="loading-state">Loading brands…</div>
+        <BrandGridSkeleton count={5} />
       ) : brands.length === 0 ? (
         <div className="empty-state">No brands found.</div>
       ) : (
@@ -85,7 +86,13 @@ export default function Brands() {
               <div key={brand.id} className="card brand-card">
                 <div className="brand-card-media">
                   {image ? (
-                    <img src={image} alt={brand.name} loading="lazy" />
+                    <ImageWithSkeleton
+                      src={image}
+                      alt={brand.name}
+                      width="100%"
+                      height="100%"
+                      radius="0"
+                    />
                   ) : (
                     <span className="brand-card-monogram" aria-hidden="true">
                       {brand.name.charAt(0)}

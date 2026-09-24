@@ -1,0 +1,260 @@
+/* ==========================================================================
+   Admin Global Skeleton Loading System Styles
+   ========================================================================== */
+
+/* Base Skeleton Shimmer Block */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--cream-deep, #ede8dc);
+  border-radius: var(--radius-sm, 4px);
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Reduced motion preference — disable animation smoothly */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+    display: none;
+  }
+  .skeleton-shimmer {
+    opacity: 0.65;
+  }
+}
+
+/* Common Skeleton Utilities */
+.skeleton-circle {
+  border-radius: 50% !important;
+}
+
+.skeleton-pill {
+  border-radius: 999px !important;
+}
+
+.skeleton-box {
+  width: 100%;
+}
+
+/* Table Row Skeleton Containers */
+.skeleton-row {
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-row td {
+  vertical-align: middle;
+  padding: 12px 14px;
+}
+
+/* Flex helper for inside table cells */
+.skeleton-cell-flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skeleton-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Image with Skeleton Overlay */
+.image-skeleton-wrapper {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.image-skeleton-wrapper img {
+  transition: opacity 0.22s ease-in-out;
+}
+
+.image-skeleton-wrapper img.is-loading {
+  opacity: 0;
+}
+
+.image-skeleton-wrapper img.is-loaded {
+  opacity: 1;
+}
+
+.image-skeleton-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Mobile Product Card Skeleton */
+.product-card-skeleton {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+}
+
+.product-card-skeleton-top {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.product-card-skeleton-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.product-card-skeleton-stock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  margin-top: 10px;
+  border-top: 1px solid rgba(80, 60, 30, 0.06);
+  border-bottom: 1px solid rgba(80, 60, 30, 0.06);
+}
+
+.product-card-skeleton-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Mobile Order Card Skeleton */
+.order-card-skeleton {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1px solid rgba(80, 60, 30, 0.10);
+  border-radius: var(--radius);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.order-card-skeleton-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-card-skeleton-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(80, 60, 30, 0.08);
+}
+
+/* Category Card Skeleton */
+.category-card-skeleton {
+  padding: 24px 20px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+/* Brand Card Skeleton */
+.brand-card-skeleton {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-card-skeleton-media {
+  height: 180px;
+  background: var(--cream-deep, #ede8dc);
+  position: relative;
+}
+
+.brand-card-skeleton-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Product Form / Detail Skeleton */
+.product-form-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.form-skeleton-section {
+  padding: 24px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-skeleton-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.form-skeleton-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Order Detail Panel Skeleton */
+.order-detail-skeleton {
+  padding: 20px;
+  background: #faf8f2;
+  border: 1px solid rgba(80, 60, 30, 0.08);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

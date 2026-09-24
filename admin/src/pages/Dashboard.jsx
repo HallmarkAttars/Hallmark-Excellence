@@ -99,39 +99,113 @@ const STATUS_META = [
   },
 ]
 
-// ---------------------------------------------------------------- skeletons
-function SkeletonBar({ width }) {
-  return <span className="dash-sk dash-sk--bar" style={{ width }} aria-hidden="true" />
-}
+import Skeleton from '../components/ui/Skeleton'
 
+// ---------------------------------------------------------------- skeletons
 function DashboardSkeleton() {
   return (
     <div className="dashboard-page" aria-busy="true" aria-label="Loading dashboard">
-      <div className="page-header">
-        <div>
-          <SkeletonBar width="160px" />
-          <SkeletonBar width="240px" />
+      <div className="page-header dash-page-header">
+        <div className="dash-page-title" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Skeleton width="180px" height="28px" />
+          <Skeleton width="260px" height="14px" />
+        </div>
+        <div className="dash-quick-actions" style={{ display: 'flex', gap: '8px' }}>
+          <Skeleton width="140px" height="38px" radius="var(--radius)" />
+          <Skeleton width="110px" height="38px" radius="var(--radius)" />
         </div>
       </div>
+
+      {/* KPI Cards */}
       <div className="dash-kpis">
         {[0, 1, 2, 3].map((i) => (
           <div className="stat-card stat-card--skeleton" key={i}>
-            <div>
-              <SkeletonBar width="90px" />
-              <SkeletonBar width="70px" />
-              <SkeletonBar width="120px" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Skeleton width="90px" height="13px" />
+                <Skeleton width="36px" height="36px" circle />
+              </div>
+              <Skeleton width="120px" height="26px" />
+              <Skeleton width="140px" height="12px" />
             </div>
           </div>
         ))}
       </div>
-      <div className="dash-skeleton-grid">
-        <div className="card dash-section"><SkeletonBar width="180px" /><div className="dash-sk-lines"><SkeletonBar width="100%" /><SkeletonBar width="100%" /></div></div>
-        <div className="card dash-section"><SkeletonBar width="160px" /><div className="dash-sk-lines"><SkeletonBar width="100%" /><SkeletonBar width="100%" /></div></div>
+
+      {/* Order Status Overview */}
+      <section className="card dash-section">
+        <div className="dash-section-head">
+          <Skeleton width="190px" height="20px" />
+          <Skeleton width="160px" height="12px" />
+        </div>
+        <div className="dash-status-scroll" style={{ marginTop: '14px' }}>
+          <div className="dash-status-grid">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div className="dash-status-card" key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <Skeleton width="24px" height="24px" circle />
+                <Skeleton width="70px" height="13px" />
+                <Skeleton width="45px" height="20px" />
+                <Skeleton width="100%" height="4px" radius="999px" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Revenue & Actions Grid */}
+      <div className="dash-row">
+        <section className="card dash-section" style={{ minHeight: '260px' }}>
+          <div className="dash-section-head dash-section-head--split">
+            <Skeleton width="160px" height="20px" />
+            <Skeleton width="180px" height="32px" radius="var(--radius)" />
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <Skeleton width="100%" height="160px" radius="var(--radius)" />
+          </div>
+        </section>
+        <section className="card dash-section" style={{ minHeight: '260px' }}>
+          <div className="dash-section-head">
+            <Skeleton width="140px" height="20px" />
+            <Skeleton width="180px" height="12px" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <Skeleton width="100%" height="44px" radius="var(--radius)" />
+            <Skeleton width="100%" height="44px" radius="var(--radius)" />
+            <Skeleton width="100%" height="44px" radius="var(--radius)" />
+          </div>
+        </section>
       </div>
-      <div className="dash-skeleton-grid">
-        <div className="card dash-section"><SkeletonBar width="140px" /><div className="dash-sk-lines"><SkeletonBar width="100%" /><SkeletonBar width="100%" /></div></div>
-        <div className="card dash-section"><SkeletonBar width="180px" /><div className="dash-sk-lines"><SkeletonBar width="100%" /><SkeletonBar width="100%" /></div></div>
-      </div>
+
+      {/* Recent Orders Skeleton */}
+      <section className="card dash-section">
+        <div className="dash-section-head dash-section-head--split">
+          <Skeleton width="140px" height="20px" />
+          <Skeleton width="90px" height="30px" radius="var(--radius)" />
+        </div>
+        <div className="table-scroll dash-recent-table" style={{ marginTop: '14px' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Order #</th><th>Customer</th><th>Date</th><th>Items</th><th>Amount</th><th>Payment</th><th>Status</th><th aria-label="Action" />
+              </tr>
+            </thead>
+            <tbody>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <tr key={i} className="skeleton-row">
+                  <td><Skeleton width="80px" height="14px" /></td>
+                  <td><Skeleton width="120px" height="14px" /></td>
+                  <td><Skeleton width="75px" height="14px" /></td>
+                  <td><Skeleton width="45px" height="14px" /></td>
+                  <td><Skeleton width="65px" height="14px" /></td>
+                  <td><Skeleton width="85px" height="20px" pill /></td>
+                  <td><Skeleton width="70px" height="24px" pill /></td>
+                  <td><Skeleton width="40px" height="24px" radius="var(--radius)" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   )
 }

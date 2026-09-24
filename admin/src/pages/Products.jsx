@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProducts, getCategories, deleteProduct, toggleProductStatus } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminProductCard from '../components/ui/AdminProductCard'
+import Pagination from '../components/ui/Pagination'
+import { usePagination } from '../hooks/usePagination'
+import { ProductRowSkeleton, ProductCardSkeleton, ImageWithSkeleton } from '../components/ui/Skeleton'
 import { resolveProductImage, handleProductImageError } from '../utils/productImage'
 import { perUnitDisplay } from '../utils/variantValidation'
 import { getStockStatus, normalizeStock } from '../utils/stock'
@@ -13,6 +16,7 @@ export default function Products() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(null)
 
   // Search + category filter — client-side over the already-loaded product
@@ -24,11 +28,17 @@ export default function Products() {
 
   const load = () => {
     setLoading(true)
-    Promise.all([getProducts(), getCategories()]).then(([p, c]) => {
-      setProducts(p)
-      setCategories(c)
-      setLoading(false)
-    })
+    setLoadError('')
+    Promise.all([getProducts(), getCategories()])
+      .then(([p, c]) => {
+        setProducts(p)
+        setCategories(c)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setLoading(false)
+        setLoadError(err.message || 'Failed to load products. Please try again.')
+      })
   }
 
   useEffect(load, [])
@@ -51,6 +61,37 @@ export default function Products() {
       return matchesCategory && matchesStock && matchesSearch
     })
   }, [products, search, categoryFilter, stockFilter])
+
+  // Shared Pagination: 25 default, options [25, 50, 100], URL synchronized, resets on filter/search change
+  const {
+    currentPage,
+    totalPages,
+    pageSize,
+    totalItems,
+    paginatedItems: paginatedProducts,
+    onPageChange,
+    onPageSizeChange,
+  } = usePagination({
+    items: filteredProducts,
+    defaultPageSize: 25,
+    resetTrigger: `${search}_${categoryFilter}_${stockFilter}`,
+  })
+
+  // Page / filter transition for smooth skeleton feedback
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const isInitialMount = useRef(true)
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    setIsTransitioning(true)
+    const t = window.setTimeout(() => setIsTransitioning(false), 160)
+    return () => window.clearTimeout(t)
+  }, [currentPage, search, categoryFilter, stockFilter])
+
+  const isTableLoading = loading || isTransitioning
 
   const clearFilters = () => {
     setSearch('')
@@ -206,22 +247,17 @@ export default function Products() {
         </p>
       )}
 
+      {loadError && (
+        <div className="card" style={{ padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+          <p className="login-error" style={{ marginBottom: '12px' }}>{loadError}</p>
+          <button type="button" className="btn btn-gold btn-sm" onClick={load}>Retry</button>
+        </div>
+      )}
+
       <div className="card">
-        {loading ? (
-          <div className="loading-state">Loading products…</div>
-        ) : products.length === 0 ? (
-          <div className="empty-state">No products yet.</div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="products-empty">
-            <h3>No products found</h3>
-            <p>Try changing your search or category filter.</p>
-            <button type="button" className="btn btn-outline btn-sm" onClick={clearFilters}>Clear Filters</button>
-          </div>
-        ) : (
-          <>
-            {/* Desktop table — kept as-is, shown at >= 768px */}
-            <div className="products-desktop">
-              <div className="table-scroll">
+        {/* Desktop table — kept as-is, shown at >= 768px */}
+        <div className="products-desktop">
+          <div className="table-scroll">
             <table>
               <thead>
                 <tr>
@@ -229,60 +265,101 @@ export default function Products() {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((p) => (
-                  <tr key={p.id}>
-                    <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
-                    <td className="products-pos">{p.display_order ?? '—'}</td>
-                    <td className="products-name">
-                      {p.name}
-                      {p.is_featured && <span className="featured-badge">Featured</span>}
-                    </td>
-                    <td>{categoryName(p.category_id)}</td>
-                    <td>{renderPriceCell(p)}</td>
-                    <td>{renderStockCell(p)}</td>
-                    <td>
-                      <button
-                        className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}
-                        onClick={() => handleToggle(p)}
-                        aria-pressed={p.is_active !== false}
-                      >
-                        {p.is_active === false ? 'Inactive' : 'Active'}
-                      </button>
-                    </td>
-                    <td className="products-actions">
-                      {can('products.edit') && <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>}
-                      {can('products.delete') && <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>}
-                    </td>
-                  </tr>
-                ))}
+                {isTableLoading ? (
+                  <ProductRowSkeleton count={pageSize || 10} />
+                ) : filteredProducts.length === 0 ? null : (
+                  paginatedProducts.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <ImageWithSkeleton
+                          src={resolveProductImage(p)}
+                          alt={p.name}
+                          width={44}
+                          height={44}
+                          radius={4}
+                          imgClassName="products-thumb"
+                        />
+                      </td>
+                      <td className="products-pos">{p.display_order ?? '—'}</td>
+                      <td className="products-name">
+                        {p.name}
+                        {p.is_featured && <span className="featured-badge">Featured</span>}
+                      </td>
+                      <td>{categoryName(p.category_id)}</td>
+                      <td>{renderPriceCell(p)}</td>
+                      <td>{renderStockCell(p)}</td>
+                      <td>
+                        <button
+                          className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}
+                          onClick={() => handleToggle(p)}
+                          aria-pressed={p.is_active !== false}
+                        >
+                          {p.is_active === false ? 'Inactive' : 'Active'}
+                        </button>
+                      </td>
+                      <td className="products-actions">
+                        {can('products.edit') && <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>}
+                        {can('products.delete') && <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
-              </table>
-              </div>
-            </div>
+            </table>
+          </div>
+        </div>
 
-            {/* Mobile product cards — same products array, shown below 768px */}
-            <div className="products-mobile">
-              {filteredProducts.map((p) => (
-                <AdminProductCard
-                  key={p.id}
-                  product={p}
-                  category={categoryName(p.category_id)}
-                  onToggle={handleToggle}
-                  onDelete={setConfirmDelete}
-                  canEdit={can('products.edit')}
-                  canDelete={can('products.delete')}
-                />
-              ))}
-            </div>
+        {/* Mobile product cards — same products array, shown below 768px */}
+        <div className="products-mobile">
+          {isTableLoading ? (
+            <ProductCardSkeleton count={6} />
+          ) : (
+            paginatedProducts.map((p) => (
+              <AdminProductCard
+                key={p.id}
+                product={p}
+                category={categoryName(p.category_id)}
+                onToggle={handleToggle}
+                onDelete={setConfirmDelete}
+                canEdit={can('products.edit')}
+                canDelete={can('products.delete')}
+              />
+            ))
+          )}
+        </div>
 
-            {/* Small info box — explains what the PRICE column actually shows. */}
-            <div className="price-note" role="note">
-              <strong>The price shown is the Price Per Unit of the Default Variant.</strong>
-              <span>“₹45 / piece” means ₹45 for one piece.</span>
-              <span>Variant Total Price is calculated automatically as Quantity × Price Per Unit.</span>
-            </div>
-          </>
+        {/* Empty states — only shown when NOT loading */}
+        {!isTableLoading && products.length === 0 && (
+          <div className="empty-state">No products yet.</div>
         )}
+
+        {!isTableLoading && products.length > 0 && filteredProducts.length === 0 && (
+          <div className="products-empty">
+            <h3>No products found</h3>
+            <p>Try changing your search or category filter.</p>
+            <button type="button" className="btn btn-outline btn-sm" onClick={clearFilters}>Clear Filters</button>
+          </div>
+        )}
+
+        {/* Shared Pagination Component */}
+        {!isTableLoading && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+            itemLabel="products"
+          />
+        )}
+
+        {/* Small info box — explains what the PRICE column actually shows. */}
+        <div className="price-note" role="note">
+          <strong>The price shown is the Price Per Unit of the Default Variant.</strong>
+          <span>“₹45 / piece” means ₹45 for one piece.</span>
+          <span>Variant Total Price is calculated automatically as Quantity × Price Per Unit.</span>
+        </div>
       </div>
 
       {confirmDelete && (

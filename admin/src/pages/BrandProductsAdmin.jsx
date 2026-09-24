@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getProductsByBrand, getCategories, deleteProduct, toggleProductStatus, getBrands } from '../services/mockApi'
 import AdminProductCard from '../components/ui/AdminProductCard'
+import { ProductRowSkeleton, ProductCardSkeleton, ImageWithSkeleton } from '../components/ui/Skeleton'
 import { resolveProductImage, handleProductImageError } from '../utils/productImage'
 import { perUnitDisplay } from '../utils/variantValidation'
 import { getStockStatus, normalizeStock } from '../utils/stock'
@@ -167,67 +168,95 @@ export default function BrandProductsAdmin({ brandSlug }) {
       </div>
 
       <div className="card">
-        {loading ? (
-          <div className="loading-state">Loading products…</div>
-        ) : products.length === 0 ? (
-          <div className="empty-state">No {brand?.name || brandSlug} products yet.</div>
-        ) : visibleProducts.length === 0 ? (
-          <div className="empty-state">
-            No products match your filters.
-            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); setStockFilter('all'); }}>
-              Clear Search
-            </button>
+        {/* Desktop table — kept as-is, shown at >= 768px */}
+        <div className="products-desktop">
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <ProductRowSkeleton count={8} />
+                ) : visibleProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem 1rem' }}>
+                      <div className="empty-state">
+                        {products.length === 0 ? `No ${brand?.name || brandSlug} products yet.` : 'No products match your filters.'}
+                        {hasFilters && (
+                          <div style={{ marginTop: '0.75rem' }}>
+                            <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); setStockFilter('all'); }}>
+                              Clear Filters
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  visibleProducts.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <ImageWithSkeleton
+                          src={resolveProductImage(p)}
+                          alt={p.name}
+                          width={44}
+                          height={44}
+                          radius={4}
+                          imgClassName="products-thumb"
+                        />
+                      </td>
+                      <td className="products-name">{p.name}</td>
+                      <td>{categoryName(p.category_id)}</td>
+                      <td>{renderPriceCell(p)}</td>
+                      <td>{renderStockCell(p)}</td>
+                      <td>
+                        <button
+                          className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}
+                          onClick={() => handleToggle(p)}
+                        >
+                          {p.is_active === false ? 'Inactive' : 'Active'}
+                        </button>
+                      </td>
+                      <td className="products-actions">
+                        <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>
+                        <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <>
-            {/* Desktop table — kept as-is, shown at >= 768px */}
-            <div className="products-desktop">
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
-                  </thead>
-                  <tbody>
-                    {visibleProducts.map((p) => (
-                      <tr key={p.id}>
-                        <td><img src={resolveProductImage(p)} alt={p.name} className="products-thumb" loading="lazy" onError={handleProductImageError} /></td>
-                        <td className="products-name">{p.name}</td>
-                        <td>{categoryName(p.category_id)}</td>
-                        <td>{renderPriceCell(p)}</td>
-                        <td>{renderStockCell(p)}</td>
-                        <td>
-                          <button
-                            className={`status-toggle ${p.is_active === false ? '' : 'is-active'}`}
-                            onClick={() => handleToggle(p)}
-                          >
-                            {p.is_active === false ? 'Inactive' : 'Active'}
-                          </button>
-                        </td>
-                        <td className="products-actions">
-                          <Link to={`/admin/products/${p.id}/edit`} className="btn btn-outline btn-sm">Edit</Link>
-                          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(p)}>Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        </div>
 
-            {/* Mobile product cards — same filtered array, shown below 768px */}
-            <div className="products-mobile">
-              {visibleProducts.map((p) => (
-                <AdminProductCard
-                  key={p.id}
-                  product={p}
-                  category={categoryName(p.category_id)}
-                  onToggle={handleToggle}
-                  onDelete={setConfirmDelete}
-                />
-              ))}
+        {/* Mobile product cards — same filtered array, shown below 768px */}
+        <div className="products-mobile">
+          {loading ? (
+            <ProductCardSkeleton count={4} />
+          ) : visibleProducts.length === 0 ? (
+            <div className="empty-state">
+              {products.length === 0 ? `No ${brand?.name || brandSlug} products yet.` : 'No products match your filters.'}
+              {hasFilters && (
+                <div style={{ marginTop: '0.75rem' }}>
+                  <button className="btn btn-outline btn-sm" onClick={() => { setQuery(''); setStatusFilter('all'); setCategoryFilter('all'); setStockFilter('all'); }}>
+                    Clear Filters
+                  </button>
+                </div>
+              )}
             </div>
-          </>
-        )}
+          ) : (
+            visibleProducts.map((p) => (
+              <AdminProductCard
+                key={p.id}
+                product={p}
+                category={categoryName(p.category_id)}
+                onToggle={handleToggle}
+                onDelete={setConfirmDelete}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       {confirmDelete && (

@@ -8,6 +8,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
 import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory } from '../utils/productValidation'
 import { compressProductImage } from '../utils/imageCompressor'
+import { ProductDetailSkeleton } from '../components/ui/Skeleton'
 import './ProductForm.css'
 
 const EMPTY = {
@@ -636,8 +637,6 @@ export default function ProductForm() {
     return isEdit ? 'Save Changes' : 'Add Product'
   }
 
-  if (loading) return <div className="loading-state">Loading product…</div>
-
   return (
     <div className="product-form-container">
       <div className="page-header">
@@ -645,7 +644,10 @@ export default function ProductForm() {
         <Link to="/admin/products" className="btn btn-outline btn-sm">Back to Products</Link>
       </div>
 
-      <form className="card product-form" onSubmit={handleSubmit}>
+      {loading ? (
+        <ProductDetailSkeleton />
+      ) : (
+        <form className="card product-form" onSubmit={handleSubmit}>
         <div className="form-field">
           <label htmlFor="name">Name</label>
           <input
@@ -903,6 +905,7 @@ export default function ProductForm() {
           {submitButtonLabel()}
         </button>
       </form>
+      )}
     </div>
   )
 }

@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router-dom'
 import { getOrders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import AdminStatusBadge from '../components/ui/AdminStatusBadge'
+import Pagination from '../components/ui/Pagination'
+import { usePagination } from '../hooks/usePagination'
+import { OrderRowSkeleton, OrderCardSkeleton, ImageWithSkeleton } from '../components/ui/Skeleton'
 import Modal from '../components/ui/Modal'
 import OrderInvoice from '../components/invoice/OrderInvoice'
 import { InvoiceDownloadButton, InvoicePrintButton } from '../components/invoice/InvoiceActions'
@@ -102,7 +105,7 @@ function OrderItemsList({ items }) {
           <div className="orders-panel-item" key={i}>
             <div className="orders-panel-item-img">
               {item.image ? (
-                <img src={item.image} alt={name} loading="lazy" />
+                <ImageWithSkeleton src={item.image} alt={name} width={56} height={56} radius={4} />
               ) : (
                 <span className="orders-panel-item-img-ph" aria-hidden="true">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -252,22 +255,34 @@ export default function Orders() {
   const [generating, setGenerating] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [progress, setProgress] = useState(null)
+  const [loadError, setLoadError] = useState('')
+
+  const fetchOrders = () => {
+    setLoading(true)
+    setLoadError('')
+    getOrders()
+      .then((o) => {
+        const sorted = [...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        setOrders(sorted)
+        setLoading(false)
+        // Notification-bell deep link: expand that exact order and bring it
+        // into view once the list has rendered.
+        if (openOrderId && sorted.some((ord) => ord.id === openOrderId)) {
+          setExpanded(openOrderId)
+          requestAnimationFrame(() => {
+            const el = document.getElementById(`order-row-${openOrderId}`)
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          })
+        }
+      })
+      .catch((err) => {
+        setLoading(false)
+        setLoadError(err.message || 'Failed to load orders. Please try again.')
+      })
+  }
 
   useEffect(() => {
-    getOrders().then((o) => {
-      const sorted = [...o].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      setOrders(sorted)
-      setLoading(false)
-      // Notification-bell deep link: expand that exact order and bring it
-      // into view once the list has rendered.
-      if (openOrderId && sorted.some((ord) => ord.id === openOrderId)) {
-        setExpanded(openOrderId)
-        requestAnimationFrame(() => {
-          const el = document.getElementById(`order-row-${openOrderId}`)
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        })
-      }
-    })
+    fetchOrders()
     return () => window.clearTimeout(feedbackTimer.current)
   }, [openOrderId])
 
@@ -302,10 +317,41 @@ export default function Orders() {
     return list
   }, [orders, statusFilter, paymentFilter, debouncedSearch])
 
+  // Shared Pagination: 25 default, options [25, 50, 100], URL synchronized, resets on filter/search change
+  const {
+    currentPage,
+    totalPages,
+    pageSize,
+    totalItems,
+    paginatedItems: paginatedOrders,
+    onPageChange,
+    onPageSizeChange,
+  } = usePagination({
+    items: visibleOrders,
+    defaultPageSize: 25,
+    resetTrigger: `${debouncedSearch}_${statusFilter}_${paymentFilter}`,
+  })
+
+  // Page / filter transition for smooth skeleton feedback
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const isInitialMount = useRef(true)
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+    setIsTransitioning(true)
+    const t = window.setTimeout(() => setIsTransitioning(false), 160)
+    return () => window.clearTimeout(t)
+  }, [currentPage, debouncedSearch, statusFilter, paymentFilter])
+
+  const isTableLoading = loading || isTransitioning
+
   // Packing-label helpers --------------------------------------------------
-  // Selection over the currently visible rows (checkboxes in table + cards).
-  const visibleIds = useMemo(() => visibleOrders.map((o) => o.id), [visibleOrders])
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id))
+  // Selection over the currently visible page rows (checkboxes in table + cards).
+  const pageVisibleIds = useMemo(() => paginatedOrders.map((o) => o.id), [paginatedOrders])
+  const allVisibleSelected = pageVisibleIds.length > 0 && pageVisibleIds.every((id) => selectedIds.includes(id))
 
   // Range resolved in LOCAL time from the existing created_at timestamp — no
   // new date fields anywhere. 'custom' requires explicit From/To dates.
@@ -355,7 +401,7 @@ export default function Orders() {
     setSelectedIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
   const toggleSelectAll = () =>
     setSelectedIds((cur) =>
-      allVisibleSelected ? cur.filter((id) => !visibleIds.includes(id)) : [...new Set([...cur, ...visibleIds])]
+      allVisibleSelected ? cur.filter((id) => !pageVisibleIds.includes(id)) : [...new Set([...cur, ...pageVisibleIds])]
     )
   const clearSelection = () => setSelectedIds([])
 
@@ -712,6 +758,13 @@ export default function Orders() {
         </div>
       )}
 
+      {loadError && (
+        <div className="card" style={{ padding: '20px', textAlign: 'center', marginBottom: '16px' }}>
+          <p className="login-error" style={{ marginBottom: '12px' }}>{loadError}</p>
+          <button type="button" className="btn btn-gold btn-sm" onClick={fetchOrders}>Retry</button>
+        </div>
+      )}
+
       {/* Result count — dynamic, correct singular/plural */}
       {!loading && (
         <p className="orders-count" role="status">
@@ -720,75 +773,38 @@ export default function Orders() {
       )}
 
       <div className="card orders-list-card">
-        {loading ? (
-          <div className="loading-state">Loading orders…</div>
-        ) : noOrdersAtAll ? (
-          <div className="orders-empty">
-            <span className="orders-empty-icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-                <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
-              </svg>
-            </span>
-            <h3>No orders yet</h3>
-            <p>Customer orders will appear here once an order is placed.</p>
-          </div>
-        ) : noSearchResults ? (
-          <div className="orders-empty">
-            <span className="orders-empty-icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3M8.5 8.5l5 5M13.5 8.5l-5 5" />
-              </svg>
-            </span>
-            {emptyBySearch ? (
-              <>
-                <h3>No orders found</h3>
-                <p>Check the Order ID or mobile number and try again.</p>
-                <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
-                  Clear Search
-                </button>
-              </>
-            ) : (
-              <>
-                <h3>No orders match this filter</h3>
-                <p>Try a different status or payment method, or clear the filter to see all orders.</p>
-                <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
-                  Clear Filter
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Desktop table — kept as-is, shown at >= 768px */}
-            <div className="orders-desktop">
-              <div className="table-scroll">
-                <table className="orders-table">
-                  <thead>
-                    <tr>
-                      <th aria-label="Select all visible orders">
-                        <input
-                          type="checkbox"
-                          className="orders-select-all"
-                          checked={allVisibleSelected}
-                          onChange={toggleSelectAll}
-                          aria-label="Select all visible orders"
-                        />
-                      </th>
-                      <th aria-label="Expand" />
-                      <th>Order #</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Payment</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleOrders.map((o) => (
-                      <Fragment key={o.id}>
+        {/* Desktop table — kept as-is, shown at >= 768px */}
+        <div className="orders-desktop">
+          <div className="table-scroll">
+            <table className="orders-table">
+              <thead>
+                <tr>
+                  <th aria-label="Select all visible orders">
+                    <input
+                      type="checkbox"
+                      className="orders-select-all"
+                      checked={allVisibleSelected}
+                      onChange={toggleSelectAll}
+                      disabled={isTableLoading}
+                      aria-label="Select all visible orders"
+                    />
+                  </th>
+                  <th aria-label="Expand" />
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isTableLoading ? (
+                  <OrderRowSkeleton count={pageSize || 10} />
+                ) : (
+                  paginatedOrders.map((o) => (
+                    <Fragment key={o.id}>
                         <tr id={`order-row-${o.id}`} className={`orders-row ${expanded === o.id ? 'is-expanded' : ''}`}>
                           <td className="orders-select-cell">
                             <input
@@ -918,15 +934,19 @@ export default function Orders() {
                           </tr>
                         )}
                       </Fragment>
-                    ))}
-                  </tbody>
+                    ))
+                  )}
+                </tbody>
                 </table>
               </div>
             </div>
 
             {/* Mobile order cards — same orders array, shown below 768px */}
             <div className="orders-mobile">
-              {visibleOrders.map((o) => {
+              {isTableLoading ? (
+                <OrderCardSkeleton count={6} />
+              ) : (
+                paginatedOrders.map((o) => {
                 const isOpen = expanded === o.id
                 return (
                   <div id={`order-row-${o.id}`} className={`order-card ${isOpen ? 'is-open' : ''}`} key={o.id}>
@@ -1068,10 +1088,63 @@ export default function Orders() {
                     </button>
                   </div>
                 )
-              })}
+              }))}
             </div>
-          </>
-        )}
+
+            {/* Empty states — only shown when NOT loading */}
+            {!isTableLoading && noOrdersAtAll && (
+              <div className="orders-empty">
+                <span className="orders-empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+                    <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
+                  </svg>
+                </span>
+                <h3>No orders yet</h3>
+                <p>Customer orders will appear here once an order is placed.</p>
+              </div>
+            )}
+
+            {!isTableLoading && noSearchResults && (
+              <div className="orders-empty">
+                <span className="orders-empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3M8.5 8.5l5 5M13.5 8.5l-5 5" />
+                  </svg>
+                </span>
+                {emptyBySearch ? (
+                  <>
+                    <h3>No orders found</h3>
+                    <p>Check the Order ID or mobile number and try again.</p>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
+                      Clear Search
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h3>No orders match this filter</h3>
+                    <p>Try a different status or payment method, or clear the filter to see all orders.</p>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={clearAll}>
+                      Clear Filter
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Shared Pagination Component */}
+            {!isTableLoading && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={totalItems}
+                onPageChange={onPageChange}
+                onPageSizeChange={onPageSizeChange}
+                itemLabel="orders"
+              />
+            )}
       </div>
 
       {invoiceOrder && (

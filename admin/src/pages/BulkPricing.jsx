@@ -3,6 +3,7 @@ import { getBrands, updateBrandBulkPricing } from '../services/mockApi'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/ui/Modal'
 import { getBulkTiers, validateTiers } from '../utils/brandBulkTiers'
+import { BulkPricingRowSkeleton } from '../components/ui/Skeleton'
 import './BulkPricing.css'
 
 // The storefront's exact five brands — same scoping as the Brands page.
@@ -244,23 +245,23 @@ export default function BulkPricing() {
 
       {error && <p className="login-error">{error}</p>}
 
-      {loading ? (
-        <div className="loading-state">Loading brands…</div>
-      ) : (
-        <div className="card bulk-pricing-table-wrap">
-          <table className="bulk-pricing-table">
-            <thead>
-              <tr>
-                <th>Brand</th>
-                <th>Price Tiers</th>
-                <th>Normal Price</th>
-                <th>Best Bulk Price</th>
-                <th>Status</th>
-                <th className="bulk-pricing-actions-col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {brands.map((brand) => {
+      <div className="card bulk-pricing-table-wrap">
+        <table className="bulk-pricing-table">
+          <thead>
+            <tr>
+              <th>Brand</th>
+              <th>Price Tiers</th>
+              <th>Normal Price</th>
+              <th>Best Bulk Price</th>
+              <th>Status</th>
+              <th className="bulk-pricing-actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <BulkPricingRowSkeleton count={5} />
+            ) : (
+              brands.map((brand) => {
                 const active = hasActiveRule(brand)
                 const tiers = getBulkTiers(brand)
                 const configured = Boolean(tiers && tiers.length > 0)
@@ -344,11 +345,10 @@ export default function BulkPricing() {
                     </td>
                   </tr>
                 )
-              })}
+              }))}
             </tbody>
           </table>
         </div>
-      )}
 
       {modalMode && (
         <Modal title={modalMode === 'edit' ? 'Edit Bulk Pricing' : 'Add Bulk Price'} onClose={closeModal}>
