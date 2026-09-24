@@ -1,5 +1,5 @@
 const supabase = require('../config/supabase')
-const { sendOrderEmails } = require('../services/orderEmailService')
+const { sendOrderEmails, sendOrderStatusEmail } = require('../services/orderEmailService')
 const {
   normalizeEmail,
   validateEmailWithHost,
@@ -894,7 +894,7 @@ async function updateOrderStatus(req, res) {
     // concurrency exists elsewhere either.)
     const { data: existing, error: readError } = await supabase
       .from('orders')
-      .select('id, notes')
+      .select('*')
       .eq('id', id)
       .maybeSingle()
 
@@ -904,6 +904,11 @@ async function updateOrderStatus(req, res) {
       console.error('updateOrderStatus read hint:', readError.hint)
       return res.status(500).json({ error: 'Failed to update order status.' })
     }
+    if (!existing) {
+      return res.status(404).json({ error: 'Order not found.' })
+    }
+
+    const oldStatus = (existing.order_status || '').trim()
     const parsedNotes = parseOrderNotes(existing)
     const mergedNotes = recordStatusTimestamp(parsedNotes, matched)
 
@@ -928,6 +933,19 @@ async function updateOrderStatus(req, res) {
     }
     if (!data) {
       return res.status(404).json({ error: 'Order not found.' })
+    }
+
+    // --- STATUS EMAIL AUTOMATION ---
+    // Only send if status actually changed (case-insensitive check inside helper).
+    // Email failures are handled independently and NEVER fail the order update.
+    try {
+      await sendOrderStatusEmail({
+        order: data,
+        oldStatus,
+        newStatus: matched,
+      })
+    } catch (emailErr) {
+      console.error('[ORDER EMAIL ERROR] Unexpected error sending status email:', emailErr.message || emailErr)
     }
 
     // Use direct column values with fallback to notes parsing

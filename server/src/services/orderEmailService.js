@@ -1,14 +1,17 @@
 // services/orderEmailService.js
 // ---------------------------------------------------------------------------
 // Brevo transactional order emails — CUSTOMER order confirmation + ADMIN new
-// order notification for Hallmark Excellence Attars.
+// order notification + ORDER STATUS updates (Processing, Shipped) for
+// Hallmark Excellence Attars.
 //
 // CONTRACT (read before editing):
-//  * This module NEVER throws. A Brevo failure must never fail an order.
+//  * This module NEVER throws. A Brevo failure must never fail an order or
+//    order-status update.
 //  * sendOrderEmails() is called ONLY from the backend order-creation flow,
-//    AFTER the order row has been saved in the database. It is never called
-//    from React/frontend code and never from order-viewing endpoints.
-//  * Both emails are built from ONE params object derived from the SAVED
+//    AFTER the order row has been saved in the database.
+//  * sendOrderStatusEmail() is called ONLY when order status actually changes
+//    (oldStatus !== newStatus), AFTER the update succeeds in the database.
+//  * Emails are built from params objects derived from the SAVED/UPDATED
 //    order row (never from request-body values, never from mock data).
 //  * The API key lives only in the server environment. It is never logged,
 //    never returned to clients, and never exposed to any frontend.
@@ -74,70 +77,89 @@ function buildTrackOrderUrl(orderNumber) {
 
 // --- Params builder --------------------------------------------------------
 
-// Builds ONE params object shared by BOTH templates from the SAVED order row.
-// Field names below are the contract with the Brevo templates — they must
-// match {{params.*}} / {% for item in params.items %} exactly.
-//
-// Money fields ship twice so templates can display either form:
-//   formatted string, e.g. "3,350"        -> {{params.total}}
-//   raw number,     e.g. 3350             -> {{params.totalRaw}}
-// trackOrderUrl is the customer template's Track Order button deep-link,
-// built from process.env.FRONTEND_URL (never hardcoded).
-// The example admin subject "New Order #{{params.orderId}} - ₹{{params.total}}"
-// renders as "New Order #ORD-123456 - ₹3,350" with the template's own ₹ sign.
+// Builds ONE params object shared by templates from the SAVED order row.
+// Field names below support both camelCase and snake_case contracts with Brevo templates
+// (e.g. {{params.order_number}}, {{params.orderId}}, {{params.customer_name}}, etc.)
 function buildOrderEmailParams(order) {
   let notesInfo = {}
   try {
-    if (order && order.notes) notesInfo = JSON.parse(order.notes)
+    if (order && order.notes) {
+      notesInfo = typeof order.notes === 'string' ? JSON.parse(order.notes) : order.notes
+    }
   } catch {
     notesInfo = {}
   }
 
-  const items = Array.isArray(notesInfo.items)
-    ? notesInfo.items.map((it) => {
-        const quantity = Math.floor(Number(it.quantity ?? it.qty ?? 1)) || 1
-        const unitPrice = Number(it.unit_price ?? it.price ?? 0)
-        const lineTotal = unitPrice * quantity
-        const variant =
-          it.variant_label ||
-          (it.quantity_value != null && it.quantity_unit
-            ? `${it.quantity_value} ${it.quantity_unit}`
-            : '')
-        return {
-          name: it.product_name || it.name || 'Product',
-          image: safeImage(it.image),
-          variant, // use in templates as {{item.variant}}
-          size: variant, // alias so templates using {{item.size}} also work
-          quantity,
-          price: formatINR(unitPrice),
-          priceRaw: unitPrice,
-          total: formatINR(lineTotal),
-          totalRaw: lineTotal,
-        }
-      })
-    : []
+  const itemsSource = Array.isArray(notesInfo.items)
+    ? notesInfo.items
+    : (Array.isArray(order?.items) ? order.items : [])
 
-  const subtotal = Number(order?.subtotal ?? 0)
+  const items = itemsSource.map((it) => {
+    const quantity = Math.floor(Number(it.quantity ?? it.qty ?? 1)) || 1
+    const unitPrice = Number(it.unit_price ?? it.price ?? 0)
+    const lineTotal = unitPrice * quantity
+    const variant =
+      it.variant_label ||
+      (it.quantity_value != null && it.quantity_unit
+        ? `${it.quantity_value} ${it.quantity_unit}`
+        : '')
+    return {
+      name: it.product_name || it.name || 'Product',
+      image: safeImage(it.image),
+      variant, // use in templates as {{item.variant}}
+      size: variant, // alias so templates using {{item.size}} also work
+      quantity,
+      price: formatINR(unitPrice),
+      priceRaw: unitPrice,
+      total: formatINR(lineTotal),
+      totalRaw: lineTotal,
+    }
+  })
+
+  const subtotal = Number(order?.subtotal ?? order?.total_amount ?? 0)
   const discount = Number(order?.discount ?? 0)
   const shipping = Number(order?.shipping_charge ?? 0)
   const tax = 0 // the current system does not collect tax separately
-  const total = Number(order?.total ?? subtotal)
+  const total = Number(order?.total ?? order?.total_amount ?? subtotal)
+
+  const orderNumber = order?.order_number || ''
+  const orderDate = formatOrderDate(order?.created_at)
+  const orderStatus = order?.order_status || 'Pending'
+  const trackUrl = buildTrackOrderUrl(orderNumber)
+
+  const customerName = notesInfo.customer_name || order?.customer_name || 'Valued Customer'
+  const customerEmail = notesInfo.email || notesInfo.customer_email || order?.customer_email || order?.email || ''
+  const phone = notesInfo.phone || order?.phone || ''
+  const message = notesInfo.message || order?.message || ''
+
+  const paymentLabel =
+    String(order?.payment_method || '').toLowerCase().includes('upi')
+      ? 'UPI / Online Payment'
+      : 'Advance Payment'
+  const paymentStatus = order?.payment_status || 'Pending'
 
   return {
-    // Order
-    orderId: order?.order_number || '',
-    orderDate: formatOrderDate(order?.created_at),
-    orderStatus: order?.order_status || 'Pending',
+    // Order identifiers
+    orderId: orderNumber,
+    order_id: orderNumber,
+    orderNumber: orderNumber,
+    order_number: orderNumber,
+    orderDate,
+    order_date: orderDate,
+    orderStatus,
+    order_status: orderStatus,
 
-    // Track Order deep-link for the customer template's button (built from
-    // the configured FRONTEND_URL — never hardcoded).
-    trackOrderUrl: buildTrackOrderUrl(order?.order_number),
+    // Track Order deep-link
+    trackOrderUrl: trackUrl,
+    track_order_url: trackUrl,
 
     // Customer
-    customerName: notesInfo.customer_name || '',
-    customerEmail: notesInfo.email || '',
-    phone: notesInfo.phone || '',
-    message: notesInfo.message || '', // customer's optional checkout note
+    customerName,
+    customer_name: customerName,
+    customerEmail,
+    customer_email: customerEmail,
+    phone,
+    message,
 
     // Products — loop with {% for item in params.items %}
     items,
@@ -145,31 +167,34 @@ function buildOrderEmailParams(order) {
     // Price summary
     subtotal: formatINR(subtotal),
     subtotalRaw: subtotal,
+    subtotal_raw: subtotal,
     discount: formatINR(discount),
     discountRaw: discount,
+    discount_raw: discount,
     shipping: formatINR(shipping),
     shippingRaw: shipping,
+    shipping_raw: shipping,
     tax: formatINR(tax),
     taxRaw: tax,
+    tax_raw: tax,
     total: formatINR(total),
     totalRaw: total,
+    total_raw: total,
 
-    // Payment — customer-facing label. The business now takes only advance
-    // payments, so the legacy stored 'cod'/'Cash On Delivery' value always
-    // displays as 'Advance Payment' (stored data is never rewritten); UPI
-    // keeps its own label. Mirrors the storefront utils/invoice mapping.
-    paymentMethod:
-      String(order?.payment_method || '').toLowerCase().includes('upi')
-        ? 'UPI / Online Payment'
-        : 'Advance Payment',
-    paymentStatus: order?.payment_status || 'Pending',
+    // Payment
+    paymentMethod: paymentLabel,
+    payment_method: paymentLabel,
+    paymentStatus,
+    payment_status: paymentStatus,
 
     // Delivery
-    address: notesInfo.address || '',
+    address: notesInfo.address || order?.address || '',
     addressLine2: notesInfo.address_line2 || '',
-    city: notesInfo.city || '',
-    state: notesInfo.state || '',
-    pincode: notesInfo.pincode || '',
+    address_line2: notesInfo.address_line2 || '',
+    locality: notesInfo.locality || '',
+    city: notesInfo.city || order?.city || '',
+    state: notesInfo.state || order?.state || '',
+    pincode: notesInfo.pincode || order?.pincode || '',
     country: notesInfo.country || 'India',
   }
 }
@@ -202,11 +227,11 @@ async function sendTemplateEmail({ tag, to, templateId, params }) {
 
   if (!client) {
     console.log(`[ORDER EMAIL] Skipped ${tag}: BREVO_API_KEY not configured`)
-    return { status: 'skipped' }
+    return { status: 'skipped', reason: 'BREVO_API_KEY not configured' }
   }
   if (!Number.isFinite(id) || id <= 0) {
     console.log(`[ORDER EMAIL] Skipped ${tag}: template id not configured`)
-    return { status: 'skipped' }
+    return { status: 'skipped', reason: 'Template ID not configured' }
   }
 
   try {
@@ -214,7 +239,7 @@ async function sendTemplateEmail({ tag, to, templateId, params }) {
       setTimeout(() => reject(new Error('Brevo request timed out')), REQUEST_TIMEOUT_MS)
     )
     // v6 SDK request object — templateId / to / params are the exact fields
-    // the Brevo templates expect (the old SendSmtpEmail class is gone).
+    // the Brevo templates expect.
     await Promise.race([
       client.transactionalEmails.sendTransacEmail({
         templateId: id,
@@ -225,17 +250,17 @@ async function sendTemplateEmail({ tag, to, templateId, params }) {
     ])
     return { status: 'sent' }
   } catch (err) {
-    // Log only the generic message + HTTP status — never the API key, tokens
-    // or payment data (a 400/404 here usually means a template id mismatch).
-    const status = err?.statusCode ?? err?.status
-    console.error(`[ORDER EMAIL ERROR] ${tag} failed${status ? ` (HTTP ${status})` : ''}: ${err.message || err}`)
-    return { status: 'failed' }
+    // Log only the generic message + HTTP status + response body (when available)
+    // never the API key, tokens or payment data.
+    const status = err?.statusCode ?? err?.status ?? err?.response?.statusCode ?? err?.response?.status
+    const body = err?.response?.body || err?.response?.data || err?.body
+    const bodyStr = body ? (typeof body === 'object' ? JSON.stringify(body) : String(body)) : ''
+    console.error(`[ORDER EMAIL ERROR] ${tag} failed${status ? ` (HTTP ${status})` : ''}: ${err.message || err}${bodyStr ? ` | Response: ${bodyStr}` : ''}`)
+    return { status: 'failed', error: err }
   }
 }
 
-// Sends the CUSTOMER confirmation + ADMIN notification for a freshly saved
-// order. Both emails use the SAME params object. Failures are fully
-// independent (Promise.allSettled) and can never affect the saved order.
+// Sends the CUSTOMER confirmation + ADMIN notification for a freshly saved order.
 // Never throws.
 async function sendOrderEmails({ order }) {
   try {
@@ -244,18 +269,16 @@ async function sendOrderEmails({ order }) {
 
     const emails = []
 
-    // 1) Customer confirmation — only when a real address exists (centralized
-    // syntax check; an address that passed checkout is always valid, this is
-    // a belt-and-braces guard for any legacy row).
+    // 1) Customer confirmation — uses BREVO_ORDER_CONFIRMATION_TEMPLATE_ID (fallback BREVO_CUSTOMER_TEMPLATE_ID)
     const customerEmail = String(params.customerEmail || '').trim().toLowerCase()
     if (validateEmailSyntax(customerEmail)) {
       emails.push({
-        tag: 'Customer email',
+        tag: 'Customer confirmation email',
         to: [{ email: customerEmail, name: params.customerName || 'Valued Customer' }],
-        templateId: process.env.BREVO_CUSTOMER_TEMPLATE_ID,
+        templateId: process.env.BREVO_ORDER_CONFIRMATION_TEMPLATE_ID || process.env.BREVO_CUSTOMER_TEMPLATE_ID,
       })
     } else {
-      console.log(`[ORDER EMAIL] Skipped customer email: no customer email for ${orderNumber}`)
+      console.log(`[ORDER EMAIL] Skipped customer confirmation email: no customer email for ${orderNumber}`)
     }
 
     // 2) Admin notification — always to ADMIN_EMAIL (infohallmarkexcellence@gmail.com).
@@ -288,10 +311,71 @@ async function sendOrderEmails({ order }) {
   }
 }
 
+// Sends status change emails (Processing, Shipped, Cancelled) to the customer.
+// Only sends when oldStatus !== newStatus.
+// Never throws.
+async function sendOrderStatusEmail({ order, oldStatus, newStatus }) {
+  try {
+    const fromStatus = (oldStatus || '').trim().toLowerCase()
+    const toStatus = (newStatus || '').trim().toLowerCase()
+
+    // CRITICAL: Do not send duplicate emails if status has not changed or is empty
+    if (!toStatus || fromStatus === toStatus) {
+      return { status: 'skipped', reason: 'Status unchanged or empty' }
+    }
+
+    let templateId = null
+    let tag = ''
+
+    if (toStatus === 'processing') {
+      templateId = process.env.BREVO_ORDER_PROCESSING_TEMPLATE_ID
+      tag = 'Processing email'
+    } else if (toStatus === 'shipped') {
+      templateId = process.env.BREVO_ORDER_SHIPPED_TEMPLATE_ID
+      tag = 'Shipped email'
+    } else if (toStatus === 'cancelled') {
+      templateId = process.env.BREVO_ORDER_CANCELLED_TEMPLATE_ID
+      tag = 'Cancellation email'
+    } else {
+      // No email automated for other statuses (Pending, Delivered, Returned)
+      return { status: 'skipped', reason: `No email automation for status "${newStatus}"` }
+    }
+
+    const params = buildOrderEmailParams(order)
+    const orderNumber = order?.order_number || 'unknown'
+    const customerEmail = String(params.customerEmail || '').trim().toLowerCase()
+
+    if (!validateEmailSyntax(customerEmail)) {
+      if (toStatus === 'cancelled') {
+        console.log(`[ORDER EMAIL] Customer email missing or invalid; cancellation email skipped for ${orderNumber}`)
+      } else {
+        console.log(`[ORDER EMAIL] Skipped ${tag}: no customer email for ${orderNumber}`)
+      }
+      return { status: 'skipped', reason: 'No valid customer email' }
+    }
+
+    const to = [{ email: customerEmail, name: params.customerName || 'Valued Customer' }]
+    const res = await sendTemplateEmail({ tag, to, templateId, params })
+    if (res.status === 'sent') {
+      if (toStatus === 'cancelled') {
+        console.log(`[ORDER EMAIL] Cancellation email sent successfully:\norder=${orderNumber}\nemail=${customerEmail}\ntemplate=${templateId}`)
+      } else {
+        console.log(`[ORDER EMAIL] ${tag} sent: ${orderNumber}`)
+      }
+    }
+    return res
+  } catch (err) {
+    console.error('[ORDER EMAIL ERROR] Unexpected status email error:', err.message || err)
+    return { status: 'failed', error: err }
+  }
+}
+
 module.exports = {
   formatINR,
   formatOrderDate,
   safeImage,
   buildOrderEmailParams,
+  sendTemplateEmail,
   sendOrderEmails,
+  sendOrderStatusEmail,
 }
