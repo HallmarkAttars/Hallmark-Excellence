@@ -1,0 +1,428 @@
+/* ============================================================
+   FeaturedProductsCarousel.css
+   Cinematic Circular Orbit Luxury Perfume Display Pedestal
+   Matches the reference image visual direction:
+   - Center active product dominant and largest
+   - All products curve along a circular/elliptical dais
+   - Upright bottles with name and category printed below
+   - Illuminated golden pedestal platform with light trails
+   - Gold circular navigation arrows & matching pagination dots
+   ============================================================ */
+
+.carousel-orbit-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  user-select: none;
+  touch-action: pan-y;
+  cursor: grab;
+  overflow: hidden; /* Guarantees zero horizontal scrollbars */
+  padding: 10px 0 20px;
+}
+
+.carousel-orbit-wrapper:active {
+  cursor: grabbing;
+}
+
+/* ---------- 3D Orbit Stage ---------- */
+.carousel-orbit-stage {
+  position: relative;
+  width: 100%;
+  height: 380px; /* Mobile baseline */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 480px) {
+  .carousel-orbit-stage {
+    height: 420px;
+  }
+}
+
+@media (min-width: 768px) {
+  .carousel-orbit-stage {
+    height: 480px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-orbit-stage {
+    height: 540px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .carousel-orbit-stage {
+    height: 570px;
+  }
+}
+
+/* ---------- Ambient Backlight & Warm Golden Aura ---------- */
+.carousel-ambient-backlight {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(920px, 94vw);
+  height: min(340px, 58vw);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(218, 185, 95, 0.22) 0%,
+    rgba(240, 222, 175, 0.12) 40%,
+    rgba(255, 250, 240, 0.04) 70%,
+    transparent 80%
+  );
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Illuminated 3D Pedestal Platform Dais ---------- */
+.carousel-pedestal-platform {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1040px, 92vw);
+  height: min(280px, 36vw);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Outer glowing double-gold beveled rim */
+.platform-rim-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(228, 192, 108, 0.95);
+  box-shadow:
+    0 0 45px rgba(212, 175, 55, 0.35),
+    inset 0 0 35px rgba(212, 175, 55, 0.25),
+    0 22px 65px rgba(50, 35, 12, 0.12);
+}
+
+.platform-rim-inner {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(184, 137, 56, 0.45);
+}
+
+/* Polished warm ivory marble platform floor */
+.platform-surface-marble {
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(253, 248, 238, 0.82) 42%,
+    rgba(242, 229, 206, 0.45) 75%,
+    transparent 100%
+  );
+  overflow: hidden;
+}
+
+/* Luminous orbital light trails on platform surface */
+.platform-light-trails {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Pedestal spotlight under center front bottle */
+.platform-center-spotlight {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52%;
+  height: 48%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 240, 190, 0.6) 0%,
+    rgba(212, 175, 55, 0.28) 45%,
+    transparent 72%
+  );
+  filter: blur(14px);
+}
+
+/* ---------- Orbiting Items Track ---------- */
+.carousel-orbit-track {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 5;
+}
+
+/* Individual Orbiting Item Container */
+.carousel-orbit-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 140px;
+  height: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity, filter;
+  cursor: pointer;
+  outline: none;
+  transition: filter 0.25s ease;
+}
+
+@media (min-width: 480px) {
+  .carousel-orbit-item {
+    width: 160px;
+    height: 260px;
+  }
+}
+
+@media (min-width: 768px) {
+  .carousel-orbit-item {
+    width: 195px;
+    height: 310px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .carousel-orbit-item {
+    width: 220px;
+    height: 345px;
+  }
+}
+
+.carousel-orbit-item:focus-visible {
+  outline: 2px solid #b88938;
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+/* Inner card sitting on the platform */
+.carousel-item-pedestal-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  text-align: center;
+}
+
+/* Bottle ground shadow directly on the platform floor */
+.carousel-bottle-shadow {
+  position: absolute;
+  bottom: 46px; /* Sits under bottle, above text */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72%;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(35, 22, 10, 0.32) 0%,
+    rgba(80, 55, 20, 0.12) 48%,
+    transparent 78%
+  );
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+/* Bottle / Box Container — strictly upright! */
+.carousel-bottle-container {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 58px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.carousel-orbit-item:hover .carousel-bottle-container {
+  transform: translateY(-6px);
+}
+
+.carousel-bottle-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  /* Premium luxury depth shadow on packaging */
+  filter: drop-shadow(0 16px 26px rgba(45, 30, 10, 0.2));
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Product Info text directly beneath each bottle */
+.carousel-item-info {
+  position: relative;
+  width: 100%;
+  padding-top: 8px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.carousel-item-name {
+  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2b251f;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.carousel-item-category {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #786d60;
+  margin: 2px 0 0;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* Center Active Front Product Styling */
+.carousel-orbit-item.is-active-front {
+  cursor: pointer;
+}
+
+.carousel-orbit-item.is-active-front .carousel-bottle-shadow {
+  width: 82%;
+  height: 20px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(30, 18, 6, 0.42) 0%,
+    rgba(70, 48, 15, 0.18) 50%,
+    transparent 80%
+  );
+  filter: blur(6px);
+}
+
+.carousel-orbit-item.is-active-front .carousel-item-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1a1612;
+  letter-spacing: 0.03em;
+}
+
+@media (min-width: 768px) {
+  .carousel-orbit-item.is-active-front .carousel-item-name {
+    font-size: 1.25rem;
+  }
+}
+
+.carousel-orbit-item.is-active-front .carousel-item-category {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #85591a;
+}
+
+/* ---------- Circular Gold Navigation Arrows ---------- */
+.carousel-nav-arrow {
+  position: absolute;
+  top: 52%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #85591a;
+  border: 2px solid rgba(228, 192, 108, 0.75);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 6px 18px rgba(133, 89, 26, 0.35);
+  transition: all 0.22s ease;
+  outline: none;
+}
+
+.carousel-nav-arrow:hover {
+  background: #b88938;
+  border-color: #f7e2a9;
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 8px 24px rgba(184, 137, 56, 0.45);
+}
+
+.carousel-nav-arrow:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.carousel-nav-arrow.is-left {
+  left: clamp(10px, 3.5vw, 40px);
+}
+
+.carousel-nav-arrow.is-right {
+  right: clamp(10px, 3.5vw, 40px);
+}
+
+@media (min-width: 768px) {
+  .carousel-nav-arrow {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* ---------- Pagination Dots ---------- */
+.carousel-pagination-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 0 16px;
+  flex-wrap: wrap;
+  z-index: 20;
+}
+
+.carousel-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid rgba(184, 137, 56, 0.55);
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+
+.carousel-dot:hover {
+  border-color: #85591a;
+  background: rgba(184, 137, 56, 0.25);
+  transform: scale(1.15);
+}
+
+.carousel-dot.is-active {
+  background: #85591a;
+  border-color: #85591a;
+  box-shadow: 0 0 8px rgba(133, 89, 26, 0.4);
+  transform: scale(1.2);
+}
+
+/* ---------- Reduced Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .carousel-orbit-item {
+    transition: none !important;
+  }
+  .carousel-nav-arrow:hover,
+  .carousel-dot:hover {
+    transform: none !important;
+  }
+}

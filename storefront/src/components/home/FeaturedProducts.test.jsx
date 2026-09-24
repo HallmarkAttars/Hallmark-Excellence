@@ -4,6 +4,7 @@ import { render, screen, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CartProvider } from '../../context/CartContext'
 import FeaturedProducts from './FeaturedProducts'
+import FeaturedProductsCarousel from './FeaturedProductsCarousel'
 
 const mockFeaturedProducts = [
   { id: 1, name: 'Own Main show', is_featured: true, price: 500, category_name: 'Attar' },
@@ -13,7 +14,7 @@ const mockFeaturedProducts = [
   { id: 5, name: 'X -MAN', is_featured: true, price: 900, category_name: 'Attar' },
 ]
 
-describe('FeaturedProducts Component — Cinematic Orbit', () => {
+describe('FeaturedProducts Component — Continuous Circular Orbit', () => {
   afterEach(() => cleanup())
 
   it('returns null when empty or no products', () => {
@@ -25,7 +26,7 @@ describe('FeaturedProducts Component — Cinematic Orbit', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders section title, eyebrow, and view all link', () => {
+  it('renders section title, subtitle, and view all link', () => {
     render(
       <CartProvider>
         <MemoryRouter>
@@ -35,11 +36,11 @@ describe('FeaturedProducts Component — Cinematic Orbit', () => {
     )
 
     expect(screen.getByText(/FEATURED PRODUCTS/i)).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /Scents, made by hand/i })).toBeTruthy()
+    expect(screen.getByText(/Scents, made by hand/i)).toBeTruthy()
     expect(screen.getByRole('link', { name: /view all/i })).toBeTruthy()
   })
 
-  it('renders the illuminated platform and circular orbit stage with nav controls', () => {
+  it('renders the illuminated pedestal platform and circular orbit stage with navigation arrows', () => {
     const { container } = render(
       <CartProvider>
         <MemoryRouter>
@@ -48,10 +49,10 @@ describe('FeaturedProducts Component — Cinematic Orbit', () => {
       </CartProvider>
     )
 
-    const stage = container.querySelector('.featured-orbit-stage')
+    const stage = container.querySelector('.carousel-orbit-stage')
     expect(stage).toBeTruthy()
 
-    const platform = container.querySelector('.featured-orbit-platform')
+    const platform = container.querySelector('.carousel-pedestal-platform')
     expect(platform).toBeTruthy()
 
     const prevBtn = screen.getByRole('button', { name: /previous fragrance/i })
@@ -60,7 +61,7 @@ describe('FeaturedProducts Component — Cinematic Orbit', () => {
     expect(nextBtn).toBeTruthy()
   })
 
-  it('renders orbit product items and dot indicators', () => {
+  it('renders orbit product items with names and categories printed below', () => {
     const { container } = render(
       <CartProvider>
         <MemoryRouter>
@@ -69,24 +70,53 @@ describe('FeaturedProducts Component — Cinematic Orbit', () => {
       </CartProvider>
     )
 
-    const items = container.querySelectorAll('.featured-orbit-item')
-    expect(items.length).toBeGreaterThanOrEqual(5)
+    const items = container.querySelectorAll('.carousel-orbit-item')
+    expect(items.length).toBe(5)
 
-    const dots = container.querySelectorAll('.orbit-dot')
+    const dots = container.querySelectorAll('.carousel-dot')
     expect(dots.length).toBe(5)
   })
 
-  it('renders active product showcase details with explore fragrance cta', () => {
-    render(
-      <CartProvider>
-        <MemoryRouter>
-          <FeaturedProducts products={mockFeaturedProducts} />
-        </MemoryRouter>
-      </CartProvider>
+  it('renders correctly with 3, 5, or 11 products in FeaturedProductsCarousel', () => {
+    const elevenProducts = Array.from({ length: 11 }, (_, i) => ({
+      id: i + 1,
+      name: `Fragrance ${i + 1}`,
+      is_featured: true,
+      category_name: 'Roll On Perfume',
+    }))
+
+    const { container } = render(
+      <MemoryRouter>
+        <FeaturedProductsCarousel products={elevenProducts} />
+      </MemoryRouter>
     )
 
-    expect(screen.getByRole('link', { name: /explore fragrance/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /quick view/i })).toBeTruthy()
+    const items = container.querySelectorAll('.carousel-orbit-item')
+    expect(items.length).toBe(11)
+
+    const dots = container.querySelectorAll('.carousel-dot')
+    expect(dots.length).toBe(11)
+  })
+
+  it('assigns all 20 products to positions on the same single orbit without slicing or duplication', () => {
+    const twentyProducts = Array.from({ length: 20 }, (_, i) => ({
+      id: i + 1,
+      name: `Fragrance ${i + 1}`,
+      is_featured: true,
+      category_name: 'Roll On Perfume',
+    }))
+
+    const { container } = render(
+      <MemoryRouter>
+        <FeaturedProductsCarousel products={twentyProducts} />
+      </MemoryRouter>
+    )
+
+    const items = container.querySelectorAll('.carousel-orbit-item')
+    expect(items.length).toBe(20)
+
+    const dots = container.querySelectorAll('.carousel-dot')
+    expect(dots.length).toBe(20)
   })
 
   it('renders the subtle section divider', () => {

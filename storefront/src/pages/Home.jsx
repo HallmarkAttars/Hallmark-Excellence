@@ -122,7 +122,7 @@ export default function Home() {
               </div>
             </section>
           )}
-          <FeaturedProducts products={featuredProducts} />
+          <FeaturedProducts products={featuredProducts} allProducts={products} />
           <SocialStrip products={products} />
         </>
       )}
