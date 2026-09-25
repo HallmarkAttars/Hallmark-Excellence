@@ -1,0 +1,169 @@
+/* ============================================================
+   Mobile Fixed Bottom Navigation
+   Luxury cream / gold accent matching Arees & Dahab aesthetic
+   Mobile & Tablet only (hidden on desktop >= 1025px)
+   ============================================================ */
+
+:root {
+  --bottom-nav-h: 62px;
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 98; /* Stays above general content; below modal dialogs and toasts */
+  background: rgba(248, 243, 232, 0.96);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line, rgba(184, 137, 56, 0.18));
+  box-shadow: 0 -4px 20px rgba(29, 25, 20, 0.08);
+  border-radius: 16px 16px 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mobile-bottom-nav-inner {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: var(--bottom-nav-h);
+  align-items: stretch;
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+.mobile-bottom-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 2px 4px;
+  text-decoration: none;
+  color: var(--charcoal-soft, #5F584E);
+  transition: color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-width: 0;
+}
+
+/* Small gold indicator above the active item */
+.mobile-bottom-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 2.5px;
+  border-radius: 0 0 2px 2px;
+  background: linear-gradient(90deg, var(--gold, #B88938), var(--gold-light, #C69A4B));
+  box-shadow: 0 1px 4px rgba(184, 137, 56, 0.4);
+}
+
+.mobile-bottom-nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--charcoal, #1D1914);
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.mobile-bottom-nav-icon-wrap svg {
+  display: block;
+}
+
+.mobile-bottom-nav-label {
+  font-family: var(--font-body, 'Manrope', sans-serif);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+  transition: color 0.18s ease, font-weight 0.18s ease;
+}
+
+/* Active State: gold/brown icon & label + indicator */
+.mobile-bottom-nav-item.is-active .mobile-bottom-nav-icon-wrap {
+  color: var(--gold-deep, #8A6626);
+  transform: translateY(-1px);
+}
+
+.mobile-bottom-nav-item.is-active .mobile-bottom-nav-label {
+  color: var(--gold-deep, #8A6626);
+  font-weight: 600;
+}
+
+/* Hover on fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  .mobile-bottom-nav-item:hover .mobile-bottom-nav-icon-wrap,
+  .mobile-bottom-nav-item:hover .mobile-bottom-nav-label {
+    color: var(--ink, #1D1914);
+  }
+  .mobile-bottom-nav-item.is-active:hover .mobile-bottom-nav-icon-wrap,
+  .mobile-bottom-nav-item.is-active:hover .mobile-bottom-nav-label {
+    color: var(--gold-deep, #8A6626);
+  }
+}
+
+/* Cart Quantity Badge */
+.mobile-bottom-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--gold-deep, #8A6626);
+  color: #ffffff;
+  font-family: var(--font-body, 'Manrope', sans-serif);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border: 1.5px solid var(--cream, #F8F3E8);
+  box-shadow: 0 2px 5px rgba(29, 25, 20, 0.2);
+  pointer-events: none;
+}
+
+/* Small mobile devices (e.g. 360px and smaller) */
+@media (max-width: 360px) {
+  .mobile-bottom-nav-label {
+    font-size: 9.5px;
+    letter-spacing: 0;
+  }
+  .mobile-bottom-nav-icon-wrap {
+    width: 22px;
+    height: 22px;
+  }
+  .mobile-bottom-nav-icon-wrap svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Mobile body padding & safe area */
+@media (max-width: 1024px) {
+  body {
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Desktop: hide mobile bottom nav completely, keep existing layout */
+@media (min-width: 1025px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}

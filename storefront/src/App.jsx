@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import StickyWhatsApp from './components/ui/StickyWhatsApp'
+import MobileBottomNav from './components/layout/MobileBottomNav'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 
 // Route-level code splitting: each page ships as its own chunk and is only
@@ -17,6 +18,7 @@ const Home = lazy(() => import('./pages/Home'))
 const Shop = lazy(() => import('./pages/Shop'))
 const Categories = lazy(() => import('./pages/Categories'))
 const CategoryProducts = lazy(() => import('./pages/CategoryProducts'))
+const Brands = lazy(() => import('./pages/Brands'))
 const BrandProducts = lazy(() => import('./pages/BrandProducts'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
 const About = lazy(() => import('./pages/About'))
@@ -71,6 +73,7 @@ function PageContent() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/categories/:slug" element={<CategoryProducts />} />
+            <Route path="/brands" element={<Brands />} />
             <Route path="/brand/:slug" element={<BrandProducts />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/about" element={<About />} />
@@ -104,6 +107,9 @@ export default function App() {
                 root so it appears on every customer-facing page. The admin app
                 is a separate build, so it never appears there. */}
             <StickyWhatsApp />
+            {/* Mobile Fixed Bottom Navigation — rendered once at the storefront
+                root, displays on mobile/tablet breakpoints (<1025px) */}
+            <MobileBottomNav />
           </BrowserRouter>
         </ToastProvider>
       </CartProvider>

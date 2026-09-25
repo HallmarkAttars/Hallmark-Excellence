@@ -88,13 +88,14 @@
   box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.25);
 }
 
-/* Mobile — tighter offsets + safe-area, compact & unobtrusive footprint */
-@media (max-width: 767px) {
+/* Mobile & Tablet — positioned above fixed bottom navigation with safe-area spacing */
+@media (max-width: 1024px) {
   .sticky-whatsapp {
     right: calc(14px + env(safe-area-inset-right, 0px));
-    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     width: 48px;      /* mobile (46–50px) */
     height: 48px;
+    z-index: 99;
     box-shadow: 0 4px 14px rgba(31, 120, 72, 0.32);
   }
   .sticky-whatsapp svg {

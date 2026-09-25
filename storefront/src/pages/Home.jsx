@@ -95,7 +95,7 @@ export default function Home() {
               directly below Shop by Category under one heading. The banners are
               the SAME components as before (no duplicates, no new content). */}
           {gridCards.length > 0 && (
-            <section className="our-brands-section">
+            <section className="our-brands-section" id="brands">
               <div className="container">
                 <div className="section-head">
                   <h2 className="section-title-upper">{HOME_BRANDS.title}</h2>
