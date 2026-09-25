@@ -1,0 +1,261 @@
+/* ============================================================
+   CinematicHero.css — Continuous Brand Image Transition
+   Luxury perfume cinematic slideshow with Ken Burns effect
+   ============================================================ */
+
+/* Background layer container — sits below dark overlay (z-index: 0) */
+.hero-background-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background-color: #0c0a08; /* Luxury deep dark ink base */
+}
+
+/* Individual slide wrapper — manages opacity & crossfading */
+.cinematic-hero-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint layout;
+}
+
+/* Active slide (holding state) */
+.cinematic-hero-slide--active {
+  z-index: 1;
+  opacity: 1;
+}
+
+/* Outgoing slide (bottom layer during crossfade) — keeps running its motion */
+.cinematic-hero-slide--outgoing {
+  z-index: 1;
+  opacity: 1;
+}
+
+/* Incoming slide (top layer during crossfade) — smoothly dissolves in */
+.cinematic-hero-slide--incoming {
+  z-index: 2;
+  opacity: 0;
+  animation: cinematic-fade-in var(--fade-duration, 1800ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes cinematic-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Inner media wrapper — carries the Ken Burns camera movement */
+.cinematic-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Slide picture and image elements */
+.cinematic-hero-picture {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.cinematic-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background-size: cover;
+  background-position: center;
+  display: block;
+}
+
+/* ------------------------------------------------------------
+   Ken Burns Camera Motion Variants
+   Slow, elegant, subtle camera movements through luxury campaign
+   ------------------------------------------------------------ */
+
+/* Variant 1: Slow subtle zoom-in with gentle drift to the right */
+.cinematic-motion-0 {
+  animation: cinematic-kb-1 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-1 {
+  0% {
+    transform: scale(1.04) translate3d(-1.5%, 0, 0);
+  }
+  100% {
+    transform: scale(1.11) translate3d(1.5%, 0, 0);
+  }
+}
+
+/* Variant 2: Slow subtle zoom-out with gentle drift to the left */
+.cinematic-motion-1 {
+  animation: cinematic-kb-2 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-2 {
+  0% {
+    transform: scale(1.11) translate3d(1.5%, -0.5%, 0);
+  }
+  100% {
+    transform: scale(1.04) translate3d(-1.5%, 0.5%, 0);
+  }
+}
+
+/* Variant 3: Slow subtle upward camera movement with very slight zoom */
+.cinematic-motion-2 {
+  animation: cinematic-kb-3 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-3 {
+  0% {
+    transform: scale(1.05) translate3d(0, 1.5%, 0);
+  }
+  100% {
+    transform: scale(1.10) translate3d(0, -1.5%, 0);
+  }
+}
+
+/* Variant 4: Slow subtle downward camera movement with very slight zoom-out */
+.cinematic-motion-3 {
+  animation: cinematic-kb-4 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-4 {
+  0% {
+    transform: scale(1.10) translate3d(0, -1.5%, 0);
+  }
+  100% {
+    transform: scale(1.05) translate3d(0, 1.5%, 0);
+  }
+}
+
+/* Variant 5: Subtle diagonal movement (up-right) */
+.cinematic-motion-4 {
+  animation: cinematic-kb-5 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-5 {
+  0% {
+    transform: scale(1.05) translate3d(-1%, 1%, 0);
+  }
+  100% {
+    transform: scale(1.11) translate3d(1%, -1%, 0);
+  }
+}
+
+/* Variant 6: Subtle diagonal movement (down-left) */
+.cinematic-motion-5 {
+  animation: cinematic-kb-6 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes cinematic-kb-6 {
+  0% {
+    transform: scale(1.11) translate3d(1%, -1%, 0);
+  }
+  100% {
+    transform: scale(1.05) translate3d(-1%, 1%, 0);
+  }
+}
+
+/* Single-image subtle breathing (if only 1 image exists) */
+.cinematic-motion-single {
+  animation: cinematic-kb-single 14000ms ease-in-out infinite alternate;
+}
+
+@keyframes cinematic-kb-single {
+  0% {
+    transform: scale(1.03) translate3d(-0.8%, 0, 0);
+  }
+  100% {
+    transform: scale(1.08) translate3d(0.8%, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------
+   Mobile & Responsive Viewports
+   Maintains product recognition and prevents aggressive cropping
+   ------------------------------------------------------------ */
+
+@media (max-width: 767px) {
+  .cinematic-hero-img {
+    object-position: center 38%;
+    background-position: center 38%;
+  }
+
+  .cinematic-hero-media {
+    transform-origin: center 40%;
+  }
+
+  /* Slightly tighter scale range on mobile to preserve perfume bottle framing */
+  @keyframes cinematic-kb-1 {
+    0% { transform: scale(1.03) translate3d(-1%, 0, 0); }
+    100% { transform: scale(1.08) translate3d(1%, 0, 0); }
+  }
+
+  @keyframes cinematic-kb-2 {
+    0% { transform: scale(1.08) translate3d(1%, 0, 0); }
+    100% { transform: scale(1.03) translate3d(-1%, 0, 0); }
+  }
+
+  @keyframes cinematic-kb-3 {
+    0% { transform: scale(1.03) translate3d(0, 1%, 0); }
+    100% { transform: scale(1.07) translate3d(0, -1%, 0); }
+  }
+
+  @keyframes cinematic-kb-4 {
+    0% { transform: scale(1.07) translate3d(0, -1%, 0); }
+    100% { transform: scale(1.03) translate3d(0, 1%, 0); }
+  }
+
+  @keyframes cinematic-kb-5 {
+    0% { transform: scale(1.04) translate3d(-0.8%, 0.8%, 0); }
+    100% { transform: scale(1.08) translate3d(0.8%, -0.8%, 0); }
+  }
+
+  @keyframes cinematic-kb-6 {
+    0% { transform: scale(1.08) translate3d(0.8%, -0.8%, 0); }
+    100% { transform: scale(1.04) translate3d(-0.8%, 0.8%, 0); }
+  }
+}
+
+/* ------------------------------------------------------------
+   Reduced Motion
+   Respects user preferences: disables camera pan/zoom
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-hero-media,
+  .cinematic-motion-0,
+  .cinematic-motion-1,
+  .cinematic-motion-2,
+  .cinematic-motion-3,
+  .cinematic-motion-4,
+  .cinematic-motion-5,
+  .cinematic-motion-single {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .cinematic-hero-slide--incoming {
+    animation-duration: 800ms !important;
+  }
+}

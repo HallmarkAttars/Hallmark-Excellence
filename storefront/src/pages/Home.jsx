@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from 'react'
-import Hero from '../components/home/Hero'
+import { useEffect, useState, useRef, useMemo } from 'react'
+import CinematicHero from '../components/home/CinematicHero'
+import { collectBrandHeroImages } from '../utils/brandHeroImages'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
 import BrandShowcaseCard from '../components/home/BrandShowcaseCard'
@@ -58,6 +59,14 @@ export default function Home() {
   // fetched above.
   const featuredProducts = products.filter((p) => p.is_featured === true)
 
+  // Dynamically collect all available brand and product hero images from
+  // database brands, admin-configured imagery, and catalog content.
+  // When an admin adds a new brand/image in the admin panel, it automatically
+  // participates in the continuous hero rotation without any code change.
+  const heroImages = useMemo(() => {
+    return collectBrandHeroImages(brands, featuredProducts)
+  }, [brands, featuredProducts])
+
   const homeSchema = [
     buildOrganizationSchema(),
     buildWebSiteSchema(),
@@ -72,10 +81,9 @@ export default function Home() {
         canonical="/"
         schema={homeSchema}
       />
-      {/* Hero is static/local content (no fetch dependency) — it always
-          renders immediately and is never wrapped in a loading condition.
-          Only the data-driven sections below swap to skeletons. */}
-      <Hero />
+      {/* Hero renders immediately with continuous cinematic brand transitions
+          cycling smoothly through all available brand images. */}
+      <CinematicHero images={heroImages} />
 
       {loading ? (
         <>
