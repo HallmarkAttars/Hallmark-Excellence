@@ -365,12 +365,6 @@ export default function ProductForm() {
     setPriceSyncedBrand(form.brand_id)
   }, [isEdit, isAttarCategory, form.brand_id, selectedBrand, variants.length, defaultVariantIndex, priceSyncedBrand, brandHasNormalPrice, brandNormalPrice])
 
-  // Clear brand selection when switching AWAY from Attar category
-  useEffect(() => {
-    if (!isAttarCategory && form.brand_id && !lockedBrandId) {
-      setForm((f) => ({ ...f, brand_id: '' }))
-    }
-  }, [isAttarCategory, form.brand_id, lockedBrandId])
 
   // Category label contextual helper
   const isBrandProduct = checkIsBrandProduct({ brandId: form.brand_id, lockedBrandId })
