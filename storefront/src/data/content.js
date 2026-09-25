@@ -72,7 +72,7 @@ export const HERO = {
   subtitle:
     'CRAFTING FRAGRANCE. CREATING IDENTITY. Discover the world of Arees perfumes, premium attars, oud, and traditional fragrance oils.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
-  secondaryCta: { label: 'Explore Attars', to: '/categories/attars' },
+  secondaryCta: { label: 'Explore Attars', to: '/categories' },
 }
 
 // --------------------------------------------------------------------------
