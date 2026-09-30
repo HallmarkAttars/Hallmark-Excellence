@@ -402,9 +402,13 @@ export default function Contact() {
           // authoritatively from the database.
           const unit_price = lineUnitPrice(item)
           const quantity = Number(item.quantity ?? item.qty ?? 1)
-          const hasVariant = item.variant_id != null
+          const hasVariant = (item.variant_id ?? item.variantId) != null
+          const varId = item.variantId ?? item.variant_id ?? null
           return {
-            product_id: item.product_id ?? item.id,
+            product_id: item.product_id ?? item.productId ?? item.id,
+            productId: item.productId ?? item.product_id ?? item.id,
+            variantId: varId,
+            selectedVariant: item.selectedVariant ?? null,
             product_name: item.name,
             image: item.image,
             quantity,
@@ -415,7 +419,9 @@ export default function Contact() {
             subtotal: unit_price * quantity,
             ...(hasVariant
               ? {
-                  variant_id: item.variant_id,
+                  variant_id: varId,
+                  variantId: varId,
+                  selectedVariant: item.selectedVariant ?? null,
                   variant_label: item.variant_label,
                   quantity_value: item.quantity_value,
                   quantity_unit: item.quantity_unit,

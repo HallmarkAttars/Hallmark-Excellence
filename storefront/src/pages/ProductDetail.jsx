@@ -8,9 +8,9 @@ import {
   getApplicableBulkTier,
   getBulkTiers,
   lineNormalPerPiece,
-  pieceBandRange,
   pieceWord,
   productPageBrandPieces,
+  round2,
 } from '../utils/brandBulk'
 import { getStockStatus, isProductInStock } from '../utils/stock'
 import { getDefaultVariant } from '../utils/productPricing'
@@ -19,6 +19,28 @@ import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
 import { buildProductSchema, buildBreadcrumbsSchema } from '../utils/seo'
 import './ProductDetail.css'
+
+// Extract piece quantity from a variant (either quantity_value or numeric match from display_label)
+export function getVariantAmount(v) {
+  if (!v) return 1
+  if (typeof v === 'number') return v
+  if (v.quantity_value != null && Number.isFinite(Number(v.quantity_value)) && Number(v.quantity_value) > 0) {
+    return Math.floor(Number(v.quantity_value))
+  }
+  const match = String(v.display_label || '').match(/(\d+)/)
+  if (match) {
+    const parsed = parseInt(match[1], 10)
+    if (Number.isFinite(parsed) && parsed > 0) return parsed
+  }
+  return 1
+}
+
+export function isPieceVariant(v) {
+  if (!v) return false
+  const u = String(v.quantity_unit ?? '').trim().toLowerCase()
+  const l = String(v.display_label ?? '').toLowerCase()
+  return u === 'pieces' || l.includes('piece')
+}
 
 // Display unit for the per-unit price (e.g. "₹10 / piece").
 function unitDisplay(unit) {
@@ -63,7 +85,7 @@ function BagIcon() {
   )
 }
 
-export default function ProductDetail() {
+export default function ProductDetail({ onAddToCart }) {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
   const variantParam = searchParams.get('variant')
@@ -73,20 +95,20 @@ export default function ProductDetail() {
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
-  // Automatically select the default active variant upon product load.
+  // Two completely separate state values: selectedVariant and quantity.
+  // selectedVariant tracks the variant value (e.g. 216).
+  // quantity tracks the local quantity (e.g. 216, 217, 218...).
   const [selectedVariant, setSelectedVariant] = useState(null)
+  const [selectedVariantId, setSelectedVariantId] = useState(null)
+  const [quantity, setQuantity] = useState(1)
+  const qty = quantity
+  const setQty = setQuantity
+
   // "Please select a variant" hint when Add to Cart is clicked too early.
   const [variantHint, setVariantHint] = useState(false)
   const [error, setError] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [adding, setAdding] = useState(false)
-  // How many units/packs of the SELECTED VARIANT the customer wants.
-  const [qty, setQty] = useState(1)
-  // True once the CURRENT selection (variant + quantity) has actually been
-  // added to the cart. While false, the bulk preview shows cart + selection;
-  // once true, the cart already contains those pieces and the preview must
-  // NOT add them again (the double-counting bug). Reset on every selection
-  // change; set after a successful add.
   const [selectionInCart, setSelectionInCart] = useState(false)
   // Description "Read more" — purely visual (line clamp), no data change.
   const [descOpen, setDescOpen] = useState(false)
@@ -94,10 +116,6 @@ export default function ProductDetail() {
   const [wishlistIds, setWishlistIds] = useState(readWishlist)
   const addedTimer = useRef(null)
   const addTimer = useRef(null)
-  // Synchronous re-entry guard for handleAdd: React state (`adding`) cannot
-  // block two clicks in the same frame, and a double-fire would add the
-  // selected quantity twice (60 → 120). The ref is set before the first
-  // mutation and cleared when the add completes.
   const addingRef = useRef(false)
 
   // Clear feedback timers on unmount.
@@ -111,13 +129,12 @@ export default function ProductDetail() {
     setError(null)
     setAdded(false)
     setSelectedVariant(null)
+    setSelectedVariantId(null)
     setVariantHint(false)
-    setQty(1)
+    setQuantity(1)
     setSelectionInCart(false)
     setDescOpen(false)
     addingRef.current = false
-    // Normal mounts reuse the catalog cache; the "Try Again" retry forces a
-    // fresh read so it can never be served a stale cached failure.
     getProductById(id, { refresh: reloadKey > 0 })
       .then((p) => {
         setProduct(p)
@@ -133,16 +150,11 @@ export default function ProductDetail() {
           }
 
           if (activeVar) {
-            setSelectedVariant(activeVar)
-            if (
-              p.brand_id != null &&
-              String(activeVar.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
-              activeVar.quantity_value != null
-            ) {
-              setQty(Math.max(1, Math.floor(Number(activeVar.quantity_value) || 1)))
-            } else {
-              setQty(1)
-            }
+            const isPiece = isPieceVariant(activeVar)
+            const varAmount = getVariantAmount(activeVar)
+            setSelectedVariant(isPiece ? varAmount : 1)
+            setSelectedVariantId(activeVar.id)
+            setQuantity(isPiece ? Math.max(1, varAmount) : 1)
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
         }
@@ -180,28 +192,43 @@ export default function ProductDetail() {
   const hasVariants = variants.length > 0
   const inWishlist = wishlistIds.includes(String(product.id))
 
-  // The selected variant's TOTAL price is the authoritative amount paid for
-  // ONE unit of it (e.g. ₹7500 for "1000 Pieces"). Price-per-unit is display
-  // only. Variant-less products keep their product-level price.
+  const defaultVariant =
+    getDefaultVariant(product) ||
+    (variants.length ? variants.find((v) => v.is_default) || variants[0] : null)
+
+  const activeVariant = hasVariants
+    ? (variants.find((v) => String(v.id) === String(selectedVariantId)) ||
+       variants.find((v) => getVariantAmount(v) === selectedVariant) ||
+       defaultVariant ||
+       variants[0] ||
+       null)
+    : null
+
+  const isBrandProduct = product.brand_id != null
+  const pieceMode = hasVariants && Boolean(activeVariant && isPieceVariant(activeVariant))
+
+  const variantSelected = hasVariants ? Boolean(activeVariant || selectedVariant) : true
   const totalPrice = hasVariants
-    ? Number(selectedVariant?.total_price ?? selectedVariant?.price ?? 0)
+    ? Number(activeVariant?.total_price ?? activeVariant?.price ?? 0)
     : Number(product.price)
   const perUnit = hasVariants
-    ? Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0)
+    ? Number(
+        activeVariant?.price_per_unit ??
+          (isPieceVariant(activeVariant) && getVariantAmount(activeVariant) > 0
+            ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) / getVariantAmount(activeVariant)
+            : activeVariant?.price) ??
+          0
+      )
     : null
-  const selectedUnit = hasVariants ? selectedVariant?.quantity_unit : null
+  const selectedUnit = hasVariants ? activeVariant?.quantity_unit : null
 
-  // A variant product shows its price ONLY after the customer explicitly
-  // selects a variant. The displayed total = selected variant TOTAL × qty
-  // (the exact same math the cart line uses — never per-unit × qty).
-  const variantSelected = hasVariants ? Boolean(selectedVariant) : true
-  const displayTotal = Number.isFinite(totalPrice) ? totalPrice * qty : 0
-
-  const variantLabel = (v) =>
-    v.display_label || `${v.quantity_value} ${v.quantity_unit}`.trim()
-
-  // The default variant marks cart lines (is_default flag).
-  const defaultVariant = getDefaultVariant(product) || (variants.length ? variants.find((v) => v.is_default) || variants[0] : null)
+  const variantLabel = (v) => {
+    if (!v) return ''
+    if (v.display_label) return v.display_label
+    const val = v.quantity_value ?? getVariantAmount(v)
+    const unit = v.quantity_unit || 'Pieces'
+    return `${val} ${unit}`.trim()
+  }
 
   // Stock resolution: product-level boolean availability (single source of truth)
   const isInStock = isProductInStock(product)
@@ -209,58 +236,24 @@ export default function ProductDetail() {
   const isOutOfStock = !isInStock
 
   // --- Brand-level bulk pricing (brand products only) ----------------------
-  // `brandRule` is the brand's valid bulk rule when this product belongs to a
-  // brand that has one configured. Category products and brands without a
-  // rule are completely untouched. `cartBrandPieces` is the pieces of that
-  // brand already in the cart; the current selection adds on top so the
-  // unlock state updates live as the customer changes quantity.
   const brandRule =
     product.brand_id != null ? bulkRules[String(product.brand_id)] || null : null
   const isBrandBulkProduct = Boolean(brandRule)
   const cartBrandPieces =
     product.brand_id != null ? brandPieces[String(product.brand_id)] || 0 : 0
 
-  // Any BRAND product whose selected variant is a "Pieces" band gets the
-  // one-piece-at-a-time stepper: min = the band's quantity_value, max = one
-  // below the next band, auto-advancing at the edge. Category products and
-  // ML/Gram brand variants keep the original pack-based control.
-  const isBrandProduct = product.brand_id != null
-  const pieceVariants = isBrandProduct
-    ? variants.filter((v) => String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces')
-    : []
-  const pieceMode =
-    hasVariants &&
-    selectedVariant &&
-    pieceVariants.some((v) => String(v.id) === String(selectedVariant.id))
-  // Shared band math (unit-tested in utils/brandBulk.js): the selected
-  // band's minimum, its max (one below the next band) and the next band
-  // (auto-selected at the edge). null for non-Pieces variants / categories.
-  const bandRange = pieceMode ? pieceBandRange(variants, selectedVariant.id) : null
-  const pieceMin = bandRange ? bandRange.min : 1
-  const nextVariant = bandRange ? bandRange.next : null
-  const pieceMax = bandRange ? bandRange.max : null
-
-  // VARIANT SELECTION IS THE SOURCE OF INITIAL QUANTITY: selecting a Pieces
-  // band of a BRAND product resets the quantity to that band's minimum. It
-  // NEVER inherits the previous quantity, another cart item's quantity, the
-  // brand total or the bulk threshold — those stay logically separate (the
-  // brand total is used ONLY for bulk eligibility). Category products and
-  // ML/Gram brand variants keep their current quantity when switching.
   const handleVariantSelect = (v) => {
-    setSelectedVariant(v)
+    if (!v) return
+    const isPiece = isPieceVariant(v)
+    const varAmount = getVariantAmount(v)
+    const varId = v.id != null ? v.id : (typeof v === 'object' ? v.id : null)
+
+    setSelectedVariant(isPiece ? varAmount : 1)
+    if (varId != null) setSelectedVariantId(varId)
+    // When the user selects a variant, quantity matches that variant amount
+    setQuantity(isPiece ? Math.max(1, varAmount) : 1)
     setVariantHint(false)
-    // A new variant is a NEW selection — it has not been added to the cart.
     setSelectionInCart(false)
-    if (
-      isBrandProduct &&
-      String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces' &&
-      v.quantity_value != null
-    ) {
-      // Same `|| 1` guard as pieceBandRange so a corrupt (non-numeric)
-      // quantity_value can never leave the quantity at NaN.
-      const initialQty = Math.max(1, Math.floor(Number(v.quantity_value) || 1))
-      setQty(initialQty)
-    }
   }
 
   // Pieces the CURRENT selection would add to the brand tally.
@@ -268,23 +261,17 @@ export default function ProductDetail() {
     !variantSelected
       ? 0
       : pieceMode
-        ? qty
+        ? quantity
         : hasVariants
-          ? String(selectedVariant.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
-            ? Math.floor(Number(selectedVariant.quantity_value) || 0) * qty
-            : qty
-          : qty
-  // The brand total shown on the page: the cart's REAL brand pieces plus the
-  // current selection — but ONLY while that selection has not yet been added
-  // to the cart (once added, the cart total already includes it; adding it
-  // again would double-count, e.g. 60/90 becoming 120/90 after Add to Cart).
+          ? isPieceVariant(activeVariant)
+            ? getVariantAmount(activeVariant) * quantity
+            : quantity
+          : quantity
+
   const totalBrandPieces = isBrandBulkProduct
     ? productPageBrandPieces(cartBrandPieces, selectionPieces, selectionInCart)
     : 0
-  // Multi-tier resolution: progress targets the FIRST tier; once unlocked,
-  // the HIGHEST applicable tier drives the price, savings and the shown
-  // threshold (100/150/200 pcs example: 149 → 100-tier ₹43, 150 → 150-tier
-  // ₹42).
+
   const brandTiers = isBrandBulkProduct ? getBulkTiers(brandRule) : null
   const firstBulkTier = brandTiers ? brandTiers[0] : null
   const bulkMinQty = firstBulkTier ? firstBulkTier.minQuantity : 0
@@ -293,8 +280,6 @@ export default function ProductDetail() {
     : null
   const brandUnlocked = isBrandBulkProduct && Boolean(applicableTier)
   const brandRemaining = isBrandBulkProduct ? Math.max(0, bulkMinQty - totalBrandPieces) : 0
-  // The applicable tier's rate once unlocked; the first tier's rate (the
-  // advertised offer) while locked.
   const bulkPerPiece = applicableTier
     ? applicableTier.price
     : firstBulkTier
@@ -302,35 +287,24 @@ export default function ProductDetail() {
       : 0
   const bulkThresholdShown = brandUnlocked && applicableTier ? applicableTier.minQuantity : bulkMinQty
 
-  // Brand products with a bulk rule, OR a brand product whose selected Pieces
-  // band is active, show a per-piece price + total (the exact math the cart
-  // line charges — display can never diverge from the cart). Everything else
-  // keeps the original variant-total display.
   const pieceStylePrice = isBrandBulkProduct || pieceMode
 
-  // Per-piece pricing: the brand's bulk rate when the brand is unlocked AND
-  // it is a genuine discount below the product's own per-piece price;
-  // otherwise the product's normal per-piece price. Uses the SAME per-piece
-  // semantics as the cart util (a Pieces variant's price-per-unit; a
-  // non-Pieces variant's total per unit; product price for variant-less
-  // items).
-  // The line's own normal per-piece price (Pieces variant's price-per-unit,
-  // non-Pieces variant's total per unit, product price for variant-less).
   const ownPerPiece =
-    pieceStylePrice && variantSelected && hasVariants
+    pieceStylePrice && variantSelected && hasVariants && activeVariant
       ? lineNormalPerPiece({
-          variant_id: selectedVariant.id,
-          quantity_unit: selectedVariant.quantity_unit,
-          quantity_value: selectedVariant.quantity_value,
-          variant_price_per_unit: Number(selectedVariant?.price_per_unit ?? selectedVariant?.price ?? 0),
-          variant_total_price: Number(selectedVariant?.total_price ?? selectedVariant?.price ?? 0),
+          variant_id: activeVariant.id,
+          quantity_unit: activeVariant.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
+          quantity_value: activeVariant.quantity_value ?? selectedVariant,
+          variant_price_per_unit: Number(
+            activeVariant?.price_per_unit ??
+              (isPieceVariant(activeVariant) && getVariantAmount(activeVariant) > 0
+                ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) / getVariantAmount(activeVariant)
+                : activeVariant.price ?? 0)
+          ),
+          variant_total_price: Number(activeVariant?.total_price ?? activeVariant?.price ?? 0),
         })
       : Number(product.price)
-  // The BRAND rule is the source of truth for the brand's PIECE-priced
-  // products: when a Pieces band is selected, the brand's standard price is
-  // the normal per-piece price (the product's own variant per-piece figure
-  // may be stale — e.g. ₹45 while the brand rule says ₹50). ML/Gram variants
-  // keep their own per-unit price.
+
   const brandStandardPerPiece = isBrandBulkProduct
     ? Number(brandRule?.standard_price ?? 0)
     : 0
@@ -346,68 +320,85 @@ export default function ProductDetail() {
     bulkPerPiece > 0 &&
     bulkPerPiece < normalPerPiece
   const chargedPerPiece = bulkApplied ? bulkPerPiece : normalPerPiece
-  const brandDisplayTotal =
-    pieceStylePrice && variantSelected ? chargedPerPiece * selectionPieces : 0
 
-  // --- Presentation derived values (display only — same underlying math) ---
-  // The line total shown in the quantity section: the same total the cart
-  // line will charge.
+  // Unit price and immediate recalculation of total = unitPrice * quantity
+  const getUnitPrice = () => {
+    if (bulkApplied && bulkPerPiece > 0) {
+      return bulkPerPiece
+    }
+    if (pieceStylePrice && normalPerPiece > 0) {
+      return normalPerPiece
+    }
+    if (hasVariants && activeVariant) {
+      const varTotal = Number(activeVariant.total_price ?? activeVariant.price ?? 0)
+      const varAmount = getVariantAmount(activeVariant)
+      if (varAmount > 0 && isPieceVariant(activeVariant)) {
+        return varTotal / varAmount
+      }
+      const varPpu = Number(activeVariant.price_per_unit)
+      if (Number.isFinite(varPpu) && varPpu > 0) {
+        return varPpu
+      }
+      return varTotal
+    }
+    return Number(product.price || 0)
+  }
+
+  const unitPrice = getUnitPrice()
   const lineTotal =
-    pieceStylePrice && variantSelected
-      ? brandDisplayTotal
-      : displayTotal
+    hasVariants && activeVariant && quantity === getVariantAmount(activeVariant) && !bulkApplied
+      ? Number(activeVariant.total_price ?? activeVariant.price ?? 0)
+      : round2(unitPrice * quantity)
+
   // Top price row: per-piece price (bulk-aware) once a variant is chosen.
   const topPerPiece = pieceStylePrice
     ? chargedPerPiece
-    : hasVariants
-      ? perUnit
-      : null
+    : (hasVariants && isPieceVariant(activeVariant)
+        ? unitPrice
+        : perUnit)
   const topPriceSuffix = pieceStylePrice
     ? (hasVariants && !pieceMode ? ' / unit' : ' / piece')
     : hasVariants
       ? ` / ${unitDisplay(selectedUnit)}`
       : ''
-  // Stepper disable states. The + button stays enabled at a band's max when
-  // a NEXT band exists — the existing auto-advance (handleIncrease →
-  // nextVariant) must stay reachable; it is disabled only on the last band's
-  // max. The business has unlimited stock while product is available.
-  const canDecrease = isOutOfStock ? false : (pieceMode ? qty > pieceMin : qty > 1)
-  const canIncrease = isOutOfStock
-    ? false
-    : (pieceMode && pieceMax != null && !nextVariant ? qty < pieceMax : true)
-  // Bulk card progress + per-piece savings.
+
+  // Stepper disable states
+  const minAllowed = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
+    ? Number(selectedVariant)
+    : 1
+  const canDecrease = !isOutOfStock && quantity > minAllowed
+  const canIncrease = !isOutOfStock
+
   const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
   const bulkSavingsPerPiece = bulkApplied
     ? Math.max(0, Number(normalPerPiece) - bulkPerPiece)
     : 0
 
-  // One-piece-at-a-time stepping within the selected band (bulk-brand Pieces
-  // variants); the existing ±1 behaviour everywhere else.
-  // Changing the quantity changes the selection — it is no longer the exact
-  // line already in the cart, so the preview must count it again.
   const markSelectionChanged = () => setSelectionInCart(false)
+
+  // Stepper handlers: update React state locally without changing selectedVariant
   const handleDecrease = () => {
     if (isOutOfStock) return
     markSelectionChanged()
-    if (pieceMode) {
-      setQty((q) => Math.max(pieceMin, q - 1))
-    } else {
-      setQty((q) => Math.max(1, q - 1))
-    }
+    setQuantity((q) => {
+      const minVal = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
+        ? Number(selectedVariant)
+        : 1
+      const current = Number.isInteger(q) && q > 0 ? q : minVal
+      return Math.max(minVal, current - 1)
+    })
   }
+
   const handleIncrease = () => {
     if (isOutOfStock) return
     markSelectionChanged()
-    if (pieceMode) {
-      if (pieceMax != null && qty >= pieceMax) {
-        // The band's max is reached — the customer must select the next band.
-        if (nextVariant) handleVariantSelect(nextVariant)
-        return
-      }
-      setQty((q) => (currentStock != null ? Math.min(currentStock, q + 1) : q + 1))
-    } else {
-      setQty((q) => (currentStock != null ? Math.min(currentStock, q + 1) : q + 1))
-    }
+    setQuantity((q) => {
+      const minVal = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
+        ? Number(selectedVariant)
+        : 1
+      const current = Number.isInteger(q) && q > 0 ? q : minVal
+      return current + 1
+    })
   }
 
   // Frontend-only wishlist toggle — no backend, no cart changes.
@@ -427,57 +418,62 @@ export default function ProductDetail() {
   }
 
   const handleAdd = () => {
-    // A variant product can never be added without an explicit variant — show
-    // a small existing-style validation hint instead of silently returning.
-    if (hasVariants && !selectedVariant) {
+    if (hasVariants && !activeVariant) {
       setVariantHint(true)
       return
     }
     setVariantHint(false)
     if (isOutOfStock || adding || addingRef.current) return
 
-    // Build the complete selected variant info for the cart item so the cart
-    // and checkout show the exact variant and price the customer picked.
-    const variantInfo = hasVariants
+    const cartPayload = {
+      productId: product.id,
+      variantId: activeVariant?.id ?? null,
+      selectedVariant: selectedVariant,
+      quantity: quantity,
+    }
+
+    if (typeof onAddToCart === 'function') {
+      onAddToCart(cartPayload)
+    }
+
+    const variantInfo = hasVariants && activeVariant
       ? {
-          variant_id: selectedVariant.id,
-          variant_label: variantLabel(selectedVariant),
-          quantity_value: selectedVariant.quantity_value,
-          quantity_unit: selectedVariant.quantity_unit,
-          min_quantity:
-            selectedVariant.min_quantity ??
-            selectedVariant.min_qty ??
-            (pieceMode ? pieceMin : 1),
-          total_price: Number(selectedVariant.total_price ?? selectedVariant.price),
-          price_per_unit: Number(selectedVariant.price_per_unit ?? selectedVariant.price),
-          is_default: String(selectedVariant.id) === String(defaultVariant?.id),
+          variant_id: activeVariant.id,
+          variantId: activeVariant.id,
+          variant_label: variantLabel(activeVariant),
+          quantity_value: selectedVariant,
+          quantity_unit: activeVariant.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
+          min_quantity: selectedVariant,
+          total_price: Number(activeVariant.total_price ?? activeVariant.price),
+          price_per_unit: Number(activeVariant.price_per_unit ?? unitPrice),
+          is_default: String(activeVariant.id) === String(defaultVariant?.id),
+          selectedVariant: selectedVariant,
+          quantity: quantity,
         }
       : null
 
     setAdding(true)
     addingRef.current = true
     try {
-      // `qty` units of the selected variant. The cart line is priced at
-      // variant TOTAL price × qty.
-      // Bulk-brand products with a Pieces variant add an EXACT piece count
-      // (quantity 1, priced per piece); everything else adds packs as before.
-      const pieces = pieceMode ? qty : null
+      const pieces = pieceMode ? quantity : null
       addItem(
         {
           id: product.id,
+          productId: product.id,
           name: product.name,
           price: Number(product.price),
           image: product.image,
           stock: product.stock != null ? Number(product.stock) : null,
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
+          variantId: activeVariant?.id ?? null,
+          selectedVariant: selectedVariant,
+          quantity: quantity,
         },
-        pieceMode ? 1 : qty,
+        pieceMode ? 1 : quantity,
         variantInfo,
         pieces
       )
-      // The selection is now IN the cart — the brand total must come from the
-      // updated cart alone, never selection + cart again.
       setSelectionInCart(true)
       addTimer.current = setTimeout(() => {
         addingRef.current = false
@@ -694,7 +690,9 @@ export default function ProductDetail() {
               <p className="pd-section-title">Select Variant</p>
               <div className="variant-options">
                 {variants.map((v) => {
-                  const active = selectedVariant?.id === v.id
+                  const active = activeVariant
+                    ? String(activeVariant.id) === String(v.id)
+                    : (selectedVariant != null && getVariantAmount(v) === selectedVariant)
                   return (
                     <button
                       key={v.id}
@@ -726,7 +724,7 @@ export default function ProductDetail() {
                   >
                     −
                   </button>
-                  <span aria-live="polite">{qty}</span>
+                  <span aria-live="polite">{quantity}</span>
                   <button
                     type="button"
                     onClick={handleIncrease}
@@ -738,9 +736,9 @@ export default function ProductDetail() {
                 </div>
                 <div className="pd-qty-total">
                   <p className="pd-selected-label">
-                    {hasVariants
-                      ? `${variantLabel(selectedVariant)} selected`
-                      : `${qty} selected`}
+                    {hasVariants && activeVariant
+                      ? `${variantLabel(activeVariant)} selected`
+                      : `${quantity} selected`}
                   </p>
                   <p className="pd-total">
                     ₹{Number(lineTotal).toLocaleString('en-IN')}{' '}
@@ -750,9 +748,7 @@ export default function ProductDetail() {
               </div>
               {pieceMode && (
                 <p className="qty-piece-hint">
-                  {nextVariant
-                    ? `${pieceMin}–${pieceMax} pieces of this size · next at ${variantLabel(nextVariant)}`
-                    : `${pieceMin}+ pieces per selection`}
+                  {selectedVariant}+ pieces per selection
                 </p>
               )}
             </div>

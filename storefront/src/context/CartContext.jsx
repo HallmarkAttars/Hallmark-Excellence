@@ -26,7 +26,7 @@ function readStoredCart() {
 // Normalize a stored cart item into the canonical shape used everywhere.
 function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object') return null
-  const variantId = raw.variant_id ?? raw.variant?.id ?? null
+  const variantId = raw.variantId ?? raw.variant_id ?? raw.variant?.id ?? null
   const hasVariant = variantId != null
   const minQuantity = raw.min_quantity != null
     ? Math.max(1, Math.floor(Number(raw.min_quantity)))
@@ -39,7 +39,10 @@ function normalizeItem(raw) {
   const selectedPrice = lineUnitPrice(raw)
 
   return {
+    productId: raw.productId ?? raw.product_id ?? raw.id,
     product_id: raw.product_id ?? raw.id,
+    variantId: variantId,
+    selectedVariant: raw.selectedVariant ?? raw.selected_variant ?? null,
     name: raw.name || 'Fragrance',
     image: raw.image,
     stock: raw.stock != null ? Number(raw.stock) : null,
@@ -56,7 +59,9 @@ function normalizeItem(raw) {
     ...(Array.isArray(raw.variants) ? { variants: raw.variants } : {}),
     ...(hasVariant
       ? {
+          variantId: variantId,
           variant_id: variantId,
+          selectedVariant: raw.selectedVariant ?? raw.selected_variant ?? null,
           variant_label: raw.variant_label ?? raw.variant?.label ?? raw.variant?.display_label,
           quantity_value: raw.quantity_value ?? raw.variant?.quantity_value,
           quantity_unit: raw.quantity_unit ?? raw.variant?.quantity_unit,
@@ -118,7 +123,13 @@ export function CartProvider({ children }) {
       isFirstRender.current = false
       return
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+      }
+    } catch {
+      // Storage unavailable
+    }
   }, [items])
 
   // Add `qty` units of the selected product/variant to the cart. `pieces` is
@@ -130,9 +141,18 @@ export function CartProvider({ children }) {
     setItems((prev) => {
       const activeDefaultVar = getDefaultVariant(product)
       const variantObj = variant || (activeDefaultVar ? activeDefaultVar : null)
-      const variantId = variantObj?.variant_id ?? variantObj?.id ?? null
+      const variantId = variantObj?.variantId ?? variantObj?.variant_id ?? product?.variantId ?? variantObj?.id ?? null
       const hasVariant = variantId != null
-      const explicitPieces = pieces != null ? Math.max(1, Math.floor(Number(pieces) || 1)) : null
+      const selectedVariantVal =
+        product?.selectedVariant ??
+        variantObj?.selectedVariant ??
+        (hasVariant ? Number(variantObj?.quantity_value) || null : null)
+      const explicitPieces =
+        pieces != null
+          ? Math.max(1, Math.floor(Number(pieces) || 1))
+          : (product?.quantity && selectedVariantVal
+              ? Math.max(1, Math.floor(Number(product.quantity) || 1))
+              : null)
       const quantity = Math.max(1, Number(qty) || 1)
 
       // Authoritative per-line price
@@ -180,7 +200,11 @@ export function CartProvider({ children }) {
         : Math.max(1, Math.floor(Number(product.min_quantity ?? product.min_qty) || 1))
 
       const newItem = {
+        productId: product.productId ?? product.id,
         product_id: product.id,
+        variantId: variantId,
+        variant_id: variantId,
+        selectedVariant: selectedVariantVal,
         name: product.name,
         image: product.image,
         stock: product.stock != null ? Number(product.stock) : null,
@@ -196,7 +220,9 @@ export function CartProvider({ children }) {
         ...(Array.isArray(product.variants) ? { variants: product.variants } : {}),
         ...(hasVariant && variantObj
           ? {
+              variantId: variantId,
               variant_id: variantId,
+              selectedVariant: selectedVariantVal,
               variant_label:
                 explicitPieces != null
                   ? `${explicitPieces} ${String(variantObj.quantity_unit || 'Pieces')}`.trim()

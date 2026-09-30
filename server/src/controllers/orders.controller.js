@@ -331,7 +331,7 @@ async function createOrder(req, res) {
 
     // --- Fetch authoritative product / variant data from the database --------
     const productIds = items
-      .map((it) => it.product_id ?? it.id)
+      .map((it) => it.product_id ?? it.productId ?? it.id)
       .filter((id) => id != null && String(id).trim() !== '')
       .map((id) => String(id))
 
@@ -363,8 +363,8 @@ async function createOrder(req, res) {
     }
 
     const variantIds = items
-      .filter((it) => it.variant_id != null)
-      .map((it) => String(it.variant_id))
+      .filter((it) => (it.variant_id ?? it.variantId) != null)
+      .map((it) => String(it.variant_id ?? it.variantId))
 
     let dbVariants = []
     if (variantIds.length > 0) {
@@ -444,7 +444,7 @@ async function createOrder(req, res) {
     let normalizedItems
     try {
       normalizedItems = items.map((item) => {
-        const product = productMap.get(String(item.product_id ?? item.id))
+        const product = productMap.get(String(item.product_id ?? item.productId ?? item.id))
         if (!product) {
           throw new Error('One of the products in your cart is no longer available. Please refresh and try again.')
         }
@@ -466,8 +466,9 @@ async function createOrder(req, res) {
         let pieces
         let normalPerPiece
         let variantFields = {}
-        if (item.variant_id != null) {
-          const variant = variantMap.get(String(item.variant_id))
+        const rawVariantId = item.variant_id ?? item.variantId ?? null
+        if (rawVariantId != null) {
+          const variant = variantMap.get(String(rawVariantId))
           if (!variant || String(variant.product_id) !== String(product.id)) {
             throw new Error(`The selected size/variant of ${product.name} is no longer available. Please refresh and try again.`)
           }
@@ -488,15 +489,18 @@ async function createOrder(req, res) {
             throw new Error(`Invalid variant unit for ${product.name}.`)
           }
 
-          const isPiecesUnit = String(variant.quantity_unit ?? '').trim() === 'Pieces'
+          const isPiecesUnit = String(variant.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
           const sizePerUnit = Math.floor(Number(variant.quantity_value))
 
+          const selectedVariantVal = item.selectedVariant ?? item.selected_variant ?? null
           // `pieces` is the TOTAL pieces of the line — either an exact piece
-          // count picked on the product page (quantity 1) or a legacy pack
-          // line's derived tally (size × quantity). It mirrors the storefront
-          // linePieces. unitPieces = pieces per ONE unit of the line, so the
-          // existing invariant holds: line total = unit_price × quantity.
-          const explicitPieces = item.pieces != null ? Math.floor(Number(item.pieces)) : null
+          // count picked on the product page or a legacy pack line's derived tally.
+          const explicitPieces =
+            item.pieces != null
+              ? Math.floor(Number(item.pieces))
+              : (isPiecesUnit && selectedVariantVal != null
+                  ? Math.floor(Number(item.quantity ?? item.qty ?? 1))
+                  : null)
           if (explicitPieces != null && (!Number.isFinite(explicitPieces) || explicitPieces < 1)) {
             throw new Error(`Invalid piece quantity for ${product.name}.`)
           }
@@ -541,6 +545,8 @@ async function createOrder(req, res) {
 
           variantFields = {
             variant_id: variant.id,
+            variantId: variant.id,
+            selectedVariant: selectedVariantVal,
             // Piece-based lines store the EXACT pieces ordered (mirrors the
             // cart line the customer saw); pack-based lines keep the DB label.
             variant_label:
@@ -565,6 +571,9 @@ async function createOrder(req, res) {
 
         return {
           product_id: product.id,
+          productId: product.id,
+          variantId: variantFields.variant_id ?? null,
+          selectedVariant: variantFields.selectedVariant ?? null,
           product_name: product.name,
           image: product.image || null,
           quantity,
