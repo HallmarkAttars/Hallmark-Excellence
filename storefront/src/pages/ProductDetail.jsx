@@ -154,7 +154,7 @@ export default function ProductDetail({ onAddToCart }) {
             const varAmount = getVariantAmount(activeVar)
             setSelectedVariant(isPiece ? varAmount : 1)
             setSelectedVariantId(activeVar.id)
-            setQuantity(isPiece ? Math.max(1, varAmount) : 1)
+            setQuantity(1)
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
         }
@@ -244,29 +244,24 @@ export default function ProductDetail({ onAddToCart }) {
 
   const handleVariantSelect = (v) => {
     if (!v) return
-    const isPiece = isPieceVariant(v)
-    const varAmount = getVariantAmount(v)
-    const varId = v.id != null ? v.id : (typeof v === 'object' ? v.id : null)
+    const found = variants.find((item) => item && String(item.id) === String(v.id))
+    if (!found) return
+
+    const isPiece = isPieceVariant(found)
+    const varAmount = getVariantAmount(found)
 
     setSelectedVariant(isPiece ? varAmount : 1)
-    if (varId != null) setSelectedVariantId(varId)
-    // When the user selects a variant, quantity matches that variant amount
-    setQuantity(isPiece ? Math.max(1, varAmount) : 1)
+    setSelectedVariantId(found.id)
+    // When changing variant, keep quantity independent (e.g. 2 remains 2)
     setVariantHint(false)
     setSelectionInCart(false)
   }
 
+  const variantPieces = hasVariants && activeVariant ? getVariantAmount(activeVariant) : 1
+  const totalPieces = pieceMode ? variantPieces * quantity : quantity
+
   // Pieces the CURRENT selection would add to the brand tally.
-  const selectionPieces =
-    !variantSelected
-      ? 0
-      : pieceMode
-        ? quantity
-        : hasVariants
-          ? isPieceVariant(activeVariant)
-            ? getVariantAmount(activeVariant) * quantity
-            : quantity
-          : quantity
+  const selectionPieces = !variantSelected ? 0 : totalPieces
 
   const totalBrandPieces = isBrandBulkProduct
     ? productPageBrandPieces(cartBrandPieces, selectionPieces, selectionInCart)
@@ -294,11 +289,11 @@ export default function ProductDetail({ onAddToCart }) {
       ? lineNormalPerPiece({
           variant_id: activeVariant.id,
           quantity_unit: activeVariant.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
-          quantity_value: activeVariant.quantity_value ?? selectedVariant,
+          quantity_value: activeVariant.quantity_value ?? variantPieces,
           variant_price_per_unit: Number(
             activeVariant?.price_per_unit ??
-              (isPieceVariant(activeVariant) && getVariantAmount(activeVariant) > 0
-                ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) / getVariantAmount(activeVariant)
+              (isPieceVariant(activeVariant) && variantPieces > 0
+                ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) / variantPieces
                 : activeVariant.price ?? 0)
           ),
           variant_total_price: Number(activeVariant?.total_price ?? activeVariant?.price ?? 0),
@@ -321,7 +316,7 @@ export default function ProductDetail({ onAddToCart }) {
     bulkPerPiece < normalPerPiece
   const chargedPerPiece = bulkApplied ? bulkPerPiece : normalPerPiece
 
-  // Unit price and immediate recalculation of total = unitPrice * quantity
+  // Unit price and immediate recalculation of total = pricePerPiece * totalPieces
   const getUnitPrice = () => {
     if (bulkApplied && bulkPerPiece > 0) {
       return bulkPerPiece
@@ -345,10 +340,19 @@ export default function ProductDetail({ onAddToCart }) {
   }
 
   const unitPrice = getUnitPrice()
-  const lineTotal =
-    hasVariants && activeVariant && quantity === getVariantAmount(activeVariant) && !bulkApplied
-      ? Number(activeVariant.total_price ?? activeVariant.price ?? 0)
-      : round2(unitPrice * quantity)
+  const varPackagePrice = hasVariants && activeVariant ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) : Number(product.price || 0)
+  const pricePerPiece = bulkApplied
+    ? bulkPerPiece
+    : (useBrandStandard
+        ? brandStandardPerPiece
+        : (hasVariants && activeVariant && variantPieces > 0
+            ? varPackagePrice / variantPieces
+            : (chargedPerPiece > 0 ? chargedPerPiece : unitPrice)))
+  const lineTotal = bulkApplied || useBrandStandard
+    ? round2(pricePerPiece * totalPieces)
+    : (pieceMode
+        ? round2(varPackagePrice * quantity)
+        : round2(unitPrice * quantity))
 
   // Top price row: per-piece price (bulk-aware) once a variant is chosen.
   const topPerPiece = pieceStylePrice
@@ -362,11 +366,8 @@ export default function ProductDetail({ onAddToCart }) {
       ? ` / ${unitDisplay(selectedUnit)}`
       : ''
 
-  // Stepper disable states
-  const minAllowed = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
-    ? Number(selectedVariant)
-    : 1
-  const canDecrease = !isOutOfStock && quantity > minAllowed
+  // Stepper disable states: quantity minimum is always 1
+  const canDecrease = !isOutOfStock && quantity > 1
   const canIncrease = !isOutOfStock
 
   const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
@@ -376,16 +377,13 @@ export default function ProductDetail({ onAddToCart }) {
 
   const markSelectionChanged = () => setSelectionInCart(false)
 
-  // Stepper handlers: update React state locally without changing selectedVariant
+  // Stepper handlers: increment/decrement package quantity (never below 1)
   const handleDecrease = () => {
     if (isOutOfStock) return
     markSelectionChanged()
     setQuantity((q) => {
-      const minVal = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
-        ? Number(selectedVariant)
-        : 1
-      const current = Number.isInteger(q) && q > 0 ? q : minVal
-      return Math.max(minVal, current - 1)
+      const current = Number.isInteger(q) && q > 0 ? q : 1
+      return Math.max(1, current - 1)
     })
   }
 
@@ -393,10 +391,7 @@ export default function ProductDetail({ onAddToCart }) {
     if (isOutOfStock) return
     markSelectionChanged()
     setQuantity((q) => {
-      const minVal = Number.isFinite(Number(selectedVariant)) && Number(selectedVariant) > 0
-        ? Number(selectedVariant)
-        : 1
-      const current = Number.isInteger(q) && q > 0 ? q : minVal
+      const current = Number.isInteger(q) && q > 0 ? q : 1
       return current + 1
     })
   }
@@ -418,7 +413,11 @@ export default function ProductDetail({ onAddToCart }) {
   }
 
   const handleAdd = () => {
-    if (hasVariants && !activeVariant) {
+    const isValidVariant = hasVariants
+      ? Boolean(activeVariant && variants.some((v) => v && String(v.id) === String(activeVariant.id)))
+      : true
+
+    if (hasVariants && !isValidVariant) {
       setVariantHint(true)
       return
     }
@@ -428,8 +427,11 @@ export default function ProductDetail({ onAddToCart }) {
     const cartPayload = {
       productId: product.id,
       variantId: activeVariant?.id ?? null,
-      selectedVariant: selectedVariant,
-      quantity: quantity,
+      variantPieces,
+      quantity,
+      totalPieces,
+      unitPrice: pricePerPiece,
+      totalPrice: lineTotal,
     }
 
     if (typeof onAddToCart === 'function') {
@@ -441,21 +443,25 @@ export default function ProductDetail({ onAddToCart }) {
           variant_id: activeVariant.id,
           variantId: activeVariant.id,
           variant_label: variantLabel(activeVariant),
-          quantity_value: selectedVariant,
+          variantPieces,
+          quantity,
+          totalPieces,
+          quantity_value: variantPieces,
           quantity_unit: activeVariant.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
-          min_quantity: selectedVariant,
-          total_price: Number(activeVariant.total_price ?? activeVariant.price),
-          price_per_unit: Number(activeVariant.price_per_unit ?? unitPrice),
+          min_quantity: 1,
+          total_price: lineTotal,
+          totalPrice: lineTotal,
+          price_per_unit: pricePerPiece,
+          unit_price: pricePerPiece,
+          unitPrice: pricePerPiece,
           is_default: String(activeVariant.id) === String(defaultVariant?.id),
-          selectedVariant: selectedVariant,
-          quantity: quantity,
+          selectedVariant: variantPieces,
         }
       : null
 
     setAdding(true)
     addingRef.current = true
     try {
-      const pieces = pieceMode ? quantity : null
       addItem(
         {
           id: product.id,
@@ -467,12 +473,21 @@ export default function ProductDetail({ onAddToCart }) {
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
           variantId: activeVariant?.id ?? null,
-          selectedVariant: selectedVariant,
-          quantity: quantity,
+          variant_id: activeVariant?.id ?? null,
+          variantPieces,
+          quantity,
+          totalPieces,
+          unitPrice: pricePerPiece,
+          unit_price: pricePerPiece,
+          totalPrice: lineTotal,
+          total_price: lineTotal,
+          selectedVariant: variantPieces,
+          pieces: pieceMode ? totalPieces : null,
+          variants: product.variants,
         },
-        pieceMode ? 1 : quantity,
+        quantity,
         variantInfo,
-        pieces
+        pieceMode ? totalPieces : null
       )
       setSelectionInCart(true)
       addTimer.current = setTimeout(() => {
@@ -737,20 +752,20 @@ export default function ProductDetail({ onAddToCart }) {
                 <div className="pd-qty-total">
                   <p className="pd-selected-label">
                     {hasVariants && activeVariant
-                      ? `${variantLabel(activeVariant)} selected`
+                      ? `${variantLabel(activeVariant)} × ${quantity}`
                       : `${quantity} selected`}
                   </p>
+                  {pieceMode && (
+                    <p className="pd-total-pieces">
+                      Total Pieces: {Number(totalPieces).toLocaleString('en-IN')}
+                    </p>
+                  )}
                   <p className="pd-total">
                     ₹{Number(lineTotal).toLocaleString('en-IN')}{' '}
-                    <span className="pd-total-word">Total</span>
+                    <span className="pd-total-word">TOTAL</span>
                   </p>
                 </div>
               </div>
-              {pieceMode && (
-                <p className="qty-piece-hint">
-                  {selectedVariant}+ pieces per selection
-                </p>
-              )}
             </div>
           )}
 

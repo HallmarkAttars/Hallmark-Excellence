@@ -91,12 +91,16 @@ export function adjustLinePieces(item, delta) {
   return {
     ...item,
     pieces: next,
+    totalPieces: next,
     quantity: 1,
     quantity_value: next,
     min_quantity: minQty,
     variant_label: `${next} ${unit}`.trim(),
     selected_price: total,
+    totalPrice: total,
     variant_total_price: total,
+    unitPrice: ppu,
+    unit_price: ppu,
   }
 }
 
@@ -114,20 +118,26 @@ export function mergeCartLines(items) {
     }
 
     const existing = out[idx]
-    if (existing.pieces != null || item.pieces != null) {
+    if (existing.pieces != null || item.pieces != null || existing.totalPieces != null || item.totalPieces != null) {
       const existingPieces =
-        existing.pieces != null ? Number(existing.pieces) || 0 : linePieces(existing)
-      const addPieces = item.pieces != null ? Number(item.pieces) || 0 : linePieces(item)
+        existing.totalPieces != null
+          ? Number(existing.totalPieces) || 0
+          : (existing.pieces != null ? Number(existing.pieces) || 0 : linePieces(existing))
+      const addPieces =
+        item.totalPieces != null
+          ? Number(item.totalPieces) || 0
+          : (item.pieces != null ? Number(item.pieces) || 0 : linePieces(item))
       const combined = existingPieces + addPieces
+      const combinedQty = Math.max(1, Number(existing.quantity || 1) + Number(item.quantity || 1))
       const unit = String(item.quantity_unit || 'Pieces')
       // Keep the FIRST line's per-piece price (see header comment) and price
       // the merged line from it — summing the two stored prices would
       // disagree with ppu × combined when the bands were priced differently
       // (60 @ ₹45 + 100 @ ₹42 must price 160 pieces at ₹7,200, not ₹6,900).
-      const ppu = Number(existing.variant_price_per_unit ?? item.variant_price_per_unit)
+      const ppu = Number(existing.unitPrice ?? existing.variant_price_per_unit ?? item.unitPrice ?? item.variant_price_per_unit)
       const mergedTotal = Number.isFinite(ppu) && ppu > 0
         ? round2(ppu * combined)
-        : Number(existing.selected_price ?? 0) + Number(item.selected_price ?? 0)
+        : Number(existing.totalPrice ?? existing.selected_price ?? 0) + Number(item.totalPrice ?? item.selected_price ?? 0)
       const existingMin = getLineMinQuantity(existing)
       const addMin = getLineMinQuantity(item)
       const minQty = Math.min(existingMin, addMin)
@@ -135,7 +145,12 @@ export function mergeCartLines(items) {
       out[idx] = {
         ...existing,
         pieces: combined,
+        totalPieces: combined,
         quantity: 1,
+        variantPieces: existing.variantPieces ?? item.variantPieces ?? (combinedQty > 0 ? Math.round(combined / combinedQty) : combined),
+        unitPrice: ppu,
+        unit_price: ppu,
+        totalPrice: mergedTotal,
         quantity_value: combined,
         min_quantity: minQty,
         variant_label: `${combined} ${unit}`.trim(),
@@ -150,22 +165,30 @@ export function mergeCartLines(items) {
       continue
     }
 
+    const combinedQty = Math.max(1, Number(existing.quantity ?? 1) + Number(item.quantity ?? 1))
+    const unitPrice = Number(existing.unitPrice ?? item.unitPrice ?? existing.selected_price ?? existing.price ?? 0)
+    const mergedTotal = round2(unitPrice * combinedQty)
+
     out[idx] = {
       ...existing,
-      quantity: Math.max(1, Number(existing.quantity ?? 1) + Number(item.quantity ?? 1)),
+      quantity: combinedQty,
+      totalPieces: combinedQty,
+      unitPrice,
+      unit_price: unitPrice,
+      totalPrice: mergedTotal,
       min_quantity: Math.min(getLineMinQuantity(existing), getLineMinQuantity(item)),
       // Refresh price/variant info on re-add — a legacy line must pick up the
       // current variant total price.
-      selected_price: Number(item.selected_price ?? item.price ?? existing.selected_price ?? 0),
+      selected_price: mergedTotal,
       variant_total_price: Number(
         item.variant_total_price ??
           item.selected_price ??
           existing.variant_total_price ??
           existing.selected_price ??
-          0
+          mergedTotal
       ),
       variant_price_per_unit:
-        item.variant_price_per_unit ?? existing.variant_price_per_unit,
+        item.variant_price_per_unit ?? existing.variant_price_per_unit ?? unitPrice,
       variant_is_default: item.variant_is_default === true,
       stock: item.stock ?? existing.stock,
       brand_id: item.brand_id ?? existing.brand_id,

@@ -92,7 +92,7 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     })
   })
 
-  it('selects 216 Pieces and initializes quantity to 216', async () => {
+  it('selects 216 Pieces and initializes quantity to 1 with totalPieces = 216', async () => {
     renderProductDetail()
 
     await waitFor(() => {
@@ -103,121 +103,92 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     fireEvent.click(btn216)
 
     expect(btn216.classList.contains('is-active')).toBe(true)
-    expect(screen.getByText('216 Pieces selected')).toBeTruthy()
-    expect(screen.getByText('216')).toBeTruthy()
-    // No error boundary message
-    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
-  })
-
-  it('clicking + increments quantity 216 → 217 without changing selectedVariant', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
-    fireEvent.click(btn216)
-
-    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
-    fireEvent.click(plusBtn)
-
-    // Quantity is now 217
-    expect(screen.getByText('217')).toBeTruthy()
-    // selectedVariant is still 216 Pieces
-    expect(screen.getByText('216 Pieces selected')).toBeTruthy()
-    expect(btn216.classList.contains('is-active')).toBe(true)
-    // No error occurred
-    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
-  })
-
-  it('clicking + twice increments quantity 216 → 217 → 218', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
-    fireEvent.click(btn216)
-
-    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
-    fireEvent.click(plusBtn)
-    fireEvent.click(plusBtn)
-
-    expect(screen.getByText('218')).toBeTruthy()
-    expect(screen.getByText('216 Pieces selected')).toBeTruthy()
-    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
-  })
-
-  it('clicking - decrements quantity 218 → 217', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
-    fireEvent.click(btn216)
-
-    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
-    fireEvent.click(plusBtn)
-    fireEvent.click(plusBtn)
-    expect(screen.getByText('218')).toBeTruthy()
-
-    const minusBtn = screen.getByRole('button', { name: /Decrease quantity/i })
-    fireEvent.click(minusBtn)
-    expect(screen.getByText('217')).toBeTruthy()
-    expect(screen.getByText('216 Pieces selected')).toBeTruthy()
-  })
-
-  it('quantity cannot go below selectedVariant', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
-    fireEvent.click(btn216)
-
-    const minusBtn = screen.getByRole('button', { name: /Decrease quantity/i })
-    // At 216, the minus button should be disabled
-    expect(minusBtn.disabled).toBe(true)
-
-    // Even if clicked, quantity stays at 216
-    fireEvent.click(minusBtn)
-    expect(screen.getByText('216')).toBeTruthy()
-    expect(screen.queryByText('215')).toBeNull()
-  })
-
-  it('total price updates correctly when quantity changes (total = unitPrice × quantity)', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
-    fireEvent.click(btn216)
-
-    // unitPrice is 30, so for 216 pieces: 30 * 216 = 6,480
+    expect(screen.getByText('216 Pieces × 1')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 216')).toBeTruthy()
     expect(screen.getByText(/6,480/)).toBeTruthy()
+    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
+  })
+
+  it('clicking + increments quantity to 2 and totalPieces to 432 (216 × 2)', async () => {
+    renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
+    fireEvent.click(btn216)
 
     const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
     fireEvent.click(plusBtn)
 
-    // for 217 pieces: 30 * 217 = 6,510
-    expect(screen.getByText(/6,510/)).toBeTruthy()
-
-    fireEvent.click(plusBtn)
-    // for 218 pieces: 30 * 218 = 6,540
-    expect(screen.getByText(/6,540/)).toBeTruthy()
+    // Quantity is now 2 packages
+    expect(screen.getByText('2')).toBeTruthy()
+    expect(screen.getByText('216 Pieces × 2')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 432')).toBeTruthy()
+    // 30 per piece * 432 pieces = 12,960
+    expect(screen.getByText(/12,960/)).toBeTruthy()
+    expect(btn216.classList.contains('is-active')).toBe(true)
+    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
   })
 
-  it('Add to Cart sends selectedVariant and quantity separately', async () => {
-    const onAddToCart = vi.fn()
-    renderProductDetail({ onAddToCart })
+  it('clicking + twice increments quantity 1 → 2 → 3 and totalPieces 216 → 432 → 648', async () => {
+    renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
+    fireEvent.click(btn216)
+
+    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
+    fireEvent.click(plusBtn)
+    fireEvent.click(plusBtn)
+
+    expect(screen.getByText('3')).toBeTruthy()
+    expect(screen.getByText('216 Pieces × 3')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 648')).toBeTruthy()
+    // 30 per piece * 648 pieces = 19,440
+    expect(screen.getByText(/19,440/)).toBeTruthy()
+    expect(screen.queryByText(/Something went wrong/i)).toBeNull()
+  })
+
+  it('clicking - decrements quantity 3 → 2 → 1 and never drops below 1', async () => {
+    renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
+    fireEvent.click(btn216)
+
+    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
+    fireEvent.click(plusBtn)
+    fireEvent.click(plusBtn)
+    expect(screen.getByText('3')).toBeTruthy()
+
+    const minusBtn = screen.getByRole('button', { name: /Decrease quantity/i })
+    fireEvent.click(minusBtn)
+    expect(screen.getByText('2')).toBeTruthy()
+    expect(screen.getByText('216 Pieces × 2')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 432')).toBeTruthy()
+
+    fireEvent.click(minusBtn)
+    expect(screen.getByText('1')).toBeTruthy()
+    expect(screen.getByText('216 Pieces × 1')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 216')).toBeTruthy()
+
+    // At 1, minus button is disabled and clicking it does not decrease below 1
+    expect(minusBtn.disabled).toBe(true)
+    fireEvent.click(minusBtn)
+    expect(screen.getByText('1')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 216')).toBeTruthy()
+  })
+
+  it('when changing variant, quantity remains independent (e.g. 216 Pieces with qty 2 to 60 Pieces yields 60 Pieces × 2 = 120 Total Pieces)', async () => {
+    renderProductDetail()
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
@@ -227,7 +198,37 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     const btn216 = screen.getByRole('button', { name: /216 Pieces/i })
     fireEvent.click(btn216)
 
-    // Click + to make quantity 217
+    // Increase quantity to 2
+    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
+    fireEvent.click(plusBtn)
+    expect(screen.getByText('216 Pieces × 2')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 432')).toBeTruthy()
+
+    // Switch variant to 60 Pieces
+    const btn60 = screen.getByRole('button', { name: /60 Pieces/i })
+    fireEvent.click(btn60)
+
+    // Quantity must remain 2!
+    expect(screen.getByText('2')).toBeTruthy()
+    expect(screen.getByText('60 Pieces × 2')).toBeTruthy()
+    expect(screen.getByText('Total Pieces: 120')).toBeTruthy()
+    // 30 per piece * 120 pieces = 3,600
+    expect(screen.getByText(/3,600/)).toBeTruthy()
+  })
+
+  it('Add to Cart provides cart data { variantId, variantPieces, quantity, totalPieces, unitPrice, totalPrice }', async () => {
+    const onAddToCart = vi.fn()
+    renderProductDetail({ onAddToCart })
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    // Select 60 Pieces (variantId: 105, price_per_unit: 30)
+    const btn60 = screen.getByRole('button', { name: /60 Pieces/i })
+    fireEvent.click(btn60)
+
+    // Quantity to 2
     const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
     fireEvent.click(plusBtn)
 
@@ -238,36 +239,13 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     expect(onAddToCart).toHaveBeenCalledTimes(1)
     expect(onAddToCart).toHaveBeenCalledWith({
       productId: 10,
-      variantId: 110,
-      selectedVariant: 216,
-      quantity: 217,
+      variantId: 105,
+      variantPieces: 60,
+      quantity: 2,
+      totalPieces: 120,
+      unitPrice: 30,
+      totalPrice: 3600,
     })
-  })
-
-  it('quantity control works for other variants (e.g. 60 Pieces: 60 → 61 → 62)', async () => {
-    renderProductDetail()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
-    })
-
-    const btn60 = screen.getByRole('button', { name: /60 Pieces/i })
-    fireEvent.click(btn60)
-
-    expect(btn60.classList.contains('is-active')).toBe(true)
-    expect(screen.getByText('60 Pieces selected')).toBeTruthy()
-    expect(screen.getByText('60')).toBeTruthy()
-
-    const plusBtn = screen.getByRole('button', { name: /Increase quantity/i })
-    fireEvent.click(plusBtn)
-    expect(screen.getByText('61')).toBeTruthy()
-    expect(screen.getByText('60 Pieces selected')).toBeTruthy()
-
-    fireEvent.click(plusBtn)
-    expect(screen.getByText('62')).toBeTruthy()
-    expect(screen.getByText('60 Pieces selected')).toBeTruthy()
-    // It must NOT switch variant to 72 Pieces
-    expect(btn60.classList.contains('is-active')).toBe(true)
   })
 
   it('no page reload or error occurs when interacting with quantity and variants', async () => {

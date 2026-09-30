@@ -8,6 +8,7 @@ import {
   isValidBulkRule,
   lineBulkPricing,
   lineNormalPerPiece,
+  round2,
 } from '../utils/brandBulk'
 
 const CartContext = createContext(null)
@@ -27,33 +28,86 @@ function readStoredCart() {
 function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object') return null
   const variantId = raw.variantId ?? raw.variant_id ?? raw.variant?.id ?? null
-  const hasVariant = variantId != null
+  const hasVariant = variantId != null && String(variantId) !== 'null' && String(variantId) !== 'undefined'
+  const quantity = Math.max(1, Math.floor(Number(raw.quantity ?? raw.qty ?? 1)))
+  const unitStr = String(raw.quantity_unit ?? raw.variant?.quantity_unit ?? '').trim().toLowerCase()
+  const isPiece =
+    unitStr === 'pieces' ||
+    raw.variantPieces != null ||
+    raw.totalPieces != null ||
+    raw.pieces != null ||
+    (raw.variant_label && String(raw.variant_label).toLowerCase().includes('piece'))
+
+  const variantPieces = Math.max(
+    1,
+    Math.floor(
+      Number(
+        raw.variantPieces ??
+        raw.selectedVariant ??
+        raw.quantity_value ??
+        (raw.totalPieces && quantity > 0 ? Math.round(raw.totalPieces / quantity) : null) ??
+        (raw.pieces && quantity > 0 ? Math.round(raw.pieces / quantity) : null) ??
+        1
+      )
+    )
+  )
+
+  const totalPieces = Math.max(
+    1,
+    Math.floor(
+      Number(
+        raw.totalPieces ??
+        (raw.pieces != null ? raw.pieces : (isPiece ? variantPieces * quantity : quantity))
+      )
+    )
+  )
+
+  const packagePrice = Number(
+    raw.variant_total_price ??
+    raw.selected_price ??
+    (raw.totalPrice && quantity > 0 ? raw.totalPrice / quantity : null) ??
+    lineUnitPrice(raw)
+  )
+
+  const piecePrice = Number(
+    raw.unitPrice ??
+    raw.price_per_unit ??
+    raw.variant_price_per_unit ??
+    (isPiece && variantPieces > 0 ? packagePrice / variantPieces : packagePrice)
+  )
+
+  const totalPrice = Number(
+    raw.totalPrice ??
+    raw.total_price ??
+    round2(packagePrice * quantity)
+  )
+
   const minQuantity = raw.min_quantity != null
     ? Math.max(1, Math.floor(Number(raw.min_quantity)))
     : (raw.min_qty != null
         ? Math.max(1, Math.floor(Number(raw.min_qty)))
-        : (raw.pieces != null || String(raw.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
-            ? Math.max(1, Math.floor(Number(raw.quantity_value ?? raw.pieces ?? 1)))
-            : 1))
-
-  const selectedPrice = lineUnitPrice(raw)
+        : 1)
 
   return {
     productId: raw.productId ?? raw.product_id ?? raw.id,
-    product_id: raw.product_id ?? raw.id,
-    variantId: variantId,
-    selectedVariant: raw.selectedVariant ?? raw.selected_variant ?? null,
+    product_id: raw.product_id ?? raw.productId ?? raw.id,
+    variantId: hasVariant ? variantId : null,
+    variant_id: hasVariant ? variantId : null,
+    variantPieces: isPiece ? variantPieces : 1,
+    quantity,
+    totalPieces: isPiece ? totalPieces : quantity,
+    unitPrice: piecePrice,
+    unit_price: packagePrice,
+    totalPrice,
+    total_price: totalPrice,
+    selectedVariant: isPiece ? variantPieces : (raw.selectedVariant ?? null),
     name: raw.name || 'Fragrance',
     image: raw.image,
     stock: raw.stock != null ? Number(raw.stock) : null,
     is_in_stock: raw.is_in_stock !== undefined ? Boolean(raw.is_in_stock) : true,
-    quantity: Math.max(1, Number(raw.quantity ?? raw.qty ?? 1)),
     min_quantity: minQuantity,
-    // Exact piece count for brand bulk lines (quantity stays 1; the line
-    // represents `pieces` pieces of the brand).
     ...(raw.pieces != null ? { pieces: Number(raw.pieces) } : {}),
-    // Authoritative price per one unit of this line
-    selected_price: selectedPrice,
+    selected_price: packagePrice,
     brand_id: raw.brand_id ?? null,
     brand_name: raw.brand_name ?? null,
     ...(Array.isArray(raw.variants) ? { variants: raw.variants } : {}),
@@ -61,19 +115,19 @@ function normalizeItem(raw) {
       ? {
           variantId: variantId,
           variant_id: variantId,
-          selectedVariant: raw.selectedVariant ?? raw.selected_variant ?? null,
-          variant_label: raw.variant_label ?? raw.variant?.label ?? raw.variant?.display_label,
-          quantity_value: raw.quantity_value ?? raw.variant?.quantity_value,
-          quantity_unit: raw.quantity_unit ?? raw.variant?.quantity_unit,
+          variantPieces: isPiece ? variantPieces : 1,
+          totalPieces: isPiece ? totalPieces : quantity,
+          unitPrice: piecePrice,
+          unit_price: packagePrice,
+          totalPrice,
+          total_price: totalPrice,
+          selectedVariant: isPiece ? variantPieces : (raw.selectedVariant ?? null),
+          variant_label: raw.variant_label ?? raw.variant?.label ?? raw.variant?.display_label ?? (isPiece ? `${variantPieces} Pieces` : ''),
+          quantity_value: variantPieces,
+          quantity_unit: raw.quantity_unit ?? raw.variant?.quantity_unit ?? (isPiece ? 'Pieces' : ''),
           min_quantity: minQuantity,
-          variant_total_price:
-            raw.variant_total_price != null && Number(raw.variant_total_price) > 0
-              ? Number(raw.variant_total_price)
-              : selectedPrice,
-          variant_price_per_unit:
-            raw.variant_price_per_unit != null && Number(raw.variant_price_per_unit) > 0
-              ? Number(raw.variant_price_per_unit)
-              : (raw.pieces && raw.pieces > 0 ? selectedPrice / raw.pieces : selectedPrice),
+          variant_total_price: packagePrice,
+          variant_price_per_unit: piecePrice,
           variant_is_default: raw.variant_is_default === true,
         }
       : {}),
@@ -132,56 +186,68 @@ export function CartProvider({ children }) {
     }
   }, [items])
 
-  // Add `qty` units of the selected product/variant to the cart. `pieces` is
-  // optional and used ONLY by brand products with an exact piece-count picker
-  // (see ProductDetail): the line then represents `pieces` pieces, priced per
-  // piece, with quantity kept at 1.
+  // Add `qty` packages of the selected product/variant to the cart.
   const addItem = useCallback((product, qty = 1, variant = null, pieces = null) => {
     if (!product) return
     setItems((prev) => {
       const activeDefaultVar = getDefaultVariant(product)
       const variantObj = variant || (activeDefaultVar ? activeDefaultVar : null)
-      const variantId = variantObj?.variantId ?? variantObj?.variant_id ?? product?.variantId ?? variantObj?.id ?? null
-      const hasVariant = variantId != null
-      const selectedVariantVal =
-        product?.selectedVariant ??
-        variantObj?.selectedVariant ??
-        (hasVariant ? Number(variantObj?.quantity_value) || null : null)
-      const explicitPieces =
+      const rawVariantId = variantObj?.variantId ?? variantObj?.variant_id ?? product?.variantId ?? variantObj?.id ?? null
+      const hasVariant = rawVariantId != null && String(rawVariantId) !== 'null' && String(rawVariantId) !== 'undefined'
+      const variantId = hasVariant ? rawVariantId : null
+      const quantity = Math.max(1, Number(qty ?? product?.quantity) || 1)
+
+      const unitStr = String(product?.quantity_unit ?? variantObj?.quantity_unit ?? '').trim().toLowerCase()
+      const isPiece =
+        unitStr === 'pieces' ||
+        product?.variantPieces != null ||
+        product?.pieces != null ||
         pieces != null
-          ? Math.max(1, Math.floor(Number(pieces) || 1))
-          : (product?.quantity && selectedVariantVal
-              ? Math.max(1, Math.floor(Number(product.quantity) || 1))
-              : null)
-      const quantity = Math.max(1, Number(qty) || 1)
 
-      // Authoritative per-line price
-      let selected_price
-      if (explicitPieces != null) {
-        const normalPerPiece = hasVariant
-          ? lineNormalPerPiece({
-              variant_id: variantId,
-              quantity_unit: variantObj.quantity_unit,
-              quantity_value: variantObj.quantity_value,
-              variant_price_per_unit: Number(variantObj.price_per_unit ?? variantObj.total_price ?? variantObj.price ?? 0),
-              variant_total_price: Number(variantObj.total_price ?? variantObj.price ?? 0),
-            })
-          : Number(product.price || 0)
+      const variantPieces = Math.max(
+        1,
+        Math.floor(
+          Number(
+            product?.variantPieces ??
+            product?.selectedVariant ??
+            variantObj?.variantPieces ??
+            variantObj?.selectedVariant ??
+            variantObj?.quantity_value ??
+            (pieces && quantity > 0 ? Math.round(pieces / quantity) : null) ??
+            1
+          )
+        )
+      )
 
-        selected_price =
-          Number.isFinite(normalPerPiece) && normalPerPiece > 0
-            ? normalPerPiece * explicitPieces
-            : Number(variantObj?.total_price ?? variantObj?.price ?? product.price ?? 0)
-      } else {
-        selected_price = hasVariant
-          ? Number(variantObj?.total_price ?? variantObj?.price ?? 0)
-          : Number(product.price || 0)
-      }
+      const totalPieces = Math.max(
+        1,
+        Math.floor(
+          Number(
+            product?.totalPieces ??
+            pieces ??
+            (isPiece ? variantPieces * quantity : quantity)
+          )
+        )
+      )
 
-      // If selected_price is 0 and default variant exists, use default variant price
-      if (selected_price <= 0 && activeDefaultVar) {
-        selected_price = Number(activeDefaultVar.total_price ?? activeDefaultVar.price ?? 0)
-      }
+      const packagePrice = Number(
+        variantObj?.variant_total_price ??
+        (hasVariant ? (variantObj?.total_price ?? variantObj?.price) : product?.price) ??
+        lineUnitPrice(product) ??
+        0
+      )
+
+      const piecePrice = Number(
+        product?.unitPrice ??
+        variantObj?.unitPrice ??
+        variantObj?.price_per_unit ??
+        (isPiece && variantPieces > 0 ? packagePrice / variantPieces : packagePrice)
+      )
+
+      const totalPrice = Number(
+        product?.totalPrice ??
+        round2(packagePrice * quantity)
+      )
 
       const minQuantity = hasVariant && variantObj
         ? Math.max(
@@ -189,11 +255,8 @@ export function CartProvider({ children }) {
             Math.floor(
               Number(
                 variantObj.min_quantity ??
-                  variantObj.min_qty ??
-                  (explicitPieces != null ||
-                  String(variantObj.quantity_unit || '').trim().toLowerCase() === 'pieces'
-                    ? variantObj.quantity_value
-                    : 1)
+                variantObj.min_qty ??
+                1
               ) || 1
             )
           )
@@ -202,36 +265,46 @@ export function CartProvider({ children }) {
       const newItem = {
         productId: product.productId ?? product.id,
         product_id: product.id,
-        variantId: variantId,
+        variantId,
         variant_id: variantId,
-        selectedVariant: selectedVariantVal,
+        variantPieces: isPiece ? variantPieces : 1,
+        quantity,
+        totalPieces: isPiece ? totalPieces : quantity,
+        unitPrice: piecePrice,
+        unit_price: packagePrice,
+        totalPrice,
+        total_price: totalPrice,
+        selectedVariant: isPiece ? variantPieces : (product?.selectedVariant ?? null),
         name: product.name,
         image: product.image,
         stock: product.stock != null ? Number(product.stock) : null,
         is_in_stock: product.is_in_stock !== undefined ? Boolean(product.is_in_stock) : true,
-        quantity: explicitPieces != null ? 1 : quantity,
         min_quantity: minQuantity,
-        // Exact piece count (brand bulk lines only).
-        ...(explicitPieces != null ? { pieces: explicitPieces } : {}),
-        selected_price,
-        // Brand context carried on the line for display (never pricing).
+        ...(pieces != null ? { pieces: Number(pieces) } : (product?.pieces != null ? { pieces: Number(product.pieces) } : {})),
+        selected_price: packagePrice,
         brand_id: product.brand_id ?? null,
         brand_name: product.brand_name ?? null,
         ...(Array.isArray(product.variants) ? { variants: product.variants } : {}),
         ...(hasVariant && variantObj
           ? {
-              variantId: variantId,
+              variantId,
               variant_id: variantId,
-              selectedVariant: selectedVariantVal,
+              variantPieces: isPiece ? variantPieces : 1,
+              totalPieces: isPiece ? totalPieces : quantity,
+              unitPrice: piecePrice,
+              unit_price: packagePrice,
+              totalPrice,
+              total_price: totalPrice,
+              selectedVariant: isPiece ? variantPieces : null,
               variant_label:
-                explicitPieces != null
-                  ? `${explicitPieces} ${String(variantObj.quantity_unit || 'Pieces')}`.trim()
-                  : (variantObj.variant_label || variantObj.display_label),
-              quantity_value: explicitPieces != null ? explicitPieces : variantObj.quantity_value,
-              quantity_unit: variantObj.quantity_unit,
+                variantObj.variant_label ||
+                variantObj.display_label ||
+                (isPiece ? `${variantPieces} Pieces` : ''),
+              quantity_value: variantPieces,
+              quantity_unit: variantObj.quantity_unit || (isPiece ? 'Pieces' : ''),
               min_quantity: minQuantity,
-              variant_total_price: selected_price,
-              variant_price_per_unit: Number(variantObj.price_per_unit ?? variantObj.total_price ?? variantObj.price ?? selected_price),
+              variant_total_price: packagePrice,
+              variant_price_per_unit: piecePrice,
               variant_is_default: variantObj.is_default === true,
             }
           : {}),
@@ -307,8 +380,22 @@ export function CartProvider({ children }) {
       const baseUnit = lineUnitPrice(i)
       const bulk = i.brand_id != null ? brandBulk[String(i.brand_id)] || null : null
       const pricing = bulk ? lineBulkPricing(i, bulk) : null
+      const resolvedTotalPieces = pricing ? pricing.linePieces : (i.totalPieces ?? (i.variantPieces ? i.variantPieces * i.quantity : i.quantity))
+      const resolvedUnitPrice = pricing && pricing.isPiecePriced
+        ? pricing.chargedPerPiece
+        : (i.unitPrice ?? (pricing ? pricing.unitPrice : baseUnit))
+      const resolvedTotalPrice = pricing && pricing.isPiecePriced
+        ? round2(pricing.chargedPerPiece * resolvedTotalPieces)
+        : round2((pricing ? pricing.unitPrice : baseUnit) * i.quantity)
+
       return {
         ...i,
+        variantId: i.variantId ?? i.variant_id ?? null,
+        variantPieces: i.variantPieces ?? 1,
+        quantity: i.quantity,
+        totalPieces: resolvedTotalPieces,
+        unitPrice: resolvedUnitPrice,
+        totalPrice: resolvedTotalPrice,
         min_quantity: getLineMinQuantity(i),
         unit_price: pricing ? pricing.unitPrice : baseUnit,
         normal_unit_price: pricing ? pricing.normalUnitPrice : baseUnit,

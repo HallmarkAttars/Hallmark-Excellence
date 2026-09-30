@@ -467,7 +467,13 @@ async function createOrder(req, res) {
         let normalPerPiece
         let variantFields = {}
         const rawVariantId = item.variant_id ?? item.variantId ?? null
-        if (rawVariantId != null) {
+        const productVariants = dbVariants.filter((v) => String(v.product_id) === String(product.id))
+
+        if (productVariants.length > 0 && (rawVariantId == null || String(rawVariantId) === 'null' || String(rawVariantId) === 'undefined')) {
+          throw new Error(`Please select a valid variant for ${product.name}.`)
+        }
+
+        if (rawVariantId != null && String(rawVariantId) !== 'null' && String(rawVariantId) !== 'undefined') {
           const variant = variantMap.get(String(rawVariantId))
           if (!variant || String(variant.product_id) !== String(product.id)) {
             throw new Error(`The selected size/variant of ${product.name} is no longer available. Please refresh and try again.`)
@@ -492,15 +498,17 @@ async function createOrder(req, res) {
           const isPiecesUnit = String(variant.quantity_unit ?? '').trim().toLowerCase() === 'pieces'
           const sizePerUnit = Math.floor(Number(variant.quantity_value))
 
-          const selectedVariantVal = item.selectedVariant ?? item.selected_variant ?? null
+          const selectedVariantVal = item.variantPieces ?? item.selectedVariant ?? item.selected_variant ?? null
           // `pieces` is the TOTAL pieces of the line — either an exact piece
           // count picked on the product page or a legacy pack line's derived tally.
           const explicitPieces =
-            item.pieces != null
-              ? Math.floor(Number(item.pieces))
-              : (isPiecesUnit && selectedVariantVal != null
-                  ? Math.floor(Number(item.quantity ?? item.qty ?? 1))
-                  : null)
+            item.totalPieces != null
+              ? Math.floor(Number(item.totalPieces))
+              : (item.pieces != null
+                  ? Math.floor(Number(item.pieces))
+                  : (isPiecesUnit && selectedVariantVal != null
+                      ? Math.floor(Number(selectedVariantVal) * quantity)
+                      : null))
           if (explicitPieces != null && (!Number.isFinite(explicitPieces) || explicitPieces < 1)) {
             throw new Error(`Invalid piece quantity for ${product.name}.`)
           }
@@ -546,14 +554,17 @@ async function createOrder(req, res) {
           variantFields = {
             variant_id: variant.id,
             variantId: variant.id,
-            selectedVariant: selectedVariantVal,
+            variantPieces: sizePerUnit,
+            quantity,
+            totalPieces: pieces,
+            selectedVariant: sizePerUnit,
             // Piece-based lines store the EXACT pieces ordered (mirrors the
             // cart line the customer saw); pack-based lines keep the DB label.
             variant_label:
               explicitPieces != null
                 ? `${explicitPieces} ${String(variant.quantity_unit ?? '').trim()}`
                 : variant.display_label,
-            quantity_value: explicitPieces != null ? explicitPieces : variant.quantity_value,
+            quantity_value: sizePerUnit,
             quantity_unit: variant.quantity_unit,
             variant_total_price: round2(variantTotal),
             variant_price_per_unit: round2(variantPerUnit),

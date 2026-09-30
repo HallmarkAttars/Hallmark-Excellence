@@ -396,38 +396,54 @@ export default function Contact() {
         // Build a complete snapshot of every item so orders remain
         // historically accurate even if the product/variant is edited later.
         const items = checkout.checkoutItems.map((item) => {
-          // Send the line's unit price (the selected variant's TOTAL price,
-          // or the product price) so the snapshot mirrors what the customer
-          // is charged — the server still recomputes everything
-          // authoritatively from the database.
-          const unit_price = lineUnitPrice(item)
-          const quantity = Number(item.quantity ?? item.qty ?? 1)
-          const hasVariant = (item.variant_id ?? item.variantId) != null
-          const varId = item.variantId ?? item.variant_id ?? null
+          const rawVariantId = item.variantId ?? item.variant_id ?? null
+          const hasVariant = rawVariantId != null && String(rawVariantId) !== 'null' && String(rawVariantId) !== 'undefined'
+          const varId = hasVariant ? (Number.isFinite(Number(rawVariantId)) ? Number(rawVariantId) : rawVariantId) : null
+
+          // Validate selected variant against product's available variants list
+          if (Array.isArray(item.variants) && item.variants.length > 0) {
+            const valid = varId != null && item.variants.some((v) => String(v.id) === String(varId))
+            if (!valid) {
+              throw new Error(`Please select a valid variant for ${item.name || 'product'}.`)
+            }
+          }
+
+          const quantity = Math.max(1, Number(item.quantity ?? item.qty ?? 1))
+          const variantPieces = Math.max(1, Number(item.variantPieces ?? item.selectedVariant ?? (item.totalPieces && quantity > 0 ? Math.round(item.totalPieces / quantity) : 1)))
+          const totalPieces = Math.max(1, Number(item.totalPieces ?? (item.pieces != null ? item.pieces : (variantPieces * quantity))))
+          const unitPrice = Number(item.unitPrice ?? item.unit_price ?? lineUnitPrice(item))
+          const totalPrice = Number(item.totalPrice ?? item.total_price ?? (unitPrice * (item.pieces != null || item.totalPieces != null ? totalPieces : quantity)))
+
           return {
             product_id: item.product_id ?? item.productId ?? item.id,
             productId: item.productId ?? item.product_id ?? item.id,
             variantId: varId,
-            selectedVariant: item.selectedVariant ?? null,
+            variant_id: varId,
+            variantPieces,
+            quantity,
+            totalPieces,
+            unitPrice,
+            totalPrice,
+            selectedVariant: variantPieces,
             product_name: item.name,
             image: item.image,
-            quantity,
-            // Exact piece count for brand bulk lines — the server charges
-            // per piece using this (quantity stays 1).
-            ...(item.pieces != null ? { pieces: item.pieces } : {}),
-            unit_price,
-            subtotal: unit_price * quantity,
+            pieces: totalPieces,
+            unit_price: unitPrice,
+            subtotal: totalPrice,
             ...(hasVariant
               ? {
                   variant_id: varId,
                   variantId: varId,
-                  selectedVariant: item.selectedVariant ?? null,
+                  variantPieces,
+                  totalPieces,
+                  unitPrice,
+                  totalPrice,
+                  selectedVariant: variantPieces,
                   variant_label: item.variant_label,
-                  quantity_value: item.quantity_value,
-                  quantity_unit: item.quantity_unit,
-                  variant_total_price: Number(item.variant_total_price ?? unit_price),
-                  variant_price_per_unit:
-                    item.variant_price_per_unit != null ? Number(item.variant_price_per_unit) : null,
+                  quantity_value: variantPieces,
+                  quantity_unit: item.quantity_unit || 'Pieces',
+                  variant_total_price: round2(unitPrice * variantPieces),
+                  variant_price_per_unit: unitPrice,
                 }
               : {}),
           }

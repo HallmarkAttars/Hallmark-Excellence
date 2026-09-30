@@ -415,6 +415,13 @@
   letter-spacing: 0.05em;
   color: var(--charcoal-soft);
 }
+.pd-total-pieces {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  letter-spacing: 0.02em;
+}
 .pd-total {
   margin: 0;
   font-size: 1.35rem;
