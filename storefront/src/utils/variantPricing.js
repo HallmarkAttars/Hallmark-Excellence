@@ -8,6 +8,7 @@
 // sees is exactly what they will be charged.
 
 import { getDefaultVariant, getDisplayPrice, getVariantPrice } from './productPricing'
+import { round2 } from './brandBulk'
 
 /**
  * Resolves the unit price for a cart line using the strict priority:
@@ -95,15 +96,16 @@ export function lineQuantity(item) {
   return Number.isFinite(q) && q >= 1 ? Math.floor(q) : 1
 }
 
-// Line total = variant total price × quantity.
+// Line total = variant total price × quantity (rounded to 2 decimal places).
 export function lineTotal(item) {
-  return lineUnitPrice(item) * lineQuantity(item)
+  return round2(lineUnitPrice(item) * lineQuantity(item))
 }
 
-// Cart total = sum of every line total.
+// Cart total = sum of every line total (rounded to 2 decimal places).
 export function cartTotal(items) {
-  return (Array.isArray(items) ? items : []).reduce((sum, i) => sum + lineTotal(i), 0)
+  const sum = (Array.isArray(items) ? items : []).reduce((acc, i) => acc + lineTotal(i), 0)
+  return round2(sum)
 }
 
-export { getDefaultVariant, getDisplayPrice, getVariantPrice }
+export { getDefaultVariant, getDisplayPrice, getVariantPrice, round2 }
 

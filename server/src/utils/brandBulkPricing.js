@@ -34,7 +34,9 @@
 
 // Round monetary values to 2 decimals (orders table stores numeric(10,2)).
 function round2(n) {
-  return Math.round((Number(n) + Number.EPSILON) * 100) / 100
+  const x = Number(n)
+  if (!Number.isFinite(x)) return 0
+  return Math.round((x + Number.EPSILON) * 100) / 100
 }
 
 // Normalize a brand's stored bulk config into a SORTED array of tiers

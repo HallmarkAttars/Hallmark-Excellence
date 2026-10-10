@@ -5,7 +5,7 @@ import { submitOrder } from '../services/mockApi'
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { useCart } from '../context/CartContext'
-import { lineUnitPrice } from '../utils/variantPricing'
+import { lineUnitPrice, round2 } from '../utils/variantPricing'
 import { submitContactForm } from '../utils/contactForm'
 import { paymentMethodLabel } from '../utils/invoice'
 import { getEmailError } from '../utils/email'
@@ -75,9 +75,9 @@ function OrderSummaryItem({ item }) {
   // product price (variant-less products). × quantity = line total —
   // identical to the cart and to the server-side order math.
   const rawQty = item.quantity ?? item.qty
-  const unitPrice = lineUnitPrice(item)
+  const unitPrice = round2(lineUnitPrice(item))
   const quantity = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
-  const lineTotal = unitPrice * quantity
+  const lineTotal = round2(unitPrice * quantity)
   const label = item.variant_label ||
     (item.quantity_value != null && item.quantity_unit
       ? `${item.quantity_value} ${item.quantity_unit}`
@@ -411,8 +411,8 @@ export default function Contact() {
           const quantity = Math.max(1, Number(item.quantity ?? item.qty ?? 1))
           const variantPieces = Math.max(1, Number(item.variantPieces ?? item.selectedVariant ?? (item.totalPieces && quantity > 0 ? Math.round(item.totalPieces / quantity) : 1)))
           const totalPieces = Math.max(1, Number(item.totalPieces ?? (item.pieces != null ? item.pieces : (variantPieces * quantity))))
-          const unitPrice = Number(item.unitPrice ?? item.unit_price ?? lineUnitPrice(item))
-          const totalPrice = Number(item.totalPrice ?? item.total_price ?? (unitPrice * (item.pieces != null || item.totalPieces != null ? totalPieces : quantity)))
+          const unitPrice = round2(item.unitPrice ?? item.unit_price ?? lineUnitPrice(item))
+          const totalPrice = round2(item.totalPrice ?? item.total_price ?? (unitPrice * (item.pieces != null || item.totalPieces != null ? totalPieces : quantity)))
 
           return {
             product_id: item.product_id ?? item.productId ?? item.id,
@@ -443,7 +443,7 @@ export default function Contact() {
                   quantity_value: variantPieces,
                   quantity_unit: item.quantity_unit || 'Pieces',
                   variant_total_price: round2(unitPrice * variantPieces),
-                  variant_price_per_unit: unitPrice,
+                  variant_price_per_unit: round2(unitPrice),
                 }
               : {}),
           }
@@ -473,7 +473,7 @@ export default function Contact() {
             : {}),
           message: form.message,
           items,
-          total: checkout.total,
+          total: round2(checkout.total),
           // Selected payment method (cod | upi) — stored on the order so
           // staff can contact the customer about payment. No gateway.
           paymentMethod,
@@ -624,12 +624,14 @@ export default function Contact() {
   // confirmed later, so the Total row uses the cart's authoritative total
   // from the checkout state.
   const checkoutSubtotal = isCheckout && checkout
-    ? checkout.checkoutItems.reduce((acc, it) => {
-        const unitPrice = lineUnitPrice(it)
-        const rawQty = it.quantity ?? it.qty
-        const qty = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
-        return acc + unitPrice * qty
-      }, 0)
+    ? round2(
+        checkout.checkoutItems.reduce((acc, it) => {
+          const unitPrice = round2(lineUnitPrice(it))
+          const rawQty = it.quantity ?? it.qty
+          const qty = Number.isFinite(Number(rawQty)) ? Number(rawQty) : 1
+          return acc + round2(unitPrice * qty)
+        }, 0)
+      )
     : 0
 
   // --- Contact / Checkout view -------------------------------------------

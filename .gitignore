@@ -30,3 +30,7 @@ Thumbs.db
 *.swp
 *.swo
 
+# --- Agents / Skills ---
+.agents/
+skills-lock.json
+

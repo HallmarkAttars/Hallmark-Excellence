@@ -29,7 +29,9 @@ function generateOrderNumber() {
 
 // Round monetary values to 2 decimals (the orders table stores numeric(10,2)).
 function round2(n) {
-  return Math.round((Number(n) + Number.EPSILON) * 100) / 100
+  const x = Number(n)
+  if (!Number.isFinite(x)) return 0
+  return Math.round((x + Number.EPSILON) * 100) / 100
 }
 
 // Resolve the delivery address for a guest order.

@@ -19,6 +19,7 @@ import {
   pieceBandRange,
   pieceWord,
   productPageBrandPieces,
+  round2,
 } from './brandBulk'
 
 const AREES = {
@@ -549,3 +550,31 @@ describe('pieceWord', () => {
     expect(pieceWord(70)).toBe('pieces')
   })
 })
+
+describe('round2', () => {
+  it('rounds standard decimals correctly', () => {
+    expect(round2(10.555)).toBe(10.56)
+    expect(round2(10.554)).toBe(10.55)
+    expect(round2(42)).toBe(42)
+  })
+
+  it('handles floating point precision safely', () => {
+    expect(round2(0.1 + 0.2)).toBe(0.3)
+    expect(round2(1.005)).toBe(1.01)
+  })
+
+  it('parses valid numeric strings', () => {
+    expect(round2('19.999')).toBe(20)
+    expect(round2('45.50')).toBe(45.5)
+  })
+
+  it('safely handles non-finite, null, or undefined values without throwing or returning NaN', () => {
+    expect(round2(null)).toBe(0)
+    expect(round2(undefined)).toBe(0)
+    expect(round2(NaN)).toBe(0)
+    expect(round2('invalid')).toBe(0)
+    expect(round2(Infinity)).toBe(0)
+    expect(round2(-Infinity)).toBe(0)
+  })
+})
+

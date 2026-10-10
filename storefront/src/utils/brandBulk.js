@@ -34,8 +34,11 @@
 // identical for every line of the brand.
 
 // Round monetary values to 2 decimals (matches the orders table numeric(10,2)).
+// Safely handles numeric values and prevents NaN or invalid values from entering calculations.
 export function round2(n) {
-  return Math.round((Number(n) + Number.EPSILON) * 100) / 100
+  const x = Number(n)
+  if (!Number.isFinite(x)) return 0
+  return Math.round((x + Number.EPSILON) * 100) / 100
 }
 
 // Normalize a brand's stored bulk config into a SORTED array of tiers
