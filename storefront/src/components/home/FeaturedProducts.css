@@ -69,7 +69,7 @@
 }
 
 .featured-title-text {
-  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
+  font-family: var(--font-primary);
   font-size: clamp(0.95rem, 2.5vw, 1.15rem);
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -79,7 +79,7 @@
 }
 
 .featured-subtitle-text {
-  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-family: var(--font-primary);
   font-size: clamp(1.15rem, 3vw, 1.45rem);
   font-weight: 400;
   line-height: 1.4;
@@ -94,7 +94,7 @@
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--font-primary);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.12em;

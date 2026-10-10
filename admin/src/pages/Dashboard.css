@@ -27,9 +27,8 @@
   gap: 12px;
   padding: 14px 18px;
   background: rgba(184, 134, 43, 0.08);
-  border: 1px solid rgba(184, 134, 43, 0.25);
+  border: 1px solid rgba(184, 134, 43, 0.32);
   border-radius: var(--radius);
-  border-left: 4px solid var(--gold);
 }
 .dash-alert-icon {
   width: 34px;

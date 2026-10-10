@@ -62,7 +62,7 @@
 }
 
 .category-title {
-  font-family: var(--font-heading, var(--font-display, 'Cormorant Garamond', Georgia, serif));
+  font-family: var(--font-primary);
   font-size: clamp(1.85rem, 3.2vw, 2.5rem);
   font-weight: 500;
   line-height: 1.15;
@@ -92,7 +92,7 @@
   background: linear-gradient(135deg, #c79c4c 0%, #b38534 50%, #9e7225 100%);
   color: #ffffff !important;
   text-decoration: none;
-  font-family: var(--font-body, 'Manrope', sans-serif);
+  font-family: var(--font-primary);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -255,7 +255,7 @@
 }
 
 .category-name {
-  font-family: var(--font-heading, var(--font-display, 'Cormorant Garamond', Georgia, serif));
+  font-family: var(--font-primary);
   font-size: 15px;
   font-weight: 600;
   text-transform: uppercase;

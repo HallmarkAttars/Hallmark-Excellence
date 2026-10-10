@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Packing Labels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* 4 × 6 inch thermal sheet — the label fills the page exactly. */
+  @page { size: 101.6mm 152.4mm; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #ffffff; }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1a1815;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .label {
+    width: 101.6mm;
+    height: 152.4mm;
+    padding: 5mm 6mm 4mm;
+    display: flex;
+    flex-direction: column;
+    page-break-inside: avoid;
+    overflow: hidden;
+    position: relative;
+    background: #ffffff;
+  }
+  .label::before {
+    content: '';
+    position: absolute;
+    top: 3.5mm;
+    left: 3.5mm;
+    right: 3.5mm;
+    bottom: 3.5mm;
+    border: 0.5px solid rgba(184, 134, 43, 0.45);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .page-break { page-break-after: always; break-after: page; }
+
+  /* Header */
+  .label-head { text-align: center; }
+  .label-head strong {
+    display: block;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: .06em;
+    color: #171512;
+  }
+  .label-head span {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    margin-top: .6mm;
+  }
+
+  /* Ornament line with centered diamond */
+  .ornament { position: relative; text-align: center; margin: 1.5mm 0; }
+  .ornament-rule { border: none; border-top: 0.5px solid #b8862b; margin: 0; }
+  .ornament-diamond {
+    position: relative;
+    top: -5px;
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #b8862b;
+    transform: rotate(45deg);
+    border-radius: 1px;
+  }
+  .ornament-diamond.sm {
+    width: 4px;
+    height: 4px;
+    margin: 0 6px;
+    vertical-align: middle;
+    top: -1px;
+  }
+
+  /* Fields */
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 2.8mm;
+  }
+  .field { margin-top: 0; }
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    margin-bottom: 0.6mm;
+  }
+  .order-id {
+    display: block;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1815;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .payment-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    border: 1px solid rgba(138, 95, 30, 0.4);
+    background: #fbf9f4;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* Address box — FROM / SHIP TO side-by-side */
+  .address-box {
+    flex: 1;
+    display: flex;
+    border: 0.6px solid #b8862b;
+    border-radius: 3px;
+    margin-top: 2.8mm;
+    overflow: hidden;
+    min-height: 0;
+    background: #fdfcf9;
+  }
+  .address-col {
+    flex: 1;
+    padding: 3mm 3.5mm;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .address-divider {
+    width: 0.4px;
+    background: #b8862b;
+    margin: 2mm 0;
+    flex-shrink: 0;
+  }
+
+  /* Col headers */
+  .col-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2mm;
+  }
+  .col-header .field-label { margin-bottom: 0; }
+  .col-header .icon { flex-shrink: 0; }
+
+  /* FROM section */
+  .from-address { font-size: 11px; line-height: 1.45; color: #1a1815; }
+  .from-address strong {
+    display: block;
+    font-weight: 800;
+    font-size: 12px;
+    margin-bottom: 0.6mm;
+    color: #171512;
+  }
+  .from-address span { display: block; }
+
+  /* SHIP TO section */
+  .value-name {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+    color: #171512;
+  }
+  .value-phone {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #1a1815;
+    margin-top: 1mm;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .value-address {
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.45;
+    margin-top: 1mm;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    max-height: 22mm;
+    overflow: hidden;
+  }
+  .value-address > div { flex: 1; min-width: 0; }
+  .value-address span { display: block; }
+  .trunc { color: rgba(26,24,21,.55); }
+
+  /* Footer */
+  .label-foot { flex-shrink: 0; text-align: center; }
+  .barcode-zone { border-top: 1px solid rgba(184,134,43,.55); padding-top: 2mm; }
+  .barcode-zone svg { display: block; margin: 0 auto; max-width: 100%; }
+  .barcode-id {
+    display: block;
+    margin-top: 1mm;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: #1a1815;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  /* PACKED WITH CARE */
+  .packed-care {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    margin: 2mm 0;
+  }
+  .packed-line { flex: 1; border-top: 0.4px solid #b8862b; }
+  .packed-text {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    white-space: nowrap;
+  }
+
+  /* THANK YOU */
+  .thank-you-rule {
+    border: none;
+    border-top: 0.5px solid #b8862b;
+    margin: 1.5mm 0;
+  }
+  .thank-you {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Icons */
+  .icon { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+  .value-phone .icon, .value-address .icon {
+    flex-shrink: 0; display: inline-block;
+  }
+  .value-address { align-items: flex-start; }
+  .value-address > .icon { margin-top: 2px; }
+
+  @media print {
+    .page-break { page-break-after: always; break-after: page; }
+    .label {
+      page-break-inside: avoid;
+      width: 101.6mm !important;
+      height: 152.4mm !important;
+      padding: 5mm 6mm 4mm !important;
+      overflow: visible !important;
+    }
+    svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+    <section class="label">
+      <div class="label-body">
+        <header class="label-head">
+          <strong>HIKMAEXPORTS</strong>
+          <span>Packing / Shipping Label</span>
+        </header>
+
+        <div class="ornament">
+          <hr class="ornament-rule" />
+          <span class="ornament-diamond"></span>
+        </div>
+
+        <div class="field-row">
+          <div class="field field-order-id">
+            <span class="field-label">Order ID</span>
+            <strong class="order-id">ORD-164714</strong>
+          </div>
+          <div class="field field-payment">
+            <span class="field-label">Payment</span>
+            <strong class="payment-badge cod">CASH ON DELIVERY (COD)</strong>
+          </div>
+        </div>
+
+        <div class="address-box">
+          <div class="address-col from-col">
+            <div class="col-header">
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="8" height="9" rx="0.5"/><rect x="3" y="0" width="4" height="4"/><rect x="3.5" y="8" width="3" height="4" fill="white"/></svg>
+              <span class="field-label">FROM</span>
+            </div>
+            <div class="from-address">
+              <strong>HIKMAEXPORTS</strong>
+              <span>83 &amp; 84, Moore St,</span>
+              <span>Mannadi, George Town,</span>
+              <span>Chennai, Greater Chennai,</span>
+              <span>Tamil Nadu 600001</span>
+            </div>
+          </div>
+          <div class="address-divider"></div>
+          <div class="address-col to-col">
+            <div class="col-header">
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="3.5" r="2.5"/><path d="M0 12 L5 7 L10 12 Z"/></svg>
+              <span class="field-label">SHIP TO</span>
+            </div>
+            <strong class="value-name">MOHAMED FAREETH</strong>
+            <div class="value-phone">
+              <svg width="8" height="10" viewBox="0 0 8 10" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="0" width="6" height="8" rx="1"/><rect x="2" y="1.5" width="4" height="1" fill="white"/><rect x="2" y="5.5" width="4" height="1" fill="white"/></svg>
+              <span>+91 9363456545</span>
+            </div>
+            <div class="value-address">
+              <svg width="8" height="11" viewBox="0 0 8 11" fill="#B8862B" xmlns="http://www.w3.org/2000/svg"><circle cx="4" cy="4" r="3"/><path d="M1 5 L4 10 L7 5 Z"/><circle cx="4" cy="4" r="1.2" fill="white"/></svg>
+              <div><span>no 95 moore street, first floor, kalajiyam school opp</span><span>Chennai, Chennai, Tamil Nadu - 600001</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="label-foot">
+        <div class="barcode-zone">
+          <svg xmlns="http://www.w3.org/2000/svg" width="46.420mm" height="11mm" viewBox="0 0 46.419999999999916 11" shape-rendering="crispEdges" aria-hidden="true"><rect x="2.200" y="0" width="0.220" height="11"/><rect x="3.080" y="0" width="0.220" height="11"/><rect x="3.520" y="0" width="0.660" height="11"/><rect x="4.400" y="0" width="0.660" height="11"/><rect x="5.280" y="0" width="0.220" height="11"/><rect x="5.720" y="0" width="0.660" height="11"/><rect x="6.600" y="0" width="0.220" height="11"/><rect x="7.040" y="0" width="0.660" height="11"/><rect x="7.920" y="0" width="0.220" height="11"/><rect x="8.800" y="0" width="0.220" height="11"/><rect x="9.240" y="0" width="0.660" height="11"/><rect x="10.120" y="0" width="0.220" height="11"/><rect x="10.560" y="0" width="0.220" height="11"/><rect x="11.000" y="0" width="0.660" height="11"/><rect x="12.320" y="0" width="0.220" height="11"/><rect x="12.760" y="0" width="0.220" height="11"/><rect x="13.200" y="0" width="0.220" height="11"/><rect x="13.640" y="0" width="0.660" height="11"/><rect x="14.960" y="0" width="0.220" height="11"/><rect x="15.400" y="0" width="0.660" height="11"/><rect x="16.280" y="0" width="0.220" height="11"/><rect x="17.160" y="0" width="0.220" height="11"/><rect x="17.600" y="0" width="0.220" height="11"/><rect x="18.040" y="0" width="0.660" height="11"/><rect x="18.920" y="0" width="0.660" height="11"/><rect x="19.800" y="0" width="0.660" height="11"/><rect x="20.680" y="0" width="0.220" height="11"/><rect x="21.560" y="0" width="0.220" height="11"/><rect x="22.000" y="0" width="0.220" height="11"/><rect x="22.440" y="0" width="0.660" height="11"/><rect x="23.320" y="0" width="0.220" height="11"/><rect x="23.760" y="0" width="0.660" height="11"/><rect x="25.080" y="0" width="0.660" height="11"/><rect x="25.960" y="0" width="0.220" height="11"/><rect x="26.400" y="0" width="0.220" height="11"/><rect x="26.840" y="0" width="0.220" height="11"/><rect x="27.280" y="0" width="0.220" height="11"/><rect x="28.160" y="0" width="0.660" height="11"/><rect x="29.040" y="0" width="0.220" height="11"/><rect x="29.480" y="0" width="0.660" height="11"/><rect x="30.360" y="0" width="0.220" height="11"/><rect x="30.800" y="0" width="0.220" height="11"/><rect x="31.680" y="0" width="0.220" height="11"/><rect x="32.120" y="0" width="0.660" height="11"/><rect x="33.000" y="0" width="0.660" height="11"/><rect x="33.880" y="0" width="0.660" height="11"/><rect x="34.760" y="0" width="0.220" height="11"/><rect x="35.640" y="0" width="0.220" height="11"/><rect x="36.080" y="0" width="0.220" height="11"/><rect x="36.520" y="0" width="0.660" height="11"/><rect x="37.400" y="0" width="0.220" height="11"/><rect x="37.840" y="0" width="0.220" height="11"/><rect x="38.720" y="0" width="0.660" height="11"/><rect x="39.600" y="0" width="0.220" height="11"/><rect x="40.040" y="0" width="0.660" height="11"/><rect x="40.920" y="0" width="0.220" height="11"/><rect x="41.800" y="0" width="0.220" height="11"/><rect x="42.240" y="0" width="0.660" height="11"/><rect x="43.120" y="0" width="0.660" height="11"/><rect x="44.000" y="0" width="0.220" height="11"/></svg>
+          <span class="barcode-id">ORD-164714</span>
+        </div>
+        <div class="packed-care">
+          <span class="packed-line"></span>
+          <span class="packed-text">PACKED WITH CARE</span>
+          <span class="packed-line"></span>
+        </div>
+        <hr class="thank-you-rule" />
+        <p class="thank-you"><span class="ornament-diamond sm"></span>THANK YOU FOR YOUR ORDER!<span class="ornament-diamond sm"></span></p>
+      </footer>
+    </section>
+</body>
+</html>

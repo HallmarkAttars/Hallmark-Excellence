@@ -18,8 +18,8 @@
 // ============================================================================
 
 import { jsPDF } from 'jspdf'
-import { packingLabelData, packingLabelFileName } from '../../utils/packing'
-import { code39Svg, drawCode39, code39Modules } from '../../utils/barcode'
+import { packingLabelData, packingLabelFileName } from '../../utils/packing.js'
+import { code39Svg, drawCode39, code39Modules } from '../../utils/barcode.js'
 
 // Palette — HIKMAEXPORTS premium branding.
 const INK = [23, 21, 18]        // #171512 — near-black for headings
@@ -113,6 +113,15 @@ function drawLabel(doc, data) {
   const gold = GOLD.map((v) => v / 255)
   const hairline = HAIRLINE.map((v) => v / 255)
 
+  // ---- Outer frame & corner diamond accents -----------------------------
+  doc.setDrawColor(...gold)
+  doc.setLineWidth(0.25)
+  doc.rect(3.5, 3.5, W - 7, H - 7)
+  drawDiamond(doc, 3.5, 3.5, 0.7, gold)
+  drawDiamond(doc, W - 3.5, 3.5, 0.7, gold)
+  drawDiamond(doc, 3.5, H - 3.5, 0.7, gold)
+  drawDiamond(doc, W - 3.5, H - 3.5, 0.7, gold)
+
   const rule = (y, width = 0.4, color = gold) => {
     doc.setDrawColor(...color)
     doc.setLineWidth(width)
@@ -154,9 +163,19 @@ function drawLabel(doc, data) {
   rule(17)
   drawDiamond(doc, CX, 17, 1.2, gold)
 
-  // ---- ORDER ID ---------------------------------------------------------
+  // ---- ORDER ID & PAYMENT -----------------------------------------------
   let y = 23
   fieldLabel('ORDER ID', M, y)
+  if (data.payment) {
+    const payLabel = 'PAYMENT'
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(5.6)
+    doc.setCharSpace(1.6)
+    doc.setTextColor(...gold)
+    const payLabelW = doc.getTextWidth(payLabel) + 1.6 * (payLabel.length - 1)
+    doc.text(payLabel, W - M - payLabelW, y)
+    doc.setCharSpace(0)
+  }
   y += 6
 
   const id = String(data.orderId || '—')
@@ -164,6 +183,14 @@ function drawLabel(doc, data) {
   doc.setFontSize(14)
   doc.setTextColor(...text)
   doc.text(id, M, y)
+
+  if (data.payment) {
+    const payText = data.payment === 'COD' ? 'CASH ON DELIVERY (COD)' : String(data.payment).toUpperCase()
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(...gold)
+    doc.text(payText, W - M, y - 0.5, { align: 'right' })
+  }
   y += 8
 
   // ---- FROM / SHIP TO BOX -----------------------------------------------
@@ -404,12 +431,22 @@ function labelMarkup(data, last) {
 
         <div class="ornament">
           <hr class="ornament-rule" />
-          <span class="ornament-diamond">◆</span>
+          <span class="ornament-diamond"></span>
         </div>
 
-        <div class="field field-order-id">
-          <span class="field-label">Order ID</span>
-          <strong class="order-id">${escapeHtml(data.orderId)}</strong>
+        <div class="field-row">
+          <div class="field field-order-id">
+            <span class="field-label">Order ID</span>
+            <strong class="order-id">${escapeHtml(data.orderId)}</strong>
+          </div>
+          ${
+            data.payment
+              ? `<div class="field field-payment">
+            <span class="field-label">Payment</span>
+            <strong class="payment-badge ${escapeHtml(data.payment.toLowerCase())}">${escapeHtml(data.payment === 'COD' ? 'CASH ON DELIVERY (COD)' : data.payment)}</strong>
+          </div>`
+              : ''
+          }
         </div>
 
         <div class="address-box">
@@ -439,7 +476,7 @@ function labelMarkup(data, last) {
             </div>
             <div class="value-address">
               ${ICON_SVG.location}
-              ${addressRows}
+              <div>${addressRows}</div>
             </div>
           </div>
         </div>
@@ -456,7 +493,7 @@ function labelMarkup(data, last) {
           <span class="packed-line"></span>
         </div>
         <hr class="thank-you-rule" />
-        <p class="thank-you">✦ THANK YOU FOR YOUR ORDER! ✦</p>
+        <p class="thank-you"><span class="ornament-diamond sm"></span>THANK YOU FOR YOUR ORDER!<span class="ornament-diamond sm"></span></p>
       </footer>
     </section>`
 }
@@ -471,12 +508,20 @@ function renderLabelsHtml(labels) {
 <head>
 <meta charset="utf-8" />
 <title>Packing Labels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   /* 4 × 6 inch thermal sheet — the label fills the page exactly. */
   @page { size: 101.6mm 152.4mm; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #ffffff; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1815; }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1a1815;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .label {
     width: 101.6mm;
     height: 152.4mm;
@@ -485,133 +530,249 @@ function renderLabelsHtml(labels) {
     flex-direction: column;
     page-break-inside: avoid;
     overflow: hidden;
+    position: relative;
+    background: #ffffff;
+  }
+  .label::before {
+    content: '';
+    position: absolute;
+    top: 3.5mm;
+    left: 3.5mm;
+    right: 3.5mm;
+    bottom: 3.5mm;
+    border: 0.5px solid rgba(184, 134, 43, 0.45);
+    border-radius: 2px;
+    pointer-events: none;
   }
   .page-break { page-break-after: always; break-after: page; }
 
-  /* Header — compact, centered */
+  /* Header */
   .label-head { text-align: center; }
   .label-head strong {
-    display: block; font-family: Georgia, serif; font-size: 16px;
-    letter-spacing: .04em; color: #171512;
+    display: block;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: .06em;
+    color: #171512;
   }
   .label-head span {
-    display: block; font-size: 5.2px; letter-spacing: .12em;
-    text-transform: uppercase; color: #b8862b; margin-top: .6mm;
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    margin-top: .6mm;
   }
 
   /* Ornament line with centered diamond */
   .ornament { position: relative; text-align: center; margin: 1.5mm 0; }
   .ornament-rule { border: none; border-top: 0.5px solid #b8862b; margin: 0; }
   .ornament-diamond {
-    position: relative; top: -6px; background: #fff;
-    padding: 0 4px; color: #b8862b; font-size: 8px; line-height: 1;
+    position: relative;
+    top: -5px;
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #b8862b;
+    transform: rotate(45deg);
+    border-radius: 1px;
+  }
+  .ornament-diamond.sm {
+    width: 4px;
+    height: 4px;
+    margin: 0 6px;
+    vertical-align: middle;
+    top: -1px;
   }
 
   /* Fields */
-  .field { margin-top: 3.6mm; }
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 2.8mm;
+  }
+  .field { margin-top: 0; }
   .field-label {
-    display: inline-block; font-size: 6px; font-weight: 700;
-    letter-spacing: .18em; text-transform: uppercase; color: #b8862b;
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    margin-bottom: 0.6mm;
   }
   .order-id {
-    display: block; font-size: 14px; font-weight: 700;
-    color: #1a1815; letter-spacing: .01em; margin-top: 1mm;
+    display: block;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a1815;
+    letter-spacing: .02em;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .payment-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    border: 1px solid rgba(138, 95, 30, 0.4);
+    background: #fbf9f4;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
   /* Address box — FROM / SHIP TO side-by-side */
   .address-box {
-    flex: 1; display: flex; border: 0.5px solid #b8862b;
-    border-radius: 3px; margin-top: 3mm; overflow: hidden; min-height: 0;
+    flex: 1;
+    display: flex;
+    border: 0.6px solid #b8862b;
+    border-radius: 3px;
+    margin-top: 2.8mm;
+    overflow: hidden;
+    min-height: 0;
+    background: #fdfcf9;
   }
   .address-col {
-    flex: 1; padding: 3mm; display: flex; flex-direction: column;
-    overflow: hidden; min-height: 0;
+    flex: 1;
+    padding: 3mm 3.5mm;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
   }
   .address-divider {
-    width: 0.3px; background: #b8862b; margin: 2mm 0; flex-shrink: 0;
+    width: 0.4px;
+    background: #b8862b;
+    margin: 2mm 0;
+    flex-shrink: 0;
   }
 
   /* Col headers */
   .col-header {
-    display: flex; align-items: center; gap: 2px; margin-bottom: 2mm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2mm;
   }
   .col-header .field-label { margin-bottom: 0; }
   .col-header .icon { flex-shrink: 0; }
 
   /* FROM section */
-  .from-address { font-size: 6.5px; line-height: 1.5; color: #1a1815; }
+  .from-address { font-size: 11px; line-height: 1.45; color: #1a1815; }
   .from-address strong {
-    display: block; font-weight: 700; font-size: 7px; margin-bottom: 0.5mm;
+    display: block;
+    font-weight: 800;
+    font-size: 12px;
+    margin-bottom: 0.6mm;
+    color: #171512;
   }
   .from-address span { display: block; }
 
   /* SHIP TO section */
   .value-name {
-    display: block; font-size: 8px; font-weight: 700; color: #1a1815;
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+    color: #171512;
   }
   .value-phone {
-    display: flex; align-items: center; gap: 2px;
-    font-size: 6.5px; font-weight: 600; color: #1a1815; margin-top: .8mm;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #1a1815;
+    margin-top: 1mm;
+    font-variant-numeric: tabular-nums lining-nums;
   }
   .value-address {
-    display: flex; gap: 2px; font-size: 6.5px; font-weight: 500;
-    line-height: 1.5; margin-top: .8mm;
-    word-wrap: break-word; overflow-wrap: anywhere; white-space: normal;
-    /* Hard safety net: pathological addresses never push the barcode off. */
-    max-height: 18mm; overflow: hidden;
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.45;
+    margin-top: 1mm;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    max-height: 22mm;
+    overflow: hidden;
   }
-  .value-address > span { display: block; }
+  .value-address > div { flex: 1; min-width: 0; }
+  .value-address span { display: block; }
   .trunc { color: rgba(26,24,21,.55); }
 
-  /* Footer — barcode zone pinned to the bottom, then the notes */
+  /* Footer */
   .label-foot { flex-shrink: 0; text-align: center; }
   .barcode-zone { border-top: 1px solid rgba(184,134,43,.55); padding-top: 2mm; }
   .barcode-zone svg { display: block; margin: 0 auto; max-width: 100%; }
   .barcode-id {
-    display: block; margin-top: 1mm; font-size: 8px; font-weight: 600;
-    letter-spacing: .12em; color: #1a1815;
+    display: block;
+    margin-top: 1mm;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: #1a1815;
+    font-variant-numeric: tabular-nums lining-nums;
   }
 
-  /* PACKED WITH CARE with flanking lines */
+  /* PACKED WITH CARE */
   .packed-care {
-    display: flex; align-items: center; gap: 3mm; margin: 2mm 0;
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    margin: 2mm 0;
   }
-  .packed-line { flex: 1; border-top: 0.3px solid #b8862b; }
+  .packed-line { flex: 1; border-top: 0.4px solid #b8862b; }
   .packed-text {
-    font-size: 5.5px; font-weight: 700; letter-spacing: .3em;
-    text-transform: uppercase; color: #b8862b; white-space: nowrap;
-  }
-
-  /* THANK YOU rule + text */
-  .thank-you-rule {
-    border: none; border-top: 0.5px solid #b8862b; margin: 1.5mm 0;
-  }
-  .thank-you {
-    font-size: 5.5px; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: #b8862b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .24em;
+    text-transform: uppercase;
+    color: #8a5f1e;
     white-space: nowrap;
   }
 
-  /* Icons — small inline SVGs */
+  /* THANK YOU */
+  .thank-you-rule {
+    border: none;
+    border-top: 0.5px solid #b8862b;
+    margin: 1.5mm 0;
+  }
+  .thank-you {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #8a5f1e;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Icons */
   .icon { flex-shrink: 0; display: inline-block; vertical-align: middle; }
   .value-phone .icon, .value-address .icon {
     flex-shrink: 0; display: inline-block;
   }
   .value-address { align-items: flex-start; }
-  .value-address > .icon { margin-top: 1px; }
+  .value-address > .icon { margin-top: 2px; }
 
   @media print {
     .page-break { page-break-after: always; break-after: page; }
     .label {
       page-break-inside: avoid;
-      /* Force exact 4×6 inch dimensions for the printer. */
       width: 101.6mm !important;
       height: 152.4mm !important;
       padding: 5mm 6mm 4mm !important;
       overflow: visible !important;
     }
-    .label-head span { letter-spacing: .12em !important; }
-    .thank-you { letter-spacing: .1em !important; white-space: nowrap !important; }
     svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>

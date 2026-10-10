@@ -23,8 +23,10 @@
   --line-soft: rgba(184, 137, 56, 0.10);
   --line-strong: rgba(29, 25, 20, 0.45); /* visible outline for buttons/controls */
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+  --font-primary: "Plus Jakarta Sans", "Inter", "DM Sans", sans-serif;
+  --font-numeric: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-display: var(--font-primary);
+  --font-body: var(--font-primary);
 
   --radius: 2px;
   --shadow-soft: 0 6px 18px rgba(29, 25, 20, 0.06);
@@ -45,11 +47,61 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: rgba(184, 137, 56, 0.45) var(--cream);
+}
+
+/* Browser surfaces — Craft floor standards */
+::selection {
+  background: rgba(184, 137, 56, 0.25);
+  color: var(--charcoal);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(184, 137, 56, 0.38);
+  border-radius: 4px;
+  border: 2px solid var(--cream);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-deep);
+}
+
+input, textarea, select {
+  caret-color: var(--gold-deep);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-primary);
+}
+
+.numeric,
+.price,
+.currency,
+.quantity,
+.stat-value,
+.table-number,
+.tabular-nums,
+[data-tabular="true"] {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums lining-nums;
+}
 
 body {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: var(--font-primary);
   font-size: 16px;
   line-height: 1.7;
   color: var(--ink);
@@ -60,8 +112,8 @@ body {
 
 img { max-width: 100%; display: block; }
 
-h1, h2, h3, h4 {
-  font-family: var(--font-display);
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
   font-weight: 600;
   letter-spacing: 0.01em;
   margin: 0 0 0.5em;
@@ -71,7 +123,7 @@ h1, h2, h3, h4 {
 
 p { line-height: 1.7; margin: 0 0 1em; max-width: 68ch; }
 a { color: inherit; text-decoration: none; }
-button { font-family: var(--font-body); cursor: pointer; }
+button { font-family: var(--font-primary); cursor: pointer; }
 
 /* Mobile tap polish: remove 300ms delay and stray tap highlights */
 a, button, input, textarea, select { touch-action: manipulation; }

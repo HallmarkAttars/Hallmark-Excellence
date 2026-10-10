@@ -71,21 +71,11 @@
   color: var(--cream);
 }
 .sidebar-link.is-active {
-  background: rgba(198, 161, 91, 0.15);
+  background: rgba(198, 161, 91, 0.16);
   color: var(--gold);
   font-weight: 600;
-  position: relative;
-}
-/* Gold accent bar on left for active item */
-.sidebar-link.is-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--gold);
+  border-radius: var(--radius);
+  border: 1px solid rgba(198, 161, 91, 0.28);
 }
 
 .sidebar-link-icon {

@@ -22,8 +22,10 @@
      Manrope             → everything else (nav, stats, tables, forms,
                             buttons, statuses, toasts, inputs)
      ---------------------------------------------------------------- */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+  --font-primary: "Plus Jakarta Sans", "Inter", "DM Sans", sans-serif;
+  --font-numeric: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-display: var(--font-primary);
+  --font-body: var(--font-primary);
 
   --admin-text-xs: 11px;
   --admin-text-sm: 12px;
@@ -37,9 +39,64 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scrollbar-color: rgba(198, 161, 91, 0.4) var(--cream);
+}
+
+::selection {
+  background: rgba(198, 161, 91, 0.25);
+  color: var(--ink);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(198, 161, 91, 0.38);
+  border-radius: 4px;
+  border: 2px solid var(--cream);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-deep);
+}
+
+a, button, input, textarea, select {
+  touch-action: manipulation;
+}
+
+input, textarea, select {
+  caret-color: var(--gold-deep);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-primary);
+}
+
+.numeric,
+.price,
+.currency,
+.quantity,
+.stat-value,
+.stat-card-value,
+.table-number,
+.tabular-nums,
+[data-tabular="true"] {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 body {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: var(--font-primary);
   font-size: var(--admin-text-base);
   font-weight: 400;
   line-height: 1.5;
@@ -48,9 +105,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Display (serif) hierarchy — titles only */
-h1, h2, h3, h4 {
-  font-family: var(--font-display);
+/* Heading hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
   font-weight: 600;
   margin: 0 0 0.4em;
   color: var(--ink);
@@ -62,8 +119,8 @@ h4 { font-size: var(--admin-text-lg); line-height: 1.25; }
 
 p { margin: 0 0 0.8em; line-height: 1.6; }
 a { text-decoration: none; color: inherit; }
-button { font-family: var(--font-body); cursor: pointer; }
-input, select, textarea { font-family: var(--font-body); }
+button { font-family: var(--font-primary); cursor: pointer; }
+input, select, textarea { font-family: var(--font-primary); }
 
 /* Buttons — Manrope SemiBold */
 .btn {

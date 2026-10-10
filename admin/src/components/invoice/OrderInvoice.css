@@ -93,7 +93,7 @@
 }
 .invoice-company-line {
   display: block;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-primary);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -104,7 +104,7 @@
 .invoice-tagline {
   display: block;
   margin-top: 3px;
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: #b8862b;
@@ -138,7 +138,7 @@
   min-width: 0;
 }
 .invoice-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-primary);
   font-size: 30px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -177,7 +177,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10.5px;
+  font-size: 11px;
   color: #6f6a63;
   letter-spacing: 0.03em;
 }
@@ -206,7 +206,7 @@
 }
 .invoice-legal p {
   margin: 1px 0 0;
-  font-size: 9.5px;
+  font-size: 11px;
   color: #6f6a63;
   letter-spacing: 0.02em;
 }
@@ -230,8 +230,8 @@
   min-width: 0;
 }
 .invoice-card-title {
-  font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 10px;
+  font-family: var(--font-primary);
+  font-size: 11px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: #b8862b;
@@ -290,7 +290,7 @@
   background: #171512;
   color: #f7f2e8;
   text-align: left;
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -351,7 +351,7 @@
 .invoice-pack-tag {
   display: inline-block;
   margin-left: 8px;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   color: #171512;
   background: #f7f2e8;
@@ -408,7 +408,7 @@
 }
 .invoice-thanks-title {
   margin: 0 0 3mm;
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-primary);
   font-size: 22px;
   font-weight: 700;
   color: #b8862b;
@@ -416,9 +416,9 @@
 }
 .invoice-thanks-line {
   margin: 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-size: 15px;
+  font-family: var(--font-primary);
+  font-style: normal;
+  font-size: 14px;
   color: #171512;
 }
 .invoice-thanks-sub {
@@ -454,7 +454,7 @@
   background: linear-gradient(90deg, #b8862b, rgba(184, 134, 43, 0));
 }
 .invoice-pagefoot-text {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-primary);
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.22em;

@@ -273,7 +273,7 @@
 }
 
 .carousel-item-name {
-  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-family: var(--font-primary);
   font-size: 0.95rem;
   font-weight: 600;
   color: #2b251f;
@@ -288,7 +288,7 @@
 }
 
 .carousel-item-category {
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--font-primary);
   font-size: 0.72rem;
   font-weight: 500;
   color: #786d60;

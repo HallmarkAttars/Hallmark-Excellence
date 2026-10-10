@@ -581,7 +581,7 @@ export default function ProductDetail({ onAddToCart }) {
               src={cloudinarySrc(product.image, { width: 900 })}
               alt={`${product.name} - ${brandTitle} attar`}
               decoding="async"
-              fetchPriority="high"
+              fetchpriority="high"
             />
           </div>
         </div>
