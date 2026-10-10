@@ -92,11 +92,12 @@ export async function getBrandBySlug(slug, options) {
   return (data.brands ?? data).find((b) => b.slug === slug) ?? null
 }
 
-export async function submitContactMessage(payload) {
+export async function submitContactMessage() {
   // Backend currently has /api/orders but not contact endpoints.
-  // Keep logging for now; will return success to not block UI.
-  // If you add /api/contact later, update this function.
-  console.log('[storefront api] contact payload:', payload)
+  // Returns success to not block UI.
+  if (import.meta.env.DEV) {
+    console.log('[storefront api] contact message submitted')
+  }
   return { success: true }
 }
 
@@ -150,25 +151,28 @@ export async function submitOrder(payload) {
     idempotency_key: payload.idempotencyKey,
   }
 
-  console.log('[submitOrder] Sending payload:', JSON.stringify(requestBody, null, 2))
+  if (import.meta.env.DEV) {
+    console.log(`[submitOrder] Placing order (${requestBody.items?.length || 0} items)`)
+  }
 
   try {
     const res = await api.post('/orders', requestBody)
-    console.log('[submitOrder] Response:', JSON.stringify(res, null, 2))
+    const orderNumber = res.order?.order_number ?? res.order_number ?? res.order?.orderNumber
+    if (import.meta.env.DEV) {
+      console.log(`[submitOrder] Order placed successfully: ${orderNumber || 'OK'}`)
+    }
     return {
       success: true,
-      orderNumber: res.order?.order_number ?? res.order_number ?? res.order?.orderNumber,
+      orderNumber,
       // Full persisted order row so the success page can show the real
       // total / payment method / status from the database. Only the
       // customer-friendly fields are read — the internal UUID is never used.
       order: res.order ?? null,
     }
   } catch (err) {
-    // Log the real error in development while keeping the user-facing message.
-    console.error('[submitOrder] Error:', err.message)
-    console.error('[submitOrder] Error code:', err.code)
-    console.error('[submitOrder] Error detail:', err.detail)
-    console.error('[submitOrder] Error hint:', err.hint)
+    if (import.meta.env.DEV) {
+      console.error('[submitOrder] Failed to place order:', err.message || 'Unknown error')
+    }
     // Re-throw with the actual backend error message
     throw new Error(err.message || 'Failed to place order.')
   }

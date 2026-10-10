@@ -139,14 +139,19 @@ function OrderSummaryItem({ item }) {
   )
 }
 
+const LAST_ORDER_KEY = 'arees_last_order'
+
 export default function Contact() {
   const location = useLocation()
-  const { clearCart } = useCart()
+  const { clearCart, pricedItems, total: cartContextTotal } = useCart()
 
-  // Checkout lives on its own route (/checkout) so the navbar never highlights
-  // "Contact" and the URL stays clean. The cart snapshot travels via router state.
-  const checkout = location.state?.checkoutItems ? location.state : null
   const isCheckout = location.pathname === '/checkout'
+  // Checkout lives on its own route (/checkout) so the navbar never highlights
+  // "Contact" and the URL stays clean. The cart snapshot travels via router state,
+  // falling back to active cart lines if state is lost on refresh.
+  const checkout = location.state?.checkoutItems
+    ? location.state
+    : (pricedItems && pricedItems.length > 0 ? { checkoutItems: pricedItems, total: cartContextTotal } : null)
 
   const [form, setForm] = useState({
     name: '',
@@ -161,7 +166,18 @@ export default function Contact() {
     message: '',
   })
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState(null) // { orderNumber, order } | { sent: true }
+  const [result, setResult] = useState(() => {
+    if (typeof window !== 'undefined' && location.pathname === '/checkout') {
+      try {
+        const saved = sessionStorage.getItem(LAST_ORDER_KEY)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed?.orderNumber) return parsed
+        }
+      } catch {}
+    }
+    return null
+  }) // { orderNumber, order } | { sent: true }
   const [error, setError] = useState('')
   // Selected payment method — an advance payment is REQUIRED to confirm the
   // order (no payment gateway; staff share instructions after placement and
@@ -482,7 +498,11 @@ export default function Contact() {
         const res = await submitOrder(payload)
         // Clear the cart ONLY after the order was created successfully.
         clearCart()
-        setResult({ orderNumber: res.orderNumber, order: res.order })
+        const successResult = { orderNumber: res.orderNumber, order: res.order }
+        setResult(successResult)
+        try {
+          sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(successResult))
+        } catch {}
       } else {
         // Contact form → Formspree. Only the four contact fields are sent —
         // no cart/order/auth data ever leaves the browser here. A non-OK
@@ -502,8 +522,10 @@ export default function Contact() {
   // --- Order Success view -------------------------------------------------
   if (orderPlaced) {
     const order = result.order
-    const items = checkout.checkoutItems
-    const orderTotal = order?.total != null ? Number(order.total) : Number(checkout.total)
+    const items = checkout?.checkoutItems || order?.items || []
+    const orderTotal = order?.total != null
+      ? Number(order.total)
+      : (order?.total_amount != null ? Number(order.total_amount) : Number(checkout?.total || 0))
     // Customer-facing label — the business now takes only advance payments,
     // so the stored legacy method always displays as 'Advance Payment'.
     const paymentMethod = paymentMethodLabel(order?.payment_method || 'Cash On Delivery')
@@ -610,13 +632,27 @@ export default function Contact() {
             {/* Invoice is generated from the SAVED order record (result.order),
                 never from the cart or live product prices. */}
             <InvoiceDownloadButton order={result.order} className="btn btn-primary" />
-            <Link to="/shop" className="btn btn-outline order-success-continue">
+            <Link
+              to="/shop"
+              onClick={() => {
+                try {
+                  sessionStorage.removeItem(LAST_ORDER_KEY)
+                } catch {}
+              }}
+              className="btn btn-outline order-success-continue"
+            >
               Continue Shopping
             </Link>
           </div>
         </div>
       </div>
     )
+  }
+
+  // If a user navigates directly to /checkout with no items and no placed order,
+  // redirect them to the cart instead of rendering an incomplete form.
+  if (isCheckout && !checkout) {
+    return <Navigate to="/cart" replace />
   }
 
   // Real line-level subtotal for the checkout summary — the sum of the same

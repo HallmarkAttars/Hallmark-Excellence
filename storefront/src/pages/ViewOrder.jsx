@@ -17,7 +17,16 @@ import './ViewOrder.css'
 
 export default function ViewOrder() {
   const location = useLocation()
-  const order = location.state?.order
+  let order = location.state?.order
+  if (!order && typeof window !== 'undefined') {
+    try {
+      const saved = sessionStorage.getItem('arees_last_order')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed?.order) order = parsed.order
+      }
+    } catch {}
+  }
 
   if (!order) {
     return <Navigate to="/track-order" replace />

@@ -279,14 +279,9 @@ async function createOrder(req, res) {
       req.body.paymentMethod ?? req.body.payment_method
     )
 
-    console.log('[createOrder] Received payload:', JSON.stringify({
-      customer_name,
-      phone,
-      address,
-      pincode,
-      message,
-      items_count: items?.length,
-    }, null, 2))
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[createOrder] Processing order (${items?.length || 0} items)`)
+    }
 
     if (!customer_name || !phone || !address || !pincode || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
@@ -765,19 +760,57 @@ async function createOrder(req, res) {
       })
     }
 
+    // Persist line items to the order_items child table for relational integrity
+    if (Array.isArray(normalizedItems) && normalizedItems.length > 0) {
+      try {
+        const orderItemsRows = normalizedItems.map((it) => ({
+          order_id: data.id,
+          product_id: it.product_id,
+          quantity: it.quantity,
+          price: it.unit_price,
+          subtotal: it.subtotal,
+        }))
+        const { error: oiErr } = await supabase.from('order_items').insert(orderItemsRows)
+        if (oiErr) {
+          console.warn('[createOrder] order_items insert warning:', oiErr.message)
+        }
+      } catch (oiCatchErr) {
+        console.warn('[createOrder] order_items exception:', oiCatchErr.message)
+      }
+    }
+
+    const enrichedOrder = {
+      ...data,
+      customer_name,
+      email: customerEmail,
+      phone,
+      address,
+      pincode,
+      locality: req.body.locality || '',
+      city: req.body.city || '',
+      state: req.body.state || '',
+      message: message || '',
+      items: normalizedItems,
+      subtotal: data.subtotal,
+      total: data.total,
+      total_amount: data.total,
+      status: data.order_status || 'Pending',
+      payment_code: paymentCode,
+    }
+
     // --- ORDER IS SAVED. Only now are the Brevo emails sent. ---
     // Under Product-Level ON/OFF Availability, stock is not numerically deducted.
     // Both emails use the same params object built from THIS saved order row.
     // Email failures are handled independently and never fail the order.
     console.log('[createOrder] Order created successfully:', data.id, data.order_number)
     try {
-      await sendOrderEmails({ order: data })
+      await sendOrderEmails({ order: enrichedOrder })
     } catch (emailErr) {
       // sendOrderEmails never throws by contract; this is a last-resort guard.
       console.error('[ORDER EMAIL ERROR] Unexpected error sending order emails:', emailErr.message || emailErr)
     }
 
-    return res.status(201).json({ order: data })
+    return res.status(201).json({ order: enrichedOrder })
   } catch (err) {
     console.error('[createOrder] Unexpected error:', err)
     return res.status(500).json({ error: 'Internal server error' })
