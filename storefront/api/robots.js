@@ -13,6 +13,11 @@ import { buildRobotsTxt, resolveSiteUrl } from '../src/utils/seo.js'
 export default async function handler(req, res) {
   try {
     const baseUrl = resolveSiteUrl(process.env.SITE_URL, req.headers)
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400')
+      return res.status(200).end()
+    }
     const robots = buildRobotsTxt(baseUrl)
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')

@@ -9,7 +9,7 @@
 // Kept free of any direct DOM manipulation so they are 100% unit-testable.
 // ============================================================================
 
-import { isProductInStock } from './stock'
+import { isProductInStock } from './stock.js'
 
 // --------------------------------------------------------------------------
 // Canonical domain & Brand Identity
@@ -69,7 +69,7 @@ function lastmodFromTimestamp(createdAt) {
 // Public indexable commercial pages only.
 // Utility/transactional routes (/cart, /checkout, /track-order, /view-order)
 // are deliberately NOT included in sitemap.
-export const STATIC_PAGES = ['/', '/shop', '/categories', '/about', '/contact']
+export const STATIC_PAGES = ['/', '/shop', '/categories', '/brands', '/about', '/contact']
 
 export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = [], brands = [], products = [] }) {
   const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')

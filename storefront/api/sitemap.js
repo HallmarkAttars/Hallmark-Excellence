@@ -35,6 +35,12 @@ export default async function handler(req, res) {
   try {
     const baseUrl = resolveSiteUrl(process.env.SITE_URL, req.headers)
 
+    if (req.method === 'HEAD') {
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400')
+      return res.status(200).end()
+    }
+
     // Fetch the three datasets independently: a single failing endpoint (e.g. a
     // cold-started backend timing out) must not 503 the whole sitemap — a
     // partial sitemap with the datasets that DID load is strictly better than
@@ -45,21 +51,15 @@ export default async function handler(req, res) {
       fetchPublicJson('/brands'),
     ])
 
-    const products = productsRes.status === 'fulfilled' ? productsRes.value.products : []
-    const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value.categories : []
-    const brands = brandsRes.status === 'fulfilled' ? brandsRes.value.brands : []
+    const products = productsRes.status === 'fulfilled' ? productsRes.value?.products || [] : []
+    const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value?.categories || [] : []
+    const brands = brandsRes.status === 'fulfilled' ? brandsRes.value?.brands || [] : []
 
     for (const settled of [productsRes, categoriesRes, brandsRes]) {
       if (settled.status === 'rejected') console.error('sitemap upstream fetch failed:', settled.reason)
     }
 
     const xml = buildSitemapXml({ baseUrl, products, categories, brands })
-
-    // A fully empty sitemap (every upstream failed) is not useful — surface a
-    // retryable error instead of an empty urlset.
-    if (!products.length && !categories.length && !brands.length) {
-      throw new Error('All sitemap data sources failed.')
-    }
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8')
     res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400')

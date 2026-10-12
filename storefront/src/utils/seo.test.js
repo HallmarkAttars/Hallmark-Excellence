@@ -86,6 +86,7 @@ describe('buildSitemapXml', () => {
     expect(xml).toContain('<loc>https://areesperfumes.in/</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/shop</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/categories</loc>')
+    expect(xml).toContain('<loc>https://areesperfumes.in/brands</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/about</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/contact</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/brand/arees</loc>')
