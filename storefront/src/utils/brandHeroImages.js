@@ -26,7 +26,7 @@ export function collectBrandHeroImages(brands = [], products = []) {
   const images = []
   const seenUrls = new Set()
 
-  const addImage = (src, webp, alt, brandName) => {
+  const addImage = (src, webp, alt, brandName, mobileWebp = null) => {
     if (!src || typeof src !== 'string') return
     const trimmed = src.trim()
     if (!trimmed || seenUrls.has(trimmed)) return
@@ -40,6 +40,7 @@ export function collectBrandHeroImages(brands = [], products = []) {
     images.push({
       src: optSrc,
       webp: optWebp,
+      mobileWebp: mobileWebp || null,
       alt: alt || (brandName ? `${brandName} — Hallmark Luxury Fragrance Collection` : 'Arees Perfumes — Hallmark luxury perfume and attar collection'),
       brandName: brandName || null,
     })
@@ -50,7 +51,8 @@ export function collectBrandHeroImages(brands = [], products = []) {
     IMAGES.heroBackground,
     IMAGES.heroBackgroundWebp,
     'Arees Perfumes — Hallmark luxury perfume and attar collection',
-    'Arees Perfumes'
+    'Arees Perfumes',
+    IMAGES.heroBackgroundMobile
   )
 
   // 2. Database brands (dynamically fetched from API / admin panel)

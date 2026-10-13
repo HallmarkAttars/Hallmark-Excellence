@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { COLLECTIONS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
+import { cloudinarySrc } from '../../utils/productImage'
 import './BrandShowcaseCard.css'
 
 // Full-image luxury brand card for the homepage "Our Brands" showcase.
@@ -20,12 +21,16 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
 
   const title = brand.name || fallback.lines?.[0] || fallback.eyebrow
   const description = brand.description || fallback.description || null
-  const image =
+  const rawImage =
     brand.card_image_url ||
     brand.cover_image_url ||
     brand.banner_image_url ||
     IMAGES.collections[slug] ||
     null
+
+  const image = rawImage
+    ? cloudinarySrc(rawImage, { width: variant === 'featured' ? 900 : 600 })
+    : null
 
   return (
     <Link
@@ -39,6 +44,7 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
           src={image}
           alt={`${brand.name} Perfumes & Attars Collection`}
           loading="lazy"
+          decoding="async"
         />
       ) : (
         <span className="brand-showcase-monogram" aria-hidden="true">

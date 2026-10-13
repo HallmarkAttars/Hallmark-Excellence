@@ -119,7 +119,7 @@ export default function Footer() {
         <Reveal as="div" className="footer-grid stagger-fade">
           {/* Brand */}
           <div className="footer-brand">
-            <img src={IMAGES.logoLight} alt={BUSINESS.name} className="footer-logo-img" loading="lazy" />
+            <img src={IMAGES.logoLight} alt={BUSINESS.name} className="footer-logo-img" width="168" height="54" loading="lazy" decoding="async" />
             <p className="footer-description">{FOOTER.description}</p>
             <div className="footer-social" aria-label="Social media links">
               {BUSINESS.social.map((social) => {

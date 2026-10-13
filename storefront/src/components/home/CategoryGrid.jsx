@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Reveal from '../../animations/Reveal'
 import { HOME_CATEGORIES } from '../../data/content'
+import { cloudinarySrc } from '../../utils/productImage'
 import './CategoryGrid.css'
 
 export default function CategoryGrid({ categories }) {
@@ -32,24 +33,38 @@ export default function CategoryGrid({ categories }) {
         </div>
 
         <div className="category-grid stagger-fade">
-          {visibleCategories.map((cat) => (
-            <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
-              {/* Upper portion — category image */}
-              <span className="category-media">
-                <span
-                  className="category-image"
-                  style={{ backgroundImage: `url(${cat.image})` }}
-                  role="img"
-                  aria-label={cat.name}
-                />
-              </span>
-              {/* Footer — name + arrow */}
-              <span className="category-footer">
-                <span className="category-name">{cat.name}</span>
-                <span className="category-arrow" aria-hidden="true">→</span>
-              </span>
-            </Link>
-          ))}
+          {visibleCategories.map((cat) => {
+            const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
+            return (
+              <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
+                {/* Upper portion — category image */}
+                <span className="category-media">
+                  {imgSrc ? (
+                    <img
+                      className="category-image"
+                      src={imgSrc}
+                      alt={cat.name}
+                      loading="lazy"
+                      decoding="async"
+                      width="400"
+                      height="300"
+                    />
+                  ) : (
+                    <span
+                      className="category-image"
+                      role="img"
+                      aria-label={cat.name}
+                    />
+                  )}
+                </span>
+                {/* Footer — name + arrow */}
+                <span className="category-footer">
+                  <span className="category-name">{cat.name}</span>
+                  <span className="category-arrow" aria-hidden="true">→</span>
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </Reveal>

@@ -37,6 +37,7 @@ export default function CinematicHero({
             return {
               src: item,
               webp: isWebp ? item : null,
+              mobileWebp: index === 0 ? IMAGES.heroBackgroundMobile : null,
               alt:
                 index === 0
                   ? 'Arees Perfumes — Hallmark luxury perfume and attar collection'
@@ -47,6 +48,7 @@ export default function CinematicHero({
           return {
             src: item.src || item.url || item.image || item.cover_image_url || '',
             webp: item.webp || (typeof item.src === 'string' && item.src.endsWith('.webp') ? item.src : null),
+            mobileWebp: item.mobileWebp || (index === 0 ? IMAGES.heroBackgroundMobile : null),
             alt:
               item.alt ||
               (index === 0
@@ -67,6 +69,7 @@ export default function CinematicHero({
     {
       src: IMAGES.heroBackground,
       webp: IMAGES.heroBackgroundWebp,
+      mobileWebp: IMAGES.heroBackgroundMobile,
       alt: 'Arees Perfumes — Hallmark luxury perfume and attar collection',
       brandName: 'Arees Perfumes',
     },
@@ -90,7 +93,7 @@ export default function CinematicHero({
   const timerRef = useRef(null)
   const fadeCleanupRef = useRef(null)
 
-  // Preload upcoming images in the background to guarantee zero flicker
+  // Preload upcoming images in the background after initial render settles
   useEffect(() => {
     if (totalSlides <= 1) return
     const nextIdx = (activeSlide.index + 1) % totalSlides
@@ -105,10 +108,14 @@ export default function CinematicHero({
       }
     }
 
-    preload(validSlides[nextIdx])
-    if (totalSlides > 2) {
-      preload(validSlides[nextNextIdx])
-    }
+    const timer = setTimeout(() => {
+      preload(validSlides[nextIdx])
+      if (totalSlides > 2) {
+        preload(validSlides[nextNextIdx])
+      }
+    }, 2500)
+
+    return () => clearTimeout(timer)
   }, [activeSlide.index, totalSlides, validSlides])
 
   // Clean up outgoing slide after crossfade completes (fadeDuration)
@@ -149,6 +156,9 @@ export default function CinematicHero({
     const slide = validSlides[slideIndex] || validSlides[0]
     return (
       <picture className="hero-picture cinematic-hero-picture">
+        {slide.mobileWebp && (
+          <source media="(max-width: 767px)" type="image/webp" srcSet={slide.mobileWebp} />
+        )}
         {slide.webp && <source type="image/webp" srcSet={slide.webp} />}
         <img
           src={slide.src}

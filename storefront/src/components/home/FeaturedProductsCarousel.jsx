@@ -417,7 +417,7 @@ export default function FeaturedProductsCarousel({
                       src={imgSrc}
                       alt={product.name}
                       className="carousel-bottle-img"
-                      loading={index < 5 ? 'eager' : 'lazy'}
+                      loading="lazy"
                       decoding="async"
                       onError={(e) => {
                         e.currentTarget.onerror = null

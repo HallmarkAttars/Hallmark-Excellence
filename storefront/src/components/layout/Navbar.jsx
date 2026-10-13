@@ -125,7 +125,7 @@ export default function Navbar() {
       <header className="navbar">
         <div className="container navbar-inner">
           <Link to="/" className="navbar-logo" aria-label="Arees and Dahab — home">
-            <img src={IMAGES.logo} alt="Arees & Dahab" className="navbar-logo-img" />
+            <img src={IMAGES.logo} alt="Arees & Dahab" className="navbar-logo-img" width="168" height="54" decoding="async" />
           </Link>
 
           <nav className="navbar-nav" aria-label="Main navigation">
