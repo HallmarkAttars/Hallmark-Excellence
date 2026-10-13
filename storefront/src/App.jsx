@@ -1,6 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import CanonicalLink from './components/seo/CanonicalLink'
 import { CartProvider } from './context/CartContext'
 import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
@@ -97,8 +96,6 @@ export default function App() {
         <ToastProvider>
           <BrowserRouter>
             <ScrollToTop />
-            {/* Per-route canonical URL — always the apex domain, never www. */}
-            <CanonicalLink />
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Navbar />
             <PageContent />

@@ -74,21 +74,39 @@ export const STATIC_PAGES = ['/', '/shop', '/categories', '/brands', '/about', '
 export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = [], brands = [], products = [] }) {
   const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')
 
+  const seen = new Set()
   const entries = []
+
+  const addEntry = (rawLoc, timestamp) => {
+    if (!rawLoc) return
+    const encodedLoc = encodeURI(rawLoc)
+    if (seen.has(encodedLoc)) return
+    seen.add(encodedLoc)
+    entries.push({
+      loc: encodedLoc,
+      lastmod: lastmodFromTimestamp(timestamp),
+    })
+  }
+
   for (const path of pages) {
-    entries.push({ loc: `${base}${path}` })
+    if (!path) continue
+    const cleanPath = path === '/' ? '/' : (path.startsWith('/') ? path : `/${path}`).replace(/\/+$/, '')
+    addEntry(`${base}${cleanPath}`)
   }
   for (const category of categories) {
     if (!category?.slug) continue
-    entries.push({ loc: `${base}/categories/${category.slug}`, lastmod: lastmodFromTimestamp(category.created_at) })
+    if (category.is_active === false) continue
+    addEntry(`${base}/categories/${category.slug}`, category.updated_at || category.created_at)
   }
   for (const brand of brands) {
     if (!brand?.slug) continue
-    entries.push({ loc: `${base}/brand/${brand.slug}`, lastmod: lastmodFromTimestamp(brand.created_at) })
+    if (brand.is_active === false) continue
+    addEntry(`${base}/brand/${brand.slug}`, brand.updated_at || brand.created_at)
   }
   for (const product of products) {
     if (!product?.id) continue
-    entries.push({ loc: `${base}/product/${product.id}`, lastmod: lastmodFromTimestamp(product.created_at) })
+    if (product.is_active === false) continue
+    addEntry(`${base}/product/${product.id}`, product.updated_at || product.created_at)
   }
 
   const body = entries

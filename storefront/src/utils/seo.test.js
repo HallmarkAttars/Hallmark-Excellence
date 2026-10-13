@@ -100,16 +100,30 @@ describe('buildSitemapXml', () => {
     expect(xml.endsWith('</urlset>')).toBe(true)
   })
 
-  it('skips rows without a usable slug/id', () => {
+  it('skips rows without a usable slug/id or where is_active is false', () => {
     const xml = buildSitemapXml({
       baseUrl: 'https://areesperfumes.in',
       pages: [],
-      categories: [{ slug: null }, { slug: '' }, {}],
-      brands: [{ slug: undefined }, {}],
-      products: [{ id: null }, {}],
+      categories: [{ slug: null }, { slug: '' }, {}, { slug: 'hidden', is_active: false }],
+      brands: [{ slug: undefined }, {}, { slug: 'archived', is_active: false }],
+      products: [{ id: null }, {}, { id: 'p-deleted', is_active: false }],
     })
     expect(xml).not.toContain('<loc>')
     expect(xml).toContain('</urlset>')
+  })
+
+  it('properly URL-encodes slugs with spaces and deduplicates URLs', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://areesperfumes.in',
+      pages: ['/shop', '/shop'],
+      categories: [{ slug: 'Roll on' }, { slug: 'Roll on' }],
+      brands: [],
+      products: [],
+    })
+    expect(xml).toContain('<loc>https://areesperfumes.in/categories/Roll%20on</loc>')
+    expect(xml).not.toContain('/categories/Roll on<')
+    const count = (xml.match(/<loc>https:\/\/areesperfumes\.in\/shop<\/loc>/g) || []).length
+    expect(count).toBe(1)
   })
 })
 
