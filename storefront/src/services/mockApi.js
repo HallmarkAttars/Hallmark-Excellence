@@ -62,8 +62,9 @@ export async function getProductsByCategory(slug, options) {
 }
 
 export async function getProductsByBrand(slug, options) {
-  return cachedCatalogRead(`brand-products:${slug}`, async () => {
-    const data = await api.get(`/brands/${slug}/products`)
+  const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
+  return cachedCatalogRead(`brand-products:${resolvedSlug}`, async () => {
+    const data = await api.get(`/brands/${resolvedSlug}/products`)
     return data.products ?? []
   }, options)
 }
@@ -88,8 +89,13 @@ export async function getBrands(options) {
 }
 
 export async function getBrandBySlug(slug, options) {
+  const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
   const data = await getBrands(options)
-  return (data.brands ?? data).find((b) => b.slug === slug) ?? null
+  const brand = (data.brands ?? data).find((b) => b.slug === resolvedSlug || b.slug === slug) ?? null
+  if (brand && slug === 'arees-luxury') {
+    return { ...brand, name: 'Arees Luxury', slug: 'arees-luxury' }
+  }
+  return brand
 }
 
 export async function submitContactMessage() {

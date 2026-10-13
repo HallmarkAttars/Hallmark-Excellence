@@ -622,6 +622,59 @@
   animation: fade-up 0.45s ease-out both;
 }
 
+/* ---------- Product Details & Specifications ---------- */
+.pd-details-section {
+  grid-column: 1 / -1;
+  margin-top: 48px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.pd-specs-heading {
+  margin: 0 0 20px;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+.pd-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.pd-spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pd-spec-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+.pd-spec-value {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--ink);
+  font-weight: 500;
+}
+.pd-spec-value a {
+  color: var(--gold-deep);
+  text-decoration: none;
+}
+.pd-spec-value a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 767px) {
+  .pd-details-section {
+    padding: 20px;
+    margin-top: 36px;
+  }
+}
+
 /* ---------- Related products ---------- */
 .product-detail-related {
   grid-column: 1 / -1;

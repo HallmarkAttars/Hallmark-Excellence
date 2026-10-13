@@ -1,0 +1,173 @@
+.south-india-page {
+  padding-bottom: 80px;
+}
+
+.south-india-container {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.si-heritage .si-heritage-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+}
+
+.si-heritage-card h2 {
+  font-size: 1.5rem;
+  color: var(--gold-deep);
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+
+.si-heritage-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.si-reasons h2,
+.si-store-details h2,
+.si-coverage h2,
+.si-cta h2 {
+  font-size: 1.4rem;
+  color: var(--text-heading);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.si-coverage-sub {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+
+.si-reasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.si-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.si-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+}
+
+.si-card h3 {
+  font-size: 1.15rem;
+  color: var(--gold-deep);
+  margin-bottom: 10px;
+}
+
+.si-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.si-store-details .si-details-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .si-store-details .si-details-box {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+}
+
+.si-detail-col h4 {
+  font-size: 1.1rem;
+  color: var(--text-heading);
+  margin-bottom: 8px;
+}
+
+.si-detail-col p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-bottom: 6px;
+}
+
+.si-landmark {
+  font-style: italic;
+  font-size: 0.85rem !important;
+  color: var(--text-muted);
+}
+
+.si-map-link {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--gold-deep);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.si-map-link:hover {
+  text-decoration: underline;
+}
+
+.si-regions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+.si-region {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+}
+
+.si-region h4 {
+  font-size: 1.1rem;
+  color: var(--gold-deep);
+  margin-bottom: 8px;
+}
+
+.si-region p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.si-cta {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.si-cta p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+.si-cta-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

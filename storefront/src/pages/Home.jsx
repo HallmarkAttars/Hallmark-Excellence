@@ -76,8 +76,8 @@ export default function Home() {
   return (
     <div>
       <SEO
-        title="Arees Perfumes | Premium Attars, Oud & Fragrances in Chennai"
-        description="Discover Arees Perfumes and premium attars, oud, musk and traditional fragrances. Shop authentic perfume oils and fragrances with delivery across India."
+        title="Arees Perfumes | Pure Attars, Fragrance Oils & Perfumes | South India"
+        description="Welcome to Arees Perfumes — authentic non-alcoholic attars, Dahab attars, Arees Luxury perfume oils, wholesale and retail fragrance supplier in South India."
         canonical="/"
         schema={homeSchema}
       />

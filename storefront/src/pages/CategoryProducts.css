@@ -38,6 +38,15 @@
   color: var(--ink);
 }
 
+.category-hero-desc {
+  max-width: 680px;
+  margin: 0 auto 18px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
 /* Thin gold divider under the title — subtle, not loud */
 .category-hero-rule {
   display: block;

@@ -505,12 +505,20 @@ export default function ProductDetail({ onAddToCart }) {
   }
 
   const brandTitle = product.brand_name || 'Arees Perfumes'
-  const seoTitle = `${product.name} | ${brandTitle} | Arees Perfumes`
-  const seoDesc = product.description
-    ? (product.description.length > 155
-        ? `${product.description.slice(0, 152)}...`
-        : product.description)
-    : `Shop ${product.name} from Arees Perfumes. Explore premium attars, oud and fragrances with delivery across India.`
+  const catTitle = product.category_name || 'Attar'
+  const seoTitle = product.name.toLowerCase().includes(catTitle.toLowerCase())
+    ? `${product.name} | ${brandTitle} | Arees Perfumes`
+    : `${product.name} - ${catTitle} | ${brandTitle} | Arees Perfumes`
+
+  const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
+  let seoDesc = ''
+  if (cleanDbDesc && cleanDbDesc.length >= 60) {
+    seoDesc = cleanDbDesc.length > 155 ? `${cleanDbDesc.slice(0, 152).trim()}...` : cleanDbDesc
+  } else if (cleanDbDesc) {
+    seoDesc = `${cleanDbDesc}. 100% alcohol-free concentrated ${catTitle.toLowerCase()} oil by ${brandTitle}. Order online with delivery across India.`
+  } else {
+    seoDesc = `Discover ${product.name} by ${brandTitle}. Authentic alcohol-free ${catTitle.toLowerCase()} formulated for rich, long-lasting scent. Available retail & wholesale.`
+  }
   const ogImg = cloudinarySrc(product.image, { width: 1200 }) || product.image
 
   const breadcrumbItems = [
@@ -579,7 +587,7 @@ export default function ProductDetail({ onAddToCart }) {
             {/* Main (LCP) product image — eager, optimized Cloudinary size */}
             <img
               src={cloudinarySrc(product.image, { width: 900 })}
-              alt={`${product.name} - ${brandTitle} attar`}
+              alt={`${product.name} - ${brandTitle} ${catTitle} | Arees Perfumes`}
               decoding="async"
               fetchpriority="high"
             />
@@ -795,6 +803,43 @@ export default function ProductDetail({ onAddToCart }) {
 
         </div>
       </div>
+
+      {/* Product Authenticity & Specifications */}
+      <section className="pd-details-section" aria-labelledby="pd-specs-heading">
+        <h2 id="pd-specs-heading" className="pd-specs-heading">Product Details & Authenticity</h2>
+        <div className="pd-specs-grid">
+          <div className="pd-spec-item">
+            <span className="pd-spec-label">Fragrance Formulation</span>
+            <span className="pd-spec-value">100% Alcohol-Free Pure Perfume Oil / Attar</span>
+          </div>
+          <div className="pd-spec-item">
+            <span className="pd-spec-label">Brand</span>
+            <span className="pd-spec-value">
+              {product.brand_name ? (
+                <Link to={`/brand/${product.brand_slug || 'arees'}`}>{product.brand_name}</Link>
+              ) : (
+                'Arees Perfumes'
+              )}
+            </span>
+          </div>
+          {product.category_name && (
+            <div className="pd-spec-item">
+              <span className="pd-spec-label">Category</span>
+              <span className="pd-spec-value">
+                <Link to={`/categories/${product.category_slug || 'attars'}`}>{product.category_name}</Link>
+              </span>
+            </div>
+          )}
+          <div className="pd-spec-item">
+            <span className="pd-spec-label">Ordering Options</span>
+            <span className="pd-spec-value">Retail & Bulk / Wholesale Available</span>
+          </div>
+          <div className="pd-spec-item">
+            <span className="pd-spec-label">Boutique Origin</span>
+            <span className="pd-spec-value">Mannadi, George Town, Chennai - 600001, Tamil Nadu</span>
+          </div>
+        </div>
+      </section>
 
       {related.length > 0 && (
         <div className="product-detail-related">

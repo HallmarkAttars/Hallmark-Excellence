@@ -84,8 +84,30 @@ export default function CategoryProducts() {
   const activeCount = (brandFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
 
   const catName = category?.name || 'Category'
-  const seoTitle = `${catName} | Attars & Perfumes | Arees Perfumes`
-  const seoDesc = `Shop ${catName} attars and perfumes from Arees Perfumes. Pure, long-lasting fragrances delivered across India.`
+  const lowerSlug = String(slug || '').toLowerCase().trim()
+
+  let seoTitle = `${catName} | Pure Attars & Fragrance Oils | Arees Perfumes`
+  let seoDesc = category?.description || `Explore authentic ${catName} at Arees Perfumes. 100% alcohol-free concentrated oils and traditional fragrances delivered across India.`
+  let introDesc = category?.description || null
+
+  if (lowerSlug.includes('fragrance') || lowerSlug.includes('oil')) {
+    seoTitle = 'Fragrance Oils & Pure Concentrated Attars | Arees Perfumes'
+    seoDesc = 'Discover premium fragrance oils and concentrated attars by Arees Perfumes. Artisanal alcohol-free perfume oils crafted for daily wear and distinctive longevity.'
+    introDesc = introDesc || 'Explore our comprehensive selection of concentrated fragrance oils and traditional attars. Each blend is formulated without alcohol, delivering authentic scent throw, rich skin warmth, and all-day longevity.'
+  } else if (lowerSlug.includes('roll') || lowerSlug.includes('pocket')) {
+    seoTitle = 'Roll-On Attars & Pocket Perfumes | Alcohol-Free Oils | Arees Perfumes'
+    seoDesc = 'Shop pocket-friendly roll-on attars and pure perfume oils from Arees and Dahab. Convenient rollerballs, travel-ready sizes, and intense fragrance oils.'
+    introDesc = introDesc || 'Convenient, travel-ready roll-on attars designed for effortless touch-ups throughout the day. Handcrafted with concentrated, skin-friendly essential oils that last for hours.'
+  } else if (lowerSlug.includes('bakhoor') || lowerSlug.includes('bukhoor')) {
+    seoTitle = 'Bakhoor & Traditional Incense Fragrances | Arees Perfumes'
+    seoDesc = 'Artisanal Bakhoor, scented wood chips, and oriental incense by Arees Perfumes. Infuse your living spaces and garments with rich Arabian oud and amber aromas.'
+    introDesc = introDesc || 'Immerse your spaces in oriental luxury with Arees artisanal bakhoor. Formulated with aromatic wood chips, precious resins, and pure fragrance oils.'
+  } else if (lowerSlug.includes('display') || lowerSlug.includes('bottle')) {
+    seoTitle = 'Attar Display Bottles & Crystal Vials | Arees Perfumes'
+    seoDesc = 'Elegant attar display bottles, crystal perfume flacons, and traditional applicators. Perfect for vanity displays, gifts, and bespoke fragrance oils.'
+    introDesc = introDesc || 'Finely crafted glass and crystal display bottles for attars and concentrated oils. Featuring glass wand applicators and airtight caps.'
+  }
+
   const breadcrumbs = [
     { name: 'Home', path: '/' },
     { name: 'Categories', path: '/categories' },
@@ -106,6 +128,7 @@ export default function CategoryProducts() {
           <span className="category-hero-back-arrow" aria-hidden="true">←</span> All Categories
         </Link>
         <h1>{category ? category.name : 'Category'}</h1>
+        {introDesc && <p className="category-hero-desc">{introDesc}</p>}
         <span className="category-hero-rule" aria-hidden="true" />
       </header>
 

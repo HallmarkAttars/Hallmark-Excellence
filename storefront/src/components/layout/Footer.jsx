@@ -144,8 +144,9 @@ export default function Footer() {
           {/* Link columns — Shop, Company */}
           {FOOTER.columns.map((column) => {
             const isOpen = !!openSections[column.heading]
-            const sectionId = `footer-section-${column.heading.toLowerCase()}`
-            const triggerId = `footer-trigger-${column.heading.toLowerCase()}`
+            const slugHeading = column.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+            const sectionId = `footer-section-${slugHeading}`
+            const triggerId = `footer-trigger-${slugHeading}`
 
             return (
               <nav key={column.heading} className="footer-col" aria-label={column.heading}>

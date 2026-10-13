@@ -59,6 +59,7 @@ export const NAV_LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/shop', label: 'Shop' },
   { to: '/categories', label: 'Categories' },
+  { to: '/wholesale', label: 'Wholesale' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
   { to: '/track-order', label: 'Track Order' },
@@ -233,6 +234,14 @@ export const FOOTER = {
       links: [
         { label: 'All Attars', to: '/shop' },
         { label: 'Categories', to: '/categories' },
+        { label: 'Retail Attars', to: '/retail' },
+      ],
+    },
+    {
+      heading: 'Wholesale & Stores',
+      links: [
+        { label: 'Wholesale Attars', to: '/wholesale' },
+        { label: 'Attars South India', to: '/attar-perfume-shop-south-india' },
       ],
     },
     {

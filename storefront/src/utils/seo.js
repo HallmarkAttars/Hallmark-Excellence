@@ -69,7 +69,17 @@ function lastmodFromTimestamp(createdAt) {
 // Public indexable commercial pages only.
 // Utility/transactional routes (/cart, /checkout, /track-order, /view-order)
 // are deliberately NOT included in sitemap.
-export const STATIC_PAGES = ['/', '/shop', '/categories', '/brands', '/about', '/contact']
+export const STATIC_PAGES = [
+  '/',
+  '/shop',
+  '/categories',
+  '/brands',
+  '/wholesale',
+  '/retail',
+  '/attar-perfume-shop-south-india',
+  '/about',
+  '/contact',
+]
 
 export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = [], brands = [], products = [] }) {
   const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')
@@ -102,6 +112,9 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
     if (!brand?.slug) continue
     if (brand.is_active === false) continue
     addEntry(`${base}/brand/${brand.slug}`, brand.updated_at || brand.created_at)
+    if (brand.slug === 'oud-al-haramain') {
+      addEntry(`${base}/brand/arees-luxury`, brand.updated_at || brand.created_at)
+    }
   }
   for (const product of products) {
     if (!product?.id) continue
