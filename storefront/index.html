@@ -16,9 +16,21 @@
     <meta name="twitter:description" content="Discover Arees Perfumes and premium attars, oud, musk and traditional fragrances. Shop authentic perfume oils and fragrances with delivery across India." />
     <meta name="twitter:image" content="https://areesperfumes.in/Hero.webp" />
     <title>Arees Perfumes | Premium Attars, Oud &amp; Fragrances in Chennai</title>
+    <!-- Preconnect critical CDNs & API to cut DNS/TLS handshake latency -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="preconnect" href="https://api.areesperfumes.in" crossorigin />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    <link rel="dns-prefetch" href="https://api.areesperfumes.in" />
+    <!-- Preload homepage LCP Hero image -->
+    <link rel="preload" as="image" href="/Hero.webp" type="image/webp" fetchpriority="high" />
+    <!-- Non-render-blocking font stylesheet loading -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+    </noscript>
     <script>
       // Marks the app as JS-enabled BEFORE first paint. Every entrance
       // animation in the storefront is gated behind this class, so content

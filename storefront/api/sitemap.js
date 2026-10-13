@@ -10,11 +10,12 @@
 // the very first fetch).
 
 import { buildSitemapXml, resolveSiteUrl } from '../src/utils/seo.js'
+import { SITEMAP_CATALOG_FALLBACK } from '../src/data/sitemapCatalog.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 
-// Keep the upstream request well inside the platform function timeout.
-const FETCH_TIMEOUT_MS = 8000
+// Keep the upstream request inside the platform function timeout.
+const FETCH_TIMEOUT_MS = 10000
 
 async function fetchPublicJson(path) {
   const controller = new AbortController()
@@ -41,22 +42,44 @@ export default async function handler(req, res) {
       return res.status(200).end()
     }
 
-    // Fetch the three datasets independently: a single failing endpoint (e.g. a
-    // cold-started backend timing out) must not 503 the whole sitemap — a
-    // partial sitemap with the datasets that DID load is strictly better than
-    // none. Any fetch errors are logged below.
+    // Fetch the three datasets independently. If any endpoint is temporarily
+    // slow or cold-starting, gracefully fall back to the catalog snapshot so
+    // the sitemap NEVER emits a partial or empty URL list.
     const [productsRes, categoriesRes, brandsRes] = await Promise.allSettled([
       fetchPublicJson('/products'),
       fetchPublicJson('/categories'),
       fetchPublicJson('/brands'),
     ])
 
-    const products = productsRes.status === 'fulfilled' ? productsRes.value?.products || [] : []
-    const categories = categoriesRes.status === 'fulfilled' ? categoriesRes.value?.categories || [] : []
-    const brands = brandsRes.status === 'fulfilled' ? brandsRes.value?.brands || [] : []
+    const liveProducts =
+      productsRes.status === 'fulfilled' &&
+      Array.isArray(productsRes.value?.products) &&
+      productsRes.value.products.length > 0
+        ? productsRes.value.products
+        : null
+
+    const liveCategories =
+      categoriesRes.status === 'fulfilled' &&
+      Array.isArray(categoriesRes.value?.categories) &&
+      categoriesRes.value.categories.length > 0
+        ? categoriesRes.value.categories
+        : null
+
+    const liveBrands =
+      brandsRes.status === 'fulfilled' &&
+      Array.isArray(brandsRes.value?.brands) &&
+      brandsRes.value.brands.length > 0
+        ? brandsRes.value.brands
+        : null
+
+    const products = liveProducts || SITEMAP_CATALOG_FALLBACK.products || []
+    const categories = liveCategories || SITEMAP_CATALOG_FALLBACK.categories || []
+    const brands = liveBrands || SITEMAP_CATALOG_FALLBACK.brands || []
 
     for (const settled of [productsRes, categoriesRes, brandsRes]) {
-      if (settled.status === 'rejected') console.error('sitemap upstream fetch failed:', settled.reason)
+      if (settled.status === 'rejected') {
+        console.warn('sitemap live fetch fallback used:', settled.reason?.message || settled.reason)
+      }
     }
 
     const xml = buildSitemapXml({ baseUrl, products, categories, brands })
