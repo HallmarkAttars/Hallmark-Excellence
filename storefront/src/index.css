@@ -150,6 +150,11 @@ a, button { -webkit-tap-highlight-color: transparent; }
   transform: translateY(0);
 }
 
+#main-content {
+  min-height: calc(100vh - var(--header-h, 80px));
+  display: block;
+}
+
 .container {
   width: 100%;
   max-width: var(--container);

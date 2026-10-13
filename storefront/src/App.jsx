@@ -13,7 +13,7 @@ import ErrorBoundary from './components/ui/ErrorBoundary'
 // minimal Suspense fallback for a few ms while the chunk loads (cached
 // afterwards), so the initial bundle stays lean — only the app shell + the
 // current page's code are ever fetched.
-const Home = lazy(() => import('./pages/Home'))
+import Home from './pages/Home'
 const Shop = lazy(() => import('./pages/Shop'))
 const Categories = lazy(() => import('./pages/Categories'))
 const CategoryProducts = lazy(() => import('./pages/CategoryProducts'))
