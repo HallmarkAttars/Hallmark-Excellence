@@ -76,8 +76,8 @@ export default function Home() {
   return (
     <div>
       <SEO
-        title="Arees Perfumes | Hallmark of Excellence in Attars"
-        description="Discover Arees Perfumes from Hallmark of Excellence and Hikma Exports. Shop authentic attars, oud and fragrance oils, with retail and wholesale supply from Chennai."
+        title="Arees Perfumes (Hikma Perfumes) | Attars in Chennai"
+        description="Shop authentic attars, oud and fragrance oils from Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports brand in Chennai."
         canonical="/"
         schema={homeSchema}
       />

@@ -8,8 +8,8 @@ export default function About() {
   return (
     <div>
       <SEO
-        title="About Arees Perfumes | Hallmark of Excellence"
-        description="Meet Arees Perfumes, Hallmark of Excellence and Hikma Exports, a Chennai perfumery with 30 years of experience in attars, oud and fragrance oils."
+        title="About Arees Perfumes & Hikma Perfumes | Chennai"
+        description="Learn about Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports fragrance brand operating under Hallmark of Excellence in Chennai."
         canonical="/about"
         schema={buildBreadcrumbsSchema([
           { name: 'Home', path: '/' },

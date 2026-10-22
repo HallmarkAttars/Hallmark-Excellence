@@ -71,7 +71,7 @@ export const NAV_LINKS = [
 export const HERO = {
   title: ['The Art of', 'Arees', 'Perfumes'],
   subtitle:
-    'CRAFTING FRAGRANCE. CREATING IDENTITY. Discover the world of Arees perfumes, premium attars, oud, and traditional fragrance oils.',
+    'CRAFTING FRAGRANCE. CREATING IDENTITY. Arees Perfumes, also known as Hikma Perfumes, is a Hikma Exports fragrance brand in Chennai. Discover authentic attars, oud, and fragrance oils.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories' },
 }
@@ -179,7 +179,7 @@ export const ABOUT = {
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees Perfumes is a Chennai fragrance brand from Hikma Exports, operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Arees Perfumes, also known as Hikma Perfumes, is a Chennai fragrance brand from Hikma Exports, operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },

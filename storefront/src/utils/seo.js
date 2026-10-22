@@ -17,9 +17,9 @@ import { isProductInStock } from './stock.js'
 // ONE canonical storefront domain: the apex (https://areesperfumes.in).
 export const CANONICAL_ORIGIN = 'https://areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
-export const DEFAULT_TITLE = 'Arees Perfumes | Premium Attars, Oud & Fragrances in Chennai'
+export const DEFAULT_TITLE = 'Arees Perfumes (Hikma Perfumes) | Attars in Chennai'
 export const DEFAULT_DESCRIPTION =
-  'Discover Arees Perfumes and premium attars, oud, musk and traditional fragrances. Shop authentic perfume oils and fragrances with delivery across India.'
+  'Shop authentic attars, oud and fragrance oils from Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports brand in Chennai.'
 export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
 
 const WWW_HOST = 'www.areesperfumes.in'
@@ -169,7 +169,7 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Arees Perfumes',
-    alternateName: ['Arees & Dahab', 'Hallmark of Excellence'],
+    alternateName: ['Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
     url: origin,
     logo: `${origin}/HE%20color%20Logo.png`,
     email: 'hikmaexports@gmail.com',

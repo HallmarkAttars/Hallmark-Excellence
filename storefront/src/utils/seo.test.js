@@ -39,6 +39,7 @@ describe('canonical domain & brand identity', () => {
 
   it('provides a strong default homepage title containing Arees Perfumes and Chennai', () => {
     expect(DEFAULT_TITLE).toContain('Arees Perfumes')
+    expect(DEFAULT_TITLE).toContain('Hikma Perfumes')
     expect(DEFAULT_TITLE).toContain('Chennai')
   })
 
@@ -161,6 +162,7 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@context']).toBe('https://schema.org')
       expect(schema['@type']).toBe('Organization')
       expect(schema.name).toBe('Arees Perfumes')
+      expect(schema.alternateName).toContain('Hikma Perfumes')
       expect(schema.url).toBe('https://areesperfumes.in')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.email).toBe('hikmaexports@gmail.com')
