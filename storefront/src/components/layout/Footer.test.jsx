@@ -148,7 +148,7 @@ describe('Footer Component', () => {
       expect(emailLink.getAttribute('href')).toBe('mailto:hikmaexports@gmail.com')
 
       const whatsappCta = screen.getByRole('link', { name: /chat with us on whatsapp/i })
-      expect(whatsappCta.getAttribute('href')).toContain('https://wa.me/919840078909')
+      expect(whatsappCta.getAttribute('href')).toContain('https://wa.me/919840750467')
       expect(whatsappCta.getAttribute('target')).toBe('_blank')
     })
   })
