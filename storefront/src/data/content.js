@@ -175,11 +175,11 @@ export const SOCIAL_STRIP = {
 // --------------------------------------------------------------------------
 export const ABOUT = {
   eyebrow: 'Our Story',
-  title: 'About Hallmark Excellence',
+  title: 'Arees Perfumes by Hallmark of Excellence',
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'With 30 years of experience in the perfumery industry, we are a trusted perfume trading company offering a complete range of products and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses.',
+      'Arees Perfumes is a Chennai fragrance brand from Hikma Exports, operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },

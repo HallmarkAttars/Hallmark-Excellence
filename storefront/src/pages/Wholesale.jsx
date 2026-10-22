@@ -13,15 +13,15 @@ export default function Wholesale() {
   return (
     <div className="wholesale-page">
       <SEO
-        title="Wholesale Attars & Bulk Attar Supplier | Arees Perfumes"
-        description="Arees Perfumes is a premier wholesale attar supplier and bulk perfume supplier based in Chennai. Pure concentrated perfume oils, bottles, and packaging delivered across India."
+        title="Wholesale Attar & Bulk Perfumes in Chennai | Arees"
+        description="Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes supplies retailers with roll-ons, fragrance oils and packaging across India."
         canonical="/wholesale"
         schema={buildBreadcrumbsSchema(breadcrumbs)}
       />
 
       <header className="page-heading">
         <p className="eyebrow">B2B & Commercial Supply</p>
-        <h1>Wholesale Attars & Bulk Attar Supplier</h1>
+        <h1>Wholesale Attars & Bulk Attar Supplier in Chennai</h1>
         <p>Premium alcohol-free perfume oils, glass packaging, and bulk fragrance supply across South India and pan-India.</p>
       </header>
 
@@ -31,9 +31,9 @@ export default function Wholesale() {
           <div className="wholesale-intro-card">
             <h2>Trusted Wholesale Perfume Supplier with 30 Years of Industry Experience</h2>
             <p>
-              Operating under Hallmark of Excellence and Hikma Exports, Arees Perfumes is an established wholesale attar supplier
-              supplying perfumers, retailers, gift shops, and boutique fragrance brands. Located in the historic trading hub
-              of Mannadi, George Town, Chennai, we combine traditional Arabian perfumery craftsmanship with dependable commercial logistics.
+              Arees Perfumes supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, and boutique fragrance brands.
+              Based in Mannadi, George Town, Chennai, and operating under Hallmark of Excellence and Hikma Exports, we combine traditional
+              Arabian perfumery craftsmanship with dependable commercial logistics.
             </p>
             <p>
               Whether you need pre-packaged 6ml and 8ml roll-ons for your retail shelves, concentrated fragrance oils for custom blending,

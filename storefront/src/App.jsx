@@ -28,6 +28,7 @@ const ViewOrder = lazy(() => import('./pages/ViewOrder'))
 const Wholesale = lazy(() => import('./pages/Wholesale'))
 const Retail = lazy(() => import('./pages/Retail'))
 const SouthIndia = lazy(() => import('./pages/SouthIndia'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Scroll the window back to the top on every route change — the single scroll
 // handler for the app. Checkout must always open at the top, never inheriting
@@ -90,7 +91,7 @@ function PageContent() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/view-order" element={<ViewOrder />} />
-            <Route path="*" element={<Home />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </div>

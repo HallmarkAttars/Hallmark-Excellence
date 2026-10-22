@@ -76,8 +76,8 @@ export default function Home() {
   return (
     <div>
       <SEO
-        title="Arees Perfumes | Pure Attars, Fragrance Oils & Perfumes | South India"
-        description="Welcome to Arees Perfumes — authentic non-alcoholic attars, Dahab attars, Arees Luxury perfume oils, wholesale and retail fragrance supplier in South India."
+        title="Arees Perfumes | Hallmark of Excellence in Attars"
+        description="Discover Arees Perfumes from Hallmark of Excellence and Hikma Exports. Shop authentic attars, oud and fragrance oils, with retail and wholesale supply from Chennai."
         canonical="/"
         schema={homeSchema}
       />
