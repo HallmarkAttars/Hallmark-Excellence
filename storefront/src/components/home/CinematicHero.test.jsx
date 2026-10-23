@@ -27,9 +27,9 @@ describe('CinematicHero Component', () => {
     // Heading structure
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeTruthy()
-    expect(heading.textContent).toContain('The Art of')
-    expect(heading.textContent).toContain('Arees')
-    expect(heading.textContent).toContain('Perfumes')
+    expect(heading.textContent).toContain('Buy Authentic')
+    expect(heading.textContent).toContain('Non-Alcoholic Attars')
+    expect(heading.textContent).toContain('Fragrance Oils Online')
 
     // Tagline
     expect(screen.getByText(HERO.subtitle)).toBeTruthy()

@@ -76,8 +76,8 @@ export default function Home() {
   return (
     <div>
       <SEO
-        title="Arees Perfumes (Hikma Perfumes) | Attars in Chennai"
-        description="Shop authentic attars, oud and fragrance oils from Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports brand in Chennai."
+        title="Arees Perfumes | Buy Pure Non-Alcoholic Attars & Perfume Oils Online"
+        description="Discover premium non-alcoholic attars, long-lasting fragrance oils, oudh and roll-on perfumes at Arees Perfumes. Retail and wholesale supply from Chennai, with delivery across India."
         canonical="/"
         schema={homeSchema}
       />

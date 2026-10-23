@@ -375,6 +375,7 @@ export default function Cart() {
               <span>Delivery / Transport</span>
               <span className="cart-summary-delivery">To be confirmed</span>
             </div>
+            <p>Transport Charges are Excluded</p>
           </div>
 
           <div className="cart-summary-total">
