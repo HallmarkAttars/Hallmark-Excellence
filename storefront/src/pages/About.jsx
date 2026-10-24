@@ -1,20 +1,25 @@
 import { ABOUT } from '../data/content'
 import { IMAGES } from '../config/assets'
 import SEO from '../components/seo/SEO'
-import { buildBreadcrumbsSchema } from '../utils/seo'
+import { buildBreadcrumbsSchema, buildFAQSchema } from '../utils/seo'
 import './About.css'
 
 export default function About() {
+  const aboutSchema = [
+    buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'About Us', path: '/about' },
+    ]),
+    buildFAQSchema(ABOUT.faqs),
+  ]
+
   return (
     <div>
       <SEO
         title="About Arees Perfumes & Hikma Perfumes | Chennai"
-        description="Learn about Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports fragrance brand operating under Hallmark of Excellence in Chennai."
+        description="Learn about Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, operating under Hallmark of Excellence in Chennai."
         canonical="/about"
-        schema={buildBreadcrumbsSchema([
-          { name: 'Home', path: '/' },
-          { name: 'About Us', path: '/about' },
-        ])}
+        schema={aboutSchema}
       />
       <div className="page-heading">
         <p className="eyebrow">{ABOUT.eyebrow}</p>
@@ -37,6 +42,13 @@ export default function About() {
           </div>
         </section>
 
+        <section className="about-hikma">
+          <h2>{ABOUT.hikma.heading}</h2>
+          {ABOUT.hikma.paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </section>
+
         <section className="about-values">
           {ABOUT.values.map((value) => (
             <div key={value.title}>
@@ -44,6 +56,18 @@ export default function About() {
               <p>{value.description}</p>
             </div>
           ))}
+        </section>
+
+        <section className="about-faq" aria-labelledby="hikma-faq-heading">
+          <h2 id="hikma-faq-heading">Hikma Perfumes FAQs</h2>
+          <div className="about-faq-grid">
+            {ABOUT.faqs.map((faq) => (
+              <article key={faq.question} className="about-faq-item">
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </div>
     </div>

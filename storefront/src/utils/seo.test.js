@@ -24,6 +24,7 @@ import {
   buildOrganizationSchema,
   buildWebSiteSchema,
   buildLocalBusinessSchema,
+  buildFAQSchema,
   buildProductSchema,
   buildBreadcrumbsSchema,
   buildProductSeo,
@@ -185,6 +186,9 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@type']).toBe('Organization')
       expect(schema.name).toBe('Arees Perfumes')
       expect(schema.alternateName).toContain('Hikma Perfumes')
+      expect(schema.parentOrganization.name).toBe('Hikma Exports')
+      expect(schema.description).toContain('parent company of Arees & Dahab')
+      expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.url).toBe('https://areesperfumes.in')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.email).toBe('hikmaexports@gmail.com')
@@ -196,6 +200,7 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildWebSiteSchema()
       expect(schema['@type']).toBe('WebSite')
       expect(schema.name).toBe('Arees Perfumes')
+      expect(schema.alternateName).toBe('Hikma Perfumes')
       expect(schema.url).toBe('https://areesperfumes.in')
     })
   })
@@ -205,10 +210,29 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildLocalBusinessSchema()
       expect(schema['@type']).toBe('LocalBusiness')
       expect(schema.name).toBe('Arees Perfumes')
+      expect(schema.alternateName).toContain('Hikma Perfumes')
+      expect(schema.parentOrganization.name).toBe('Hikma Exports')
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.address.postalCode).toBe('600001')
       expect(schema.address.streetAddress).toContain('Moore St')
       expect(schema.telephone).toBe('+919840750467')
+    })
+  })
+
+  describe('buildFAQSchema', () => {
+    it('builds a FAQPage from question/answer pairs', () => {
+      const schema = buildFAQSchema([
+        { question: 'Where is Hikma Perfumes located?', answer: 'Chennai.' },
+      ])
+      expect(schema['@type']).toBe('FAQPage')
+      expect(schema.mainEntity).toHaveLength(1)
+      expect(schema.mainEntity[0].name).toBe('Where is Hikma Perfumes located?')
+      expect(schema.mainEntity[0].acceptedAnswer.text).toBe('Chennai.')
+    })
+
+    it('returns null when there are no usable FAQs', () => {
+      expect(buildFAQSchema([])).toBeNull()
+      expect(buildFAQSchema([{ question: 'Missing answer' }])).toBeNull()
     })
   })
 

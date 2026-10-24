@@ -13,8 +13,8 @@ export default function Wholesale() {
   return (
     <div className="wholesale-page">
       <SEO
-        title="Wholesale Attar & Bulk Perfumes in Chennai | Arees"
-        description="Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes supplies retailers with roll-ons, fragrance oils and packaging across India."
+        title="Wholesale Attars in Chennai | Arees Perfumes & Hikma Exports"
+        description="Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes and Hikma Exports supply retailers with roll-ons, fragrance oils, and packaging across India."
         canonical="/wholesale"
         schema={buildBreadcrumbsSchema(breadcrumbs)}
       />

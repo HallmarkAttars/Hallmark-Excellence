@@ -254,7 +254,7 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <div className="footer-bottom-inner">
-          <p>© 2026 Arees & Dahab. All rights reserved.</p>
+          <p>{FOOTER.copyright}</p>
         </div>
       </div>
     </footer>

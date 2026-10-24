@@ -681,8 +681,8 @@ export default function Contact() {
         />
       ) : (
         <SEO
-          title="Contact Arees Perfumes | Chennai"
-          description="Contact Arees Perfumes in Mannadi, George Town, Chennai. Get in touch for enquiries, bulk orders, and fragrance consultations."
+          title="Contact Arees Perfumes & Hikma Perfumes | Chennai"
+          description="Contact Arees Perfumes, part of Hikma Exports (Hikma Perfumes), in Mannadi, George Town, Chennai for retail orders, wholesale enquiries, and fragrance consultations."
           canonical="/contact"
           schema={buildBreadcrumbsSchema([
             { name: 'Home', path: '/' },

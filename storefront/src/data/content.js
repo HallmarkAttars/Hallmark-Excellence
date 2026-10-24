@@ -179,10 +179,39 @@ export const ABOUT = {
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees Perfumes, also known as Hikma Perfumes, is a Chennai fragrance brand from Hikma Exports, operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Arees Perfumes is a Chennai fragrance brand under Hikma Exports, the parent company of Arees & Dahab, operating under Hallmark of Excellence. Hikma Exports also trades as Hikma Perfumes. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },
+  hikma: {
+    heading: 'Hikma Perfumes, Hikma Exports & Arees Perfumes',
+    paragraphs: [
+      'Hikma Exports is the parent company of Arees & Dahab. Its fragrance identity, Hikma Perfumes, is the name behind our wholesale perfume supply and the Arees Perfumes and Dahab retail collections.',
+      'From 83 & 84, Moore Street, Mannadi, George Town, Chennai, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes, and perfume packaging to customers and trade partners across India.',
+    ],
+  },
+  faqs: [
+    {
+      question: 'Is Hikma Perfumes the same as Arees Perfumes?',
+      answer:
+        'Hikma Perfumes is the fragrance identity of Hikma Exports, the parent company of Arees & Dahab. Arees Perfumes is a retail brand within the group, alongside Dahab.',
+    },
+    {
+      question: 'Where is Hikma Perfumes located?',
+      answer:
+        'Hikma Perfumes operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, the same location as Arees Perfumes and Hikma Exports.',
+    },
+    {
+      question: 'What products does Hikma Exports supply?',
+      answer:
+        'Hikma Exports supplies alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps, and pumps. Products are available for retail and wholesale.',
+    },
+    {
+      question: 'Does Hikma Perfumes offer wholesale supply?',
+      answer:
+        'Yes. Hikma Exports supplies retailers, perfumers, gift shops, and fragrance brands across India through its Chennai wholesale division, with bulk pricing and packaging support.',
+    },
+  ],
   values: [
     {
       title: 'Small Batch',
@@ -253,7 +282,7 @@ export const FOOTER = {
       ],
     },
   ],
-  copyright: `© ${new Date().getFullYear()} Arees & Dahab. All rights reserved.`,
+  copyright: `© ${new Date().getFullYear()} Hikma Exports (Arees & Dahab). All rights reserved.`,
 }
 
 // --------------------------------------------------------------------------

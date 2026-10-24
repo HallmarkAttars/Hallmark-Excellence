@@ -16,6 +16,8 @@ import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { useMobileBrandStack } from '../hooks/useMobileBrandStack'
 import SEO from '../components/seo/SEO'
 import {
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
   buildOrganizationSchema,
   buildWebSiteSchema,
   buildLocalBusinessSchema,
@@ -76,8 +78,8 @@ export default function Home() {
   return (
     <div>
       <SEO
-        title="Arees Perfumes | Buy Pure Non-Alcoholic Attars & Perfume Oils Online"
-        description="Discover premium non-alcoholic attars, long-lasting fragrance oils, oudh and roll-on perfumes at Arees Perfumes. Retail and wholesale supply from Chennai, with delivery across India."
+        title={DEFAULT_TITLE}
+        description={DEFAULT_DESCRIPTION}
         canonical="/"
         schema={homeSchema}
       />

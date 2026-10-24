@@ -20,7 +20,7 @@ export const CANONICAL_ORIGIN = 'https://areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
 export const DEFAULT_TITLE = 'Arees Perfumes (Hikma Perfumes) | Attars in Chennai'
 export const DEFAULT_DESCRIPTION =
-  'Shop authentic attars, oud and fragrance oils from Arees Perfumes, also known as Hikma Perfumes, a Hikma Exports brand in Chennai.'
+  'Shop authentic attars, oud and fragrance oils from Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, Chennai.'
 export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
 
 const WWW_HOST = 'www.areesperfumes.in'
@@ -171,10 +171,25 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     '@type': 'Organization',
     name: 'Arees Perfumes',
     alternateName: ['Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
+    description:
+      'Arees Perfumes is a Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
+    parentOrganization: {
+      '@type': 'Organization',
+      name: 'Hikma Exports',
+      url: origin,
+    },
     url: origin,
     logo: `${origin}/HE%20color%20Logo.png`,
     email: 'hikmaexports@gmail.com',
     telephone: '+919840750467',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '83 & 84, Moore St, Mannadi, George Town',
+      addressLocality: 'Chennai',
+      addressRegion: 'Tamil Nadu',
+      postalCode: '600001',
+      addressCountry: 'IN',
+    },
     sameAs: ['https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'],
   }
 }
@@ -185,6 +200,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Arees Perfumes',
+    alternateName: 'Hikma Perfumes',
     url: origin,
     description: DEFAULT_DESCRIPTION,
     publisher: {
@@ -205,7 +221,14 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
     '@type': 'LocalBusiness',
     '@id': `${origin}/#localbusiness`,
     name: 'Arees Perfumes',
-    alternateName: 'Arees Attars & Perfumes',
+    alternateName: ['Arees Attars & Perfumes', 'Hikma Perfumes'],
+    description:
+      'Arees Perfumes is the Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
+    parentOrganization: {
+      '@type': 'Organization',
+      name: 'Hikma Exports',
+      url: origin,
+    },
     image: `${origin}/Hero.webp`,
     url: origin,
     telephone: '+919840750467',
@@ -235,7 +258,28 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
   }
 }
 
-// 4. Product Schema (with Binary Stock Availability: InStock / OutOfStock)
+// 4. FAQPage Schema
+export function buildFAQSchema(faqs = []) {
+  const entries = Array.isArray(faqs)
+    ? faqs.filter((faq) => faq?.question && faq?.answer)
+    : []
+  if (entries.length === 0) return null
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: entries.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  }
+}
+
+// 5. Product Schema (with Binary Stock Availability: InStock / OutOfStock)
 // `variant` lets callers describe the exact purchasable size the visitor has
 // selected. When omitted, the product's default variant is used.
 export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant = null) {
@@ -432,7 +476,7 @@ export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
   }
 }
 
-// 5. BreadcrumbList Schema
+// 6. BreadcrumbList Schema
 export function buildBreadcrumbsSchema(crumbs = [], origin = CANONICAL_ORIGIN) {
   if (!Array.isArray(crumbs) || crumbs.length === 0) return null
 
