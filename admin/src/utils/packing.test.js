@@ -93,6 +93,17 @@ describe('packing', () => {
       packingItemLabel({ name: 'Pink Musk', qty: 2, quantity_value: 100, quantity_unit: 'Pieces' })
     ).toEqual({ name: 'Pink Musk', quantity: 2, size: '100 Pieces' })
 
+    // Older checkouts saved a corrupted Gram label ("1 Gram" for 100 Gram).
+    expect(
+      packingItemLabel({
+        product_name: 'SRK',
+        quantity: 1,
+        variant_label: '1 Gram',
+        quantity_value: 100,
+        quantity_unit: 'Gram',
+      })
+    ).toEqual({ name: 'SRK', quantity: 1, size: '100 Gram' })
+
     // No size known — carried as an empty string, never "undefined".
     expect(packingItemLabel({ name: 'X' })).toEqual({ name: 'X', quantity: 1, size: '' })
   })

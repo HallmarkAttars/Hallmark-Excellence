@@ -67,6 +67,34 @@ describe('detail line — BRAND · SIZE (real values only)', () => {
     expect(inv.items[0].detail).toBe('DAHAB · 50 ML')
   })
 
+  it('repairs a corrupted Gram label saved by older checkouts', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([
+        { product_name: 'SRK', brand_name: 'AREES', variant_label: '1 Gram', quantity_value: 100, quantity_unit: 'Gram', unit_price: 600, quantity: 1 },
+      ])
+    )
+    expect(inv.items[0].size).toBe('100 Gram')
+    expect(inv.items[0].detail).toContain('100 Gram')
+  })
+
+  it('repairs a corrupted ML label saved by older checkouts', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([
+        { product_name: 'Musk', variant_label: '2 ML', quantity_value: 12, quantity_unit: 'ML', unit_price: 300, quantity: 2 },
+      ])
+    )
+    expect(inv.items[0].size).toBe('12 ML')
+  })
+
+  it('keeps the exact Pieces label even when the structured value differs', () => {
+    const inv = formatOrderForInvoice(
+      baseOrder([
+        { product_name: 'Pink Musk', variant_label: '216 Pieces', quantity_value: 100, quantity_unit: 'Pieces', unit_price: 9000, quantity: 1 },
+      ])
+    )
+    expect(inv.items[0].size).toBe('216 Pieces')
+  })
+
   it('shows only the size when no brand exists', () => {
     const inv = formatOrderForInvoice(
       baseOrder([{ product_name: 'Musk', variant_label: '30 ML', unit_price: 45, quantity: 1 }])

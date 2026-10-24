@@ -11,6 +11,7 @@ import OrderInvoice from '../components/invoice/OrderInvoice'
 import { InvoiceDownloadButton, InvoicePrintButton } from '../components/invoice/InvoiceActions'
 import { PackingLabelDownloadButton, PackingLabelPrintButton } from '../components/packing/PackingActions'
 import { presetBounds, ordersInDateRange, packingLabelsFileName, formatDateKey } from '../utils/packing'
+import { itemSizeLabel } from '../utils/invoice'
 import {
   formatINR,
   formatOrderDate,
@@ -87,10 +88,7 @@ function OrderItemsList({ items }) {
         const unitPrice = Number(item.unit_price ?? item.price ?? 0)
         const qty = Number(item.quantity ?? item.qty ?? 1)
         const subtotal = Number(item.subtotal ?? unitPrice * qty)
-        const label = item.variant_label
-          || (item.quantity_value != null && item.quantity_unit
-              ? `${item.quantity_value} ${item.quantity_unit}`
-              : '')
+        const label = itemSizeLabel(item)
         // Pack purchase — show pack name + packs count + actual pieces instead
         // of the ambiguous single number. All values ride the stored snapshot,
         // so historical orders stay accurate even if the pack is edited later.

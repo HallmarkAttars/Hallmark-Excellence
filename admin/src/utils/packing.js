@@ -2,6 +2,8 @@
 // Framework-free so the address building, range presets and filename rules
 // are unit-testable. No prices, payment or email data ever enters a label.
 
+import { itemSizeLabel } from './invoice'
+
 // YYYY-MM-DD in LOCAL time (matches the date inputs + created_at display).
 export function formatDateKey(d) {
   const x = d instanceof Date ? d : new Date(d)
@@ -89,11 +91,7 @@ export function paymentShortLabel(value) {
 // One order item, reduced to the ONLY packing-relevant fields: name, quantity
 // and size label ("60 Pieces"). No prices, no internal info.
 export function packingItemLabel(item) {
-  const size =
-    item?.variant_label ||
-    (item?.quantity_value != null && item?.quantity_unit
-      ? `${item.quantity_value} ${item.quantity_unit}`
-      : '')
+  const size = itemSizeLabel(item)
   return {
     name: item?.product_name || item?.name || 'Item',
     quantity: Number(item?.quantity ?? item?.qty ?? 1),

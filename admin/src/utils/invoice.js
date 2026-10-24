@@ -92,6 +92,26 @@ export function paymentMethodLabel(value) {
   return v.includes('upi') ? 'UPI / Online Payment' : 'Advance Payment'
 }
 
+// Human-readable size for one order line.
+//
+// Pieces lines keep the stored label because it carries the EXACT piece count
+// ("216 Pieces"). ML/Gram sizes are rebuilt from the structured snapshot
+// fields: older orders stored a corrupted variant_label there (the checkout's
+// unit count, e.g. "1 Gram" for a 100 Gram variant), but quantity_value /
+// quantity_unit were always written correctly.
+export function itemSizeLabel(item) {
+  if (!item || typeof item !== 'object') return ''
+  const unit = String(item.quantity_unit ?? '').trim()
+  const hasStructuredSize =
+    item.quantity_value != null && String(item.quantity_value).trim() !== '' && unit
+  const structured = hasStructuredSize ? `${item.quantity_value} ${unit}` : ''
+
+  if (unit.toLowerCase() === 'pieces') {
+    return item.variant_label || structured
+  }
+  return structured || item.variant_label || ''
+}
+
 export function formatOrderForInvoice(order) {
   const notes = parseNotes(order)
 
@@ -140,11 +160,7 @@ export function formatOrderForInvoice(order) {
     const amount = Number.isFinite(unitPrice) && Number.isFinite(quantity)
       ? unitPrice * quantity
       : 0
-    const size =
-      it.variant_label ||
-      (it.quantity_value != null && it.quantity_unit
-        ? `${it.quantity_value} ${it.quantity_unit}`
-        : '')
+    const size = itemSizeLabel(it)
     // PACK purchase metadata — preserved from the order snapshot so invoices
     // show "Pack of 10 · 3 packs · 30 pieces" (never ambiguous pack/piece
     // counts).

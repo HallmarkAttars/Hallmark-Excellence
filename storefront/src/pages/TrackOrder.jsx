@@ -8,7 +8,7 @@ import {
 import { InvoiceDownloadButton } from '../components/invoice/InvoiceActions'
 import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { TRACK_ORDER_PAGE } from '../data/content'
-import { paymentMethodLabel } from '../utils/invoice'
+import { paymentMethodLabel, itemSizeLabel } from '../utils/invoice'
 import SEO from '../components/seo/SEO'
 import './TrackOrder.css'
 
@@ -207,12 +207,7 @@ function TrackItem({ item }) {
   const packLabel =
     item.pack_name || (item.pack_size != null ? `Pack of ${item.pack_size}` : '')
   const packCount = Number(item.number_of_packs ?? 1)
-  const label = isPack
-    ? packLabel
-    : item.variant_label ||
-      (item.quantity_value != null && item.quantity_unit
-        ? `${item.quantity_value} ${item.quantity_unit}`
-        : '')
+  const label = isPack ? packLabel : itemSizeLabel(item)
   const image = itemImage(item)
 
   return (

@@ -496,16 +496,20 @@ async function createOrder(req, res) {
           const sizePerUnit = Math.floor(Number(variant.quantity_value))
 
           const selectedVariantVal = item.variantPieces ?? item.selectedVariant ?? item.selected_variant ?? null
-          // `pieces` is the TOTAL pieces of the line — either an exact piece
-          // count picked on the product page or a legacy pack line's derived tally.
-          const explicitPieces =
-            item.totalPieces != null
-              ? Math.floor(Number(item.totalPieces))
-              : (item.pieces != null
-                  ? Math.floor(Number(item.pieces))
-                  : (isPiecesUnit && selectedVariantVal != null
-                      ? Math.floor(Number(selectedVariantVal) * quantity)
-                      : null))
+          // `pieces` only applies to Pieces-unit variants — either an exact
+          // piece count picked on the product page or a legacy pack tally.
+          // On ML/Gram lines the client's totalPieces is just the ordered unit
+          // count (1 for one 100 Gram pack); treating it as a piece count used
+          // to overwrite variant_label with "1 Gram".
+          const explicitPieces = isPiecesUnit
+            ? (item.totalPieces != null
+                ? Math.floor(Number(item.totalPieces))
+                : (item.pieces != null
+                    ? Math.floor(Number(item.pieces))
+                    : (selectedVariantVal != null
+                        ? Math.floor(Number(selectedVariantVal) * quantity)
+                        : null)))
+            : null
           if (explicitPieces != null && (!Number.isFinite(explicitPieces) || explicitPieces < 1)) {
             throw new Error(`Invalid piece quantity for ${product.name}.`)
           }
@@ -556,11 +560,13 @@ async function createOrder(req, res) {
             totalPieces: pieces,
             selectedVariant: sizePerUnit,
             // Piece-based lines store the EXACT pieces ordered (mirrors the
-            // cart line the customer saw); pack-based lines keep the DB label.
+            // cart line the customer saw); pack-based and ML/Gram lines keep
+            // the DB label (falling back to the structured size).
             variant_label:
               explicitPieces != null
                 ? `${explicitPieces} ${String(variant.quantity_unit ?? '').trim()}`
-                : variant.display_label,
+                : (variant.display_label ||
+                    `${sizePerUnit} ${String(variant.quantity_unit ?? '').trim()}`),
             quantity_value: sizePerUnit,
             quantity_unit: variant.quantity_unit,
             variant_total_price: round2(variantTotal),
