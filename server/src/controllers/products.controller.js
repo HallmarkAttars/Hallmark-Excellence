@@ -10,7 +10,7 @@ const {
 // product_variants.
 const PRODUCT_SELECT = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at,
+  category_id, brand_id, image, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -22,7 +22,7 @@ const PRODUCT_SELECT = `
 // production schema.
 const PRODUCT_SELECT_BASE = `
   id, name, description, price, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at,
+  category_id, brand_id, image, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -32,7 +32,7 @@ const PRODUCT_SELECT_BASE = `
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at, display_order,
+  category_id, brand_id, image, is_active, created_at, updated_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -105,14 +105,14 @@ async function selectAdminProducts(build) {
 // PostgREST rejects) — instead the current row is returned so the save stays
 // successful and the caller can surface the migration hint.
 async function withProductWriteRetry(operation, payload, select, baseSelect, fetchRow) {
-  let res = await withOptionalFieldRetry(operation, payload, select, baseSelect)
+  let res = await withOptionalFieldRetry(operation, payload, select, baseSelect, fetchRow)
   if (isDisplayOrderError(res.error)) {
     console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
     const { display_order, ...rest } = payload
     if (Object.keys(rest).length === 0 && typeof fetchRow === 'function') {
       return fetchRow()
     }
-    res = await withOptionalFieldRetry(operation, rest, select, baseSelect)
+    res = await withOptionalFieldRetry(operation, rest, select, baseSelect, fetchRow)
   }
   return res
 }
@@ -177,16 +177,22 @@ function sortVariants(variants) {
 // is applied. These are stripped from writes on pre-migration databases so
 // admin saves keep working; the values simply stay dormant until the
 // columns exist.
-const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count', 'is_in_stock']
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count', 'is_in_stock', 'updated_at']
 
 // Runs an insert/update against the full payload, retrying without the
 // optional (migration-dependent) fields when their columns are missing.
-async function withOptionalFieldRetry(operation, payload, select, baseSelect) {
+async function withOptionalFieldRetry(operation, payload, select, baseSelect, fetchRow) {
   const res = await operation(payload, select)
   if (isMissingColumnError(res.error)) {
     console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
     const basePayload = { ...payload }
     for (const key of OPTIONAL_FIELD_KEYS) delete basePayload[key]
+    // A variant-only PATCH on a pre-migration database would otherwise send an
+    // empty UPDATE (rejected by PostgREST); return the current row so the
+    // variant replacement can still run.
+    if (Object.keys(basePayload).length === 0 && typeof fetchRow === 'function') {
+      return fetchRow()
+    }
     return operation(basePayload, baseSelect)
   }
   return res
@@ -908,7 +914,7 @@ async function updateProduct(req, res) {
       }
     }
 
-    const updates = {}
+    const updates = { updated_at: new Date().toISOString() }
     if (name !== undefined) {
       updates.name = name
       updates.slug = await generateUniqueSlug(name, id)

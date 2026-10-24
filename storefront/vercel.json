@@ -2,6 +2,9 @@
   "functions": {
     "api/sitemap.js": {
       "maxDuration": 15
+    },
+    "api/meta.js": {
+      "maxDuration": 15
     }
   },
   "headers": [
@@ -27,6 +30,9 @@
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/robots.txt", "destination": "/api/robots" },
+    { "source": "/product/:id", "destination": "/api/meta?type=product&id=:id" },
+    { "source": "/categories/:slug", "destination": "/api/meta?type=category&slug=:slug" },
+    { "source": "/brand/:slug", "destination": "/api/meta?type=brand&slug=:slug" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

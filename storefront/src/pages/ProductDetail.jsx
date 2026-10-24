@@ -17,7 +17,7 @@ import { getDefaultVariant } from '../utils/productPricing'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
-import { buildProductSchema, buildBreadcrumbsSchema } from '../utils/seo'
+import { buildProductSeo } from '../utils/seo'
 import './ProductDetail.css'
 
 // Extract piece quantity from a variant (either quantity_value or numeric match from display_label)
@@ -167,24 +167,40 @@ export default function ProductDetail({ onAddToCart }) {
 
   if (error) {
     return (
-      <div className="error-state" role="alert">
-        <p>{error}</p>
-        <button
-          type="button"
-          className="btn btn-outline"
-          onClick={() => setReloadKey((k) => k + 1)}
-        >
-          Try Again
-        </button>
-      </div>
+      <>
+        <SEO
+          title="Unable to Load Product | Arees Perfumes"
+          description="This product could not be loaded. Please try again or browse our attars and fragrance oils."
+          canonical={`/product/${id}`}
+          robots="noindex,follow"
+        />
+        <div className="error-state" role="alert">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
+            Try Again
+          </button>
+        </div>
+      </>
     )
   }
   if (loading) return <SkeletonProductDetail />
   if (!product) {
     return (
-      <div className="empty-state">
-        Product not found. <Link to="/shop">Back to Shop</Link>
-      </div>
+      <>
+        <SEO
+          title="Product Not Found | Arees Perfumes"
+          description="The product you requested could not be found. Browse our attars, oud, and fragrance oils."
+          canonical={`/product/${id}`}
+          robots="noindex,follow"
+        />
+        <div className="empty-state">
+          Product not found. <Link to="/shop">Back to Shop</Link>
+        </div>
+      </>
     )
   }
 
@@ -506,56 +522,17 @@ export default function ProductDetail({ onAddToCart }) {
 
   const brandTitle = product.brand_name || 'Arees Perfumes'
   const catTitle = product.category_name || 'Attar'
-  const seoTitle = product.name.toLowerCase().includes(catTitle.toLowerCase())
-    ? `${product.name} | ${brandTitle} | Arees Perfumes`
-    : `${product.name} - ${catTitle} | ${brandTitle} | Arees Perfumes`
-
-  const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
-  let seoDesc = ''
-  if (cleanDbDesc && cleanDbDesc.length >= 60) {
-    seoDesc = cleanDbDesc.length > 155 ? `${cleanDbDesc.slice(0, 152).trim()}...` : cleanDbDesc
-  } else if (cleanDbDesc) {
-    seoDesc = `${cleanDbDesc}. 100% alcohol-free concentrated ${catTitle.toLowerCase()} oil by ${brandTitle}. Order online with delivery across India.`
-  } else {
-    seoDesc = `Discover ${product.name} by ${brandTitle}. Authentic alcohol-free ${catTitle.toLowerCase()} formulated for rich, long-lasting scent. Available retail & wholesale.`
-  }
-  const ogImg = cloudinarySrc(product.image, { width: 1200 }) || product.image
-
-  const breadcrumbItems = [
-    { name: 'Home', path: '/' },
-    { name: 'Shop', path: '/shop' },
-  ]
-  if (product.brand_name) {
-    breadcrumbItems.push({
-      name: product.brand_name,
-      path: `/brand/${product.brand_slug || 'arees'}`,
-    })
-  }
-  if (product.category_name) {
-    breadcrumbItems.push({
-      name: product.category_name,
-      path: `/categories/${product.category_slug || 'attars'}`,
-    })
-  }
-  breadcrumbItems.push({
-    name: product.name,
-    path: `/product/${product.id}`,
-  })
-
-  const productSchema = [
-    buildProductSchema(product),
-    buildBreadcrumbsSchema(breadcrumbItems),
-  ].filter(Boolean)
+  const seo = buildProductSeo(product, { variant: activeVariant })
 
   return (
     <div className="container product-detail">
       <SEO
-        title={seoTitle}
-        description={seoDesc}
-        canonical={`/product/${product.id}`}
-        image={ogImg}
-        type="product"
-        schema={productSchema}
+        title={seo.title}
+        description={seo.description}
+        canonical={seo.canonical}
+        image={seo.image}
+        type={seo.type}
+        schema={seo.schema}
       />
 
       {/* Visible Breadcrumbs */}

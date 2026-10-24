@@ -10,6 +10,7 @@
 // ============================================================================
 
 import { isProductInStock } from './stock.js'
+import { cloudinarySrc } from './productImage.js'
 
 // --------------------------------------------------------------------------
 // Canonical domain & Brand Identity
@@ -235,20 +236,39 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
 }
 
 // 4. Product Schema (with Binary Stock Availability: InStock / OutOfStock)
-export function buildProductSchema(product, origin = CANONICAL_ORIGIN) {
+// `variant` lets callers describe the exact purchasable size the visitor has
+// selected. When omitted, the product's default variant is used.
+export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant = null) {
   if (!product) return null
+
+  const variants = Array.isArray(product.variants) ? product.variants : []
+  const activeVariants = variants.filter(
+    (item) =>
+      item &&
+      item.active !== false &&
+      Number(item.total_price ?? item.price ?? 0) > 0
+  )
+  const selectedVariant =
+    variant ||
+    activeVariants.find((item) => item.is_default === true) ||
+    activeVariants[0] ||
+    null
 
   const inStock = isProductInStock(product)
   const availability = inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
   const brandName = product.brand_name || 'Arees Perfumes'
-  const price = Number(product.price || 0)
+  const rawPrice = selectedVariant
+    ? Number(selectedVariant.total_price ?? selectedVariant.price ?? product.price ?? 0)
+    : Number(product.price || 0)
+  const price = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0
   const productUrl = `${origin}/product/${product.id}`
+  const image = cloudinarySrc(product.image, { width: 1200 }) || product.image
 
-  const schema = {
+  return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: product.image ? [product.image] : [`${origin}/Hero.webp`],
+    image: image ? [image] : [`${origin}/Hero.webp`],
     description:
       product.description ||
       `Shop ${product.name} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
@@ -261,21 +281,155 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN) {
       '@type': 'Offer',
       url: productUrl,
       priceCurrency: 'INR',
-      price: price > 0 ? price : 0,
+      price,
       availability,
       itemCondition: 'https://schema.org/NewCondition',
+      sku: selectedVariant?.id || product.id,
+      seller: {
+        '@type': 'Organization',
+        name: 'Arees Perfumes',
+      },
     },
   }
+}
 
-  if (product.rating != null && Number(product.rating) > 0) {
-    schema.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: Number(product.rating),
-      reviewCount: Math.max(1, Number(product.review_count || 1)),
-    }
+// 4a. Product page SEO descriptor (title, description, canonical, schema).
+// Shared by the React page and the server-rendered /api/meta function so the
+// crawler-visible head and the client-updated head always match.
+export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = null } = {}) {
+  if (!product) return null
+
+  const brandTitle = product.brand_name || 'Arees Perfumes'
+  const catTitle = product.category_name || 'Attar'
+  const productName = String(product.name || 'Product')
+  const title = productName.toLowerCase().includes(catTitle.toLowerCase())
+    ? `${productName} | ${brandTitle} | Arees Perfumes`
+    : `${productName} - ${catTitle} | ${brandTitle} | Arees Perfumes`
+
+  const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
+  let description
+  if (cleanDbDesc && cleanDbDesc.length >= 60) {
+    description = cleanDbDesc.length > 155 ? `${cleanDbDesc.slice(0, 152).trim()}...` : cleanDbDesc
+  } else if (cleanDbDesc) {
+    description = `${cleanDbDesc}. 100% alcohol-free concentrated ${catTitle.toLowerCase()} oil by ${brandTitle}. Order online with delivery across India.`
+  } else {
+    description = `Discover ${productName} by ${brandTitle}. Authentic alcohol-free ${catTitle.toLowerCase()} formulated for rich, long-lasting scent. Available retail & wholesale.`
   }
 
-  return schema
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' },
+  ]
+  if (product.brand_name) {
+    breadcrumbs.push({
+      name: product.brand_name,
+      path: `/brand/${product.brand_slug || 'arees'}`,
+    })
+  }
+  if (product.category_name) {
+    breadcrumbs.push({
+      name: product.category_name,
+      path: `/categories/${product.category_slug || 'attars'}`,
+    })
+  }
+  breadcrumbs.push({ name: productName, path: `/product/${product.id}` })
+
+  return {
+    title,
+    description,
+    canonical: `/product/${product.id}`,
+    image: cloudinarySrc(product.image, { width: 1200 }) || product.image || DEFAULT_OG_IMAGE,
+    type: 'product',
+    schema: [
+      buildProductSchema(product, origin, variant),
+      buildBreadcrumbsSchema(breadcrumbs, origin),
+    ].filter(Boolean),
+  }
+}
+
+// 4b. Category page SEO descriptor.
+export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN } = {}) {
+  const catName = category?.name || 'Category'
+  const lowerSlug = String(slug || '').toLowerCase().trim()
+
+  let title = `${catName} | Pure Attars & Fragrance Oils | Arees Perfumes`
+  let description = category?.description || `Explore authentic ${catName} at Arees Perfumes. 100% alcohol-free concentrated oils and traditional fragrances delivered across India.`
+  let introDesc = category?.description || null
+
+  if (lowerSlug.includes('fragrance') || lowerSlug.includes('oil')) {
+    title = 'Fragrance Oils & Pure Concentrated Attars | Arees Perfumes'
+    description = 'Discover premium fragrance oils and concentrated attars by Arees Perfumes. Artisanal alcohol-free perfume oils crafted for daily wear and distinctive longevity.'
+    introDesc = introDesc || 'Explore our comprehensive selection of concentrated fragrance oils and traditional attars. Each blend is formulated without alcohol, delivering authentic scent throw, rich skin warmth, and all-day longevity.'
+  } else if (lowerSlug.includes('roll') || lowerSlug.includes('pocket')) {
+    title = 'Roll-On Attars & Pocket Perfumes | Alcohol-Free Oils | Arees Perfumes'
+    description = 'Shop pocket-friendly roll-on attars and pure perfume oils from Arees and Dahab. Convenient rollerballs, travel-ready sizes, and intense fragrance oils.'
+    introDesc = introDesc || 'Convenient, travel-ready roll-on attars designed for effortless touch-ups throughout the day. Handcrafted with concentrated, skin-friendly essential oils that last for hours.'
+  } else if (lowerSlug.includes('bakhoor') || lowerSlug.includes('bukhoor')) {
+    title = 'Bakhoor & Traditional Incense Fragrances | Arees Perfumes'
+    description = 'Artisanal Bakhoor, scented wood chips, and oriental incense by Arees Perfumes. Infuse your living spaces and garments with rich Arabian oud and amber aromas.'
+    introDesc = introDesc || 'Immerse your spaces in oriental luxury with Arees artisanal bakhoor. Formulated with aromatic wood chips, precious resins, and pure fragrance oils.'
+  } else if (lowerSlug.includes('display') || lowerSlug.includes('bottle')) {
+    title = 'Attar Display Bottles & Crystal Vials | Arees Perfumes'
+    description = 'Elegant attar display bottles, crystal perfume flacons, and traditional applicators. Perfect for vanity displays, gifts, and bespoke fragrance oils.'
+    introDesc = introDesc || 'Finely crafted glass and crystal display bottles for attars and concentrated oils. Featuring glass wand applicators and airtight caps.'
+  }
+
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Categories', path: '/categories' },
+    { name: catName, path: `/categories/${slug}` },
+  ]
+
+  return {
+    name: catName,
+    title,
+    description,
+    introDesc,
+    canonical: `/categories/${slug}`,
+    type: 'website',
+    schema: buildBreadcrumbsSchema(breadcrumbs, origin),
+  }
+}
+
+// 4c. Brand page SEO descriptor.
+export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
+  const lowerSlug = String(slug || '').toLowerCase()
+  const isArees = lowerSlug === 'arees'
+  const isDahab = lowerSlug === 'dahab'
+  const isLuxury = lowerSlug === 'arees-luxury' || lowerSlug === 'oud-al-haramain'
+
+  const brandName = isLuxury
+    ? 'Arees Luxury'
+    : (brand?.name || (isArees ? 'Arees Perfumes' : isDahab ? 'Dahab Attars' : 'Brand'))
+
+  let title = `${brandName} Perfumes & Attars | Arees Perfumes`
+  let description = `Discover authentic ${brandName} fragrances at Arees Perfumes. Pure, 100% alcohol-free concentrated oils delivered across India.`
+
+  if (isArees) {
+    title = 'Arees & Arees Perfumes | Authentic Pure Attars & Oils | Arees Perfumes'
+    description = 'Discover signature Arees and Arees Perfumes. 100% alcohol-free pure attars, musk, oud, and concentrated fragrance oils crafted in Chennai. Order retail or wholesale across India.'
+  } else if (isDahab) {
+    title = 'Dahab Perfumes & Dahab Attars | Pure Concentrated Oils | Arees Perfumes'
+    description = 'Shop authentic Dahab Perfumes and Dahab Attars. Renowned concentrated perfume oils with rich oriental projection, enduring sillage, and alcohol-free purity.'
+  } else if (isLuxury) {
+    title = 'Arees Luxury & Arees Luxury Perfumes | Artisanal Attars | Arees Perfumes'
+    description = 'Experience Arees Luxury and Arees Luxury Perfumes. Rare vintage oud, exotic amber, velvety rose, and royal artisanal attars formulated for discerning fragrance lovers.'
+  }
+
+  const breadcrumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Shop', path: '/shop' },
+    { name: brandName, path: `/brand/${slug}` },
+  ]
+
+  return {
+    brandName,
+    title,
+    description,
+    canonical: `/brand/${slug}`,
+    type: 'website',
+    schema: buildBreadcrumbsSchema(breadcrumbs, origin),
+  }
 }
 
 // 5. BreadcrumbList Schema

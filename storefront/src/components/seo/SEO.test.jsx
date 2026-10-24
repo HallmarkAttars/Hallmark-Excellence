@@ -85,6 +85,23 @@ describe('SEO component', () => {
     expect(twitterCard?.getAttribute('content')).toBe('summary_large_image')
   })
 
+  it('makes relative Open Graph images absolute', () => {
+    render(
+      <MemoryRouter initialEntries={['/product/p1']}>
+        <SEO
+          title="Arees Black Musk | Arees Perfumes"
+          canonical="/product/p1"
+          image="/images/musk.jpg"
+        />
+      </MemoryRouter>
+    )
+
+    const ogImg = document.head.querySelector('meta[property="og:image"]')
+    expect(ogImg?.getAttribute('content')).toBe(`${CANONICAL_ORIGIN}/images/musk.jpg`)
+    const twitterImg = document.head.querySelector('meta[name="twitter:image"]')
+    expect(twitterImg?.getAttribute('content')).toBe(`${CANONICAL_ORIGIN}/images/musk.jpg`)
+  })
+
   it('injects JSON-LD script tags into document head', () => {
     const sampleSchema = {
       '@context': 'https://schema.org',

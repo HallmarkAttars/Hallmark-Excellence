@@ -7,7 +7,7 @@ import usePagination from '../hooks/usePagination'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { brandHeroImage } from '../data/content'
 import SEO from '../components/seo/SEO'
-import { buildBreadcrumbsSchema } from '../utils/seo'
+import { buildBrandSeo } from '../utils/seo'
 import './BrandProducts.css'
 
 export default function BrandProducts() {
@@ -89,31 +89,26 @@ export default function BrandProducts() {
   const isDahab = lowerSlug === 'dahab'
   const isLuxury = lowerSlug === 'arees-luxury' || lowerSlug === 'oud-al-haramain'
 
-  const brandName = isLuxury
-    ? 'Arees Luxury'
-    : (brand?.name || (isArees ? 'Arees Perfumes' : isDahab ? 'Dahab Attars' : 'Brand'))
+  const {
+    brandName,
+    title: seoTitle,
+    description: seoDesc,
+    schema: brandSchema,
+  } = buildBrandSeo(brand, slug)
 
-  let seoTitle = `${brandName} Perfumes & Attars | Arees Perfumes`
-  let seoDesc = `Discover authentic ${brandName} fragrances at Arees Perfumes. Pure, 100% alcohol-free concentrated oils delivered across India.`
   let h1Title = brandName
   let headerLabel = `${brandName} Collection`
   let headerDesc = brand?.tagline || `Explore the complete ${brandName} fragrance collection.`
 
   if (isArees) {
-    seoTitle = 'Arees & Arees Perfumes | Authentic Pure Attars & Oils | Arees Perfumes'
-    seoDesc = 'Discover signature Arees and Arees Perfumes. 100% alcohol-free pure attars, musk, oud, and concentrated fragrance oils crafted in Chennai. Order retail or wholesale across India.'
     h1Title = 'Arees Perfumes & Attars'
     headerLabel = 'Signature Arees Collection'
     headerDesc = 'Discover the complete Arees Perfumes collection — authentic, alcohol-free attars, oud, musk and traditional fragrance oils crafted with heritage in Chennai.'
   } else if (isDahab) {
-    seoTitle = 'Dahab Perfumes & Dahab Attars | Pure Concentrated Oils | Arees Perfumes'
-    seoDesc = 'Shop authentic Dahab Perfumes and Dahab Attars. Renowned concentrated perfume oils with rich oriental projection, enduring sillage, and alcohol-free purity.'
     h1Title = 'Dahab Perfumes & Dahab Attars'
     headerLabel = 'Dahab Perfumes & Attars Collection'
     headerDesc = 'Authentic Dahab Perfumes and Dahab Attars — concentrated, 100% alcohol-free fragrance oils known for their rich projection, enduring sillage, and exquisite oriental character.'
   } else if (isLuxury) {
-    seoTitle = 'Arees Luxury & Arees Luxury Perfumes | Artisanal Attars | Arees Perfumes'
-    seoDesc = 'Experience Arees Luxury and Arees Luxury Perfumes. Rare vintage oud, exotic amber, velvety rose, and royal artisanal attars formulated for discerning fragrance lovers.'
     h1Title = 'Arees Luxury Perfumes'
     headerLabel = 'Artisanal Arees Luxury Collection'
     headerDesc = 'The pinnacle of royal oriental perfumery — Arees Luxury Perfumes features vintage oud, precious amber, velvety rose, and signature musk formulations crafted for true connoisseurs.'
@@ -125,19 +120,14 @@ export default function BrandProducts() {
   // content.js BRAND_HERO_IMAGES). null keeps the plain dark header.
   const heroImage = brandHeroImage(brandName) || brandHeroImage(brand?.name) || (isDahab ? '/Dahab-hero.webp' : null)
 
-  const breadcrumbs = [
-    { name: 'Home', path: '/' },
-    { name: 'Shop', path: '/shop' },
-    { name: brandName, path: `/brand/${slug}` },
-  ]
-
   return (
     <div className="brand-page">
       <SEO
         title={seoTitle}
         description={seoDesc}
         canonical={`/brand/${slug}`}
-        schema={buildBreadcrumbsSchema(breadcrumbs)}
+        robots={error ? 'noindex,follow' : 'index,follow'}
+        schema={brandSchema}
       />
       {/* Compact premium collection header — the brand's hero image fills the
           background (subtle dark overlay keeps the text readable); the plain

@@ -95,7 +95,11 @@ export default function SEO({
     setOrCreateLink('canonical', cleanCanonical)
 
     // 5. Open Graph Tags
-    const ogImg = image || DEFAULT_OG_IMAGE
+    const ogImg = image
+      ? (String(image).startsWith('http')
+          ? String(image)
+          : `${CANONICAL_ORIGIN}${String(image).startsWith('/') ? image : `/${image}`}`)
+      : DEFAULT_OG_IMAGE
     setOrCreateMeta('property', 'og:site_name', DEFAULT_BRAND)
     setOrCreateMeta('property', 'og:type', type)
     setOrCreateMeta('property', 'og:title', finalTitle)

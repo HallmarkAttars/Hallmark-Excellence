@@ -26,6 +26,9 @@ import {
   buildLocalBusinessSchema,
   buildProductSchema,
   buildBreadcrumbsSchema,
+  buildProductSeo,
+  buildCategorySeo,
+  buildBrandSeo,
 } from './seo'
 
 describe('canonical domain & brand identity', () => {
@@ -128,6 +131,25 @@ describe('buildSitemapXml', () => {
     expect(xml).not.toContain('/categories/Roll on<')
     const count = (xml.match(/<loc>https:\/\/areesperfumes\.in\/shop<\/loc>/g) || []).length
     expect(count).toBe(1)
+  })
+
+  it('uses updated_at for lastmod and keeps the Arees Luxury brand URL', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://areesperfumes.in',
+      pages: [],
+      categories: [],
+      brands: [
+        {
+          slug: 'oud-al-haramain',
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-08-02T12:00:00Z',
+        },
+      ],
+      products: [],
+    })
+    expect(xml).toContain('<loc>https://areesperfumes.in/brand/oud-al-haramain</loc>')
+    expect(xml).toContain('<loc>https://areesperfumes.in/brand/arees-luxury</loc>')
+    expect((xml.match(/<lastmod>2026-08-02<\/lastmod>/g) || []).length).toBe(2)
   })
 })
 
@@ -240,6 +262,94 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildProductSchema(product)
       expect(JSON.stringify(schema)).not.toContain('500')
       expect(schema.offers.availability).toBe('https://schema.org/InStock')
+    })
+
+    it('uses the selected variant total price and variant sku', () => {
+      const product = {
+        id: 'p-104',
+        name: 'Arees Royal Oud',
+        price: 240,
+        is_in_stock: true,
+        variants: [
+          { id: 'v-10ml', is_default: true, price: 24, total_price: 240, display_label: '10 ml' },
+          { id: 'v-50ml', is_default: false, price: 155.52, total_price: 7776, display_label: '50 ml' },
+        ],
+      }
+      const schema = buildProductSchema(product, 'https://areesperfumes.in', product.variants[1])
+      expect(schema.offers.price).toBe(7776)
+      expect(schema.offers.sku).toBe('v-50ml')
+      expect(schema.offers.seller.name).toBe('Arees Perfumes')
+    })
+
+    it('ignores inactive variants when choosing the default offer', () => {
+      const product = {
+        id: 'p-106',
+        name: 'Arees Night Musk',
+        price: 999,
+        is_in_stock: true,
+        variants: [
+          { id: 'v-inactive', is_default: true, active: false, total_price: 999 },
+          { id: 'v-active', is_default: false, active: true, total_price: 450 },
+        ],
+      }
+      const schema = buildProductSchema(product)
+      expect(schema.offers.price).toBe(450)
+      expect(schema.offers.sku).toBe('v-active')
+    })
+
+    it('does not emit unverified aggregateRating markup', () => {
+      const schema = buildProductSchema({
+        id: 'p-105',
+        name: 'Arees Musk',
+        price: 300,
+        rating: 4.8,
+        review_count: 12,
+      })
+      expect(schema.aggregateRating).toBeUndefined()
+    })
+  })
+
+  describe('page SEO descriptors', () => {
+    const product = {
+      id: 'p-201',
+      name: 'Arees Black Musk',
+      description:
+        'A rich, alcohol-free black musk attar with a warm, long-lasting trail for daily wear and special occasions.',
+      price: 450,
+      image: 'https://res.cloudinary.com/demo/image/upload/v1/musk.jpg',
+      brand_name: 'Arees Perfumes',
+      brand_slug: 'arees',
+      category_name: 'Attar',
+      category_slug: 'attar',
+      is_in_stock: true,
+      variants: [{ id: 'v-201', is_default: true, total_price: 450 }],
+    }
+
+    it('builds a product descriptor shared by the client and server head', () => {
+      const seo = buildProductSeo(product, { variant: product.variants[0] })
+      expect(seo.title).toContain('Arees Black Musk')
+      expect(seo.canonical).toBe('/product/p-201')
+      expect(seo.type).toBe('product')
+      expect(seo.schema[0].offers.price).toBe(450)
+      expect(seo.schema[1]['@type']).toBe('BreadcrumbList')
+    })
+
+    it('builds category SEO with an intro description and breadcrumbs', () => {
+      const seo = buildCategorySeo(
+        { name: 'Fragrance Oils', description: 'Concentrated alcohol-free oils.' },
+        'fragrance-oils'
+      )
+      expect(seo.title).toContain('Fragrance Oils')
+      expect(seo.introDesc).toBe('Concentrated alcohol-free oils.')
+      expect(seo.canonical).toBe('/categories/fragrance-oils')
+      expect(seo.schema['@type']).toBe('BreadcrumbList')
+    })
+
+    it('keeps the Arees Luxury brand URL self-canonical', () => {
+      const seo = buildBrandSeo({ name: 'Arees Luxury', slug: 'oud-al-haramain' }, 'arees-luxury')
+      expect(seo.brandName).toBe('Arees Luxury')
+      expect(seo.title).toContain('Arees Luxury')
+      expect(seo.canonical).toBe('/brand/arees-luxury')
     })
   })
 
