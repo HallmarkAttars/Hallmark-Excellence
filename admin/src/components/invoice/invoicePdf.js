@@ -12,7 +12,8 @@
 //               / Status) side by side on a warm cream fill
 //   • Table   — dark header, white rows, subtle separators, aspect-preserved
 //               thumbnails, brand · size detail lines
-//   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount)
+//   • Summary — right-aligned Subtotal / Delivery / TOTAL (gold amount) plus
+//               the transport-exclusion note
 //   • Thanks  — gold-bordered thank-you card, then a "Page i of n" footer
 //               flanked by gold rules + dots, redrawn on every page
 //   • Multi-page: the table header repeats, totals stay together, and the
@@ -341,7 +342,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
   const contactBits = [inv.company.phone, inv.company.email, inv.company.website].filter(Boolean)
   if (contactBits.length > 0) {
     doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(...MUTED)
-    doc.text(contactBits.join('   ·   '), W / 2, 61.5, { align: 'center' })
+    doc.text(contactBits.join('  ·  '), W / 2, 61.5, { align: 'center' })
   }
   doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(...MUTED)
   if (inv.company.gstNote) {
@@ -538,7 +539,7 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     },
   })
 
-  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 5
+  let ty = (doc.lastAutoTable?.finalY ?? tableStartY) + 3.5
 
   // ============================ PRICE SUMMARY ===============================
   const sumW = 78
@@ -547,26 +548,29 @@ export async function buildInvoicePdf(order, { logoUrl } = {}) {
     doc.addPage()
     ty = M
   }
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...MUTED)
   doc.text('Subtotal', sumX, ty)
-  drawMoney(doc, rupee, inv.subtotal, W - M, ty, { align: 'right' })
-  ty += 5.5
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
+  drawMoney(doc, rupee, inv.subtotal, W - M, ty, { align: 'right', size: 8.5 })
+  ty += 6
+  doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...MUTED)
   doc.text('Delivery / Transport', sumX, ty)
   if (inv.delivery == null) {
-    doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
+    doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...MUTED)
     doc.text('To be confirmed', W - M, ty, { align: 'right' })
   } else {
-    drawMoney(doc, rupee, inv.delivery, W - M, ty, { align: 'right' })
+    drawMoney(doc, rupee, inv.delivery, W - M, ty, { align: 'right', size: 8.5 })
   }
-  ty += 4.5
+  ty += 4.2
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED)
+  doc.text('Transport Charges are Excluded', sumX, ty)
+  ty += 2.8
   doc.setDrawColor(...GOLD).setLineWidth(0.4)
   doc.line(sumX, ty, W - M, ty)
-  ty += 5
-  doc.setFont('helvetica', 'bold').setFontSize(10.5).setTextColor(...INK)
+  ty += 4.2
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...INK)
   doc.text('TOTAL', sumX, ty)
-  drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 13, color: GOLD })
-  ty += 7
+  drawMoney(doc, rupee, inv.total, W - M, ty, { align: 'right', size: 12, color: GOLD })
+  ty += 6.4
 
   // =========================== THANK-YOU CARD ===============================
   if (ty > H - 52) {
@@ -806,11 +810,12 @@ function renderPrintHtml(inv, logo) {
   table.items td.name img.thumb { width: 100%; height: 100%; object-fit: contain; border-radius: 1mm; }
   table.items td.detail { color: #6f6a63; font-size: 11px; }
   table.items td.detail .detail-main { display: block; }
-  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 4mm; }
+  .summary { width: 78mm; min-width: 0; margin-left: auto; margin-top: 3.5mm; }
   .row { display: flex; justify-content: space-between; padding: 1.5mm 0; font-size: 11px; color: #6f6a63; font-variant-numeric: tabular-nums lining-nums; }
   .row span:last-child { color: #1a1815; text-align: right; }
-  .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.5mm; padding-top: 2.5mm; font-size: 12px; font-weight: 700; color: #171512; }
-  .row.grand .amount { color: #b8862b; font-size: 14px; font-variant-numeric: tabular-nums lining-nums; }
+  .summary-note { margin: 1.2mm 0 0; font-size: 9px; color: #6f6a63; letter-spacing: .01em; }
+  .row.grand { border-top: 1.2px solid #b8862b; margin-top: 1.6mm; padding-top: 2.8mm; font-size: 14.5px; font-weight: 700; color: #171512; }
+  .row.grand .amount { color: #b8862b; font-size: 16px; font-variant-numeric: tabular-nums lining-nums; }
   .thanks { margin-top: 4mm; padding: 4.5mm; background: #f7f2e8; border: 1px solid rgba(184,134,43,.45); border-radius: 8px; text-align: center; }
   .thanks .t { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: #b8862b; margin-bottom: 2mm; }
   .thanks .line { font-family: 'Plus Jakarta Sans', sans-serif; font-style: normal; font-size: 11.5px; color: #171512; }
@@ -871,6 +876,7 @@ function renderPrintHtml(inv, logo) {
       <div class="summary">
         <div class="row"><span>Subtotal</span><span>${formatINR(inv.subtotal)}</span></div>
         <div class="row"><span>Delivery / Transport</span><span>${inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span></div>
+        <p class="summary-note">Transport Charges are Excluded</p>
         <div class="row grand"><span>Total</span><span class="amount">${formatINR(inv.total)}</span></div>
       </div>
 

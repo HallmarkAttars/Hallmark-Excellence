@@ -160,6 +160,19 @@ describe('buildInvoicePdf — layout smoke tests', () => {
     )
     expect(doc.getNumberOfPages()).toBe(1)
   })
+
+  it('prints the transport-exclusion note once', async () => {
+    globalThis.__pdfTexts = []
+    try {
+      await buildInvoicePdf(orderWithItems([item('Cold Water', 30, 42)]))
+      const notes = globalThis.__pdfTexts.filter(
+        (r) => r.text === 'Transport Charges are Excluded'
+      )
+      expect(notes).toHaveLength(1)
+    } finally {
+      delete globalThis.__pdfTexts
+    }
+  })
 })
 
 // ---------------------------------------------------------------------------

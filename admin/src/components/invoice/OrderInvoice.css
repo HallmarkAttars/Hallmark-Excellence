@@ -367,7 +367,7 @@
 .invoice-lower {
   display: flex;
   justify-content: flex-end;
-  margin-top: 4mm;
+  margin-top: 3.5mm;
 }
 .invoice-summary {
   width: min(78mm, 100%);
@@ -382,6 +382,12 @@
   font-size: 12px;
 }
 .invoice-summary-row span:last-child { font-variant-numeric: tabular-nums; color: #1a1815; text-align: right; }
+.invoice-transport-note {
+  margin: 1.5mm 0 0;
+  color: #6f6a63;
+  font-size: 10px;
+  letter-spacing: 0.01em;
+}
 .invoice-grand-total {
   border-top: 1.2px solid #b8862b;
   margin-top: 1.5mm;

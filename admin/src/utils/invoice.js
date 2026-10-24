@@ -20,8 +20,8 @@ export const INVOICE_COMPANY = {
   // company name.
   brandTitle: 'Arees Perfumes',
   tagline: 'The Art of Significance Attars',
-  phone: '+91 98765 43210',
-  email: 'hello@areesdahab.com',
+  phone: '+91 98407 50467',
+  email: 'hikmaexports@gmail.com',
   // No website is configured in the admin app — the invoice contact strip
   // simply omits it (nothing fake is ever printed).
   website: '',

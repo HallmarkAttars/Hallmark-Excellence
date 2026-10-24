@@ -210,6 +210,7 @@ export default function OrderInvoice({ order, documentType }) {
               <span>Delivery / Transport</span>
               <span>{inv.delivery == null ? 'To be confirmed' : formatINR(inv.delivery)}</span>
             </div>
+            <p className="invoice-transport-note">Transport Charges are Excluded</p>
             <div className="invoice-summary-row invoice-grand-total">
               <span>Total</span>
               <span className="invoice-grand-amount">{formatINR(inv.total)}</span>
