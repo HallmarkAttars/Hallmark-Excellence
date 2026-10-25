@@ -47,6 +47,25 @@
   color: var(--muted);
 }
 
+.category-wholesale-link {
+  max-width: 680px;
+  margin: 0 auto 18px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.category-wholesale-link a {
+  color: var(--gold-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.category-wholesale-link a:hover {
+  text-decoration: underline;
+}
+
 /* Thin gold divider under the title — subtle, not loud */
 .category-hero-rule {
   display: block;

@@ -9,15 +9,15 @@
 // Kept free of any direct DOM manipulation so they are 100% unit-testable.
 // ============================================================================
 
-import { ABOUT, BUSINESS, HIKMA_EXPORTS } from '../data/content.js'
+import { ABOUT, BUSINESS, HIKMA_EXPORTS, WHOLESALE } from '../data/content.js'
 import { isProductInStock } from './stock.js'
 import { cloudinarySrc } from './productImage.js'
 
 // --------------------------------------------------------------------------
 // Canonical domain & Brand Identity
 // --------------------------------------------------------------------------
-// ONE canonical storefront domain: the apex (https://areesperfumes.in).
-export const CANONICAL_ORIGIN = 'https://areesperfumes.in'
+// ONE canonical storefront domain: the live host (https://www.areesperfumes.in).
+export const CANONICAL_ORIGIN = 'https://www.areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
 export const DEFAULT_TITLE = 'Arees Perfumes (Hikma Perfumes) | Attars in Chennai'
 export const DEFAULT_DESCRIPTION =
@@ -28,7 +28,8 @@ const WWW_HOST = 'www.areesperfumes.in'
 const APEX_HOST = 'areesperfumes.in'
 
 function normalizeHost(host) {
-  return String(host).toLowerCase() === WWW_HOST ? APEX_HOST : host
+  const value = String(host).toLowerCase()
+  return value === APEX_HOST ? WWW_HOST : value
 }
 
 // --------------------------------------------------------------------------
@@ -37,7 +38,7 @@ function normalizeHost(host) {
 export function resolveSiteUrl(siteUrl, headers = {}) {
   if (siteUrl) {
     const normalized = String(siteUrl).replace(
-      /^https?:\/\/www\.areesperfumes\.in(?=(\/|$))/i,
+      /^https?:\/\/areesperfumes\.in(?=(\/|$))/i,
       CANONICAL_ORIGIN
     )
     return normalized.replace(/\/+$/, '')
@@ -90,6 +91,32 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
   const seen = new Set()
   const entries = []
 
+  // Only list category/brand pages that have at least one live product. The
+  // fallback catalog snapshot does not carry category/brand relations, so the
+  // filter is applied only when the live product payload exposes them.
+  const categoryIds = new Set(
+    products.map((product) => product?.category_id).filter((value) => value != null)
+  )
+  const categorySlugs = new Set(
+    products.map((product) => product?.category_slug).filter(Boolean)
+  )
+  const brandIds = new Set(
+    products.map((product) => product?.brand_id).filter((value) => value != null)
+  )
+  const brandSlugs = new Set(
+    products.map((product) => product?.brand_slug).filter(Boolean)
+  )
+  const filterCategories = categoryIds.size > 0 || categorySlugs.size > 0
+  const filterBrands = brandIds.size > 0 || brandSlugs.size > 0
+  const categoryHasProducts = (category) =>
+    !filterCategories ||
+    categoryIds.has(category.id) ||
+    categorySlugs.has(category.slug)
+  const brandHasProducts = (brand) =>
+    !filterBrands ||
+    brandIds.has(brand.id) ||
+    brandSlugs.has(brand.slug)
+
   const addEntry = (rawLoc, timestamp) => {
     if (!rawLoc) return
     const encodedLoc = encodeURI(rawLoc)
@@ -109,11 +136,13 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
   for (const category of categories) {
     if (!category?.slug) continue
     if (category.is_active === false) continue
+    if (!categoryHasProducts(category)) continue
     addEntry(`${base}/categories/${category.slug}`, category.updated_at || category.created_at)
   }
   for (const brand of brands) {
     if (!brand?.slug) continue
     if (brand.is_active === false) continue
+    if (!brandHasProducts(brand)) continue
     addEntry(`${base}/brand/${brand.slug}`, brand.updated_at || brand.created_at)
     if (brand.slug === 'oud-al-haramain') {
       addEntry(`${base}/brand/arees-luxury`, brand.updated_at || brand.created_at)
@@ -307,6 +336,33 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
   }
 }
 
+// 3b. Wholesale Service Schema
+export function buildWholesaleServiceSchema({ origin = CANONICAL_ORIGIN } = {}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${origin}/wholesale#service`,
+    name: 'Wholesale Attars & Perfume Oils Supply',
+    serviceType: 'Wholesale attar and perfume oil supply',
+    description:
+      'Wholesale supply of alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor and perfume packaging from Hikma Exports in Chennai, for retailers, perfumers, distributors and export buyers.',
+    url: `${origin}/wholesale`,
+    provider: {
+      '@type': 'Organization',
+      name: 'Hikma Exports',
+      alternateName: 'Hikma Perfumes',
+      url: `${origin}/hikma-exports`,
+      telephone: BUSINESS.phoneTel,
+      email: BUSINESS.email,
+      address: {
+        '@type': 'PostalAddress',
+        ...BUSINESS.addressParts,
+      },
+    },
+    areaServed: ['India', 'Worldwide'],
+  }
+}
+
 // 4. FAQPage Schema
 export function buildFAQSchema(faqs = []) {
   const entries = Array.isArray(faqs)
@@ -350,12 +406,72 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
   const inStock = isProductInStock(product)
   const availability = inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
   const brandName = product.brand_name || 'Arees Perfumes'
-  const rawPrice = selectedVariant
-    ? Number(selectedVariant.total_price ?? selectedVariant.price ?? product.price ?? 0)
-    : Number(product.price || 0)
-  const price = Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : 0
   const productUrl = `${origin}/product/${product.id}`
   const image = cloudinarySrc(product.image, { width: 1200 }) || product.image
+
+  const variantPrice = (item) => {
+    const value = Number(item?.total_price ?? item?.price ?? 0)
+    return Number.isFinite(value) && value > 0 ? value : 0
+  }
+  const variantName = (item) => {
+    if (!item) return product.name
+    const label = item.display_label
+      || (item.quantity_value != null && item.quantity_unit
+        ? `${item.quantity_value} ${item.quantity_unit}`
+        : '')
+    return label ? `${product.name} - ${label}` : product.name
+  }
+  const offerBase = {
+    priceCurrency: 'INR',
+    availability,
+    itemCondition: 'https://schema.org/NewCondition',
+    url: productUrl,
+    seller: {
+      '@type': 'Organization',
+      name: 'Arees Perfumes',
+    },
+  }
+
+  let offers
+  let hasVariant
+
+  if (variant && selectedVariant) {
+    offers = {
+      '@type': 'Offer',
+      ...offerBase,
+      price: variantPrice(selectedVariant),
+      name: variantName(selectedVariant),
+      sku: selectedVariant.id || product.id,
+    }
+  } else if (activeVariants.length > 1) {
+    const prices = activeVariants.map(variantPrice).filter((value) => value > 0)
+    offers = {
+      '@type': 'AggregateOffer',
+      ...offerBase,
+      lowPrice: Math.min(...prices),
+      highPrice: Math.max(...prices),
+      offerCount: activeVariants.length,
+    }
+    hasVariant = activeVariants.map((item) => ({
+      '@type': 'Product',
+      name: variantName(item),
+      sku: item.id,
+      offers: {
+        '@type': 'Offer',
+        ...offerBase,
+        price: variantPrice(item),
+      },
+    }))
+  } else {
+    const price = selectedVariant ? variantPrice(selectedVariant) : Number(product.price || 0)
+    offers = {
+      '@type': 'Offer',
+      ...offerBase,
+      price: Number.isFinite(price) && price > 0 ? price : 0,
+      name: variantName(selectedVariant),
+      sku: selectedVariant?.id || product.id,
+    }
+  }
 
   return {
     '@context': 'https://schema.org',
@@ -370,19 +486,8 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
       name: brandName,
     },
     category: product.category_name || 'Attars',
-    offers: {
-      '@type': 'Offer',
-      url: productUrl,
-      priceCurrency: 'INR',
-      price,
-      availability,
-      itemCondition: 'https://schema.org/NewCondition',
-      sku: selectedVariant?.id || product.id,
-      seller: {
-        '@type': 'Organization',
-        name: 'Arees Perfumes',
-      },
-    },
+    offers,
+    ...(hasVariant ? { hasVariant } : {}),
   }
 }
 
@@ -449,7 +554,15 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN } =
   let description = category?.description || `Explore authentic ${catName} at Arees Perfumes. 100% alcohol-free concentrated oils and traditional fragrances delivered across India.`
   let introDesc = category?.description || null
 
-  if (lowerSlug.includes('fragrance') || lowerSlug.includes('oil')) {
+  if (lowerSlug === '10') {
+    title = 'Wholesale Fragrance Oils & Attar Bases in Chennai | Hikma Exports'
+    description = 'Source concentrated fragrance oils and attar bases in bulk from Hikma Exports in Mannadi, Chennai. Explore 290+ alcohol-free scents for retailers, perfumers and export buyers.'
+    introDesc = 'Explore concentrated fragrance oils and traditional attar bases supplied by Hikma Exports from Mannadi, George Town, Chennai. The range covers floral, woody, musky, amber and oud-led profiles for retailers, perfumers, distributors and export buyers. Share the scents, pack sizes and quantities you need for a wholesale quotation.'
+  } else if (lowerSlug === '1') {
+    title = 'Wholesale Roll-On Attars in Chennai | Arees & Dahab | Hikma Exports'
+    description = 'Source alcohol-free 6ml and 8ml roll-on attars in bulk from Arees Perfumes and Dahab. Wholesale and export enquiries are handled by Hikma Exports in Mannadi, Chennai.'
+    introDesc = 'Browse ready-to-retail roll-on attars from the Arees and Dahab collections, supplied wholesale by Hikma Exports in Chennai. These alcohol-free fragrance oils are packed for retail shelves, gifting and distribution. Share your preferred scents, pack sizes and quantities to request wholesale pricing.'
+  } else if (lowerSlug.includes('fragrance') || lowerSlug.includes('oil')) {
     title = 'Fragrance Oils & Pure Concentrated Attars | Arees Perfumes'
     description = 'Discover premium fragrance oils and concentrated attars by Arees Perfumes. Artisanal alcohol-free perfume oils crafted for daily wear and distinctive longevity.'
     introDesc = introDesc || 'Explore our comprehensive selection of concentrated fragrance oils and traditional attars. Each blend is formulated without alcohol, delivering authentic scent throw, rich skin warmth, and all-day longevity.'
@@ -525,7 +638,30 @@ export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
   }
 }
 
-// 4d. Hikma Exports entity page SEO descriptor.
+// 4d. Wholesale landing page SEO descriptor.
+export function buildWholesaleSeo({ origin = CANONICAL_ORIGIN } = {}) {
+  return {
+    title: 'Wholesale Attars & Perfume Oils Supplier in Chennai | Hikma Exports',
+    description:
+      'Source wholesale attars, concentrated fragrance oils, roll-on perfumes and perfume packaging from Hikma Exports in Mannadi, Chennai. Bulk and export enquiries welcome.',
+    canonical: '/wholesale',
+    image: DEFAULT_OG_IMAGE,
+    type: 'website',
+    schema: [
+      buildWholesaleServiceSchema({ origin }),
+      buildFAQSchema(WHOLESALE.faqs),
+      buildBreadcrumbsSchema(
+        [
+          { name: 'Home', path: '/' },
+          { name: 'Wholesale Attars', path: '/wholesale' },
+        ],
+        origin
+      ),
+    ].filter(Boolean),
+  }
+}
+
+// 4e. Hikma Exports entity page SEO descriptor.
 export function buildHikmaExportsSeo({ origin = CANONICAL_ORIGIN, sameAs = HIKMA_EXPORTS.sameAs } = {}) {
   return {
     title: 'Hikma Exports | Hikma Perfumes Wholesale & Export | Chennai',
@@ -564,17 +700,7 @@ const STATIC_PAGE_SEO = {
       buildFAQSchema(ABOUT.faqs),
     ].filter(Boolean),
   },
-  '/wholesale': {
-    title: 'Wholesale Attars in Chennai | Arees Perfumes & Hikma Exports',
-    description:
-      'Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes and Hikma Exports supply retailers with roll-ons, fragrance oils, and packaging across India.',
-    canonical: '/wholesale',
-    type: 'website',
-    schema: buildBreadcrumbsSchema([
-      { name: 'Home', path: '/' },
-      { name: 'Wholesale Attars', path: '/wholesale' },
-    ]),
-  },
+  '/wholesale': buildWholesaleSeo(),
   '/contact': {
     title: 'Contact Arees Perfumes & Hikma Perfumes | Chennai',
     description:

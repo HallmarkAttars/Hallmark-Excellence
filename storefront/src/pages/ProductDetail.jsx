@@ -632,6 +632,10 @@ export default function ProductDetail({ onAddToCart }) {
             </div>
           )}
 
+          <p className="pd-wholesale-link">
+            Buying in bulk? <Link to="/wholesale">Request wholesale pricing</Link>.
+          </p>
+
           {/* Bulk-pricing card — brand-level, live, one source of truth.
               Positioned directly under the description so the offer is
               visible before any variant is picked (progress shows the

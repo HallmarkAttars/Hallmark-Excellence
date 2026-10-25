@@ -25,19 +25,21 @@ import {
   buildWebSiteSchema,
   buildLocalBusinessSchema,
   buildHikmaExportsSchema,
+  buildWholesaleServiceSchema,
   buildFAQSchema,
   buildProductSchema,
   buildBreadcrumbsSchema,
   buildProductSeo,
   buildCategorySeo,
   buildBrandSeo,
+  buildWholesaleSeo,
   buildHikmaExportsSeo,
   buildStaticPageSeo,
 } from './seo'
 
 describe('canonical domain & brand identity', () => {
-  it('pins the apex as the canonical origin (never www)', () => {
-    expect(CANONICAL_ORIGIN).toBe('https://areesperfumes.in')
+  it('pins the live www host as the canonical origin', () => {
+    expect(CANONICAL_ORIGIN).toBe('https://www.areesperfumes.in')
   })
 
   it('sets Arees Perfumes as the primary brand name', () => {
@@ -62,17 +64,17 @@ describe('resolveSiteUrl', () => {
     expect(resolveSiteUrl('https://example.com/', { 'x-forwarded-host': 'other.com' })).toBe('https://example.com')
   })
 
-  it('normalizes a www forwarded host to the apex (sitemap/robots never emit www)', () => {
-    expect(resolveSiteUrl(null, { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'www.areesperfumes.in' })).toBe(
-      'https://areesperfumes.in'
+  it('normalizes the apex forwarded host to the live www host', () => {
+    expect(resolveSiteUrl(null, { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'areesperfumes.in' })).toBe(
+      'https://www.areesperfumes.in'
     )
-    expect(resolveSiteUrl(null, { host: 'www.areesperfumes.in' })).toBe('https://areesperfumes.in')
-    expect(resolveSiteUrl(null, { 'x-forwarded-host': 'WWW.AREESPERFUMES.IN' })).toBe('https://areesperfumes.in')
+    expect(resolveSiteUrl(null, { host: 'areesperfumes.in' })).toBe('https://www.areesperfumes.in')
+    expect(resolveSiteUrl(null, { 'x-forwarded-host': 'AREESPERFUMES.IN' })).toBe('https://www.areesperfumes.in')
   })
 
-  it('derives the base URL from the forwarded host', () => {
-    expect(resolveSiteUrl(null, { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'areesperfumes.in' })).toBe(
-      'https://areesperfumes.in'
+  it('keeps the www forwarded host as the base URL', () => {
+    expect(resolveSiteUrl(null, { 'x-forwarded-proto': 'https', 'x-forwarded-host': 'www.areesperfumes.in' })).toBe(
+      'https://www.areesperfumes.in'
     )
   })
 
@@ -84,25 +86,25 @@ describe('resolveSiteUrl', () => {
 describe('buildSitemapXml', () => {
   it('emits public indexable commercial pages only (excludes track-order, cart, checkout)', () => {
     const xml = buildSitemapXml({
-      baseUrl: 'https://areesperfumes.in',
+      baseUrl: 'https://www.areesperfumes.in',
       categories: [{ slug: 'perfume-oils', created_at: '2026-08-01T10:00:00Z' }],
       brands: [{ slug: 'arees', created_at: '2026-07-15T10:00:00Z' }],
       products: [{ id: 'prod-abc', created_at: '2026-08-13T09:00:00Z' }],
     })
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true)
     expect(xml).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
-    expect(xml).toContain('<loc>https://areesperfumes.in/</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/shop</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/categories</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/brands</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/wholesale</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/hikma-exports</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/retail</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/attar-perfume-shop-south-india</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/about</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/contact</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/brand/arees</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/product/prod-abc</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/shop</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/brands</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/wholesale</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/hikma-exports</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/retail</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/attar-perfume-shop-south-india</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/about</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/contact</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/brand/arees</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/product/prod-abc</loc>')
     // Private/utility routes must NOT be in sitemap:
     expect(xml).not.toContain('/track-order')
     expect(xml).not.toContain('/cart')
@@ -114,7 +116,7 @@ describe('buildSitemapXml', () => {
 
   it('skips rows without a usable slug/id or where is_active is false', () => {
     const xml = buildSitemapXml({
-      baseUrl: 'https://areesperfumes.in',
+      baseUrl: 'https://www.areesperfumes.in',
       pages: [],
       categories: [{ slug: null }, { slug: '' }, {}, { slug: 'hidden', is_active: false }],
       brands: [{ slug: undefined }, {}, { slug: 'archived', is_active: false }],
@@ -126,21 +128,21 @@ describe('buildSitemapXml', () => {
 
   it('properly URL-encodes slugs with spaces and deduplicates URLs', () => {
     const xml = buildSitemapXml({
-      baseUrl: 'https://areesperfumes.in',
+      baseUrl: 'https://www.areesperfumes.in',
       pages: ['/shop', '/shop'],
       categories: [{ slug: 'Roll on' }, { slug: 'Roll on' }],
       brands: [],
       products: [],
     })
-    expect(xml).toContain('<loc>https://areesperfumes.in/categories/Roll%20on</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/Roll%20on</loc>')
     expect(xml).not.toContain('/categories/Roll on<')
-    const count = (xml.match(/<loc>https:\/\/areesperfumes\.in\/shop<\/loc>/g) || []).length
+    const count = (xml.match(/<loc>https:\/\/www\.areesperfumes\.in\/shop<\/loc>/g) || []).length
     expect(count).toBe(1)
   })
 
   it('uses updated_at for lastmod and keeps the Arees Luxury brand URL', () => {
     const xml = buildSitemapXml({
-      baseUrl: 'https://areesperfumes.in',
+      baseUrl: 'https://www.areesperfumes.in',
       pages: [],
       categories: [],
       brands: [
@@ -152,15 +154,37 @@ describe('buildSitemapXml', () => {
       ],
       products: [],
     })
-    expect(xml).toContain('<loc>https://areesperfumes.in/brand/oud-al-haramain</loc>')
-    expect(xml).toContain('<loc>https://areesperfumes.in/brand/arees-luxury</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/brand/oud-al-haramain</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/brand/arees-luxury</loc>')
     expect((xml.match(/<lastmod>2026-08-02<\/lastmod>/g) || []).length).toBe(2)
+  })
+
+  it('lists only categories and brands that have at least one live product', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://www.areesperfumes.in',
+      pages: [],
+      categories: [
+        { id: 'c-1', slug: 'roll-on-attars' },
+        { id: 'c-2', slug: 'empty-category' },
+      ],
+      brands: [
+        { id: 'b-1', slug: 'arees' },
+        { id: 'b-2', slug: 'empty-brand' },
+      ],
+      products: [
+        { id: 'p-1', category_id: 'c-1', category_slug: 'roll-on-attars', brand_id: 'b-1', brand_slug: 'arees' },
+      ],
+    })
+    expect(xml).toContain('/categories/roll-on-attars')
+    expect(xml).toContain('/brand/arees')
+    expect(xml).not.toContain('/categories/empty-category')
+    expect(xml).not.toContain('/brand/empty-brand')
   })
 })
 
 describe('buildRobotsTxt', () => {
   it('allows public crawling and disallows utility/private paths', () => {
-    const robots = buildRobotsTxt('https://areesperfumes.in')
+    const robots = buildRobotsTxt('https://www.areesperfumes.in')
     expect(robots).toContain('User-agent: *')
     expect(robots).toContain('Allow: /')
     expect(robots).toContain('Disallow: /api/')
@@ -170,7 +194,7 @@ describe('buildRobotsTxt', () => {
     expect(robots).toContain('Disallow: /track-order')
     expect(robots).toContain('Disallow: /view-order')
     expect(robots).toContain('Disallow: /account')
-    expect(robots).toContain('Sitemap: https://areesperfumes.in/sitemap.xml')
+    expect(robots).toContain('Sitemap: https://www.areesperfumes.in/sitemap.xml')
   })
 
   it('does NOT block public product, category, shop, or brand paths', () => {
@@ -193,7 +217,7 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.parentOrganization.name).toBe('Hikma Exports')
       expect(schema.description).toContain('parent company of Arees & Dahab')
       expect(schema.address.addressLocality).toBe('Chennai')
-      expect(schema.url).toBe('https://areesperfumes.in')
+      expect(schema.url).toBe('https://www.areesperfumes.in')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.email).toBe('hikmaexports@gmail.com')
     })
@@ -205,7 +229,7 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@type']).toBe('WebSite')
       expect(schema.name).toBe('Arees Perfumes')
       expect(schema.alternateName).toBe('Hikma Perfumes')
-      expect(schema.url).toBe('https://areesperfumes.in')
+      expect(schema.url).toBe('https://www.areesperfumes.in')
     })
   })
 
@@ -264,7 +288,7 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.offers.price).toBe(450)
       expect(schema.offers.priceCurrency).toBe('INR')
       expect(schema.offers.availability).toBe('https://schema.org/InStock')
-      expect(schema.offers.url).toBe('https://areesperfumes.in/product/p-101')
+      expect(schema.offers.url).toBe('https://www.areesperfumes.in/product/p-101')
     })
 
     it('generates Product schema with OutOfStock availability when is_in_stock is false', () => {
@@ -303,7 +327,7 @@ describe('Schema.org JSON-LD Builders', () => {
           { id: 'v-50ml', is_default: false, price: 155.52, total_price: 7776, display_label: '50 ml' },
         ],
       }
-      const schema = buildProductSchema(product, 'https://areesperfumes.in', product.variants[1])
+      const schema = buildProductSchema(product, 'https://www.areesperfumes.in', product.variants[1])
       expect(schema.offers.price).toBe(7776)
       expect(schema.offers.sku).toBe('v-50ml')
       expect(schema.offers.seller.name).toBe('Arees Perfumes')
@@ -323,6 +347,27 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildProductSchema(product)
       expect(schema.offers.price).toBe(450)
       expect(schema.offers.sku).toBe('v-active')
+    })
+
+    it('uses an AggregateOffer and hasVariant entries for multi-variant products', () => {
+      const product = {
+        id: 'p-107',
+        name: 'Arees Oud',
+        price: 240,
+        is_in_stock: true,
+        variants: [
+          { id: 'v-6', is_default: true, quantity_value: 6, quantity_unit: 'Pieces', total_price: 240 },
+          { id: 'v-216', is_default: false, quantity_value: 216, quantity_unit: 'Pieces', total_price: 7776 },
+        ],
+      }
+      const schema = buildProductSchema(product)
+      expect(schema.offers['@type']).toBe('AggregateOffer')
+      expect(schema.offers.lowPrice).toBe(240)
+      expect(schema.offers.highPrice).toBe(7776)
+      expect(schema.offers.offerCount).toBe(2)
+      expect(schema.offers.price).toBeUndefined()
+      expect(schema.hasVariant).toHaveLength(2)
+      expect(schema.hasVariant[1].offers.price).toBe(7776)
     })
 
     it('does not emit unverified aggregateRating markup', () => {
@@ -381,6 +426,24 @@ describe('Schema.org JSON-LD Builders', () => {
     })
   })
 
+  describe('Wholesale landing page SEO', () => {
+    it('builds wholesale Service, FAQ, and breadcrumb schema', () => {
+      const seo = buildWholesaleSeo()
+      expect(seo.title).toContain('Wholesale Attars')
+      expect(seo.canonical).toBe('/wholesale')
+      expect(seo.schema.map((item) => item['@type'])).toEqual(
+        expect.arrayContaining(['Service', 'FAQPage', 'BreadcrumbList'])
+      )
+    })
+
+    it('builds a Service schema with the Hikma Exports provider', () => {
+      const schema = buildWholesaleServiceSchema()
+      expect(schema['@type']).toBe('Service')
+      expect(schema.provider.name).toBe('Hikma Exports')
+      expect(schema.areaServed).toEqual(expect.arrayContaining(['India', 'Worldwide']))
+    })
+  })
+
   describe('Hikma Exports entity SEO', () => {
     it('builds an Organization schema for Hikma Exports', () => {
       const schema = buildHikmaExportsSchema()
@@ -433,13 +496,13 @@ describe('Schema.org JSON-LD Builders', () => {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://areesperfumes.in/',
+        item: 'https://www.areesperfumes.in/',
       })
       expect(schema.itemListElement[2]).toEqual({
         '@type': 'ListItem',
         position: 3,
         name: 'Attars',
-        item: 'https://areesperfumes.in/categories/attars',
+        item: 'https://www.areesperfumes.in/categories/attars',
       })
     })
   })

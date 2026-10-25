@@ -91,7 +91,7 @@ export default function CategoryProducts() {
         title={seoTitle}
         description={seoDesc}
         canonical={`/categories/${slug}`}
-        robots={error ? 'noindex,follow' : 'index,follow'}
+        robots={error || (!loading && products.length === 0) ? 'noindex,follow' : 'index,follow'}
         schema={schema}
       />
       {/* Premium category header — back link + large serif title */}
@@ -101,6 +101,12 @@ export default function CategoryProducts() {
         </Link>
         <h1>{category ? category.name : 'Category'}</h1>
         {introDesc && <p className="category-hero-desc">{introDesc}</p>}
+        {(slug === '1' || slug === '10') && (
+          <p className="category-wholesale-link">
+            Buying in bulk? <Link to="/wholesale">Request wholesale pricing</Link> or{' '}
+            <Link to="/hikma-exports">learn about Hikma Exports</Link>.
+          </p>
+        )}
         <span className="category-hero-rule" aria-hidden="true" />
       </header>
 

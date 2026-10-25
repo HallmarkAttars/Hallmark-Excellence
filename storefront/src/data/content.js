@@ -263,6 +263,20 @@ export const HIKMA_EXPORTS = {
       ],
     },
     {
+      heading: 'What Export Buyers Should Share',
+      paragraphs: [
+        'Send your destination country, product list, required pack sizes, quantities, labelling requirements and preferred shipping terms. The Chennai team will confirm availability, pricing, documentation and dispatch options for your order.',
+        'For buyers planning a private label or custom packaging range, share your artwork, bottle and cap preferences, and target order volume so the team can assess the right components.',
+      ],
+    },
+    {
+      heading: 'What an Export Quotation Confirms',
+      paragraphs: [
+        'Each export quotation confirms the minimum order quantity, unit price, lead time, packing and labelling details, shipping terms, payment terms and documentation required for the destination.',
+        'Because these terms depend on the product mix, quantities and destination, they are confirmed in writing for each enquiry rather than presented as a single published rate.',
+      ],
+    },
+    {
       heading: 'Arees Perfumes, Dahab & the Hikma Exports Group',
       paragraphs: [
         'Hikma Exports is the parent company of Arees & Dahab. Arees Perfumes and Dahab are the group\'s retail fragrance brands, while Hikma Perfumes supports wholesale and trade supply.',
@@ -333,8 +347,109 @@ export const HIKMA_EXPORTS = {
       answer:
         'Use the wholesale enquiry form, call +91 98407 50467, email hikmaexports@gmail.com, or visit the Moore Street office in Mannadi, Chennai.',
     },
+    {
+      question: 'What information should export buyers send?',
+      answer:
+        'Include your destination country, product list, quantities, required pack sizes, labelling requirements and preferred shipping terms so the team can confirm availability, pricing and dispatch options.',
+    },
+    {
+      question: 'What are the MOQ, lead time, shipping and payment terms?',
+      answer:
+        'These depend on the products, quantities and destination. The team confirms MOQ, lead time, shipping terms, payment terms and documentation in the written quotation for your enquiry.',
+    },
+    {
+      question: 'Can Hikma Exports supply custom labels and packaging?',
+      answer:
+        'Share your label artwork, bottle, cap or pump requirements and target order volume. Custom labelling and packaging options are reviewed per order.',
+    },
   ],
   sameAs: [],
+}
+
+// --------------------------------------------------------------------------
+// WHOLESALE — B2B landing page copy and buyer FAQs
+// --------------------------------------------------------------------------
+export const WHOLESALE = {
+  eyebrow: 'B2B & Commercial Supply',
+  title: 'Wholesale Attars & Perfume Oils Supplier in Chennai',
+  intro:
+    'Hikma Exports supplies alcohol-free attars, concentrated fragrance oils, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers from Mannadi, George Town, Chennai.',
+  sections: [
+    {
+      heading: 'Wholesale Fragrance Supply for Trade Buyers',
+      paragraphs: [
+        'Our wholesale range covers ready-to-retail 6ml and 8ml roll-on attars, concentrated fragrance oils and attar bases, bakhoor, and glass packaging components. Retailers, perfume brands, gift shops and distributors can source multiple lines from one Chennai supplier.',
+        'The catalogue combines the Arees and Dahab collections with bulk fragrance oils for blending, decanting and finished perfume production. Share the scents, pack sizes and quantities you need so the team can confirm availability and wholesale pricing.',
+      ],
+    },
+    {
+      heading: 'How to Request Wholesale Pricing',
+      paragraphs: [
+        'Send your product list, required quantities, preferred pack sizes and delivery destination by phone, email or the wholesale enquiry form. If you are comparing several scents, include the product names or catalogue references so the quotation is accurate.',
+        'For export enquiries, include the destination country, labelling requirements and preferred shipping terms. The Chennai team will confirm the commercial details and dispatch options for your order.',
+      ],
+    },
+    {
+      heading: 'What Your Quotation Confirms',
+      paragraphs: [
+        'Every wholesale or export quotation confirms the minimum order quantity, unit price, lead time, packing and labelling details, shipping terms, payment terms and documentation for your destination.',
+        'These details depend on the products, quantities and destination, so they are confirmed in writing for your enquiry rather than published as a single rate. Share your requirement and the Chennai team will send the applicable terms.',
+      ],
+    },
+    {
+      heading: 'Packaging, Labelling and Order Support',
+      paragraphs: [
+        'Wholesale buyers can ask about roll-on bottles, spray bottles, caps, pumps and display bottles alongside fragrance oils and finished roll-ons. Custom labelling and packaging requirements are reviewed per order.',
+        'Orders are coordinated from the Moore Street office in Mannadi, with support for pack-size planning, invoice documentation and dispatch through Chennai courier and transport networks.',
+      ],
+    },
+  ],
+  buyerChecklist: [
+    'Product names or scent families you want to stock',
+    'Estimated quantities and preferred pack sizes',
+    'Retail, distribution or export destination',
+    'Destination city or port for export enquiries',
+    'Label, bottle, cap or pump requirements',
+    'Preferred delivery timeline and shipping terms',
+    'Preferred payment terms',
+  ],
+  faqs: [
+    {
+      question: 'What products can I buy wholesale from Hikma Exports?',
+      answer:
+        'Hikma Exports supplies alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps and pumps.',
+    },
+    {
+      question: 'Can I order both roll-on attars and fragrance oils in bulk?',
+      answer:
+        'Yes. The wholesale range includes ready-to-retail 6ml and 8ml roll-on attars as well as concentrated fragrance oils and attar bases for blending and decanting.',
+    },
+    {
+      question: 'How do I get a wholesale quotation?',
+      answer:
+        'Share your product list, quantities, pack sizes and delivery destination by phone, email or the wholesale enquiry form. The team will confirm availability and pricing.',
+    },
+    {
+      question: 'Do you handle export enquiries?',
+      answer:
+        'Yes. Hikma Exports handles international export enquiries. Include the destination country, product list, quantities, labelling requirements and preferred shipping terms in your enquiry.',
+    },
+    {
+      question: 'What are your MOQ, lead time and payment terms?',
+      answer:
+        'MOQ, lead time, shipping terms and payment terms depend on the products, quantities and destination. Share your requirement and the team will confirm the applicable terms in your written quotation.',
+    },
+    {
+      question: 'Can I request custom labelling or packaging?',
+      answer:
+        'Share your label, bottle, cap or pump requirements with the team. Custom labelling and packaging options are reviewed against your order quantity and destination.',
+    },
+    {
+      question: 'Where is the wholesale office?',
+      answer:
+        'The wholesale desk operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001.',
+    },
+  ],
 }
 
 // --------------------------------------------------------------------------

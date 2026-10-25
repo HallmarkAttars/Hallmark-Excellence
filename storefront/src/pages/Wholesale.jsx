@@ -1,28 +1,25 @@
 import { Link } from 'react-router-dom'
 import SEO from '../components/seo/SEO'
-import { buildBreadcrumbsSchema } from '../utils/seo'
-import { BUSINESS } from '../data/content'
+import { buildWholesaleSeo } from '../utils/seo'
+import { BUSINESS, WHOLESALE } from '../data/content'
 import './Wholesale.css'
 
 export default function Wholesale() {
-  const breadcrumbs = [
-    { name: 'Home', path: '/' },
-    { name: 'Wholesale Attars', path: '/wholesale' },
-  ]
+  const seo = buildWholesaleSeo()
 
   return (
     <div className="wholesale-page">
       <SEO
-        title="Wholesale Attars in Chennai | Arees Perfumes & Hikma Exports"
-        description="Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes and Hikma Exports supply retailers with roll-ons, fragrance oils, and packaging across India."
-        canonical="/wholesale"
-        schema={buildBreadcrumbsSchema(breadcrumbs)}
+        title={seo.title}
+        description={seo.description}
+        canonical={seo.canonical}
+        schema={seo.schema}
       />
 
       <header className="page-heading">
-        <p className="eyebrow">B2B & Commercial Supply</p>
-        <h1>Wholesale Attars & Bulk Attar Supplier in Chennai</h1>
-        <p>Premium alcohol-free perfume oils, glass packaging, and bulk fragrance supply across South India and pan-India.</p>
+        <p className="eyebrow">{WHOLESALE.eyebrow}</p>
+        <h1>{WHOLESALE.title}</h1>
+        <p>{WHOLESALE.intro}</p>
       </header>
 
       <div className="container wholesale-container">
@@ -53,7 +50,10 @@ export default function Wholesale() {
                 Ready-to-retail 6ml and 8ml roll-on attar bottles under the acclaimed <strong>Arees</strong> and <strong>Dahab</strong> collections.
                 Formulated alcohol-free with long-lasting scent projection.
               </p>
-              <Link to="/brand/arees" className="wholesale-link">Explore Arees Wholesale →</Link>
+              <div className="wholesale-card-links">
+                <Link to="/categories/1" className="wholesale-link">View Roll-On Attars →</Link>
+                <Link to="/brand/arees" className="wholesale-link">Explore Arees Wholesale →</Link>
+              </div>
             </div>
 
             <div className="wholesale-card">
@@ -71,7 +71,7 @@ export default function Wholesale() {
                 Complete packaging hardware including 3ml, 6ml, 8ml, and 12ml glass roll-on bottles, spray bottles,
                 aluminum and gold caps, spray pumps, and display bottles.
               </p>
-              <Link to="/categories" className="wholesale-link">View Packaging Range →</Link>
+              <Link to="/contact" className="wholesale-link">Request Packaging Details →</Link>
             </div>
 
             <div className="wholesale-card">
@@ -80,7 +80,7 @@ export default function Wholesale() {
                 Premium Arabian bakhoor chips and aromatic resins curated for specialty stores, religious occasions,
                 and luxury gift packaging.
               </p>
-              <Link to="/categories/Bakhoor%20" className="wholesale-link">Explore Bakhoor →</Link>
+              <Link to="/hikma-exports" className="wholesale-link">Explore Hikma Exports →</Link>
             </div>
           </div>
         </section>
@@ -134,6 +134,43 @@ export default function Wholesale() {
               <h4>Secure Dispatch</h4>
               <p>Orders are carefully packed and dispatched through reliable courier and transport networks from Chennai.</p>
             </div>
+          </div>
+        </section>
+
+        {/* Buyer guidance */}
+        <section className="wholesale-overview">
+          <div className="wholesale-intro-card">
+            {WHOLESALE.sections.map((section) => (
+              <div key={section.heading} className="wholesale-copy-block">
+                <h2>{section.heading}</h2>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="wholesale-overview">
+          <div className="wholesale-intro-card">
+            <h2>What to Include in Your Wholesale Enquiry</h2>
+            <ul className="wholesale-checklist">
+              {WHOLESALE.buyerChecklist.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="wholesale-categories" aria-labelledby="wholesale-faq-heading">
+          <h2 id="wholesale-faq-heading">Wholesale & Export FAQs</h2>
+          <div className="wholesale-grid">
+            {WHOLESALE.faqs.map((faq) => (
+              <div key={faq.question} className="wholesale-card">
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </div>
+            ))}
           </div>
         </section>
 

@@ -126,7 +126,7 @@ export default function BrandProducts() {
         title={seoTitle}
         description={seoDesc}
         canonical={`/brand/${slug}`}
-        robots={error ? 'noindex,follow' : 'index,follow'}
+        robots={error || (!loading && products.length === 0) ? 'noindex,follow' : 'index,follow'}
         schema={brandSchema}
       />
       {/* Compact premium collection header — the brand's hero image fills the

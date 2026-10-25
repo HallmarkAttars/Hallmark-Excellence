@@ -12,7 +12,7 @@ describe('SEO component', () => {
     document.head.querySelectorAll('[data-seo="true"]').forEach((el) => el.remove())
   })
 
-  it('sets default title, description and apex canonical when no props provided', () => {
+  it('sets default title, description and live www canonical when no props provided', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <SEO />

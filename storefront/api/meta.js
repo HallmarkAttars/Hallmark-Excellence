@@ -16,6 +16,7 @@ import {
   buildBrandSeo,
   buildStaticPageSeo,
 } from '../src/utils/seo.js'
+import { BUSINESS, HIKMA_EXPORTS, WHOLESALE } from '../src/data/content.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 const FETCH_TIMEOUT_MS = 8000
@@ -79,6 +80,59 @@ export function buildNotFoundSeo(path = '/') {
   }
 }
 
+function renderParagraphs(paragraphs = []) {
+  return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')
+}
+
+function renderSections(sections = []) {
+  return sections
+    .map(
+      (section) =>
+        `<section><h2>${escapeHtml(section.heading)}</h2>${renderParagraphs(section.paragraphs)}</section>`
+    )
+    .join('')
+}
+
+function renderFaqs(faqs = []) {
+  return faqs
+    .map(
+      (faq) =>
+        `<article><h3>${escapeHtml(faq.question)}</h3><p>${escapeHtml(faq.answer)}</p></article>`
+    )
+    .join('')
+}
+
+// Raw, crawlable fallback for the two B2B landing pages. The React app
+// replaces this markup when it mounts; the no-JS/crawler path keeps the
+// page's primary copy, FAQs and contact details in the initial HTML.
+export function buildB2bBodyHtml(slug) {
+  const contactHeading = slug === 'hikma-exports' ? 'Contact Hikma Exports' : 'Contact the Wholesale Desk'
+  const contact = `<section><h2>${contactHeading}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p></section>`
+
+  if (slug === 'wholesale') {
+    return `<main data-prerender="true">
+<header><p>${escapeHtml(WHOLESALE.eyebrow)}</p><h1>${escapeHtml(WHOLESALE.title)}</h1><p>${escapeHtml(WHOLESALE.intro)}</p></header>
+${renderSections(WHOLESALE.sections)}
+<section><h2>What to Include in Your Wholesale Enquiry</h2><ul>${WHOLESALE.buyerChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>
+<section><h2>Wholesale &amp; Export FAQs</h2>${renderFaqs(WHOLESALE.faqs)}</section>
+${contact}
+</main>`
+  }
+
+  if (slug === 'hikma-exports') {
+    return `<main data-prerender="true">
+<header><p>${escapeHtml(HIKMA_EXPORTS.eyebrow)}</p><h1>${escapeHtml(HIKMA_EXPORTS.title)}</h1><p>${escapeHtml(HIKMA_EXPORTS.intro)}</p></header>
+<section>${renderParagraphs(HIKMA_EXPORTS.introParagraphs)}</section>
+${renderSections(HIKMA_EXPORTS.sections)}
+<section><h2>What Hikma Exports Supplies</h2>${HIKMA_EXPORTS.offerings.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p></article>`).join('')}</section>
+<section><h2>Hikma Exports FAQs</h2>${renderFaqs(HIKMA_EXPORTS.faqs)}</section>
+${contact}
+</main>`
+  }
+
+  return ''
+}
+
 export async function buildSeoForRoute({ type, id, slug } = {}) {
   if (type === 'product') {
     if (!id || !UUID_RE.test(id)) throw httpError(404, 'Invalid product id')
@@ -90,19 +144,41 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
 
   if (type === 'category') {
     if (!slug) throw httpError(404, 'Missing category slug')
-    const data = await fetchJson('/categories')
-    const category = (data?.categories || []).find((item) => String(item.slug) === String(slug))
+    const [data, productsResult] = await Promise.allSettled([
+      fetchJson('/categories'),
+      fetchJson(`/categories/${encodeURIComponent(slug)}/products`),
+    ])
+    if (data.status === 'rejected') throw data.reason
+    const category = (data.value?.categories || []).find((item) => String(item.slug) === String(slug))
     if (!category) throw httpError(404, 'Category not found')
-    return { status: 200, seo: buildCategorySeo(category, slug) }
+    const seo = buildCategorySeo(category, slug)
+    if (productsResult.status === 'fulfilled') {
+      const productCount = Array.isArray(productsResult.value?.products)
+        ? productsResult.value.products.length
+        : 0
+      if (productCount === 0) seo.robots = 'noindex,follow'
+    }
+    return { status: 200, seo }
   }
 
   if (type === 'brand') {
     if (!slug) throw httpError(404, 'Missing brand slug')
     const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
-    const data = await fetchJson('/brands')
-    const brand = (data?.brands || []).find((item) => String(item.slug) === String(resolvedSlug))
+    const [data, productsResult] = await Promise.allSettled([
+      fetchJson('/brands'),
+      fetchJson(`/brands/${encodeURIComponent(resolvedSlug)}/products`),
+    ])
+    if (data.status === 'rejected') throw data.reason
+    const brand = (data.value?.brands || []).find((item) => String(item.slug) === String(resolvedSlug))
     if (!brand) throw httpError(404, 'Brand not found')
-    return { status: 200, seo: buildBrandSeo(brand, slug) }
+    const seo = buildBrandSeo(brand, slug)
+    if (productsResult.status === 'fulfilled') {
+      const productCount = Array.isArray(productsResult.value?.products)
+        ? productsResult.value.products.length
+        : 0
+      if (productCount === 0) seo.robots = 'noindex,follow'
+    }
+    return { status: 200, seo }
   }
 
   if (type === 'page') {
@@ -115,7 +191,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
   throw httpError(404, 'Unknown route')
 }
 
-export function injectSeoHtml(shellHtml, seo) {
+export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
   const canonicalUrl = absoluteUrl(seo?.canonical)
   const imageUrl = absoluteUrl(seo?.image)
   const title = escapeHtml(seo?.title || 'Arees Perfumes')
@@ -154,6 +230,13 @@ ${jsonLd}`
     .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '')
     .replace(/<link[^>]+href=["']\/Hero(?:-mobile)?\.webp["'][^>]*>/gi, '')
     .replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
+
+  if (bodyHtml) {
+    html = html.replace(
+      /<div id=["']root["'][^>]*>\s*<\/div>/i,
+      () => `<div id="root">${bodyHtml}</div>`
+    )
+  }
 
   if (/<\/head>/i.test(html)) {
     return html.replace(/<\/head>/i, `${head}\n</head>`)
@@ -244,7 +327,8 @@ export default async function handler(req, res) {
     return
   }
 
-  const html = injectSeoHtml(shell, seo)
+  const bodyHtml = status === 200 && type === 'page' ? buildB2bBodyHtml(slug) : ''
+  const html = injectSeoHtml(shell, seo, bodyHtml)
   res.statusCode = status
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader(

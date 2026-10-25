@@ -82,7 +82,7 @@ export default function SEO({
     // 3. Robots Directives
     setOrCreateMeta('name', 'robots', robots)
 
-    // 4. Canonical URL (always apex, strips query strings)
+    // 4. Canonical URL (always the live www host, strips query strings)
     const canonicalPath = canonical != null ? canonical : pathname
     let cleanCanonical = canonicalPath.startsWith('http')
       ? canonicalPath.split('?')[0].split('#')[0]

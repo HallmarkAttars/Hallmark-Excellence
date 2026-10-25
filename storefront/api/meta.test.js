@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { buildSeoForRoute, injectSeoHtml } from './meta.js'
+import { buildB2bBodyHtml, buildSeoForRoute, injectSeoHtml } from './meta.js'
 import handler from './meta.js'
 
 const shell = `<!doctype html>
@@ -8,7 +8,7 @@ const shell = `<!doctype html>
     <title>Old Homepage Title</title>
     <meta name="description" content="Old description" />
     <meta name="robots" content="index,follow" />
-    <link rel="canonical" href="https://areesperfumes.in/" />
+    <link rel="canonical" href="https://www.areesperfumes.in/" />
     <meta property="og:title" content="Old OG title" />
     <meta name="twitter:title" content="Old Twitter title" />
   </head>
@@ -33,7 +33,7 @@ describe('injectSeoHtml', () => {
     expect(html).not.toContain('Old OG title')
     expect((html.match(/name="description"/g) || []).length).toBe(1)
     expect((html.match(/rel="canonical"/g) || []).length).toBe(1)
-    expect(html).toContain('href="https://areesperfumes.in/product/11111111-1111-4111-8111-111111111111"')
+    expect(html).toContain('href="https://www.areesperfumes.in/product/11111111-1111-4111-8111-111111111111"')
     expect(html).toContain('content="https://example.com/musk.jpg"')
     expect(html).toContain('application/ld+json')
     expect(html).toContain('data-seo="true"')
@@ -60,6 +60,35 @@ describe('injectSeoHtml', () => {
       robots: 'noindex,follow',
     })
     expect(html).toContain('<meta name="robots" content="noindex,follow" />')
+  })
+
+  it('injects the crawlable B2B fallback inside the app root', () => {
+    const html = injectSeoHtml(
+      shell,
+      { title: 'Wholesale', description: 'Wholesale.', canonical: '/wholesale' },
+      '<main data-prerender="true"><h1>Wholesale Attars</h1></main>'
+    )
+    expect(html).toContain('<div id="root"><main data-prerender="true"><h1>Wholesale Attars</h1></main></div>')
+  })
+})
+
+describe('buildB2bBodyHtml', () => {
+  it('renders the wholesale page copy, checklist and FAQs', () => {
+    const html = buildB2bBodyHtml('wholesale')
+    expect(html).toContain('<h1>Wholesale Attars &amp; Perfume Oils Supplier in Chennai</h1>')
+    expect(html).toContain('What to Include in Your Wholesale Enquiry')
+    expect(html).toContain('What are your MOQ, lead time and payment terms?')
+  })
+
+  it('renders the Hikma Exports entity copy and FAQs', () => {
+    const html = buildB2bBodyHtml('hikma-exports')
+    expect(html).toContain('<h1>Hikma Exports &amp; Hikma Perfumes: Wholesale Fragrance Supply in Chennai</h1>')
+    expect(html).toContain('What an Export Quotation Confirms')
+    expect(html).toContain('What are the MOQ, lead time, shipping and payment terms?')
+  })
+
+  it('returns nothing for non-B2B pages', () => {
+    expect(buildB2bBodyHtml('about')).toBe('')
   })
 })
 
@@ -132,6 +161,32 @@ describe('buildSeoForRoute', () => {
     expect(result.seo.canonical).toBe('/brand/arees-luxury')
   })
 
+  it('marks an empty category as noindex and a populated category as indexable', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({ categories: [{ id: 'c-1', name: 'Empty', slug: 'empty' }] })
+      }
+      if (value.endsWith('/categories/empty/products')) return jsonResponse({ products: [] })
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await buildSeoForRoute({ type: 'category', slug: 'empty' })
+    expect(result.seo.robots).toBe('noindex,follow')
+
+    fetchMock.mockImplementation(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({ categories: [{ id: 'c-1', name: 'Roll on Attars', slug: '1' }] })
+      }
+      if (value.endsWith('/categories/1/products')) return jsonResponse({ products: [{ id: 'p-1' }] })
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    const populated = await buildSeoForRoute({ type: 'category', slug: '1' })
+    expect(populated.seo.robots).toBeUndefined()
+  })
+
   it('throws a 404 for an unknown record', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ error: 'Not found' }, 404)))
     await expect(buildSeoForRoute({ type: 'product', id: '11111111-1111-4111-8111-111111111111' })).rejects.toMatchObject({ status: 404 })
@@ -179,7 +234,7 @@ describe('meta handler', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toContain('<title>Arees Black Musk')
-    expect(res.body).toContain('rel="canonical" href="https://areesperfumes.in/product/11111111-1111-4111-8111-111111111111"')
+    expect(res.body).toContain('rel="canonical" href="https://www.areesperfumes.in/product/11111111-1111-4111-8111-111111111111"')
     expect(res.body).toContain('application/ld+json')
   })
 
@@ -198,8 +253,10 @@ describe('meta handler', () => {
 
     expect(res.statusCode).toBe(200)
     expect(res.body).toContain('<title>Hikma Exports | Hikma Perfumes Wholesale &amp; Export | Chennai</title>')
-    expect(res.body).toContain('rel="canonical" href="https://areesperfumes.in/hikma-exports"')
+    expect(res.body).toContain('rel="canonical" href="https://www.areesperfumes.in/hikma-exports"')
     expect(res.body).toContain('application/ld+json')
+    expect(res.body).toContain('data-prerender="true"')
+    expect(res.body).toContain('<h1>Hikma Exports &amp; Hikma Perfumes: Wholesale Fragrance Supply in Chennai</h1>')
   })
 
   it('returns HTTP 404 and noindex for a missing product', async () => {

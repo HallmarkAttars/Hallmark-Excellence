@@ -313,6 +313,18 @@
 }
 .pd-desc-toggle:hover { color: var(--charcoal); }
 
+.pd-wholesale-link {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--charcoal-soft);
+}
+.pd-wholesale-link a {
+  color: var(--gold-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+.pd-wholesale-link a:hover { text-decoration: underline; }
+
 /* ---------- Shared section titles ("SELECT VARIANT" / "QUANTITY") ---------- */
 .pd-section-title {
   margin: 0 0 12px;

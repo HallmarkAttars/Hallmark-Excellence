@@ -29,6 +29,28 @@
   margin-bottom: 12px;
 }
 
+.wholesale-copy-block + .wholesale-copy-block {
+  margin-top: 28px;
+}
+
+.wholesale-checklist {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.wholesale-checklist li + li {
+  margin-top: 8px;
+}
+
+.wholesale-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .wholesale-categories h2,
 .wholesale-tiers-section h2,
 .wholesale-process h2,
