@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ABOUT } from '../data/content'
 import { IMAGES } from '../config/assets'
 import SEO from '../components/seo/SEO'
@@ -47,6 +48,9 @@ export default function About() {
           {ABOUT.hikma.paragraphs.map((p, i) => (
             <p key={i}>{p}</p>
           ))}
+          <p className="about-hikma-link">
+            <Link to="/hikma-exports">Learn more about Hikma Exports and Hikma Perfumes →</Link>
+          </p>
         </section>
 
         <section className="about-values">

@@ -18,6 +18,13 @@ export const BUSINESS = {
   phoneTel: '+919840750467', // digits only — used for tel: links
   email: 'hikmaexports@gmail.com',
   address: '83 & 84, Moore St, Mannadi, George Town, Chennai, Greater Chennai, Tamil Nadu 600001',
+  addressParts: {
+    streetAddress: '83 & 84, Moore St, Mannadi, George Town',
+    addressLocality: 'Chennai',
+    addressRegion: 'Tamil Nadu',
+    postalCode: '600001',
+    addressCountry: 'IN',
+  },
   mapEmbedUrl:
     'https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed',
   mapDirectionsUrl:
@@ -229,6 +236,108 @@ export const ABOUT = {
 }
 
 // --------------------------------------------------------------------------
+// HIKMA EXPORTS — parent company / wholesale and export entity page
+// --------------------------------------------------------------------------
+export const HIKMA_EXPORTS = {
+  eyebrow: 'Hikma Exports',
+  title: 'Hikma Exports & Hikma Perfumes: Wholesale Fragrance Supply in Chennai',
+  intro:
+    'Hikma Exports is the Chennai-based parent company of Arees & Dahab and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers.',
+  introParagraphs: [
+    'Hikma Exports operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai. The company combines three decades of perfumery experience with wholesale distribution and international export support.',
+    'Hikma Perfumes is the fragrance identity used by Hikma Exports. Arees Perfumes and Dahab are the group\'s retail brands, giving trade buyers and individual customers access to the same fragrance standards.',
+  ],
+  sections: [
+    {
+      heading: 'Hikma Perfumes: The Fragrance Identity of Hikma Exports',
+      paragraphs: [
+        'Hikma Perfumes is the name behind Hikma Exports\' wholesale fragrance supply. It covers traditional attars, concentrated oud and fragrance oils, ready-to-retail roll-ons, bakhoor and the packaging components needed to bring a fragrance line to market.',
+        'The identity connects our trade division with the Arees Perfumes and Dahab collections, so retail customers and wholesale buyers can source from a familiar Chennai fragrance house.',
+      ],
+    },
+    {
+      heading: 'Wholesale Supply & International Export from Chennai',
+      paragraphs: [
+        'Hikma Exports supplies retailers, perfumers, distributors, gift shops and fragrance brands across India. We also handle international export orders for buyers who need Chennai-made fragrance oils, attars and packaging.',
+        'Share your product list, quantities, preferred pack sizes, labelling requirements and destination. Our team will confirm availability, pricing and dispatch options from Mannadi.',
+      ],
+    },
+    {
+      heading: 'Arees Perfumes, Dahab & the Hikma Exports Group',
+      paragraphs: [
+        'Hikma Exports is the parent company of Arees & Dahab. Arees Perfumes and Dahab are the group\'s retail fragrance brands, while Hikma Perfumes supports wholesale and trade supply.',
+        'This structure keeps retail collections and bulk supply under one quality standard, with a single Chennai team handling fragrance development, packing and order coordination.',
+      ],
+    },
+  ],
+  offerings: [
+    {
+      title: 'Alcohol-Free Attars',
+      description:
+        'Traditional attars and concentrated perfume oils without alcohol, suited to retail shelves and private-label ranges.',
+    },
+    {
+      title: 'Oud & Fragrance Oils',
+      description:
+        'Oud oils, amber, musk, floral and oriental fragrance oils in bulk for blending, decanting and finished perfume production.',
+    },
+    {
+      title: 'Roll-On Perfumes',
+      description:
+        'Ready-to-retail 6ml and 8ml roll-on perfumes under the Arees and Dahab collections, with optional custom labelling.',
+    },
+    {
+      title: 'Bakhoor & Incense',
+      description:
+        'Arabian bakhoor chips, aromatic resins and traditional incense for specialty stores, gifting and export orders.',
+    },
+    {
+      title: 'Perfume Packaging',
+      description:
+        'Glass roll-on bottles, spray bottles, caps, pumps and display bottles for brands assembling their own fragrance lines.',
+    },
+    {
+      title: 'Wholesale & Export Support',
+      description:
+        'Bulk pricing, pack-size planning, order coordination and export order support for trade buyers.',
+    },
+  ],
+  faqs: [
+    {
+      question: 'What is Hikma Exports?',
+      answer:
+        'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of Arees & Dahab. It trades as Hikma Perfumes and supplies attars, oud oils, fragrance oils, bakhoor and packaging from Mannadi, George Town.',
+    },
+    {
+      question: 'Is Hikma Perfumes the same company as Hikma Exports?',
+      answer:
+        'Hikma Perfumes is the fragrance identity used by Hikma Exports. Arees Perfumes and Dahab are the group\'s retail brands, while Hikma Perfumes supports wholesale and trade supply.',
+    },
+    {
+      question: 'Where is Hikma Exports located?',
+      answer:
+        'Hikma Exports operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, the same location as Arees Perfumes and Dahab.',
+    },
+    {
+      question: 'Does Hikma Exports handle international export orders?',
+      answer:
+        'Yes. Hikma Exports handles international export orders as well as wholesale and trade supply across India. Share your destination, product list and quantities so the team can confirm pricing and logistics.',
+    },
+    {
+      question: 'What products can I buy wholesale from Hikma Exports?',
+      answer:
+        'Hikma Exports supplies alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps and pumps.',
+    },
+    {
+      question: 'How do I place a wholesale or export enquiry?',
+      answer:
+        'Use the wholesale enquiry form, call +91 98407 50467, email hikmaexports@gmail.com, or visit the Moore Street office in Mannadi, Chennai.',
+    },
+  ],
+  sameAs: [],
+}
+
+// --------------------------------------------------------------------------
 // CONTACT — Contact page / checkout page headings + side info block
 // --------------------------------------------------------------------------
 export const CONTACT = {
@@ -270,6 +379,7 @@ export const FOOTER = {
       heading: 'Wholesale & Stores',
       links: [
         { label: 'Wholesale Attars', to: '/wholesale' },
+        { label: 'Hikma Exports', to: '/hikma-exports' },
         { label: 'Attars South India', to: '/attar-perfume-shop-south-india' },
       ],
     },

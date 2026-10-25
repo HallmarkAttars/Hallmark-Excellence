@@ -196,6 +196,22 @@
   font-weight: 600;
 }
 
+.wholesale-hikma-link {
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.wholesale-hikma-link a {
+  color: var(--gold-deep);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wholesale-hikma-link a:hover {
+  text-decoration: underline;
+}
+
 .wholesale-buttons {
   display: flex;
   gap: 16px;

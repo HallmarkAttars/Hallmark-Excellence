@@ -26,6 +26,7 @@ const Cart = lazy(() => import('./pages/Cart'))
 const TrackOrder = lazy(() => import('./pages/TrackOrder'))
 const ViewOrder = lazy(() => import('./pages/ViewOrder'))
 const Wholesale = lazy(() => import('./pages/Wholesale'))
+const HikmaExports = lazy(() => import('./pages/HikmaExports'))
 const Retail = lazy(() => import('./pages/Retail'))
 const SouthIndia = lazy(() => import('./pages/SouthIndia'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -84,6 +85,7 @@ function PageContent() {
             <Route path="/checkout" element={<Contact />} />
             <Route path="/wholesale" element={<Wholesale />} />
             <Route path="/wholesale-attars" element={<Wholesale />} />
+            <Route path="/hikma-exports" element={<HikmaExports />} />
             <Route path="/retail" element={<Retail />} />
             <Route path="/retail-attars" element={<Retail />} />
             <Route path="/attar-perfume-shop-south-india" element={<SouthIndia />} />

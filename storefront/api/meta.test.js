@@ -137,6 +137,23 @@ describe('buildSeoForRoute', () => {
     await expect(buildSeoForRoute({ type: 'product', id: '11111111-1111-4111-8111-111111111111' })).rejects.toMatchObject({ status: 404 })
   })
 
+  it('builds static page SEO without calling the API', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await buildSeoForRoute({ type: 'page', slug: 'hikma-exports' })
+    expect(result.status).toBe(200)
+    expect(result.seo.canonical).toBe('/hikma-exports')
+    expect(result.seo.schema.map((item) => item['@type'])).toEqual(
+      expect.arrayContaining(['Organization', 'FAQPage', 'BreadcrumbList'])
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('throws a 404 for an unknown static page', async () => {
+    await expect(buildSeoForRoute({ type: 'page', slug: 'not-a-page' })).rejects.toMatchObject({ status: 404 })
+  })
+
   it('rejects non-UUID product ids without calling the API', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
@@ -163,6 +180,25 @@ describe('meta handler', () => {
     expect(res.statusCode).toBe(200)
     expect(res.body).toContain('<title>Arees Black Musk')
     expect(res.body).toContain('rel="canonical" href="https://areesperfumes.in/product/11111111-1111-4111-8111-111111111111"')
+    expect(res.body).toContain('application/ld+json')
+  })
+
+  it('returns server-rendered Hikma Exports head with HTTP 200', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      { query: { type: 'page', slug: 'hikma-exports' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toContain('<title>Hikma Exports | Hikma Perfumes Wholesale &amp; Export | Chennai</title>')
+    expect(res.body).toContain('rel="canonical" href="https://areesperfumes.in/hikma-exports"')
     expect(res.body).toContain('application/ld+json')
   })
 

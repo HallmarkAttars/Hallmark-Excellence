@@ -1,0 +1,201 @@
+.hikma-page {
+  padding-bottom: 80px;
+}
+
+.hikma-container {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.hikma-intro-card {
+  display: grid;
+  gap: 32px;
+  padding: 36px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.hikma-intro-copy p {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.hikma-intro-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.hikma-intro-image {
+  min-height: 280px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-position: center;
+  background-size: cover;
+}
+
+.hikma-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.hikma-actions--center {
+  justify-content: center;
+}
+
+.hikma-section {
+  max-width: 920px;
+}
+
+.hikma-section h2,
+.hikma-offerings h2,
+.hikma-related h2,
+.hikma-contact h2,
+.hikma-faq h2 {
+  margin: 0 0 18px;
+  color: var(--charcoal);
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 2.3vw, 1.9rem);
+  line-height: 1.25;
+}
+
+.hikma-section p {
+  margin: 0 0 14px;
+  color: var(--charcoal-soft);
+  line-height: 1.8;
+}
+
+.hikma-section p:last-child {
+  margin-bottom: 0;
+}
+
+.hikma-offerings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.hikma-offering-card {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.hikma-offering-card h3 {
+  margin: 0 0 10px;
+  color: var(--gold-deep);
+  font-size: 1.05rem;
+}
+
+.hikma-offering-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.hikma-related {
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+}
+
+.hikma-related-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.hikma-related-links a {
+  color: var(--gold-deep);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hikma-related-links a:hover {
+  text-decoration: underline;
+}
+
+.hikma-contact {
+  padding: 40px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+}
+
+.hikma-contact > p {
+  max-width: 680px;
+  margin: 0 auto 20px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.hikma-contact-details {
+  max-width: 640px;
+  margin: 0 auto 8px;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  background: var(--surface-subtle, rgba(0, 0, 0, 0.02));
+  text-align: left;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.hikma-contact-details p {
+  margin: 0 0 8px;
+}
+
+.hikma-contact-details p:last-child {
+  margin-bottom: 0;
+}
+
+.hikma-contact-details a {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.hikma-faq-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.hikma-faq-item {
+  padding: 24px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.hikma-faq-item h3 {
+  margin: 0 0 10px;
+  color: var(--gold-deep);
+  font-size: 1.05rem;
+}
+
+.hikma-faq-item p {
+  margin: 0;
+  color: var(--charcoal-soft);
+  line-height: 1.7;
+}
+
+@media (min-width: 800px) {
+  .hikma-intro-card {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+  }
+
+  .hikma-faq-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

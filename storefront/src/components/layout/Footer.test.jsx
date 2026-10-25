@@ -72,6 +72,7 @@ describe('Footer Component', () => {
       expect(screen.getByText('Categories')).toBeTruthy()
       expect(screen.getByText('Arees 8ml')).toBeTruthy()
       expect(screen.getByText('About Us')).toBeTruthy()
+      expect(screen.getByText('Hikma Exports')).toBeTruthy()
       expect(screen.getByText('hikmaexports@gmail.com')).toBeTruthy()
       expect(screen.getByText('Chat with us on WhatsApp')).toBeTruthy()
       expect(screen.getByText('© 2026 Hikma Exports (Arees & Dahab). All rights reserved.')).toBeTruthy()

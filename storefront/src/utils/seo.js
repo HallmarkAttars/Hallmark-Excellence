@@ -9,6 +9,7 @@
 // Kept free of any direct DOM manipulation so they are 100% unit-testable.
 // ============================================================================
 
+import { ABOUT, BUSINESS, HIKMA_EXPORTS } from '../data/content.js'
 import { isProductInStock } from './stock.js'
 import { cloudinarySrc } from './productImage.js'
 
@@ -76,6 +77,7 @@ export const STATIC_PAGES = [
   '/categories',
   '/brands',
   '/wholesale',
+  '/hikma-exports',
   '/retail',
   '/attar-perfume-shop-south-india',
   '/about',
@@ -254,6 +256,53 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
         opens: '10:00',
         closes: '21:00',
       },
+    ],
+  }
+}
+
+// 3a. Hikma Exports Organization Schema
+export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = [] } = {}) {
+  const links = (Array.isArray(sameAs) ? sameAs : [sameAs]).filter(Boolean)
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${origin}/hikma-exports#organization`,
+    name: 'Hikma Exports',
+    alternateName: ['Hikma Perfumes'],
+    description:
+      'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of Arees & Dahab. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
+    url: `${origin}/hikma-exports`,
+    logo: `${origin}/HE%20color%20Logo.png`,
+    email: BUSINESS.email,
+    telephone: BUSINESS.phoneTel,
+    address: {
+      '@type': 'PostalAddress',
+      ...BUSINESS.addressParts,
+    },
+    hasMap: BUSINESS.mapDirectionsUrl,
+    ...(links.length ? { sameAs: links } : {}),
+    subOrganization: [
+      {
+        '@type': 'Organization',
+        name: 'Arees Perfumes',
+        url: `${origin}/brand/arees`,
+      },
+      {
+        '@type': 'Organization',
+        name: 'Dahab',
+        url: `${origin}/brand/dahab`,
+      },
+    ],
+    areaServed: ['India', 'Worldwide'],
+    knowsAbout: [
+      'Attars',
+      'Oud oils',
+      'Fragrance oils',
+      'Bakhoor',
+      'Perfume packaging',
+      'Wholesale perfume supply',
+      'Perfume export',
     ],
   }
 }
@@ -473,6 +522,138 @@ export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
     canonical: `/brand/${slug}`,
     type: 'website',
     schema: buildBreadcrumbsSchema(breadcrumbs, origin),
+  }
+}
+
+// 4d. Hikma Exports entity page SEO descriptor.
+export function buildHikmaExportsSeo({ origin = CANONICAL_ORIGIN, sameAs = HIKMA_EXPORTS.sameAs } = {}) {
+  return {
+    title: 'Hikma Exports | Hikma Perfumes Wholesale & Export | Chennai',
+    description:
+      'Hikma Exports, trading as Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export from Chennai.',
+    canonical: '/hikma-exports',
+    image: DEFAULT_OG_IMAGE,
+    type: 'website',
+    schema: [
+      buildHikmaExportsSchema({ origin, sameAs }),
+      buildFAQSchema(HIKMA_EXPORTS.faqs),
+      buildBreadcrumbsSchema(
+        [
+          { name: 'Home', path: '/' },
+          { name: 'Hikma Exports', path: '/hikma-exports' },
+        ],
+        origin
+      ),
+    ].filter(Boolean),
+  }
+}
+
+const STATIC_PAGE_SEO = {
+  '/hikma-exports': buildHikmaExportsSeo(),
+  '/about': {
+    title: 'About Arees Perfumes & Hikma Perfumes | Chennai',
+    description:
+      'Learn about Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, operating under Hallmark of Excellence in Chennai.',
+    canonical: '/about',
+    type: 'website',
+    schema: [
+      buildBreadcrumbsSchema([
+        { name: 'Home', path: '/' },
+        { name: 'About Us', path: '/about' },
+      ]),
+      buildFAQSchema(ABOUT.faqs),
+    ].filter(Boolean),
+  },
+  '/wholesale': {
+    title: 'Wholesale Attars in Chennai | Arees Perfumes & Hikma Exports',
+    description:
+      'Wholesale attars and bulk perfume oils from Mannadi, Chennai. Arees Perfumes and Hikma Exports supply retailers with roll-ons, fragrance oils, and packaging across India.',
+    canonical: '/wholesale',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Wholesale Attars', path: '/wholesale' },
+    ]),
+  },
+  '/contact': {
+    title: 'Contact Arees Perfumes & Hikma Perfumes | Chennai',
+    description:
+      'Contact Arees Perfumes, part of Hikma Exports (Hikma Perfumes), in Mannadi, George Town, Chennai for retail orders, wholesale enquiries, and fragrance consultations.',
+    canonical: '/contact',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Contact Us', path: '/contact' },
+    ]),
+  },
+  '/shop': {
+    title: 'Shop Premium Attars, Oud & Perfumes | Arees Perfumes',
+    description:
+      'Shop premium attars, oud, perfumes and traditional fragrance oils from Arees Perfumes. Discover long-lasting, alcohol-free scents crafted in Chennai.',
+    canonical: '/shop',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: '/shop' },
+    ]),
+  },
+  '/categories': {
+    title: 'All Fragrance Categories | Arees Perfumes',
+    description:
+      'Explore all fragrance categories at Arees Perfumes. Discover pure attars, oud oils, musk, and traditional perfumes crafted with excellence in Chennai.',
+    canonical: '/categories',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Categories', path: '/categories' },
+    ]),
+  },
+  '/brands': {
+    title: 'Our Fragrance Brands | Arees Perfumes',
+    description:
+      'Discover our exclusive collections of authentic luxury attars, perfumes, and oud oils crafted with heritage and excellence.',
+    canonical: '/brands',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Brands', path: '/brands' },
+    ]),
+  },
+  '/retail': {
+    title: 'Retail Attars & Pure Perfume Oils | Buy Online | Arees Perfumes',
+    description:
+      'Discover pure retail attars and alcohol-free perfume oils from Arees Perfumes. Handcrafted roll-on attars, artisanal oud, musk, and floral blends delivered across India.',
+    canonical: '/retail',
+    type: 'website',
+    schema: buildBreadcrumbsSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Retail Attars', path: '/retail' },
+    ]),
+  },
+  '/attar-perfume-shop-south-india': {
+    title: 'Attar & Perfume Shop in South India | Chennai Boutique | Arees Perfumes',
+    description:
+      'Visit Arees Perfumes in Mannadi, Chennai — a trusted attar and perfume destination in South India. Discover authentic alcohol-free attars, oud, and perfumes with fast delivery across South India.',
+    canonical: '/attar-perfume-shop-south-india',
+    type: 'website',
+    schema: [
+      buildBreadcrumbsSchema([
+        { name: 'Home', path: '/' },
+        { name: 'South India Store', path: '/attar-perfume-shop-south-india' },
+      ]),
+      buildLocalBusinessSchema(),
+    ].filter(Boolean),
+  },
+}
+
+export function buildStaticPageSeo(slug) {
+  const key = String(slug || '').replace(/^\/+|\/+$/g, '')
+  const path = key ? `/${key}` : '/'
+  const descriptor = STATIC_PAGE_SEO[path]
+  if (!descriptor) return null
+  return {
+    image: DEFAULT_OG_IMAGE,
+    ...descriptor,
   }
 }
 

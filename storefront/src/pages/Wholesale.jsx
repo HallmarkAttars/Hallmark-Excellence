@@ -146,6 +146,9 @@ export default function Wholesale() {
             <p><strong>Direct Helpline / WhatsApp:</strong> <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a></p>
             <p><strong>Wholesale Email:</strong> <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
           </div>
+          <p className="wholesale-hikma-link">
+            <Link to="/hikma-exports">Learn about Hikma Exports and Hikma Perfumes →</Link>
+          </p>
           <div className="wholesale-buttons">
             <Link to="/contact" className="btn btn-primary">Submit Wholesale Enquiry</Link>
             <Link to="/shop" className="btn btn-secondary">Browse Complete Catalogue</Link>

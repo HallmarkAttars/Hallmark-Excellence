@@ -14,6 +14,7 @@ import {
   buildProductSeo,
   buildCategorySeo,
   buildBrandSeo,
+  buildStaticPageSeo,
 } from '../src/utils/seo.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
@@ -102,6 +103,13 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     const brand = (data?.brands || []).find((item) => String(item.slug) === String(resolvedSlug))
     if (!brand) throw httpError(404, 'Brand not found')
     return { status: 200, seo: buildBrandSeo(brand, slug) }
+  }
+
+  if (type === 'page') {
+    if (!slug) throw httpError(404, 'Missing page slug')
+    const seo = buildStaticPageSeo(slug)
+    if (!seo) throw httpError(404, 'Page not found')
+    return { status: 200, seo }
   }
 
   throw httpError(404, 'Unknown route')
@@ -197,7 +205,9 @@ export default async function handler(req, res) {
         ? `/categories/${slug}`
         : type === 'brand'
           ? `/brand/${slug}`
-          : '/'
+          : type === 'page'
+            ? `/${slug}`
+            : '/'
 
   let status = 200
   let seo

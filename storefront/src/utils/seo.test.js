@@ -24,12 +24,15 @@ import {
   buildOrganizationSchema,
   buildWebSiteSchema,
   buildLocalBusinessSchema,
+  buildHikmaExportsSchema,
   buildFAQSchema,
   buildProductSchema,
   buildBreadcrumbsSchema,
   buildProductSeo,
   buildCategorySeo,
   buildBrandSeo,
+  buildHikmaExportsSeo,
+  buildStaticPageSeo,
 } from './seo'
 
 describe('canonical domain & brand identity', () => {
@@ -93,6 +96,7 @@ describe('buildSitemapXml', () => {
     expect(xml).toContain('<loc>https://areesperfumes.in/categories</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/brands</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/wholesale</loc>')
+    expect(xml).toContain('<loc>https://areesperfumes.in/hikma-exports</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/retail</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/attar-perfume-shop-south-india</loc>')
     expect(xml).toContain('<loc>https://areesperfumes.in/about</loc>')
@@ -374,6 +378,44 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.brandName).toBe('Arees Luxury')
       expect(seo.title).toContain('Arees Luxury')
       expect(seo.canonical).toBe('/brand/arees-luxury')
+    })
+  })
+
+  describe('Hikma Exports entity SEO', () => {
+    it('builds an Organization schema for Hikma Exports', () => {
+      const schema = buildHikmaExportsSchema()
+      expect(schema['@type']).toBe('Organization')
+      expect(schema.name).toBe('Hikma Exports')
+      expect(schema.alternateName).toContain('Hikma Perfumes')
+      expect(schema.address.streetAddress).toContain('Moore St')
+      expect(schema.address.postalCode).toBe('600001')
+      expect(schema.subOrganization.map((item) => item.name)).toEqual(
+        expect.arrayContaining(['Arees Perfumes', 'Dahab'])
+      )
+      expect(schema.hasMap).toContain('google.com/maps')
+    })
+
+    it('accepts a Google Business Profile URL as sameAs', () => {
+      const schema = buildHikmaExportsSchema({
+        sameAs: ['https://www.google.com/maps/place/?q=place_id:test'],
+      })
+      expect(schema.sameAs).toEqual(['https://www.google.com/maps/place/?q=place_id:test'])
+    })
+
+    it('builds the page descriptor with Organization, FAQ, and breadcrumb schema', () => {
+      const seo = buildHikmaExportsSeo()
+      expect(seo.title).toContain('Hikma Exports')
+      expect(seo.title).toContain('Hikma Perfumes')
+      expect(seo.canonical).toBe('/hikma-exports')
+      expect(seo.schema.map((item) => item['@type'])).toEqual(
+        expect.arrayContaining(['Organization', 'FAQPage', 'BreadcrumbList'])
+      )
+    })
+
+    it('returns static descriptors for server-rendered routes', () => {
+      expect(buildStaticPageSeo('about').canonical).toBe('/about')
+      expect(buildStaticPageSeo('/hikma-exports').canonical).toBe('/hikma-exports')
+      expect(buildStaticPageSeo('missing-page')).toBeNull()
     })
   })
 
