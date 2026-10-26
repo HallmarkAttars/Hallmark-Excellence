@@ -4,9 +4,15 @@ require('dotenv').config()
 require('dotenv').config({ path: '.env.local', override: true })
 
 const app = require('./src/app')
+const { runAutoMigrations } = require('./src/utils/autoMigrations')
 
 const PORT = process.env.PORT || 5000
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`)
-})
+async function start() {
+  await runAutoMigrations()
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`)
+  })
+}
+
+start()
