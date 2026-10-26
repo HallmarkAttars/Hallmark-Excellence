@@ -63,6 +63,15 @@ describe('cartLineKey', () => {
   it('keys variant-less category lines by product id alone', () => {
     expect(cartLineKey({ product_id: 'cat', brand_id: null, quantity: 1 })).toBe('cat-')
   })
+
+  it('keys loose exact-piece lines by product id across price bands', () => {
+    expect(
+      cartLineKey({ product_id: 'loose', brand_id: null, variant_id: 'v60', pieces: 60 })
+    ).toBe('p-loose')
+    expect(
+      cartLineKey({ product_id: 'loose', brand_id: null, variant_id: 'v72', pieces: 75, sell_exact_pieces: true })
+    ).toBe('p-loose')
+  })
 })
 
 describe('mergeCartLines — brand lines', () => {
@@ -256,9 +265,103 @@ describe('isPieceAdjustableLine / adjustLinePieces (cart stepper)', () => {
     expect(adjustLinePieces(legacy, 1)).toMatchObject({ pieces: 61, quantity: 1 })
   })
 
+  it('is NOT adjustable when the admin disabled exact pieces (sealed roll)', () => {
+    const sealed = { product_id: 'p', brand_id: null, quantity: 2, quantity_unit: 'Pieces', sell_exact_pieces: false }
+    expect(isPieceAdjustableLine(sealed)).toBe(false)
+    expect(adjustLinePieces(sealed, 1)).toBeNull()
+  })
+
+  it('re-bands a loose piece line and stores the line total in unit_price', () => {
+    const variants = [
+      { id: 'v60', quantity_value: 60, quantity_unit: 'Pieces', total_price: 1800 },
+      { id: 'v72', quantity_value: 72, quantity_unit: 'Pieces', total_price: 2160 },
+      { id: 'v96', quantity_value: 96, quantity_unit: 'Pieces', total_price: 2880 },
+    ]
+    const line = {
+      product_id: 'loose',
+      brand_id: null,
+      quantity: 1,
+      pieces: 74,
+      totalPieces: 74,
+      quantity_unit: 'Pieces',
+      variant_id: 'v60',
+      variant_price_per_unit: 30,
+      unitPrice: 30,
+      unit_price: 2220,
+      selected_price: 2220,
+      variant_total_price: 2220,
+      min_quantity: 60,
+      variants,
+      sell_exact_pieces: true,
+    }
+
+    const next = adjustLinePieces(line, 1)
+    expect(next.pieces).toBe(75)
+    expect(next.variant_id).toBe('v72')
+    expect(next.unitPrice).toBe(30)
+    expect(next.unit_price).toBe(2250)
+    expect(next.totalPrice).toBe(2250)
+    expect(next.selected_price).toBe(2250)
+  })
+
   it('is defensive with degenerate input', () => {
     expect(isPieceAdjustableLine(null)).toBe(false)
     expect(adjustLinePieces(null, 1)).toBeNull()
+  })
+})
+
+describe('mergeCartLines — exact and Gram regressions', () => {
+  it('merges two exact piece lines at the band for the combined count', () => {
+    const variants = [
+      { id: 'v60', quantity_value: 60, quantity_unit: 'Pieces', total_price: 1800 },
+      { id: 'v72', quantity_value: 72, quantity_unit: 'Pieces', total_price: 2160 },
+      { id: 'v96', quantity_value: 96, quantity_unit: 'Pieces', total_price: 2880 },
+    ]
+    const exact = (pieces) => ({
+      product_id: 'loose',
+      brand_id: null,
+      quantity: 1,
+      pieces,
+      totalPieces: pieces,
+      quantity_unit: 'Pieces',
+      variant_id: 'v60',
+      unitPrice: 30,
+      unit_price: 1800,
+      selected_price: 1800,
+      variants,
+      sell_exact_pieces: true,
+    })
+
+    const merged = mergeCartLines([exact(60), exact(60)])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].pieces).toBe(120)
+    expect(merged[0].quantity).toBe(1)
+    expect(merged[0].variant_id).toBe('v96')
+    expect(merged[0].unit_price).toBe(3600)
+    expect(merged[0].totalPrice).toBe(3600)
+  })
+
+  it('merges Gram packs by pack quantity, not as extra grams', () => {
+    const gram = {
+      product_id: 'oud',
+      brand_id: null,
+      quantity: 1,
+      quantity_unit: 'Gram',
+      variant_id: 'g100',
+      variantPieces: 100,
+      totalPieces: 1,
+      unitPrice: 8.5,
+      unit_price: 850,
+      selected_price: 850,
+      variant_total_price: 850,
+      sell_exact_pieces: false,
+    }
+    const merged = mergeCartLines([gram, gram])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].quantity).toBe(2)
+    expect(merged[0].totalPieces).toBe(2)
+    expect(merged[0].unit_price).toBe(850)
+    expect(merged[0].totalPrice).toBe(1700)
   })
 })
 

@@ -18,6 +18,7 @@ const EMPTY = {
   category_id: '', brand_id: '',
   display_order: '',
   is_in_stock: true,
+  sell_exact_pieces: false,
 }
 
 // Formats the live compact summary for mobile collapsed headers:
@@ -270,6 +271,9 @@ export default function ProductForm() {
   // --- Variant state ------------------------------------------------------
   const [variants, setVariants] = useState([])
   const defaultVariantIndex = variants.findIndex((v) => v.is_default)
+  const hasPiecesVariant = variants.some(
+    (v) => normalizeUnit(v.quantity_unit) === 'Pieces'
+  )
   const [priceSyncedBrand, setPriceSyncedBrand] = useState(null)
 
   useEffect(() => {
@@ -294,6 +298,7 @@ export default function ProductForm() {
             is_in_stock: p.is_in_stock !== undefined && p.is_in_stock !== null
               ? Boolean(p.is_in_stock)
               : (p.stock != null ? Number(p.stock) > 0 : true),
+            sell_exact_pieces: p.sell_exact_pieces === true,
           })
           setExistingImages([p.image].filter(Boolean))
           setImagePreview(p.image || null)
@@ -600,6 +605,7 @@ export default function ProductForm() {
         is_in_stock: Boolean(form.is_in_stock),
         stock: form.is_in_stock ? 1 : 0,
         variants: variantsPayload,
+        sell_exact_pieces: hasPiecesVariant ? Boolean(form.sell_exact_pieces) : false,
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
 
@@ -788,6 +794,48 @@ export default function ProductForm() {
             )
           })}
         </div>
+
+        {hasPiecesVariant && (
+          <div className="quantity-mode-section">
+            <h3>Piece Quantity Mode</h3>
+            <p className="quantity-mode-intro">
+              Choose what the customer&apos;s + button does for Pieces variants.
+            </p>
+            <div className="quantity-mode-options">
+              <label className={`quantity-mode-option ${!form.sell_exact_pieces ? 'is-selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="sell_exact_pieces"
+                  value="pack"
+                  checked={!form.sell_exact_pieces}
+                  onChange={() => setForm((f) => ({ ...f, sell_exact_pieces: false }))}
+                  disabled={isSubmitting}
+                />
+                <span className="quantity-mode-copy">
+                  <strong>Multiply selected pack / roll</strong>
+                  <small>+ adds one pack: 60 → 120 → 180. Use for sealed rolls.</small>
+                </span>
+              </label>
+              <label className={`quantity-mode-option ${form.sell_exact_pieces ? 'is-selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="sell_exact_pieces"
+                  value="exact"
+                  checked={form.sell_exact_pieces}
+                  onChange={() => setForm((f) => ({ ...f, sell_exact_pieces: true }))}
+                  disabled={isSubmitting}
+                />
+                <span className="quantity-mode-copy">
+                  <strong>Add exact pieces (loose)</strong>
+                  <small>+ adds one piece: 60 → 61 → 75. Use for loose packet attar.</small>
+                </span>
+              </label>
+            </div>
+            <small className="field-example">
+              Gram / ML products always multiply packs and ignore this setting.
+            </small>
+          </div>
+        )}
 
         <div className="form-field">
           <label htmlFor="display_order">Display Position (optional)</label>

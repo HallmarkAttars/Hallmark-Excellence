@@ -588,5 +588,82 @@
   color: rgba(20, 17, 13, 0.6);
 }
 
+/* -------- Piece quantity mode -------- */
+.quantity-mode-section {
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(246, 241, 234, 0.5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.quantity-mode-section h3 {
+  margin: 0 0 6px 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+
+.quantity-mode-intro {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: rgba(20, 17, 13, 0.65);
+}
+
+.quantity-mode-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quantity-mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.quantity-mode-option:hover {
+  border-color: rgba(196, 151, 79, 0.6);
+}
+
+.quantity-mode-option.is-selected {
+  border-color: var(--gold, #c4974f);
+  background: rgba(196, 151, 79, 0.08);
+}
+
+.quantity-mode-option input {
+  margin-top: 2px;
+  accent-color: var(--gold, #c4974f);
+}
+
+.quantity-mode-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.quantity-mode-copy strong {
+  font-size: 0.88rem;
+  color: var(--charcoal);
+}
+
+.quantity-mode-copy small {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: rgba(20, 17, 13, 0.62);
+}
+
+@media (max-width: 640px) {
+  .quantity-mode-options {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 

@@ -23,9 +23,9 @@ function CartLine({ item, inGroup }) {
         ? `${item.quantity_value} ${item.quantity_unit}`
         : '')
   const hasVariant = item.variant_id != null
-  // unit_price is the amount charged per ONE unit of this line: the selected
-  // variant's TOTAL price, or the product price for variant-less lines.
-  // Bulk lines carry the brand's bulk rate (never above normal).
+  // unit_price is the amount charged per line quantity: the selected pack's
+  // total price for pack lines, or the full line total for loose exact-piece
+  // lines (which always have quantity 1).
   const unitPrice = Number(item.unit_price ?? lineUnitPrice(item) ?? 0)
   const isBulkLine = item.bulk_active === true
   // The resolved per-piece price: the brand's bulk rate when the line is

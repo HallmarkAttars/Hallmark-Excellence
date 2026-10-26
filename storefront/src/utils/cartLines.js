@@ -5,6 +5,8 @@
 //     60 Pieces + Pink Musk 100 Pieces become a single 160-piece row. The
 //     pieces are what count for the brand-level bulk tally, and the two
 //     bands are the same product.
+//   • LOOSE EXACT-PIECE lines merge by product id too: crossing a price
+//     band changes the variant, not the product the customer is buying.
 //   • CATEGORY lines keep product id + variant id separate — a 12 ML and a
 //     100 ML variant of a category product have their own prices and are
 //     genuinely different selections, so they must stay separate rows.
@@ -14,14 +16,16 @@
 // + Pink Musk 100) is normalized to a single 160-piece row without losing
 // any quantity.
 
-import { lineNormalPerPiece, linePieces, round2 } from './brandBulk'
+import { lineNormalPerPiece, linePieces, pieceBandForQuantity, round2 } from './brandBulk'
 
 // The stable identity used for merging and removal. Two lines with the same
 // key are the same cart line and must never coexist as separate rows.
 export function cartLineKey(item) {
   if (!item || typeof item !== 'object') return ''
   const pid = item.product_id ?? item.id ?? ''
-  if (item.brand_id != null) return `p-${pid}`
+  if (item.brand_id != null || item.sell_exact_pieces === true || item.pieces != null) {
+    return `p-${pid}`
+  }
   return item.variant_id != null
     ? `${pid}-v${item.variant_id}`
     : `${pid}-`
@@ -42,11 +46,24 @@ export function cartLineKey(item) {
 // legacy Pieces-unit single-unit lines too. Brand ML/Gram lines and category
 // lines carry no explicit pieces and adjusting them would break the
 // per-unit pricing invariant, so they are NOT piece-adjustable.
-export function isPieceAdjustableLine(item) {
-  if (item == null) return false
+function isExactPieceLine(item) {
+  if (item == null || item.sell_exact_pieces === false) return false
   if (item.pieces != null) return true
   const unit = String(item.quantity_unit ?? '').trim().toLowerCase()
   return unit === 'pieces' && Number(item.quantity ?? 1) === 1
+}
+
+export function isPieceAdjustableLine(item) {
+  return isExactPieceLine(item)
+}
+
+function bandPricePerPiece(band) {
+  if (!band) return null
+  const amount = Math.max(1, Math.floor(Number(band.quantity_value) || 1))
+  const total = Number(band.total_price ?? band.price)
+  if (Number.isFinite(total) && total > 0) return total / amount
+  const ppu = Number(band.price_per_unit)
+  return Number.isFinite(ppu) && ppu > 0 ? ppu : null
 }
 
 // Resolves the lower-bound minimum quantity for a cart line.
@@ -83,24 +100,32 @@ export function adjustLinePieces(item, delta) {
 
   if (next === current) return null
 
-  const ppu = Number(item.variant_price_per_unit ?? lineNormalPerPiece(item))
+  const variants = Array.isArray(item.variants) ? item.variants : []
+  const band = pieceBandForQuantity(variants, next)
+  const bandPpu = bandPricePerPiece(band)
+  const storedPpu = Number(item.variant_price_per_unit ?? item.unitPrice ?? lineNormalPerPiece(item))
+  const ppu = bandPpu ?? (Number.isFinite(storedPpu) && storedPpu > 0 ? storedPpu : 0)
   const total = Number.isFinite(ppu) && ppu > 0
-    ? ppu * next
+    ? round2(ppu * next)
     : Number(item.selected_price ?? 0)
   const unit = String(item.quantity_unit || 'Pieces')
+  const bandAmount = band ? Math.max(1, Math.floor(Number(band.quantity_value) || 1)) : next
   return {
     ...item,
+    ...(band?.id != null ? { variantId: band.id, variant_id: band.id } : {}),
     pieces: next,
     totalPieces: next,
     quantity: 1,
-    quantity_value: next,
+    variantPieces: next,
+    quantity_value: bandAmount,
     min_quantity: minQty,
     variant_label: `${next} ${unit}`.trim(),
     selected_price: total,
     totalPrice: total,
     variant_total_price: total,
     unitPrice: ppu,
-    unit_price: ppu,
+    unit_price: total,
+    sell_exact_pieces: true,
   }
 }
 
@@ -118,7 +143,10 @@ export function mergeCartLines(items) {
     }
 
     const existing = out[idx]
-    if (existing.pieces != null || item.pieces != null || existing.totalPieces != null || item.totalPieces != null) {
+    const existingExact = isExactPieceLine(existing)
+    const itemExact = isExactPieceLine(item)
+
+    if (existingExact || itemExact) {
       const existingPieces =
         existing.totalPieces != null
           ? Number(existing.totalPieces) || 0
@@ -128,32 +156,45 @@ export function mergeCartLines(items) {
           ? Number(item.totalPieces) || 0
           : (item.pieces != null ? Number(item.pieces) || 0 : linePieces(item))
       const combined = existingPieces + addPieces
-      const combinedQty = Math.max(1, Number(existing.quantity || 1) + Number(item.quantity || 1))
       const unit = String(item.quantity_unit || 'Pieces')
       // Keep the FIRST line's per-piece price (see header comment) and price
       // the merged line from it — summing the two stored prices would
       // disagree with ppu × combined when the bands were priced differently
       // (60 @ ₹45 + 100 @ ₹42 must price 160 pieces at ₹7,200, not ₹6,900).
-      const ppu = Number(existing.unitPrice ?? existing.variant_price_per_unit ?? item.unitPrice ?? item.variant_price_per_unit)
+      const variants = Array.isArray(existing.variants)
+        ? existing.variants
+        : (Array.isArray(item.variants) ? item.variants : [])
+      // Non-brand exact lines reprice on the band the merged count falls in.
+      // Brand lines keep the first line's per-piece price so the brand-level
+      // bulk tally remains the single source of their discount.
+      const band = existing.brand_id == null ? pieceBandForQuantity(variants, combined) : null
+      const storedPpu = Number(existing.unitPrice ?? existing.variant_price_per_unit ?? item.unitPrice ?? item.variant_price_per_unit)
+      const firstPpu = Number.isFinite(storedPpu) && storedPpu > 0 ? storedPpu : 0
+      const ppu = bandPricePerPiece(band) ?? firstPpu
       const mergedTotal = Number.isFinite(ppu) && ppu > 0
         ? round2(ppu * combined)
         : Number(existing.totalPrice ?? existing.selected_price ?? 0) + Number(item.totalPrice ?? item.selected_price ?? 0)
       const existingMin = getLineMinQuantity(existing)
       const addMin = getLineMinQuantity(item)
       const minQty = Math.min(existingMin, addMin)
+      const bandAmount = band ? Math.max(1, Math.floor(Number(band.quantity_value) || 1)) : combined
+      const bandLabel = band
+        ? (band.display_label || `${band.quantity_value} ${unit}`)
+        : `${combined} ${unit}`
 
       out[idx] = {
         ...existing,
+        ...(band?.id != null ? { variantId: band.id, variant_id: band.id } : {}),
         pieces: combined,
         totalPieces: combined,
         quantity: 1,
-        variantPieces: existing.variantPieces ?? item.variantPieces ?? (combinedQty > 0 ? Math.round(combined / combinedQty) : combined),
+        variantPieces: combined,
         unitPrice: ppu,
-        unit_price: ppu,
+        unit_price: mergedTotal,
         totalPrice: mergedTotal,
-        quantity_value: combined,
+        quantity_value: bandAmount,
         min_quantity: minQty,
-        variant_label: `${combined} ${unit}`.trim(),
+        variant_label: bandLabel.trim(),
         selected_price: mergedTotal,
         variant_total_price: mergedTotal,
         variant_price_per_unit: ppu || item.variant_price_per_unit,
@@ -161,38 +202,44 @@ export function mergeCartLines(items) {
         stock: item.stock ?? existing.stock,
         brand_id: item.brand_id ?? existing.brand_id,
         brand_name: item.brand_name ?? existing.brand_name,
+        sell_exact_pieces: true,
       }
       continue
     }
 
     const combinedQty = Math.max(1, Number(existing.quantity ?? 1) + Number(item.quantity ?? 1))
     const unitPrice = Number(existing.unitPrice ?? item.unitPrice ?? existing.selected_price ?? existing.price ?? 0)
-    const mergedTotal = round2(unitPrice * combinedQty)
+    const packagePrice = Number(
+      item.variant_total_price ??
+        existing.variant_total_price ??
+        item.selected_price ??
+        existing.selected_price ??
+        unitPrice
+    )
+    const mergedTotal = round2(packagePrice * combinedQty)
+    const unit = String(existing.quantity_unit ?? item.quantity_unit ?? '').trim().toLowerCase()
+    const isPieces = unit === 'pieces'
+    const variantPieces = Number(existing.variantPieces ?? item.variantPieces ?? 1) || 1
 
     out[idx] = {
       ...existing,
       quantity: combinedQty,
-      totalPieces: combinedQty,
+      totalPieces: isPieces ? variantPieces * combinedQty : combinedQty,
       unitPrice,
-      unit_price: unitPrice,
+      unit_price: packagePrice,
       totalPrice: mergedTotal,
       min_quantity: Math.min(getLineMinQuantity(existing), getLineMinQuantity(item)),
       // Refresh price/variant info on re-add — a legacy line must pick up the
       // current variant total price.
-      selected_price: mergedTotal,
-      variant_total_price: Number(
-        item.variant_total_price ??
-          item.selected_price ??
-          existing.variant_total_price ??
-          existing.selected_price ??
-          mergedTotal
-      ),
+      selected_price: packagePrice,
+      variant_total_price: packagePrice,
       variant_price_per_unit:
         item.variant_price_per_unit ?? existing.variant_price_per_unit ?? unitPrice,
       variant_is_default: item.variant_is_default === true,
       stock: item.stock ?? existing.stock,
       brand_id: item.brand_id ?? existing.brand_id,
       brand_name: item.brand_name ?? existing.brand_name,
+      sell_exact_pieces: false,
     }
   }
   return out

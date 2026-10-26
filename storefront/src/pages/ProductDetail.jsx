@@ -8,6 +8,7 @@ import {
   getApplicableBulkTier,
   getBulkTiers,
   lineNormalPerPiece,
+  pieceBandForQuantity,
   pieceWord,
   productPageBrandPieces,
   round2,
@@ -96,14 +97,14 @@ export default function ProductDetail({ onAddToCart }) {
   const [related, setRelated] = useState([])
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
-  // Two completely separate state values: selectedVariant and quantity.
-  // selectedVariant tracks the variant value (e.g. 216).
-  // quantity tracks the local quantity (e.g. 216, 217, 218...).
+  // `quantity` is the number of selected packs/rolls (Gram, ML and sealed
+  // Pieces). `pieceQty` is the exact piece count for loose Pieces products.
+  // They are separate so a 100 Gram x 2 order can never become "2 grams".
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [selectedVariantId, setSelectedVariantId] = useState(null)
   const [quantity, setQuantity] = useState(1)
-  const qty = quantity
-  const setQty = setQuantity
+  const [pieceQty, setPieceQty] = useState(1)
+  const [pieceDraft, setPieceDraft] = useState(null)
 
   // "Please select a variant" hint when Add to Cart is clicked too early.
   const [variantHint, setVariantHint] = useState(false)
@@ -133,6 +134,8 @@ export default function ProductDetail({ onAddToCart }) {
     setSelectedVariantId(null)
     setVariantHint(false)
     setQuantity(1)
+    setPieceQty(1)
+    setPieceDraft(null)
     setSelectionInCart(false)
     setDescOpen(false)
     addingRef.current = false
@@ -156,6 +159,8 @@ export default function ProductDetail({ onAddToCart }) {
             setSelectedVariant(isPiece ? varAmount : 1)
             setSelectedVariantId(activeVar.id)
             setQuantity(1)
+            setPieceQty(isPiece && p.sell_exact_pieces === true ? varAmount : 1)
+            setPieceDraft(null)
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
         }
@@ -213,7 +218,7 @@ export default function ProductDetail({ onAddToCart }) {
     getDefaultVariant(product) ||
     (variants.length ? variants.find((v) => v.is_default) || variants[0] : null)
 
-  const activeVariant = hasVariants
+  const chosenVariant = hasVariants
     ? (variants.find((v) => String(v.id) === String(selectedVariantId)) ||
        variants.find((v) => getVariantAmount(v) === selectedVariant) ||
        defaultVariant ||
@@ -221,8 +226,28 @@ export default function ProductDetail({ onAddToCart }) {
        null)
     : null
 
+  const pieceBands = variants
+    .filter((v) => isPieceVariant(v))
+    .sort((a, b) => getVariantAmount(a) - getVariantAmount(b))
+  const lowestPieceSize = pieceBands.length ? getVariantAmount(pieceBands[0]) : 1
+  const resolvedPieceQty = Math.max(
+    lowestPieceSize,
+    Math.floor(Number(pieceQty) || lowestPieceSize)
+  )
+
+  // Exact pieces only when the admin explicitly enables the loose packet
+  // mode for this product. Sealed rolls and Gram/ML stay pack-based.
+  const exactPiecesMode =
+    hasVariants &&
+    product.sell_exact_pieces === true &&
+    Boolean(chosenVariant && isPieceVariant(chosenVariant))
+
+  const activeVariant = exactPiecesMode
+    ? (pieceBandForQuantity(variants, resolvedPieceQty) || chosenVariant)
+    : chosenVariant
+
   const isBrandProduct = product.brand_id != null
-  const pieceMode = hasVariants && Boolean(activeVariant && isPieceVariant(activeVariant))
+  const isPiecesUnit = hasVariants && Boolean(activeVariant && isPieceVariant(activeVariant))
 
   const variantSelected = hasVariants ? Boolean(activeVariant || selectedVariant) : true
   const totalPrice = hasVariants
@@ -266,16 +291,54 @@ export default function ProductDetail({ onAddToCart }) {
 
     const isPiece = isPieceVariant(found)
     const varAmount = getVariantAmount(found)
+    const exactForThisProduct = product.sell_exact_pieces === true
 
     setSelectedVariant(isPiece ? varAmount : 1)
     setSelectedVariantId(found.id)
-    // When changing variant, keep quantity independent (e.g. 2 remains 2)
+    // Loose Pieces starts at the selected band; pack modes keep the number
+    // of packs the customer already chose.
+    if (isPiece && exactForThisProduct) {
+      setPieceQty(varAmount)
+      setPieceDraft(null)
+    } else {
+      setPieceQty(1)
+      setPieceDraft(null)
+    }
     setVariantHint(false)
     setSelectionInCart(false)
   }
 
+  const resolvePieceQty = (raw) => {
+    const parsed = Math.floor(Number(raw))
+    if (!Number.isFinite(parsed) || parsed < 1) return lowestPieceSize
+    return Math.max(lowestPieceSize, parsed)
+  }
+
+  const applyPieceQty = (raw) => {
+    const next = resolvePieceQty(raw)
+    setPieceQty(next)
+    setPieceDraft(null)
+    const band = pieceBandForQuantity(variants, next)
+    if (band) {
+      setSelectedVariantId(band.id)
+      setSelectedVariant(getVariantAmount(band))
+    }
+    setSelectionInCart(false)
+  }
+
+  const commitPieceDraft = () => {
+    if (!exactPiecesMode) {
+      setPieceDraft(null)
+      return
+    }
+    applyPieceQty(pieceDraft ?? resolvedPieceQty)
+  }
+
   const variantPieces = hasVariants && activeVariant ? getVariantAmount(activeVariant) : 1
-  const totalPieces = pieceMode ? variantPieces * quantity : quantity
+  const totalPieces = exactPiecesMode
+    ? resolvedPieceQty
+    : (isPiecesUnit ? variantPieces * quantity : quantity)
+  const totalAmount = hasVariants ? variantPieces * quantity : quantity
 
   // Pieces the CURRENT selection would add to the brand tally.
   const selectionPieces = !variantSelected ? 0 : totalPieces
@@ -299,7 +362,7 @@ export default function ProductDetail({ onAddToCart }) {
       : 0
   const bulkThresholdShown = brandUnlocked && applicableTier ? applicableTier.minQuantity : bulkMinQty
 
-  const pieceStylePrice = isBrandBulkProduct || pieceMode
+  const pieceStylePrice = isBrandBulkProduct || isPiecesUnit
 
   const ownPerPiece =
     pieceStylePrice && variantSelected && hasVariants && activeVariant
@@ -322,7 +385,7 @@ export default function ProductDetail({ onAddToCart }) {
     : 0
   const useBrandStandard =
     isBrandBulkProduct &&
-    pieceMode &&
+    isPiecesUnit &&
     Number.isFinite(brandStandardPerPiece) &&
     brandStandardPerPiece > 0
   const normalPerPiece = useBrandStandard ? brandStandardPerPiece : ownPerPiece
@@ -333,58 +396,39 @@ export default function ProductDetail({ onAddToCart }) {
     bulkPerPiece < normalPerPiece
   const chargedPerPiece = bulkApplied ? bulkPerPiece : normalPerPiece
 
-  // Unit price and immediate recalculation of total = pricePerPiece * totalPieces
-  const getUnitPrice = () => {
-    if (bulkApplied && bulkPerPiece > 0) {
-      return bulkPerPiece
-    }
-    if (pieceStylePrice && normalPerPiece > 0) {
-      return normalPerPiece
-    }
-    if (hasVariants && activeVariant) {
-      const varTotal = Number(activeVariant.total_price ?? activeVariant.price ?? 0)
-      const varAmount = getVariantAmount(activeVariant)
-      if (varAmount > 0 && isPieceVariant(activeVariant)) {
-        return varTotal / varAmount
-      }
-      const varPpu = Number(activeVariant.price_per_unit)
-      if (Number.isFinite(varPpu) && varPpu > 0) {
-        return varPpu
-      }
-      return varTotal
-    }
-    return Number(product.price || 0)
-  }
-
-  const unitPrice = getUnitPrice()
-  const varPackagePrice = hasVariants && activeVariant ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) : Number(product.price || 0)
+  // One selected pack/roll (e.g. 72 Pieces, 100 Gram). The line total is
+  // always this pack price times the number of packs, except loose Pieces
+  // where it is the band's per-piece price times the exact piece count.
+  const varPackagePrice = hasVariants && activeVariant
+    ? Number(activeVariant.total_price ?? activeVariant.price ?? 0)
+    : Number(product.price || 0)
+  const packPerPiece = variantPieces > 0 ? varPackagePrice / variantPieces : 0
   const pricePerPiece = bulkApplied
     ? bulkPerPiece
-    : (useBrandStandard
-        ? brandStandardPerPiece
-        : (hasVariants && activeVariant && variantPieces > 0
-            ? varPackagePrice / variantPieces
-            : (chargedPerPiece > 0 ? chargedPerPiece : unitPrice)))
+    : (useBrandStandard ? brandStandardPerPiece : packPerPiece)
   const lineTotal = bulkApplied || useBrandStandard
     ? round2(pricePerPiece * totalPieces)
-    : (pieceMode
-        ? round2(varPackagePrice * quantity)
-        : round2(unitPrice * quantity))
+    : exactPiecesMode
+      ? round2(packPerPiece * resolvedPieceQty)
+      : round2(varPackagePrice * quantity)
+
+  const lineUnitPrice = exactPiecesMode
+    ? (resolvedPieceQty > 0 ? round2(lineTotal / resolvedPieceQty) : packPerPiece)
+    : (isPiecesUnit
+        ? packPerPiece
+        : Number(activeVariant?.price_per_unit ?? perUnit ?? varPackagePrice))
 
   // Top price row: per-piece price (bulk-aware) once a variant is chosen.
-  const topPerPiece = pieceStylePrice
-    ? chargedPerPiece
-    : (hasVariants && isPieceVariant(activeVariant)
-        ? unitPrice
-        : perUnit)
+  const topPerPiece = pieceStylePrice ? chargedPerPiece : perUnit
   const topPriceSuffix = pieceStylePrice
-    ? (hasVariants && !pieceMode ? ' / unit' : ' / piece')
+    ? (isPiecesUnit ? ' / piece' : ' / unit')
     : hasVariants
       ? ` / ${unitDisplay(selectedUnit)}`
       : ''
 
-  // Stepper disable states: quantity minimum is always 1
-  const canDecrease = !isOutOfStock && quantity > 1
+  const canDecrease = !isOutOfStock && (
+    exactPiecesMode ? resolvedPieceQty > lowestPieceSize : quantity > 1
+  )
   const canIncrease = !isOutOfStock
 
   const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
@@ -394,10 +438,13 @@ export default function ProductDetail({ onAddToCart }) {
 
   const markSelectionChanged = () => setSelectionInCart(false)
 
-  // Stepper handlers: increment/decrement package quantity (never below 1)
   const handleDecrease = () => {
-    if (isOutOfStock) return
+    if (isOutOfStock || !canDecrease) return
     markSelectionChanged()
+    if (exactPiecesMode) {
+      applyPieceQty(resolvedPieceQty - 1)
+      return
+    }
     setQuantity((q) => {
       const current = Number.isInteger(q) && q > 0 ? q : 1
       return Math.max(1, current - 1)
@@ -407,6 +454,10 @@ export default function ProductDetail({ onAddToCart }) {
   const handleIncrease = () => {
     if (isOutOfStock) return
     markSelectionChanged()
+    if (exactPiecesMode) {
+      applyPieceQty(resolvedPieceQty + 1)
+      return
+    }
     setQuantity((q) => {
       const current = Number.isInteger(q) && q > 0 ? q : 1
       return current + 1
@@ -441,14 +492,19 @@ export default function ProductDetail({ onAddToCart }) {
     setVariantHint(false)
     if (isOutOfStock || adding || addingRef.current) return
 
+    const lineQuantity = exactPiecesMode ? 1 : quantity
+    const cartVariantPieces = exactPiecesMode ? totalPieces : variantPieces
+    const cartMinQuantity = exactPiecesMode ? lowestPieceSize : 1
+
     const cartPayload = {
       productId: product.id,
       variantId: activeVariant?.id ?? null,
-      variantPieces,
-      quantity,
+      variantPieces: cartVariantPieces,
+      quantity: lineQuantity,
       totalPieces,
-      unitPrice: pricePerPiece,
+      unitPrice: lineUnitPrice,
       totalPrice: lineTotal,
+      sell_exact_pieces: exactPiecesMode,
     }
 
     if (typeof onAddToCart === 'function') {
@@ -460,19 +516,20 @@ export default function ProductDetail({ onAddToCart }) {
           variant_id: activeVariant.id,
           variantId: activeVariant.id,
           variant_label: variantLabel(activeVariant),
-          variantPieces,
-          quantity,
+          variantPieces: cartVariantPieces,
+          quantity: lineQuantity,
           totalPieces,
           quantity_value: variantPieces,
           quantity_unit: activeVariant.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
-          min_quantity: 1,
+          min_quantity: cartMinQuantity,
           total_price: lineTotal,
           totalPrice: lineTotal,
-          price_per_unit: pricePerPiece,
-          unit_price: pricePerPiece,
-          unitPrice: pricePerPiece,
+          variant_total_price: lineTotal,
+          price_per_unit: lineUnitPrice,
+          unit_price: lineUnitPrice,
+          unitPrice: lineUnitPrice,
           is_default: String(activeVariant.id) === String(defaultVariant?.id),
-          selectedVariant: variantPieces,
+          selectedVariant: cartVariantPieces,
         }
       : null
 
@@ -489,22 +546,24 @@ export default function ProductDetail({ onAddToCart }) {
           stock: product.stock != null ? Number(product.stock) : null,
           brand_id: product.brand_id ?? null,
           brand_name: product.brand_name ?? null,
+          quantity_unit: activeVariant?.quantity_unit || (isPieceVariant(activeVariant) ? 'Pieces' : ''),
           variantId: activeVariant?.id ?? null,
           variant_id: activeVariant?.id ?? null,
-          variantPieces,
-          quantity,
+          variantPieces: cartVariantPieces,
+          quantity: lineQuantity,
           totalPieces,
-          unitPrice: pricePerPiece,
-          unit_price: pricePerPiece,
+          unitPrice: lineUnitPrice,
+          unit_price: lineUnitPrice,
           totalPrice: lineTotal,
           total_price: lineTotal,
-          selectedVariant: variantPieces,
-          pieces: pieceMode ? totalPieces : null,
+          selectedVariant: cartVariantPieces,
+          pieces: exactPiecesMode ? totalPieces : null,
+          sell_exact_pieces: exactPiecesMode,
           variants: product.variants,
         },
-        quantity,
+        lineQuantity,
         variantInfo,
-        pieceMode ? totalPieces : null
+        exactPiecesMode ? totalPieces : null
       )
       setSelectionInCart(true)
       addTimer.current = setTimeout(() => {
@@ -729,7 +788,9 @@ export default function ProductDetail({ onAddToCart }) {
                   >
                     −
                   </button>
-                  <span aria-live="polite">{quantity}</span>
+                  <span aria-live="polite">
+                    {exactPiecesMode ? resolvedPieceQty : quantity}
+                  </span>
                   <button
                     type="button"
                     onClick={handleIncrease}
@@ -741,13 +802,21 @@ export default function ProductDetail({ onAddToCart }) {
                 </div>
                 <div className="pd-qty-total">
                   <p className="pd-selected-label">
-                    {hasVariants && activeVariant
-                      ? `${variantLabel(activeVariant)} × ${quantity}`
-                      : `${quantity} selected`}
+                    {exactPiecesMode
+                      ? `Loose ${pieceWord(resolvedPieceQty)} selected`
+                      : hasVariants && activeVariant
+                        ? `${variantLabel(activeVariant)} × ${quantity}`
+                        : `${quantity} selected`}
                   </p>
-                  {pieceMode && (
+                  {isPiecesUnit && (
                     <p className="pd-total-pieces">
                       Total Pieces: {Number(totalPieces).toLocaleString('en-IN')}
+                    </p>
+                  )}
+                  {hasVariants && activeVariant && !isPiecesUnit && (
+                    <p className="pd-total-pieces">
+                      {variantLabel(activeVariant)} × {quantity} · Total{' '}
+                      {Number(totalAmount).toLocaleString('en-IN')} {unitDisplay(selectedUnit)}
                     </p>
                   )}
                   <p className="pd-total">
@@ -756,6 +825,35 @@ export default function ProductDetail({ onAddToCart }) {
                   </p>
                 </div>
               </div>
+
+              {exactPiecesMode && (
+                <div className="pd-exact-pieces">
+                  <label htmlFor="exact-piece-qty">Exact pieces</label>
+                  <input
+                    id="exact-piece-qty"
+                    type="number"
+                    inputMode="numeric"
+                    min={lowestPieceSize}
+                    step="1"
+                    value={pieceDraft ?? resolvedPieceQty}
+                    onChange={(e) => {
+                      const raw = e.target.value
+                      setPieceDraft(raw === '' ? '' : raw.replace(/[^\d]/g, ''))
+                    }}
+                    onBlur={commitPieceDraft}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        commitPieceDraft()
+                      }
+                    }}
+                    aria-describedby="exact-piece-hint"
+                  />
+                  <small id="exact-piece-hint">
+                    Minimum {lowestPieceSize}. The correct price band applies automatically.
+                  </small>
+                </div>
+              )}
             </div>
           )}
 

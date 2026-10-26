@@ -10,7 +10,7 @@ const {
 // product_variants.
 const PRODUCT_SELECT = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at, updated_at,
+  sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -32,7 +32,7 @@ const PRODUCT_SELECT_BASE = `
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at, updated_at, display_order,
+  sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -177,7 +177,7 @@ function sortVariants(variants) {
 // is applied. These are stripped from writes on pre-migration databases so
 // admin saves keep working; the values simply stay dormant until the
 // columns exist.
-const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count', 'is_in_stock', 'updated_at']
+const OPTIONAL_FIELD_KEYS = ['compare_at_price', 'rating', 'review_count', 'is_in_stock', 'sell_exact_pieces', 'updated_at']
 
 // Runs an insert/update against the full payload, retrying without the
 // optional (migration-dependent) fields when their columns are missing.
@@ -821,6 +821,7 @@ async function createProduct(req, res) {
       image: image ?? null,
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
+      sell_exact_pieces: sell_exact_pieces === true,
       display_order: resolvedOrder,
     }
 
@@ -898,7 +899,7 @@ async function updateProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order, stock, is_in_stock
+      display_order, stock, is_in_stock, sell_exact_pieces
     } = req.body
 
     // If the category is being updated to "Attar", brand is required
@@ -938,6 +939,7 @@ async function updateProduct(req, res) {
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
     if (is_featured !== undefined) updates.is_featured = is_featured
+    if (sell_exact_pieces !== undefined) updates.sell_exact_pieces = sell_exact_pieces === true
     if (display_order !== undefined) {
       const order = Number(display_order)
       if (!Number.isInteger(order) || order < 0) {

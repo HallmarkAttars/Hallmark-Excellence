@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import ProductDetail from './ProductDetail'
 import { CartProvider } from '../context/CartContext'
 import { ToastProvider } from '../context/ToastContext'
+import { getProductById } from '../services/mockApi'
 
 const mockSampleProduct = {
   id: 10,
@@ -245,6 +246,82 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
       totalPieces: 120,
       unitPrice: 30,
       totalPrice: 3600,
+      sell_exact_pieces: false,
+    })
+  })
+
+  it('allows exact loose piece counts and auto-switches to the 72-piece band at 75', async () => {
+    getProductById.mockResolvedValueOnce({ ...mockSampleProduct, sell_exact_pieces: true })
+    const onAddToCart = vi.fn()
+    renderProductDetail({ onAddToCart })
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /60 Pieces/i }))
+    expect(screen.getByLabelText('Exact pieces').value).toBe('60')
+
+    const input = screen.getByLabelText('Exact pieces')
+    fireEvent.change(input, { target: { value: '75' } })
+    fireEvent.blur(input)
+
+    await waitFor(() => {
+      expect(screen.getByText('Total Pieces: 75')).toBeTruthy()
+      expect(screen.getAllByText(/2,250/).length).toBeGreaterThan(0)
+      expect(screen.getByRole('button', { name: /72 Pieces/i }).classList.contains('is-active')).toBe(true)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Add to Cart/i }))
+    expect(onAddToCart).toHaveBeenCalledWith({
+      productId: 10,
+      variantId: 106,
+      variantPieces: 75,
+      quantity: 1,
+      totalPieces: 75,
+      unitPrice: 30,
+      totalPrice: 2250,
+      sell_exact_pieces: true,
+    })
+  })
+
+  it('keeps Gram products pack-based and shows pack math plus total weight', async () => {
+    getProductById.mockResolvedValueOnce({
+      ...mockSampleProduct,
+      id: 11,
+      name: 'Royal Oud',
+      price: 0,
+      variants: [
+        {
+          id: 201,
+          display_label: '100 Gram',
+          quantity_value: 100,
+          quantity_unit: 'Gram',
+          price: 850,
+          price_per_unit: 8.5,
+          is_default: true,
+          active: true,
+        },
+      ],
+    })
+    renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Oud' })).toBeTruthy()
+    })
+
+    expect(screen.queryByLabelText('Exact pieces')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: /Increase quantity/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('100 Gram × 2')).toBeTruthy()
+      expect(
+        screen.getByText((_, element) =>
+          element?.classList?.contains('pd-total-pieces') &&
+          /Total 200 gram/i.test(element.textContent)
+        )
+      ).toBeTruthy()
+      expect(screen.getAllByText(/1,700/).length).toBeGreaterThan(0)
     })
   })
 

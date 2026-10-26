@@ -28,6 +28,7 @@ create table if not exists products (
   brand_id uuid references brands(id) on delete set null,
   images jsonb default '[]',
   is_active boolean default true,
+  sell_exact_pieces boolean default false not null,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

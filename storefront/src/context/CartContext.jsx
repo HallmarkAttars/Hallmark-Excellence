@@ -88,6 +88,13 @@ function normalizeItem(raw) {
         ? Math.max(1, Math.floor(Number(raw.min_qty)))
         : 1)
 
+  // `pieces` is only written by exact-piece lines, so legacy carts with
+  // pieces stay adjustable even before this flag existed.
+  const exactPieces =
+    raw.sell_exact_pieces === true ||
+    (raw.pieces != null && raw.sell_exact_pieces !== false)
+  const lineUnitPriceValue = exactPieces ? totalPrice : packagePrice
+
   return {
     productId: raw.productId ?? raw.product_id ?? raw.id,
     product_id: raw.product_id ?? raw.productId ?? raw.id,
@@ -97,7 +104,7 @@ function normalizeItem(raw) {
     quantity,
     totalPieces: isPiece ? totalPieces : quantity,
     unitPrice: piecePrice,
-    unit_price: packagePrice,
+    unit_price: lineUnitPriceValue,
     totalPrice,
     total_price: totalPrice,
     selectedVariant: isPiece ? variantPieces : (raw.selectedVariant ?? null),
@@ -107,7 +114,8 @@ function normalizeItem(raw) {
     is_in_stock: raw.is_in_stock !== undefined ? Boolean(raw.is_in_stock) : true,
     min_quantity: minQuantity,
     ...(raw.pieces != null ? { pieces: Number(raw.pieces) } : {}),
-    selected_price: packagePrice,
+    selected_price: lineUnitPriceValue,
+    sell_exact_pieces: exactPieces,
     brand_id: raw.brand_id ?? null,
     brand_name: raw.brand_name ?? null,
     ...(Array.isArray(raw.variants) ? { variants: raw.variants } : {}),
@@ -118,7 +126,7 @@ function normalizeItem(raw) {
           variantPieces: isPiece ? variantPieces : 1,
           totalPieces: isPiece ? totalPieces : quantity,
           unitPrice: piecePrice,
-          unit_price: packagePrice,
+          unit_price: lineUnitPriceValue,
           totalPrice,
           total_price: totalPrice,
           selectedVariant: isPiece ? variantPieces : (raw.selectedVariant ?? null),
@@ -126,7 +134,7 @@ function normalizeItem(raw) {
           quantity_value: variantPieces,
           quantity_unit: raw.quantity_unit ?? raw.variant?.quantity_unit ?? (isPiece ? 'Pieces' : ''),
           min_quantity: minQuantity,
-          variant_total_price: packagePrice,
+          variant_total_price: lineUnitPriceValue,
           variant_price_per_unit: piecePrice,
           variant_is_default: raw.variant_is_default === true,
         }
@@ -196,6 +204,7 @@ export function CartProvider({ children }) {
       const hasVariant = rawVariantId != null && String(rawVariantId) !== 'null' && String(rawVariantId) !== 'undefined'
       const variantId = hasVariant ? rawVariantId : null
       const quantity = Math.max(1, Number(qty ?? product?.quantity) || 1)
+      const exactPieces = pieces != null && product?.sell_exact_pieces === true
 
       const unitStr = String(product?.quantity_unit ?? variantObj?.quantity_unit ?? '').trim().toLowerCase()
       const isPiece =
@@ -271,7 +280,7 @@ export function CartProvider({ children }) {
         quantity,
         totalPieces: isPiece ? totalPieces : quantity,
         unitPrice: piecePrice,
-        unit_price: packagePrice,
+        unit_price: exactPieces ? totalPrice : packagePrice,
         totalPrice,
         total_price: totalPrice,
         selectedVariant: isPiece ? variantPieces : (product?.selectedVariant ?? null),
@@ -281,7 +290,8 @@ export function CartProvider({ children }) {
         is_in_stock: product.is_in_stock !== undefined ? Boolean(product.is_in_stock) : true,
         min_quantity: minQuantity,
         ...(pieces != null ? { pieces: Number(pieces) } : (product?.pieces != null ? { pieces: Number(product.pieces) } : {})),
-        selected_price: packagePrice,
+        selected_price: exactPieces ? totalPrice : packagePrice,
+        sell_exact_pieces: exactPieces,
         brand_id: product.brand_id ?? null,
         brand_name: product.brand_name ?? null,
         ...(Array.isArray(product.variants) ? { variants: product.variants } : {}),
@@ -292,7 +302,7 @@ export function CartProvider({ children }) {
               variantPieces: isPiece ? variantPieces : 1,
               totalPieces: isPiece ? totalPieces : quantity,
               unitPrice: piecePrice,
-              unit_price: packagePrice,
+              unit_price: exactPieces ? totalPrice : packagePrice,
               totalPrice,
               total_price: totalPrice,
               selectedVariant: isPiece ? variantPieces : null,
@@ -303,7 +313,7 @@ export function CartProvider({ children }) {
               quantity_value: variantPieces,
               quantity_unit: variantObj.quantity_unit || (isPiece ? 'Pieces' : ''),
               min_quantity: minQuantity,
-              variant_total_price: packagePrice,
+              variant_total_price: exactPieces ? totalPrice : packagePrice,
               variant_price_per_unit: piecePrice,
               variant_is_default: variantObj.is_default === true,
             }

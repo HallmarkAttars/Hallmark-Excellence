@@ -441,6 +441,41 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+.pd-exact-pieces {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+.pd-exact-pieces label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-soft);
+}
+.pd-exact-pieces input {
+  width: 92px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--white);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.pd-exact-pieces input:focus {
+  outline: none;
+  border-color: var(--gold, #c6a15b);
+  box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.3);
+}
+.pd-exact-pieces small {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--charcoal-soft);
+}
 .pd-total-word {
   font-size: 0.7rem;
   font-weight: 600;

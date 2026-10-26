@@ -363,3 +363,28 @@ export function pieceBandRange(variants, selectedVariantId) {
     max: next ? Math.max(min, Math.floor(Number(next.quantity_value)) - 1) : null,
   }
 }
+
+// The Pieces band that covers an exact piece quantity: the highest band
+// whose minimum is <= pieces. Quantities below the smallest band clamp to
+// that first band; quantities above the last band stay in the last one
+// (its range is unbounded). Returns null when there are no Pieces variants.
+//
+// Example bands 60 / 72 / 96:
+//   50  -> 60 band
+//   75  -> 72 band (the price break was crossed)
+//   100 -> 96 band
+export function pieceBandForQuantity(variants, pieces) {
+  const bands = (Array.isArray(variants) ? variants : [])
+    .filter((v) => String(v.quantity_unit ?? '').trim().toLowerCase() === 'pieces')
+    .sort((a, b) => Number(a.quantity_value) - Number(b.quantity_value))
+  if (bands.length === 0) return null
+
+  const qty = Math.max(1, Math.floor(Number(pieces) || 1))
+  let chosen = bands[0]
+  for (const band of bands) {
+    const min = Math.max(1, Math.floor(Number(band.quantity_value) || 1))
+    if (min <= qty) chosen = band
+    else break
+  }
+  return chosen
+}

@@ -16,6 +16,7 @@ import {
   buildBrandBulk,
   buildBrandPieces,
   brandSavings,
+  pieceBandForQuantity,
   pieceBandRange,
   pieceWord,
   productPageBrandPieces,
@@ -504,6 +505,39 @@ describe('pieceBandRange', () => {
   it('keeps the range valid even with degenerate (missing) quantity values', () => {
     const r = pieceBandRange([{ id: 'v0', quantity_unit: 'Pieces' }], 'v0')
     expect(r).toMatchObject({ min: 1, max: null, next: null })
+  })
+})
+
+describe('pieceBandForQuantity', () => {
+  const variants = [
+    { id: 'v96', quantity_value: 96, quantity_unit: 'Pieces' },
+    { id: 'v60', quantity_value: 60, quantity_unit: 'Pieces' },
+    { id: 'v72', quantity_value: 72, quantity_unit: 'Pieces' },
+    { id: 'v10ml', quantity_value: 10, quantity_unit: 'ML' },
+  ]
+
+  it('keeps 75 in the 72-piece band (price break at 72)', () => {
+    expect(pieceBandForQuantity(variants, 75).id).toBe('v72')
+  })
+
+  it('keeps 60-71 in the selected 60-piece band', () => {
+    expect(pieceBandForQuantity(variants, 60).id).toBe('v60')
+    expect(pieceBandForQuantity(variants, 71).id).toBe('v60')
+  })
+
+  it('moves to the next band exactly at its minimum', () => {
+    expect(pieceBandForQuantity(variants, 72).id).toBe('v72')
+    expect(pieceBandForQuantity(variants, 96).id).toBe('v96')
+  })
+
+  it('clamps below the lowest band and keeps above the highest band', () => {
+    expect(pieceBandForQuantity(variants, 50).id).toBe('v60')
+    expect(pieceBandForQuantity(variants, 500).id).toBe('v96')
+  })
+
+  it('returns null when there are no Pieces variants', () => {
+    expect(pieceBandForQuantity([{ id: 'ml', quantity_value: 10, quantity_unit: 'ML' }], 75)).toBeNull()
+    expect(pieceBandForQuantity([], 75)).toBeNull()
   })
 })
 
