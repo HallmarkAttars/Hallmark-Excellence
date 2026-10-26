@@ -6,13 +6,19 @@ require('dotenv').config({ path: '.env.local', override: true })
 const app = require('./src/app')
 const { runAutoMigrations } = require('./src/utils/autoMigrations')
 const { runExactPiecesBackfill } = require('./src/utils/exactPiecesBackfill')
+const { runProductDescriptionBackfill } = require('./src/utils/productDescriptionBackfill')
 
 const PORT = process.env.PORT || 5000
 
 async function start() {
   await runAutoMigrations()
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server listening on port ${PORT}`)
+    try {
+      await runProductDescriptionBackfill()
+    } catch (error) {
+      console.warn(`[description-backfill] skipped: ${error.message}`)
+    }
     runExactPiecesBackfill().catch((error) => {
       console.warn(`[exact-pieces-backfill] skipped: ${error.message}`)
     })
