@@ -12,6 +12,24 @@ const {
 } = require('./exactPieces')
 
 const BATCH_SIZE = 10
+const VARIANT_PAGE_SIZE = 1000
+
+async function fetchAllVariants() {
+  const variants = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select('product_id, quantity_unit')
+      .range(from, from + VARIANT_PAGE_SIZE - 1)
+    if (error) throw error
+    const rows = data || []
+    variants.push(...rows)
+    if (rows.length < VARIANT_PAGE_SIZE) break
+    from += VARIANT_PAGE_SIZE
+  }
+  return variants
+}
 
 function inBatches(items, size) {
   const batches = []
@@ -33,14 +51,11 @@ async function runExactPiecesBackfill() {
       .map((category) => String(category.id))
   )
 
-  const { data: variants, error: variantError } = await supabase
-    .from('product_variants')
-    .select('product_id, quantity_unit')
-  if (variantError) throw variantError
+  const variants = await fetchAllVariants()
 
   const productIds = [
     ...new Set(
-      (variants || [])
+      variants
         .filter((variant) => isPiecesUnit(variant.quantity_unit))
         .map((variant) => variant.product_id)
     ),
