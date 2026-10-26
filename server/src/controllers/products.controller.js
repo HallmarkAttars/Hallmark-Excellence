@@ -3,6 +3,13 @@ const {
   applyProductOrder,
   isMissingOrderColumnError,
 } = require('../utils/displayOrder')
+const {
+  isFragranceOilCategory,
+  hasPiecesVariant,
+  stripModeMarkers,
+  resolveExactPiecesFlag,
+  withExactPiecesMode,
+} = require('../utils/exactPieces')
 
 // Base product select WITHOUT the embedded variants relationship. Variants
 // are fetched separately (see fetchVariantsForProducts) so the code works
@@ -272,38 +279,21 @@ function attachVariants(rows, variantsByProduct) {
   })
 }
 
-// Compatibility store for sell_exact_pieces on projects where the column
-// migration has not run. The marker lives at the end of the description and
-// is stripped from every API response, so customers and SEO never see it.
-const EXACT_PIECES_MARKER = '<!--sell-exact-pieces-->'
-const EXACT_PIECES_SUFFIX = new RegExp(`\\s*${EXACT_PIECES_MARKER}\\s*$`)
-
-function stripExactPiecesMarker(description) {
-  if (typeof description !== 'string') return description ?? null
-  const cleaned = description.replace(EXACT_PIECES_SUFFIX, '').trimEnd()
-  return cleaned || null
-}
-
-function hasExactPiecesMarker(description) {
-  return typeof description === 'string' && EXACT_PIECES_SUFFIX.test(description)
-}
-
-function withExactPiecesMarker(description, enabled) {
-  const base = stripExactPiecesMarker(description)
-  if (!enabled) return base
-  return base ? `${base}\n\n${EXACT_PIECES_MARKER}` : EXACT_PIECES_MARKER
-}
-
 function flattenProduct(row) {
   if (!row) return null
   const { categories, brands, ...rest } = row
   const isInStock = row.is_in_stock !== undefined && row.is_in_stock !== null
     ? Boolean(row.is_in_stock)
     : (row.stock != null ? Number(row.stock) > 0 : true)
+  const category = {
+    name: categories?.name,
+    slug: categories?.slug,
+  }
+  const isFragranceOil = isFragranceOilCategory(category)
   return {
     ...rest,
-    description: stripExactPiecesMarker(row.description),
-    sell_exact_pieces: row.sell_exact_pieces === true || hasExactPiecesMarker(row.description),
+    description: stripModeMarkers(row.description),
+    sell_exact_pieces: !isFragranceOil && resolveExactPiecesFlag(row.description, row.sell_exact_pieces),
     is_in_stock: isInStock,
     stock: isInStock ? 1 : 0,
     category_name: categories?.name || null,
@@ -801,7 +791,7 @@ async function createProduct(req, res) {
     // 2. Next display order (if not explicitly specified)
     // 3. Unique slug generation
     const categoryPromise = resolvedCategoryId
-      ? supabase.from('categories').select('slug').eq('id', resolvedCategoryId).maybeSingle()
+      ? supabase.from('categories').select('slug, name').eq('id', resolvedCategoryId).maybeSingle()
       : Promise.resolve({ data: null, error: null })
 
     const orderPromise = explicitOrder !== undefined
@@ -830,10 +820,19 @@ async function createProduct(req, res) {
       ? Boolean(is_in_stock)
       : (stock !== undefined && stock !== null && stock !== '' ? Number(stock) > 0 : true)
 
+    const piecesAvailable = hasPiecesVariant(variants)
+    const fragranceOil = isFragranceOilCategory(categoryRes.data)
+    const exactPieces = !fragranceOil && piecesAvailable && sell_exact_pieces !== false
+    const descriptionWithMode = withExactPiecesMode(
+      description ?? null,
+      exactPieces,
+      piecesAvailable && !fragranceOil
+    )
+
     const payload = {
       name,
       slug: uniqueSlug,
-      description: withExactPiecesMarker(description ?? null, sell_exact_pieces === true),
+      description: descriptionWithMode,
       price: price ?? 0,
       stock: isInStock ? 1 : 0,
       is_in_stock: isInStock,
@@ -845,7 +844,7 @@ async function createProduct(req, res) {
       image: image ?? null,
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
-      sell_exact_pieces: sell_exact_pieces === true,
+      sell_exact_pieces: exactPieces,
       display_order: resolvedOrder,
     }
 
@@ -928,14 +927,90 @@ async function updateProduct(req, res) {
 
     // If the category is being updated to "Attar", brand is required
     const resolvedCategoryId = category_id && String(category_id).trim() !== '' ? String(category_id).trim() : null
+    let selectedCategory = null
     if (category_id !== undefined && resolvedCategoryId) {
-      const { data: category } = await supabase
+      const { data: category, error: categoryError } = await supabase
         .from('categories')
-        .select('slug')
+        .select('slug, name')
         .eq('id', resolvedCategoryId)
         .maybeSingle()
+      if (categoryError) {
+        console.error('updateProduct category lookup error:', categoryError)
+        return res.status(500).json({ error: 'Failed to verify product category.' })
+      }
+      selectedCategory = category
       if (category && category.slug === 'attar' && !brand_id) {
         return res.status(400).json({ error: 'Brand is required for Attar products.' })
+      }
+    }
+
+    const modeResolutionNeeded =
+      sell_exact_pieces !== undefined ||
+      category_id !== undefined ||
+      Array.isArray(variants)
+
+    let modeContext = null
+    if (modeResolutionNeeded) {
+      const { data: current, error: currentError } = await supabase
+        .from('products')
+        .select('description, category_id')
+        .eq('id', id)
+        .maybeSingle()
+      if (currentError) {
+        console.error('updateProduct mode lookup error:', currentError)
+        return res.status(500).json({ error: 'Failed to update product.' })
+      }
+      if (!current) {
+        return res.status(404).json({ error: 'Product not found.' })
+      }
+
+      const effectiveCategoryId =
+        category_id !== undefined ? resolvedCategoryId : current.category_id
+      let effectiveCategory = selectedCategory
+      if (category_id === undefined && effectiveCategoryId) {
+        const { data: category, error: categoryError } = await supabase
+          .from('categories')
+          .select('slug, name')
+          .eq('id', effectiveCategoryId)
+          .maybeSingle()
+        if (categoryError) {
+          console.error('updateProduct mode category lookup error:', categoryError)
+          return res.status(500).json({ error: 'Failed to update product.' })
+        }
+        effectiveCategory = category
+      }
+
+      const effectiveDescription =
+        description !== undefined ? description : current.description
+      let piecesAvailable
+      if (Array.isArray(variants)) {
+        piecesAvailable = hasPiecesVariant(variants)
+      } else {
+        const { data: currentVariants, error: variantsError } = await supabase
+          .from('product_variants')
+          .select('quantity_unit')
+          .eq('product_id', id)
+        if (variantsError) {
+          console.error('updateProduct mode variants lookup error:', variantsError)
+          return res.status(500).json({ error: 'Failed to update product.' })
+        }
+        piecesAvailable = hasPiecesVariant(currentVariants)
+      }
+
+      const fragranceOil = isFragranceOilCategory(effectiveCategory)
+      const requestedExact =
+        sell_exact_pieces !== undefined
+          ? sell_exact_pieces === true
+          : resolveExactPiecesFlag(effectiveDescription, false)
+      const exactPieces = !fragranceOil && piecesAvailable && requestedExact
+
+      modeContext = {
+        sell_exact_pieces: exactPieces,
+        description: withExactPiecesMode(
+          effectiveDescription,
+          exactPieces,
+          piecesAvailable && !fragranceOil
+        ),
       }
     }
 
@@ -963,28 +1038,9 @@ async function updateProduct(req, res) {
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
     if (is_featured !== undefined) updates.is_featured = is_featured
-    if (sell_exact_pieces !== undefined) {
-      updates.sell_exact_pieces = sell_exact_pieces === true
-      // Keep the compatibility marker in sync until the real column exists.
-      // Reuse the incoming description when present; otherwise read the
-      // current one so an exact-piece toggle never wipes product copy.
-      let currentDescription = description
-      if (currentDescription === undefined) {
-        const { data: current, error: metaError } = await supabase
-          .from('products')
-          .select('description')
-          .eq('id', id)
-          .maybeSingle()
-        if (metaError) {
-          console.error('updateProduct description lookup error:', metaError)
-          return res.status(500).json({ error: 'Failed to update product.' })
-        }
-        currentDescription = current?.description
-      }
-      updates.description = withExactPiecesMarker(
-        currentDescription,
-        sell_exact_pieces === true
-      )
+    if (modeContext) {
+      updates.sell_exact_pieces = modeContext.sell_exact_pieces
+      updates.description = modeContext.description
     }
     if (display_order !== undefined) {
       const order = Number(display_order)

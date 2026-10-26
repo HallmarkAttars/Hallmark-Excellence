@@ -4,6 +4,7 @@ import {
   isCategoryRequired,
   getCategoryLabel,
   validateProductCategory,
+  isFragranceOilCategory,
 } from './productValidation'
 
 describe('productValidation — Category requirement & Brand relationship', () => {
@@ -76,6 +77,24 @@ describe('productValidation — Category requirement & Brand relationship', () =
       expect(validateProductCategory({ categoryId: '', brandId: '' })).toBe('Please select a category.')
       expect(validateProductCategory({ categoryId: null, brandId: null })).toBe('Please select a category.')
       expect(validateProductCategory({})).toBe('Please select a category.')
+    })
+  })
+
+  describe('isFragranceOilCategory', () => {
+    it('matches the production category by name despite its numeric slug', () => {
+      expect(isFragranceOilCategory({ name: 'Fragrance Oil', slug: '10' })).toBe(true)
+      expect(isFragranceOilCategory({ name: ' fragrance oil ', slug: '10' })).toBe(true)
+    })
+
+    it('matches legacy fragrance-oil slugs', () => {
+      expect(isFragranceOilCategory({ slug: 'fragrance-oil' })).toBe(true)
+      expect(isFragranceOilCategory({ slug: 'fragrance oil' })).toBe(true)
+    })
+
+    it('does not match unrelated categories', () => {
+      expect(isFragranceOilCategory({ name: 'Roll on Attars', slug: '1' })).toBe(false)
+      expect(isFragranceOilCategory({ name: 'Bakhoor', slug: 'Bakhoor ' })).toBe(false)
+      expect(isFragranceOilCategory(null)).toBe(false)
     })
   })
 })

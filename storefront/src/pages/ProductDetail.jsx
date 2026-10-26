@@ -20,6 +20,7 @@ import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
 import { buildProductSeo } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
+import { isFragranceOilProduct } from '../utils/exactPieces'
 import './ProductDetail.css'
 
 // Extract piece quantity from a variant (either quantity_value or numeric match from display_label)
@@ -159,7 +160,11 @@ export default function ProductDetail({ onAddToCart }) {
             setSelectedVariant(isPiece ? varAmount : 1)
             setSelectedVariantId(activeVar.id)
             setQuantity(1)
-            setPieceQty(isPiece && p.sell_exact_pieces === true ? varAmount : 1)
+            setPieceQty(
+              isPiece && p.sell_exact_pieces === true && !isFragranceOilProduct(p)
+                ? varAmount
+                : 1
+            )
             setPieceDraft(null)
           }
           getRelatedProducts(p).then(setRelated).catch(() => {})
@@ -240,6 +245,7 @@ export default function ProductDetail({ onAddToCart }) {
   const exactPiecesMode =
     hasVariants &&
     product.sell_exact_pieces === true &&
+    !isFragranceOilProduct(product) &&
     Boolean(chosenVariant && isPieceVariant(chosenVariant))
 
   const activeVariant = exactPiecesMode
@@ -291,7 +297,8 @@ export default function ProductDetail({ onAddToCart }) {
 
     const isPiece = isPieceVariant(found)
     const varAmount = getVariantAmount(found)
-    const exactForThisProduct = product.sell_exact_pieces === true
+    const exactForThisProduct =
+      product.sell_exact_pieces === true && !isFragranceOilProduct(product)
 
     setSelectedVariant(isPiece ? varAmount : 1)
     setSelectedVariantId(found.id)

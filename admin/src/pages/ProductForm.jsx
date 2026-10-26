@@ -6,7 +6,7 @@ import { UNIT_OPTIONS, normalizeUnit, validateVariants } from '../utils/variantV
 // price comes from the brand's Bulk Pricing normal price). Pure helpers with
 // unit tests in utils/attarPriceSync.test.js.
 import { applyAttarPriceSync, computeVariantTotal, shouldSyncAttarPrice } from '../utils/attarPriceSync'
-import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory } from '../utils/productValidation'
+import { isBrandProduct as checkIsBrandProduct, getCategoryLabel, validateProductCategory, isFragranceOilCategory } from '../utils/productValidation'
 import { compressProductImage } from '../utils/imageCompressor'
 import { ProductDetailSkeleton } from '../components/ui/Skeleton'
 import './ProductForm.css'
@@ -18,7 +18,7 @@ const EMPTY = {
   category_id: '', brand_id: '',
   display_order: '',
   is_in_stock: true,
-  sell_exact_pieces: false,
+  sell_exact_pieces: true,
 }
 
 // Formats the live compact summary for mobile collapsed headers:
@@ -327,6 +327,8 @@ export default function ProductForm() {
     [categories, form.category_id]
   )
   const isAttarCategory = selectedCategory?.slug === 'attar' || selectedCategory?.name === 'Attar'
+  const isFragranceOil = isFragranceOilCategory(selectedCategory)
+  const pieceModeApplicable = hasPiecesVariant && !isFragranceOil
 
   const selectedBrand = useMemo(
     () => brands.find((b) => String(b.id) === String(form.brand_id)),
@@ -605,7 +607,7 @@ export default function ProductForm() {
         is_in_stock: Boolean(form.is_in_stock),
         stock: form.is_in_stock ? 1 : 0,
         variants: variantsPayload,
-        sell_exact_pieces: hasPiecesVariant ? Boolean(form.sell_exact_pieces) : false,
+        sell_exact_pieces: pieceModeApplicable ? Boolean(form.sell_exact_pieces) : false,
         display_order: form.display_order === '' ? undefined : Number(form.display_order),
       }
 
@@ -795,7 +797,7 @@ export default function ProductForm() {
           })}
         </div>
 
-        {hasPiecesVariant && (
+        {pieceModeApplicable && (
           <div className="quantity-mode-section">
             <h3>Piece Quantity Mode</h3>
             <p className="quantity-mode-intro">

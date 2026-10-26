@@ -59,3 +59,19 @@ export function validateProductCategory({ categoryId, brandId, lockedBrandId } =
   }
   return null
 }
+
+/**
+ * Fragrance Oil is excluded from loose exact-piece selling. Match by
+ * normalized name because its production slug is the numeric value "10".
+ */
+export function isFragranceOilCategory(category) {
+  const normalize = (value) => String(value ?? '').trim().toLowerCase()
+  const name = normalize(category?.name)
+  const slug = normalize(category?.slug)
+  return (
+    name === 'fragrance oil' ||
+    slug === '10' ||
+    slug === 'fragrance oil' ||
+    slug === 'fragrance-oil'
+  )
+}

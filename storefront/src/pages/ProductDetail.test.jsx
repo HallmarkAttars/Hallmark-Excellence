@@ -285,6 +285,24 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     })
   })
 
+  it('never enables exact pieces for Fragrance Oil even with a legacy true flag', async () => {
+    getProductById.mockResolvedValueOnce({
+      ...mockSampleProduct,
+      category_name: 'Fragrance Oil',
+      category_slug: '10',
+      sell_exact_pieces: true,
+    })
+    renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /60 Pieces/i }))
+    expect(screen.queryByLabelText('Exact pieces')).toBeNull()
+    expect(screen.getByText('Total Pieces: 60')).toBeTruthy()
+  })
+
   it('keeps Gram products pack-based and shows pack math plus total weight', async () => {
     getProductById.mockResolvedValueOnce({
       ...mockSampleProduct,
