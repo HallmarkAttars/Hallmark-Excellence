@@ -422,8 +422,8 @@ export const WHOLESALE = {
     'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement. Export orders are handled for buyers in India and international markets.',
   ],
   quickFacts: [
-    { label: 'Loose attar / fragrance oil MOQ', value: '100 g' },
-    { label: 'Arees & Dahab branded packs', value: '60 pieces combined' },
+    { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
+    { label: 'Arees & Dahab branded packs', value: 'Minimum 60 pieces' },
     { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
     { label: 'Export', value: 'India + Singapore, Malaysia, UAE, Sri Lanka, Maldives' },
     { label: 'Private label', value: 'Own-brand, event and function orders' },
