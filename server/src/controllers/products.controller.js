@@ -10,7 +10,7 @@ const {
 // product_variants.
 const PRODUCT_SELECT = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at,
+  sell_exact_pieces, category_id, brand_id, image, images, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -22,7 +22,7 @@ const PRODUCT_SELECT = `
 // production schema.
 const PRODUCT_SELECT_BASE = `
   id, name, description, price, is_featured, stock, is_in_stock,
-  category_id, brand_id, image, is_active, created_at, updated_at,
+  category_id, brand_id, image, images, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -32,7 +32,7 @@ const PRODUCT_SELECT_BASE = `
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
   id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
-  sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at, display_order,
+  sell_exact_pieces, category_id, brand_id, image, images, is_active, created_at, updated_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
 `
@@ -272,14 +272,31 @@ function attachVariants(rows, variantsByProduct) {
   })
 }
 
+// Compatibility store for sell_exact_pieces on projects where the column
+// migration has not run. The existing images JSONB column is not used by this
+// API, so a sentinel entry can carry the flag without another schema change.
+const EXACT_PIECES_MARKER = '__sell_exact_pieces__'
+
+function hasExactPiecesMarker(images) {
+  return Array.isArray(images) && images.includes(EXACT_PIECES_MARKER)
+}
+
+function withExactPiecesMarker(images, enabled) {
+  const base = Array.isArray(images)
+    ? images.filter((entry) => entry !== EXACT_PIECES_MARKER)
+    : []
+  return enabled ? [...base, EXACT_PIECES_MARKER] : base
+}
+
 function flattenProduct(row) {
   if (!row) return null
-  const { categories, brands, ...rest } = row
+  const { categories, brands, images, ...rest } = row
   const isInStock = row.is_in_stock !== undefined && row.is_in_stock !== null
     ? Boolean(row.is_in_stock)
     : (row.stock != null ? Number(row.stock) > 0 : true)
   return {
     ...rest,
+    sell_exact_pieces: row.sell_exact_pieces === true || hasExactPiecesMarker(images),
     is_in_stock: isInStock,
     stock: isInStock ? 1 : 0,
     category_name: categories?.name || null,
@@ -731,7 +748,7 @@ async function createProduct(req, res) {
     const {
       name, description, price, compare_at_price,
       rating, review_count, category_id, brand_id, image, is_active, is_featured, variants,
-      display_order, stock, is_in_stock
+      display_order, stock, is_in_stock, sell_exact_pieces
     } = req.body
 
     // Only the name is strictly required. The purchasable price now comes
@@ -819,6 +836,7 @@ async function createProduct(req, res) {
       category_id: resolvedCategoryId,
       brand_id: resolvedBrandId,
       image: image ?? null,
+      images: withExactPiecesMarker([], sell_exact_pieces === true),
       is_active: is_active ?? true,
       is_featured: is_featured ?? false,
       sell_exact_pieces: sell_exact_pieces === true,
@@ -939,7 +957,20 @@ async function updateProduct(req, res) {
     if (image !== undefined) updates.image = image
     if (is_active !== undefined) updates.is_active = is_active
     if (is_featured !== undefined) updates.is_featured = is_featured
-    if (sell_exact_pieces !== undefined) updates.sell_exact_pieces = sell_exact_pieces === true
+    if (sell_exact_pieces !== undefined) {
+      updates.sell_exact_pieces = sell_exact_pieces === true
+      // Keep the compatibility marker in sync until the real column exists.
+      const { data: current, error: metaError } = await supabase
+        .from('products')
+        .select('images')
+        .eq('id', id)
+        .maybeSingle()
+      if (metaError) {
+        console.error('updateProduct images lookup error:', metaError)
+      } else {
+        updates.images = withExactPiecesMarker(current?.images, sell_exact_pieces === true)
+      }
+    }
     if (display_order !== undefined) {
       const order = Number(display_order)
       if (!Number.isInteger(order) || order < 0) {

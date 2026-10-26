@@ -46,17 +46,17 @@ async function ensureSellExactPiecesColumn() {
   })
 
   if (rpcError) {
-    status.sell_exact_pieces_schema = 'missing'
+    status.sell_exact_pieces_schema = 'compatibility'
     status.sell_exact_pieces_error = rpcError.message
     console.warn(
-      `[auto-migrations] sell_exact_pieces still missing; run server/db/migration_add_product_sell_exact_pieces.sql in Supabase: ${rpcError.message}`
+      `[auto-migrations] sell_exact_pieces column missing; using images compatibility marker until server/db/migration_add_product_sell_exact_pieces.sql is run: ${rpcError.message}`
     )
     return
   }
 
   const { error: after } = await probe()
   if (after) {
-    status.sell_exact_pieces_schema = 'missing'
+    status.sell_exact_pieces_schema = 'compatibility'
     status.sell_exact_pieces_error = after.message
     console.warn(
       `[auto-migrations] sell_exact_pieces migration ran but column is still missing: ${after.message}`
