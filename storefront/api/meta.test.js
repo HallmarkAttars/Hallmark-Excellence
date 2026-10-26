@@ -97,8 +97,8 @@ describe('buildB2bBodyHtml', () => {
     expect(html).toContain('What an Export Quotation Confirms')
     expect(html).toContain('What are the wholesale desk hours and lead time?')
     expect(html).toContain('Singapore, Malaysia, the UAE, Sri Lanka and the Maldives')
-    expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100 g')
-    expect(html).toContain('60 pieces across a combined branded order')
+    expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100g - 10kg')
+    expect(html).toContain('<strong>Arees &amp; Dahab branded packs:</strong> Minimum 60 pieces')
     expect(html).toContain('GST-registered business with IEC')
   })
 

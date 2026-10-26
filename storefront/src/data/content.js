@@ -246,8 +246,8 @@ export const HIKMA_EXPORTS = {
   intro:
     'Hikma Exports is the Chennai-based parent company of Arees & Dahab and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers in India and international markets.',
   quickFacts: [
-    { label: 'Loose attar / fragrance oil MOQ', value: '100 g' },
-    { label: 'Arees & Dahab branded packs', value: '60 pieces across a combined branded order' },
+    { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
+    { label: 'Arees & Dahab branded packs', value: 'Minimum 60 pieces' },
     { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
     { label: 'Export', value: 'India and international markets' },
     { label: 'Private label', value: 'Own-brand, event and function orders' },
