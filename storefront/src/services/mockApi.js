@@ -3,6 +3,7 @@
 // from local JSON mocks to real Express backend calls.
 
 import { api } from './api'
+import { normalizeCategorySlug } from '../utils/categorySlug'
 
 // ----------------------------------------------------------------------------
 // Client-side response cache for catalog reads
@@ -55,8 +56,14 @@ export async function getProductById(id, options) {
 }
 
 export async function getProductsByCategory(slug, options) {
-  return cachedCatalogRead(`category-products:${slug}`, async () => {
-    const data = await api.get(`/categories/${slug}/products`)
+  const canonicalSlug = normalizeCategorySlug(slug)
+  return cachedCatalogRead(`category-products:${canonicalSlug}`, async () => {
+    const categories = await getCategories(options)
+    const category = categories.find(
+      (item) => normalizeCategorySlug(item.slug) === canonicalSlug
+    )
+    const apiSlug = category?.slug || slug
+    const data = await api.get(`/categories/${encodeURIComponent(apiSlug)}/products`)
     return data.products ?? []
   }, options)
 }
@@ -79,9 +86,13 @@ export async function getCategories(options) {
 }
 
 export async function getCategoryBySlug(slug, options) {
-  // Backend doesn’t have this exact endpoint; fetch categories and find.
-  const data = await getCategories(options)
-  return (data.categories ?? data).find((c) => c.slug === slug) ?? null
+  // Backend doesn't have this exact endpoint; fetch categories and find.
+  const canonicalSlug = normalizeCategorySlug(slug)
+  const categories = await getCategories(options)
+  const category = (categories.categories ?? categories).find(
+    (item) => normalizeCategorySlug(item.slug) === canonicalSlug
+  )
+  return category ? { ...category, slug: canonicalSlug } : null
 }
 
 export async function getBrands(options) {

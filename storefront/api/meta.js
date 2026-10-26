@@ -11,12 +11,20 @@
 import {
   CANONICAL_ORIGIN,
   DEFAULT_OG_IMAGE,
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+  buildLocalBusinessSchema,
   buildProductSeo,
   buildCategorySeo,
   buildBrandSeo,
   buildStaticPageSeo,
+  buildGuideSeo,
+  normalizeCategorySlug,
 } from '../src/utils/seo.js'
-import { BUSINESS, HIKMA_EXPORTS, WHOLESALE } from '../src/data/content.js'
+import { ABOUT, BUSINESS, CONTACT, HERO, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
+import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 const FETCH_TIMEOUT_MS = 8000
@@ -80,6 +88,22 @@ export function buildNotFoundSeo(path = '/') {
   }
 }
 
+export function buildHomeSeo() {
+  return {
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    canonical: '/',
+    image: DEFAULT_OG_IMAGE,
+    type: 'website',
+    robots: 'index,follow',
+    schema: [
+      buildOrganizationSchema(),
+      buildWebSiteSchema(),
+      buildLocalBusinessSchema(),
+    ],
+  }
+}
+
 function renderParagraphs(paragraphs = []) {
   return paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')
 }
@@ -102,16 +126,37 @@ function renderFaqs(faqs = []) {
     .join('')
 }
 
+function renderQuickFacts(facts = []) {
+  return `<section><h2>MOQ, Hours &amp; Export Facts</h2><ul>${facts
+    .map((fact) => `<li><strong>${escapeHtml(fact.label)}:</strong> ${escapeHtml(fact.value)}</li>`)
+    .join('')}</ul></section>`
+}
+
+function renderLinks(links = []) {
+  return links
+    .map((link) => `<a href="${escapeHtml(link.to)}">${escapeHtml(link.label)}</a>`)
+    .join(' ')
+}
+
+function renderContact(heading) {
+  return `<section><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>Wholesale desk: ${escapeHtml(BUSINESS.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">Get directions</a></p></section>`
+}
+
 // Raw, crawlable fallback for the two B2B landing pages. The React app
 // replaces this markup when it mounts; the no-JS/crawler path keeps the
 // page's primary copy, FAQs and contact details in the initial HTML.
 export function buildB2bBodyHtml(slug) {
   const contactHeading = slug === 'hikma-exports' ? 'Contact Hikma Exports' : 'Contact the Wholesale Desk'
-  const contact = `<section><h2>${contactHeading}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p></section>`
+  const contact = renderContact(contactHeading)
 
   if (slug === 'wholesale') {
     return `<main data-prerender="true">
 <header><p>${escapeHtml(WHOLESALE.eyebrow)}</p><h1>${escapeHtml(WHOLESALE.title)}</h1><p>${escapeHtml(WHOLESALE.intro)}</p></header>
+<section><h2>${escapeHtml(WHOLESALE.overviewHeading)}</h2>${renderParagraphs(WHOLESALE.overviewParagraphs)}</section>
+${renderQuickFacts(WHOLESALE.quickFacts)}
+<section><h2>Our Wholesale Product Range</h2>${WHOLESALE.productRange.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p><p>${renderLinks(item.links)}</p></article>`).join('')}</section>
+<section><h2>Transparent Bulk Quantity Tiers</h2><p>${escapeHtml(WHOLESALE.tiersNote)}</p>${WHOLESALE.tiers.map((tier) => `<article><h3>${escapeHtml(tier.heading)}</h3><p>${escapeHtml(tier.description)}</p></article>`).join('')}</section>
+<section><h2>How Wholesale Ordering Works</h2>${WHOLESALE.process.map((step) => `<article><h3>${escapeHtml(step.title)}</h3><p>${escapeHtml(step.description)}</p></article>`).join('')}</section>
 ${renderSections(WHOLESALE.sections)}
 <section><h2>What to Include in Your Wholesale Enquiry</h2><ul>${WHOLESALE.buyerChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>
 <section><h2>Wholesale &amp; Export FAQs</h2>${renderFaqs(WHOLESALE.faqs)}</section>
@@ -122,6 +167,7 @@ ${contact}
   if (slug === 'hikma-exports') {
     return `<main data-prerender="true">
 <header><p>${escapeHtml(HIKMA_EXPORTS.eyebrow)}</p><h1>${escapeHtml(HIKMA_EXPORTS.title)}</h1><p>${escapeHtml(HIKMA_EXPORTS.intro)}</p></header>
+${renderQuickFacts(HIKMA_EXPORTS.quickFacts)}
 <section>${renderParagraphs(HIKMA_EXPORTS.introParagraphs)}</section>
 ${renderSections(HIKMA_EXPORTS.sections)}
 <section><h2>What Hikma Exports Supplies</h2>${HIKMA_EXPORTS.offerings.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p></article>`).join('')}</section>
@@ -133,32 +179,210 @@ ${contact}
   return ''
 }
 
+export function buildHomeBodyHtml() {
+  return `<main data-prerender="true">
+<header><h1>${escapeHtml(HERO.title.join(' '))}</h1><p>${escapeHtml(HERO.subtitle)}</p></header>
+<section><h2>Shop Attars, Oud &amp; Fragrance Oils</h2><p>Browse alcohol-free attars and concentrated perfume oils from Arees Perfumes and Dahab.</p><p><a href="/shop">Shop all attars</a> <a href="/categories">Explore categories</a> <a href="/brands">Our brands</a></p></section>
+<section><h2>Wholesale &amp; Export</h2><p>Hikma Exports supplies loose attar and fragrance oils from 100 g, branded Arees and Dahab packs from 60 pieces, private-label orders and export support.</p><p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p></section>
+<section><h2>Fragrance Guides</h2><p>Practical guides to choosing, storing and sourcing attars and perfume oils.</p><p><a href="/guides">Read the guides</a></p></section>
+</main>`
+}
+
+export function buildSouthIndiaBodyHtml() {
+  const store = SOUTH_INDIA.store
+  return `<main data-prerender="true">
+<header><p>${escapeHtml(SOUTH_INDIA.eyebrow)}</p><h1>${escapeHtml(SOUTH_INDIA.title)}</h1><p>${escapeHtml(SOUTH_INDIA.intro)}</p></header>
+<section><h2>${escapeHtml(SOUTH_INDIA.heritage.heading)}</h2>${renderParagraphs(SOUTH_INDIA.heritage.paragraphs)}</section>
+<section><h2>Why Fragrance Buyers in South India Choose Arees</h2>${SOUTH_INDIA.reasons.map((reason) => `<article><h3>${escapeHtml(reason.title)}</h3><p>${escapeHtml(reason.description)}</p></article>`).join('')}</section>
+<section><h2>${escapeHtml(store.heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>${escapeHtml(store.landmark)}</p><p>${store.hours.map((line) => escapeHtml(line)).join(' ')}</p><p>${escapeHtml(store.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">${escapeHtml(store.directionsLabel)}</a></p></section>
+<section><h2>${escapeHtml(SOUTH_INDIA.coverage.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.coverage.intro)}</p>${SOUTH_INDIA.coverage.regions.map((region) => `<article><h3>${escapeHtml(region.title)}</h3><p>${escapeHtml(region.description)}</p></article>`).join('')}</section>
+<section><h2>${escapeHtml(SOUTH_INDIA.cta.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.cta.intro)}</p><p><a href="/shop">Shop attars</a> <a href="/wholesale">Wholesale supply</a> <a href="/contact">Contact us</a></p></section>
+</main>`
+}
+
+export function buildStaticBodyHtml(slug) {
+  if (slug === 'home') return buildHomeBodyHtml()
+  if (slug === 'wholesale' || slug === 'hikma-exports') return buildB2bBodyHtml(slug)
+  if (slug === 'guides') return buildGuideIndexBodyHtml()
+  if (slug === 'attar-perfume-shop-south-india' || slug === 'south-india') {
+    return buildSouthIndiaBodyHtml()
+  }
+
+  if (slug === 'about') {
+    return `<main data-prerender="true">
+<header><p>${escapeHtml(ABOUT.eyebrow)}</p><h1>${escapeHtml(ABOUT.title)}</h1></header>
+<section><h2>${escapeHtml(ABOUT.story.heading)}</h2>${renderParagraphs(ABOUT.story.paragraphs)}</section>
+<section><h2>${escapeHtml(ABOUT.hikma.heading)}</h2>${renderParagraphs(ABOUT.hikma.paragraphs)}</section>
+<section><h2>Our Standards</h2>${ABOUT.values.map((value) => `<article><h3>${escapeHtml(value.title)}</h3><p>${escapeHtml(value.description)}</p></article>`).join('')}</section>
+<section><h2>FAQs</h2>${renderFaqs(ABOUT.faqs)}</section>
+<p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p>
+</main>`
+  }
+
+  if (slug === 'contact') {
+    return `<main data-prerender="true">
+<header><p>${escapeHtml(CONTACT.eyebrow)}</p><h1>${escapeHtml(CONTACT.title)}</h1><p>${escapeHtml(CONTACT.subtitle)}</p></header>
+${renderContact('Visit or Reach Us')}
+</main>`
+  }
+
+  const simplePages = {
+    shop: {
+      title: 'Shop Attars, Oud & Fragrance Oils',
+      intro: 'Browse alcohol-free attars, oud and concentrated fragrance oils from Arees Perfumes and Dahab, with delivery across India.',
+      links: [
+        { to: '/categories', label: 'Explore categories' },
+        { to: '/brands', label: 'Our brands' },
+        { to: '/wholesale', label: 'Wholesale enquiry' },
+      ],
+    },
+    categories: {
+      title: 'Fragrance Categories',
+      intro: 'Explore attars, oud oils, fragrance oils, bakhoor and perfume packaging from Arees Perfumes in Chennai.',
+      links: [
+        { to: '/shop', label: 'Shop all attars' },
+        { to: '/wholesale', label: 'Wholesale supply' },
+        { to: '/guides', label: 'Fragrance guides' },
+      ],
+    },
+    brands: {
+      title: 'Our Fragrance Brands',
+      intro: 'Discover Arees and Dahab, the retail fragrance collections of Arees Perfumes and Hikma Exports.',
+      links: [
+        { to: '/brand/arees', label: 'Arees Perfumes' },
+        { to: '/brand/dahab', label: 'Dahab' },
+        { to: '/hikma-exports', label: 'Hikma Exports' },
+      ],
+    },
+    retail: {
+      title: 'Retail Attars & Pure Perfume Oils',
+      intro: 'Shop alcohol-free attars and concentrated perfume oils for personal wear, gifting and everyday use.',
+      links: [
+        { to: '/shop', label: 'Shop attars' },
+        { to: '/categories', label: 'Categories' },
+        { to: '/wholesale', label: 'Wholesale enquiry' },
+      ],
+    },
+  }
+
+  const page = simplePages[slug]
+  if (!page) return ''
+  return `<main data-prerender="true">
+<header><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.intro)}</p></header>
+<p>${renderLinks(page.links)}</p>
+</main>`
+}
+
+export function buildProductBodyHtml(product) {
+  if (!product?.name) return ''
+  const brandName = product.brand_name || 'Arees Perfumes'
+  const categoryName = product.category_name || 'Attars'
+  const description =
+    product.description ||
+    `${product.name} is an alcohol-free attar from Arees Perfumes, available for retail and wholesale from Chennai.`
+  const categorySlug = normalizeCategorySlug(product.category_slug || 'attars')
+  return `<main data-prerender="true">
+<nav><a href="/">Home</a> / <a href="/shop">Shop</a> / <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a></nav>
+<h1>${escapeHtml(product.name)}</h1>
+<p>${escapeHtml(description)}</p>
+<p>Brand: ${escapeHtml(brandName)} | Category: ${escapeHtml(categoryName)}</p>
+<p>Available for retail and wholesale from Arees Perfumes in Mannadi, Chennai.</p>
+<p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
+</main>`
+}
+
+export function buildCategoryBodyHtml(category, slug, products = []) {
+  if (!category?.name) return ''
+  const canonicalSlug = normalizeCategorySlug(slug)
+  const intro =
+    category.description ||
+    `Explore authentic ${category.name} from Arees Perfumes, with alcohol-free attars and fragrance oils supplied from Chennai.`
+  const links = (Array.isArray(products) ? products : [])
+    .slice(0, 24)
+    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(product.name)}</a></li>`)
+    .join('')
+  return `<main data-prerender="true">
+<nav><a href="/">Home</a> / <a href="/categories">Categories</a></nav>
+<h1>${escapeHtml(category.name)}</h1>
+<p>${escapeHtml(intro)}</p>
+${links ? `<h2>Products in this category</h2><ul>${links}</ul>` : ''}
+<p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p>
+</main>`
+}
+
+export function buildBrandBodyHtml(brand, slug, products = []) {
+  if (!brand?.name) return ''
+  const links = (Array.isArray(products) ? products : [])
+    .slice(0, 24)
+    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(product.name)}</a></li>`)
+    .join('')
+  return `<main data-prerender="true">
+<nav><a href="/">Home</a> / <a href="/brands">Brands</a></nav>
+<h1>${escapeHtml(brand.name)}</h1>
+<p>Explore ${escapeHtml(brand.name)} attars and fragrance oils from Arees Perfumes in Chennai.</p>
+${links ? `<h2>Products by ${escapeHtml(brand.name)}</h2><ul>${links}</ul>` : ''}
+<p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
+</main>`
+}
+
+// Crawlable fallback for the editorial guides. React replaces this markup
+// after hydration; the initial HTML keeps the guide copy, FAQs and links.
+export function buildGuideIndexBodyHtml() {
+  return `<main data-prerender="true">
+<header><p>Fragrance Guides</p><h1>Attar, Perfume Oil &amp; Wholesale Guides</h1><p>Practical guides to choosing, storing and sourcing attars, perfume oils and fragrance packaging from Arees Perfumes and Hikma Exports in Chennai.</p></header>
+<section><h2>All Guides</h2>${GUIDES.map((guide) => `<article><h3><a href="/guides/${escapeHtml(guide.slug)}">${escapeHtml(guide.title)}</a></h3><p>${escapeHtml(guide.excerpt)}</p></article>`).join('')}</section>
+</main>`
+}
+
+export function buildGuideBodyHtml(slug) {
+  const guide = getGuideBySlug(slug)
+  if (!guide) return ''
+  return `<main data-prerender="true">
+<header><p>${escapeHtml(guide.category)}</p><h1>${escapeHtml(guide.title)}</h1><p>${escapeHtml(guide.excerpt)}</p></header>
+${renderSections(guide.sections)}
+<section><h2>Frequently Asked Questions</h2>${renderFaqs(guide.faqs)}</section>
+${guide.related?.length ? `<section><h2>Related Reading</h2><ul>${guide.related.map((item) => `<li><a href="${escapeHtml(item.to)}">${escapeHtml(item.label)}</a></li>`).join('')}</ul></section>` : ''}
+</main>`
+}
+
 export async function buildSeoForRoute({ type, id, slug } = {}) {
   if (type === 'product') {
     if (!id || !UUID_RE.test(id)) throw httpError(404, 'Invalid product id')
     const data = await fetchJson(`/products/${encodeURIComponent(id)}`)
     const product = data?.product ?? data
     if (!product || !product.id) throw httpError(404, 'Product not found')
-    return { status: 200, seo: buildProductSeo(product) }
+    return {
+      status: 200,
+      seo: buildProductSeo(product),
+      bodyHtml: buildProductBodyHtml(product),
+    }
   }
 
   if (type === 'category') {
     if (!slug) throw httpError(404, 'Missing category slug')
-    const [data, productsResult] = await Promise.allSettled([
-      fetchJson('/categories'),
-      fetchJson(`/categories/${encodeURIComponent(slug)}/products`),
-    ])
-    if (data.status === 'rejected') throw data.reason
-    const category = (data.value?.categories || []).find((item) => String(item.slug) === String(slug))
+    const canonicalSlug = normalizeCategorySlug(slug)
+    const data = await fetchJson('/categories')
+    const category = (data?.categories || []).find(
+      (item) => normalizeCategorySlug(item.slug) === canonicalSlug
+    )
     if (!category) throw httpError(404, 'Category not found')
-    const seo = buildCategorySeo(category, slug)
-    if (productsResult.status === 'fulfilled') {
-      const productCount = Array.isArray(productsResult.value?.products)
-        ? productsResult.value.products.length
-        : 0
-      if (productCount === 0) seo.robots = 'noindex,follow'
+    const seo = buildCategorySeo(category, canonicalSlug)
+    let products = []
+    try {
+      const productsResult = await fetchJson(
+        `/categories/${encodeURIComponent(category.slug)}/products`
+      )
+      products = Array.isArray(productsResult?.products) ? productsResult.products : []
+      if (products.length === 0) seo.robots = 'noindex,follow'
+    } catch {
+      // Keep the category page indexable if the product count check fails;
+      // the page itself is still a valid category landing page.
     }
-    return { status: 200, seo }
+    return {
+      status: 200,
+      seo,
+      bodyHtml: buildCategoryBodyHtml(category, canonicalSlug, products),
+    }
   }
 
   if (type === 'brand') {
@@ -172,20 +396,38 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     const brand = (data.value?.brands || []).find((item) => String(item.slug) === String(resolvedSlug))
     if (!brand) throw httpError(404, 'Brand not found')
     const seo = buildBrandSeo(brand, slug)
+    let products = []
     if (productsResult.status === 'fulfilled') {
-      const productCount = Array.isArray(productsResult.value?.products)
-        ? productsResult.value.products.length
-        : 0
-      if (productCount === 0) seo.robots = 'noindex,follow'
+      products = Array.isArray(productsResult.value?.products) ? productsResult.value.products : []
+      if (products.length === 0) seo.robots = 'noindex,follow'
     }
-    return { status: 200, seo }
+    return {
+      status: 200,
+      seo,
+      bodyHtml: buildBrandBodyHtml(brand, slug, products),
+    }
+  }
+
+  if (type === 'guide') {
+    if (!slug) throw httpError(404, 'Missing guide slug')
+    const guide = getGuideBySlug(slug)
+    if (!guide) throw httpError(404, 'Guide not found')
+    return {
+      status: 200,
+      seo: buildGuideSeo(guide),
+      bodyHtml: buildGuideBodyHtml(slug),
+    }
   }
 
   if (type === 'page') {
     if (!slug) throw httpError(404, 'Missing page slug')
-    const seo = buildStaticPageSeo(slug)
+    const seo = slug === 'home' ? buildHomeSeo() : buildStaticPageSeo(slug)
     if (!seo) throw httpError(404, 'Page not found')
-    return { status: 200, seo }
+    return {
+      status: 200,
+      seo,
+      bodyHtml: buildStaticBodyHtml(slug),
+    }
   }
 
   throw httpError(404, 'Unknown route')
@@ -193,6 +435,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
 
 export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
   const canonicalUrl = absoluteUrl(seo?.canonical)
+  const isHome = canonicalUrl === CANONICAL_ORIGIN || canonicalUrl === `${CANONICAL_ORIGIN}/`
   const imageUrl = absoluteUrl(seo?.image)
   const title = escapeHtml(seo?.title || 'Arees Perfumes')
   const description = escapeHtml(seo?.description || '')
@@ -228,8 +471,10 @@ ${jsonLd}`
     .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, '')
     .replace(/<meta[^>]+(?:name|property)=["'](?:description|robots|og:[^"']+|twitter:[^"']+)["'][^>]*>/gi, '')
     .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '')
-    .replace(/<link[^>]+href=["']\/Hero(?:-mobile)?\.webp["'][^>]*>/gi, '')
-    .replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
+  if (!isHome) {
+    html = html.replace(/<link[^>]+href=["']\/Hero(?:-mobile)?\.webp["'][^>]*>/gi, '')
+  }
+  html = html.replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
 
   if (bodyHtml) {
     html = html.replace(
@@ -288,17 +533,21 @@ export default async function handler(req, res) {
         ? `/categories/${slug}`
         : type === 'brand'
           ? `/brand/${slug}`
-          : type === 'page'
-            ? `/${slug}`
-            : '/'
+          : type === 'guide'
+            ? `/guides/${slug}`
+            : type === 'page'
+              ? `/${slug}`
+              : '/'
 
   let status = 200
   let seo
+  let bodyHtml = ''
 
   try {
     const result = await buildSeoForRoute({ type, id, slug })
     status = result.status
     seo = result.seo
+    bodyHtml = result.bodyHtml || ''
   } catch (error) {
     if (error?.status === 404) {
       status = 404
@@ -315,6 +564,19 @@ export default async function handler(req, res) {
     }
   }
 
+  if (
+    status === 200 &&
+    type === 'category' &&
+    seo?.canonical &&
+    seo.canonical !== `/categories/${slug}`
+  ) {
+    res.statusCode = 301
+    res.setHeader('Location', `${CANONICAL_ORIGIN}${seo.canonical}`)
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
+    res.end()
+    return
+  }
+
   let shell
   try {
     shell = await fetchShell(req)
@@ -327,8 +589,7 @@ export default async function handler(req, res) {
     return
   }
 
-  const bodyHtml = status === 200 && type === 'page' ? buildB2bBodyHtml(slug) : ''
-  const html = injectSeoHtml(shell, seo, bodyHtml)
+  const html = injectSeoHtml(shell, seo, status === 200 ? bodyHtml : '')
   res.statusCode = status
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader(

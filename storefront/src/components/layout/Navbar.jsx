@@ -170,7 +170,7 @@ export default function Navbar() {
                         <span className="navbar-drop-empty">Loading brands…</span>
                       )}
                       {brandsLoaded && sortedBrands.length === 0 && (
-                        <span className="navbar-drop-empty">No brands yet</span>
+                        <span className="navbar-drop-empty">No frag</span>
                       )}
                     </div>
                   </div>
@@ -272,7 +272,7 @@ export default function Navbar() {
                       <span className="navbar-drawer-sublink navbar-drawer-empty">Loading brands…</span>
                     )}
                     {brandsLoaded && sortedBrands.length === 0 && (
-                      <span className="navbar-drawer-sublink navbar-drawer-empty">No brands yet</span>
+                      <span className="navbar-drawer-sublink navbar-drawer-empty">No frag</span>
                     )}
                   </div>
                 </div>

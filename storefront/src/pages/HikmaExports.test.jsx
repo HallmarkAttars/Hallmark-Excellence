@@ -17,10 +17,13 @@ describe('HikmaExports page', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: /Hikma Exports & Hikma Perfumes: Wholesale Fragrance Supply in Chennai/i,
+        name: /Hikma Exports: Perfume Wholesaler & Exporter in Chennai/i,
       })
     ).toBeTruthy()
     expect(screen.getByRole('link', { name: /Wholesale Enquiry/i }).getAttribute('href')).toBe('/wholesale')
     expect(screen.getByRole('heading', { name: /Hikma Exports FAQs/i })).toBeTruthy()
+    expect(screen.getByText('100 g')).toBeTruthy()
+    expect(screen.getByText('60 pieces across a combined branded order')).toBeTruthy()
+    expect(screen.getByText('GST-registered business with IEC')).toBeTruthy()
   })
 })

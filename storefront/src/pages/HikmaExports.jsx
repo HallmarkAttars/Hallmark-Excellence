@@ -42,6 +42,18 @@ export default function HikmaExports() {
           />
         </section>
 
+        <section className="hikma-offerings" aria-labelledby="hikma-facts-heading">
+          <h2 id="hikma-facts-heading">MOQ, Hours &amp; Export Facts</h2>
+          <div className="hikma-offerings-grid">
+            {HIKMA_EXPORTS.quickFacts.map((fact) => (
+              <article key={fact.label} className="hikma-offering-card">
+                <h3>{fact.label}</h3>
+                <p>{fact.value}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         {HIKMA_EXPORTS.sections.map((section) => (
           <section key={section.heading} className="hikma-section">
             <h2>{section.heading}</h2>

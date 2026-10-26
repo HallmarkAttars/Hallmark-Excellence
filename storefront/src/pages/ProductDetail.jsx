@@ -18,6 +18,7 @@ import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
 import { buildProductSeo } from '../utils/seo'
+import { normalizeCategorySlug } from '../utils/categorySlug'
 import './ProductDetail.css'
 
 // Extract piece quantity from a variant (either quantity_value or numeric match from display_label)
@@ -549,7 +550,7 @@ export default function ProductDetail({ onAddToCart }) {
         {product.category_name && (
           <>
             <span className="pd-breadcrumb-sep">/</span>
-            <Link to={`/categories/${product.category_slug || 'attars'}`}>{product.category_name}</Link>
+            <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{product.category_name}</Link>
           </>
         )}
         <span className="pd-breadcrumb-sep">/</span>
@@ -807,7 +808,7 @@ export default function ProductDetail({ onAddToCart }) {
             <div className="pd-spec-item">
               <span className="pd-spec-label">Category</span>
               <span className="pd-spec-value">
-                <Link to={`/categories/${product.category_slug || 'attars'}`}>{product.category_name}</Link>
+                <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{product.category_name}</Link>
               </span>
             </div>
           )}

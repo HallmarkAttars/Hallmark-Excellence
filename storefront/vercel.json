@@ -27,10 +27,18 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/categories/Display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },
+    { "source": "/categories/Display%20bottles", "destination": "/categories/display-bottles", "permanent": true },
+    { "source": "/categories/display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },
+    { "source": "/categories/display%20bottles", "destination": "/categories/display-bottles", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
     { "source": "/robots.txt", "destination": "/api/robots" },
     { "source": "/hikma-exports", "destination": "/api/meta?type=page&slug=hikma-exports" },
+    { "source": "/guides", "destination": "/api/meta?type=page&slug=guides" },
+    { "source": "/guides/:slug", "destination": "/api/meta?type=guide&slug=:slug" },
     { "source": "/about", "destination": "/api/meta?type=page&slug=about" },
     { "source": "/wholesale", "destination": "/api/meta?type=page&slug=wholesale" },
     { "source": "/wholesale-attars", "destination": "/api/meta?type=page&slug=wholesale" },
@@ -45,6 +53,7 @@
     { "source": "/product/:id", "destination": "/api/meta?type=product&id=:id" },
     { "source": "/categories/:slug", "destination": "/api/meta?type=category&slug=:slug" },
     { "source": "/brand/:slug", "destination": "/api/meta?type=brand&slug=:slug" },
+    { "source": "/", "destination": "/api/meta?type=page&slug=home" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

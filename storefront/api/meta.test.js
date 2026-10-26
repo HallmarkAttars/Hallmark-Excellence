@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { buildB2bBodyHtml, buildSeoForRoute, injectSeoHtml } from './meta.js'
+import {
+  buildB2bBodyHtml,
+  buildGuideBodyHtml,
+  buildGuideIndexBodyHtml,
+  buildSeoForRoute,
+  buildStaticBodyHtml,
+  injectSeoHtml,
+} from './meta.js'
 import handler from './meta.js'
 
 const shell = `<!doctype html>
@@ -73,22 +80,61 @@ describe('injectSeoHtml', () => {
 })
 
 describe('buildB2bBodyHtml', () => {
-  it('renders the wholesale page copy, checklist and FAQs', () => {
+  it('renders the wholesale page copy, checklist, MOQ facts and FAQs', () => {
     const html = buildB2bBodyHtml('wholesale')
-    expect(html).toContain('<h1>Wholesale Attars &amp; Perfume Oils Supplier in Chennai</h1>')
+    expect(html).toContain('<h1>Perfume &amp; Attar Wholesale in Chennai</h1>')
     expect(html).toContain('What to Include in Your Wholesale Enquiry')
-    expect(html).toContain('What are your MOQ, lead time and payment terms?')
+    expect(html).toContain('What is the wholesale minimum order quantity?')
+    expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100 g')
+    expect(html).toContain('<strong>Arees &amp; Dahab branded packs:</strong> 60 pieces combined')
+    expect(html).toContain('Private label')
+    expect(html).toContain('GST-registered business with IEC')
   })
 
-  it('renders the Hikma Exports entity copy and FAQs', () => {
+  it('renders the Hikma Exports entity copy, export facts and FAQs', () => {
     const html = buildB2bBodyHtml('hikma-exports')
-    expect(html).toContain('<h1>Hikma Exports &amp; Hikma Perfumes: Wholesale Fragrance Supply in Chennai</h1>')
+    expect(html).toContain('<h1>Hikma Exports: Perfume Wholesaler &amp; Exporter in Chennai</h1>')
     expect(html).toContain('What an Export Quotation Confirms')
-    expect(html).toContain('What are the MOQ, lead time, shipping and payment terms?')
+    expect(html).toContain('What are the wholesale desk hours and lead time?')
+    expect(html).toContain('Singapore, Malaysia, the UAE, Sri Lanka and the Maldives')
+    expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100 g')
+    expect(html).toContain('60 pieces across a combined branded order')
+    expect(html).toContain('GST-registered business with IEC')
   })
 
   it('returns nothing for non-B2B pages', () => {
     expect(buildB2bBodyHtml('about')).toBe('')
+  })
+})
+
+describe('static body fallbacks', () => {
+  it('renders home and South India copy with wholesale facts', () => {
+    const home = buildStaticBodyHtml('home')
+    expect(home).toContain('<h2>Wholesale &amp; Export</h2>')
+    expect(home).toContain('loose attar and fragrance oils from 100 g')
+    expect(home).toContain('branded Arees and Dahab packs from 60 pieces')
+
+    const southIndia = buildStaticBodyHtml('attar-perfume-shop-south-india')
+    expect(southIndia).toContain('<h1>Attar Shop in Chennai &amp; South India</h1>')
+    expect(southIndia).toContain('Wholesale desk: 9:00 AM - 9:30 PM')
+    expect(southIndia).toContain('Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, and Telangana')
+  })
+})
+
+describe('guide body fallbacks', () => {
+  it('renders the guides index and guide article copy', () => {
+    const index = buildGuideIndexBodyHtml()
+    expect(index).toContain('<h1>Attar, Perfume Oil &amp; Wholesale Guides</h1>')
+    expect(index).toContain('/guides/attar-vs-perfume-oil')
+
+    const article = buildGuideBodyHtml('attar-vs-perfume-oil')
+    expect(article).toContain('<h1>Attar vs Perfume Oil: What Is the Difference?</h1>')
+    expect(article).toContain('The Short Answer')
+    expect(article).toContain('Frequently Asked Questions')
+  })
+
+  it('returns nothing for an unknown guide', () => {
+    expect(buildGuideBodyHtml('not-a-guide')).toBe('')
   })
 })
 
@@ -187,6 +233,39 @@ describe('buildSeoForRoute', () => {
     expect(populated.seo.robots).toBeUndefined()
   })
 
+  it('resolves the legacy display-bottles slug to the live category record', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({
+          categories: [{ id: 'c-display', name: 'Canter Bottle', slug: 'Display bottles ' }],
+        })
+      }
+      if (value.includes('/categories/Display%20bottles%20/products')) {
+        return jsonResponse({ products: [{ id: 'p-1' }] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await buildSeoForRoute({ type: 'category', slug: 'display-bottles' })
+    expect(result.seo.canonical).toBe('/categories/display-bottles')
+    expect(result.seo.name).toBe('Canter Bottle')
+  })
+
+  it('builds guide SEO without calling the API', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await buildSeoForRoute({ type: 'guide', slug: 'attar-vs-perfume-oil' })
+    expect(result.status).toBe(200)
+    expect(result.seo.canonical).toBe('/guides/attar-vs-perfume-oil')
+    expect(result.seo.schema.map((item) => item['@type'])).toEqual(
+      expect.arrayContaining(['Article', 'FAQPage', 'BreadcrumbList'])
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('throws a 404 for an unknown record', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ error: 'Not found' }, 404)))
     await expect(buildSeoForRoute({ type: 'product', id: '11111111-1111-4111-8111-111111111111' })).rejects.toMatchObject({ status: 404 })
@@ -252,11 +331,61 @@ describe('meta handler', () => {
     )
 
     expect(res.statusCode).toBe(200)
-    expect(res.body).toContain('<title>Hikma Exports | Hikma Perfumes Wholesale &amp; Export | Chennai</title>')
+    expect(res.body).toContain('<title>Perfume Exporter in Chennai | Hikma Exports &amp; Hikma Perfumes</title>')
     expect(res.body).toContain('rel="canonical" href="https://www.areesperfumes.in/hikma-exports"')
     expect(res.body).toContain('application/ld+json')
     expect(res.body).toContain('data-prerender="true"')
-    expect(res.body).toContain('<h1>Hikma Exports &amp; Hikma Perfumes: Wholesale Fragrance Supply in Chennai</h1>')
+    expect(res.body).toContain('<h1>Hikma Exports: Perfume Wholesaler &amp; Exporter in Chennai</h1>')
+    expect(res.body).toContain('Singapore, Malaysia, the UAE, Sri Lanka and the Maldives')
+  })
+
+  it('server-renders the guides index and guide article body', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const indexRes = createRes()
+    await handler(
+      { query: { type: 'page', slug: 'guides' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      indexRes
+    )
+    expect(indexRes.statusCode).toBe(200)
+    expect(indexRes.body).toContain('rel="canonical" href="https://www.areesperfumes.in/guides"')
+    expect(indexRes.body).toContain('Attar, Perfume Oil &amp; Wholesale Guides')
+
+    const articleRes = createRes()
+    await handler(
+      { query: { type: 'guide', slug: 'attar-vs-perfume-oil' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      articleRes
+    )
+    expect(articleRes.statusCode).toBe(200)
+    expect(articleRes.body).toContain('rel="canonical" href="https://www.areesperfumes.in/guides/attar-vs-perfume-oil"')
+    expect(articleRes.body).toContain('data-prerender="true"')
+  })
+
+  it('redirects the legacy display-bottles category slug to the canonical URL', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({
+          categories: [{ id: 'c-display', name: 'Canter Bottle', slug: 'Display bottles ' }],
+        })
+      }
+      if (value.includes('/categories/Display%20bottles%20/products')) {
+        return jsonResponse({ products: [{ id: 'p-1' }] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      { query: { type: 'category', slug: 'Display bottles ' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      res
+    )
+    expect(res.statusCode).toBe(301)
+    expect(res.headers.location).toBe('https://www.areesperfumes.in/categories/display-bottles')
   })
 
   it('returns HTTP 404 and noindex for a missing product', async () => {

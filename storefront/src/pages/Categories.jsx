@@ -9,6 +9,7 @@ import '../components/home/CategoryGrid.css'
 import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
 import SEO from '../components/seo/SEO'
 import { buildBreadcrumbsSchema } from '../utils/seo'
+import { normalizeCategorySlug } from '../utils/categorySlug'
 import './Categories.css'
 
 export default function Categories() {
@@ -42,7 +43,7 @@ export default function Categories() {
         ) : (
           <Reveal className="category-scroll stagger-fade categories-page">
             {categories.map((cat) => (
-              <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
+              <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
                 {/* Upper portion — category image */}
                 <span className="category-media">
                   <span

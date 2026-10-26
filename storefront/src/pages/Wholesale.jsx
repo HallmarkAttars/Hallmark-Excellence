@@ -23,121 +23,73 @@ export default function Wholesale() {
       </header>
 
       <div className="container wholesale-container">
-        {/* Intro overview */}
         <section className="wholesale-overview">
           <div className="wholesale-intro-card">
-            <h2>Trusted Wholesale Perfume Supplier with 30 Years of Industry Experience</h2>
-            <p>
-              Arees Perfumes supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, and boutique fragrance brands.
-              Based in Mannadi, George Town, Chennai, and operating under Hallmark of Excellence and Hikma Exports, we combine traditional
-              Arabian perfumery craftsmanship with dependable commercial logistics.
-            </p>
-            <p>
-              Whether you need pre-packaged 6ml and 8ml roll-ons for your retail shelves, concentrated fragrance oils for custom blending,
-              or empty roll-on and spray glass bottles with caps and pumps, our wholesale division provides transparent bulk pricing
-              and verified quality control.
-            </p>
+            <h2>{WHOLESALE.overviewHeading}</h2>
+            {WHOLESALE.overviewParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </section>
 
-        {/* Product categories */}
+        <section className="wholesale-tiers-section" aria-labelledby="wholesale-facts-heading">
+          <h2 id="wholesale-facts-heading">MOQ, Hours &amp; Export Facts</h2>
+          <div className="wholesale-tiers-grid">
+            {WHOLESALE.quickFacts.map((fact) => (
+              <div key={fact.label} className="tier-card">
+                <span className="tier-badge">{fact.label}</span>
+                <h4>{fact.value}</h4>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="wholesale-categories">
           <h2>Our Wholesale Product Range</h2>
           <div className="wholesale-grid">
-            <div className="wholesale-card">
-              <h3>Wholesale Roll-on Attars</h3>
-              <p>
-                Ready-to-retail 6ml and 8ml roll-on attar bottles under the acclaimed <strong>Arees</strong> and <strong>Dahab</strong> collections.
-                Formulated alcohol-free with long-lasting scent projection.
-              </p>
-              <div className="wholesale-card-links">
-                <Link to="/categories/1" className="wholesale-link">View Roll-On Attars →</Link>
-                <Link to="/brand/arees" className="wholesale-link">Explore Arees Wholesale →</Link>
+            {WHOLESALE.productRange.map((product) => (
+              <div key={product.title} className="wholesale-card">
+                <h3>{product.title}</h3>
+                <p>{product.description}</p>
+                <div className="wholesale-card-links">
+                  {product.links.map((link) => (
+                    <Link key={link.to} to={link.to} className="wholesale-link">
+                      {link.label} -&gt;
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            <div className="wholesale-card">
-              <h3>Bulk Concentrated Fragrance Oils</h3>
-              <p>
-                Pure attar bases and undiluted perfume oils available in commercial quantities for blending, decanting,
-                and custom perfume creation. Over 290 authentic fragrance varieties.
-              </p>
-              <Link to="/categories/10" className="wholesale-link">View Fragrance Oils →</Link>
-            </div>
-
-            <div className="wholesale-card">
-              <h3>Bottles, Caps & Packaging Solutions</h3>
-              <p>
-                Complete packaging hardware including 3ml, 6ml, 8ml, and 12ml glass roll-on bottles, spray bottles,
-                aluminum and gold caps, spray pumps, and display bottles.
-              </p>
-              <Link to="/contact" className="wholesale-link">Request Packaging Details →</Link>
-            </div>
-
-            <div className="wholesale-card">
-              <h3>Bakhoor & Traditional Incense</h3>
-              <p>
-                Premium Arabian bakhoor chips and aromatic resins curated for specialty stores, religious occasions,
-                and luxury gift packaging.
-              </p>
-              <Link to="/hikma-exports" className="wholesale-link">Explore Hikma Exports →</Link>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* Bulk tiers explanation */}
         <section className="wholesale-tiers-section">
           <h2>Transparent Bulk Quantity Tiers</h2>
-          <p className="wholesale-section-sub">
-            Our catalog features automated tiered pricing designed for volume orders. No artificial markups — volume discounts are applied directly.
-          </p>
+          <p className="wholesale-section-sub">{WHOLESALE.tiersNote}</p>
           <div className="wholesale-tiers-grid">
-            <div className="tier-card">
-              <span className="tier-badge">Starter Tier</span>
-              <h4>60 – 120 Pieces</h4>
-              <p>Ideal for independent perfume retailers, boutiques, and initial store stock.</p>
-            </div>
-            <div className="tier-card">
-              <span className="tier-badge">Commercial Tier</span>
-              <h4>180 Pieces</h4>
-              <p>Optimized rates for growing perfume shops and regional distributors.</p>
-            </div>
-            <div className="tier-card">
-              <span className="tier-badge">Master Wholesale</span>
-              <h4>216+ Pieces</h4>
-              <p>Our lowest per-piece wholesale price for volume distributors and bulk trading partners.</p>
-            </div>
+            {WHOLESALE.tiers.map((tier) => (
+              <div key={tier.badge} className="tier-card">
+                <span className="tier-badge">{tier.badge}</span>
+                <h4>{tier.heading}</h4>
+                <p>{tier.description}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* How it works */}
         <section className="wholesale-process">
           <h2>How Wholesale Ordering Works</h2>
           <div className="process-steps">
-            <div className="step-item">
-              <span className="step-num">1</span>
-              <h4>Browse Real Catalogue</h4>
-              <p>Explore all 370+ active products with live pricing and variant configurations.</p>
-            </div>
-            <div className="step-item">
-              <span className="step-num">2</span>
-              <h4>Assemble Order Request</h4>
-              <p>Add required quantities to your list or reach our desk directly via WhatsApp with your SKU list.</p>
-            </div>
-            <div className="step-item">
-              <span className="step-num">3</span>
-              <h4>Receive Formal Invoice</h4>
-              <p>Get a computer-generated GST-compliant invoice specifying exact item rates, quantities, and transport.</p>
-            </div>
-            <div className="step-item">
-              <span className="step-num">4</span>
-              <h4>Secure Dispatch</h4>
-              <p>Orders are carefully packed and dispatched through reliable courier and transport networks from Chennai.</p>
-            </div>
+            {WHOLESALE.process.map((step, index) => (
+              <div key={step.title} className="step-item">
+                <span className="step-num">{index + 1}</span>
+                <h4>{step.title}</h4>
+                <p>{step.description}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* Buyer guidance */}
         <section className="wholesale-overview">
           <div className="wholesale-intro-card">
             {WHOLESALE.sections.map((section) => (
@@ -163,7 +115,7 @@ export default function Wholesale() {
         </section>
 
         <section className="wholesale-categories" aria-labelledby="wholesale-faq-heading">
-          <h2 id="wholesale-faq-heading">Wholesale & Export FAQs</h2>
+          <h2 id="wholesale-faq-heading">Wholesale &amp; Export FAQs</h2>
           <div className="wholesale-grid">
             {WHOLESALE.faqs.map((faq) => (
               <div key={faq.question} className="wholesale-card">
@@ -174,17 +126,17 @@ export default function Wholesale() {
           </div>
         </section>
 
-        {/* Contact info box */}
         <section className="wholesale-contact-cta">
           <h2>Contact Our Wholesale Desk</h2>
-          <p>Discuss custom quantities, logistics, or visit our physical trading office in Chennai:</p>
+          <p>Discuss MOQ, private label, export requirements or visit our trading office in Chennai:</p>
           <div className="wholesale-contact-details">
-            <p><strong>Boutique & Trading Office:</strong> {BUSINESS.address}</p>
+            <p><strong>Boutique &amp; Trading Office:</strong> {BUSINESS.address}</p>
+            <p><strong>Wholesale Desk Hours:</strong> {BUSINESS.wholesaleHours}</p>
             <p><strong>Direct Helpline / WhatsApp:</strong> <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a></p>
             <p><strong>Wholesale Email:</strong> <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
           </div>
           <p className="wholesale-hikma-link">
-            <Link to="/hikma-exports">Learn about Hikma Exports and Hikma Perfumes →</Link>
+            <Link to="/hikma-exports">Learn about Hikma Exports and Hikma Perfumes -&gt;</Link>
           </p>
           <div className="wholesale-buttons">
             <Link to="/contact" className="btn btn-primary">Submit Wholesale Enquiry</Link>

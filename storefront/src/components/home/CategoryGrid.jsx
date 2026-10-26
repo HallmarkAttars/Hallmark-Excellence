@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Reveal from '../../animations/Reveal'
 import { HOME_CATEGORIES } from '../../data/content'
 import { cloudinarySrc } from '../../utils/productImage'
+import { normalizeCategorySlug } from '../../utils/categorySlug'
 import './CategoryGrid.css'
 
 export default function CategoryGrid({ categories }) {
@@ -36,7 +37,7 @@ export default function CategoryGrid({ categories }) {
           {visibleCategories.map((cat) => {
             const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
             return (
-              <Link key={cat.id} to={`/categories/${cat.slug}`} className="category-card">
+              <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
                 {/* Upper portion — category image */}
                 <span className="category-media">
                   {imgSrc ? (

@@ -15,8 +15,9 @@ export const BUSINESS = {
   name: 'Arees & Dahab',
   tagline: 'The Art of Significance Attars',
   phoneDisplay: '+91 98407 50467',
-  phoneTel: '+919840750467', // digits only — used for tel: links
+  phoneTel: '+919840750467', // digits only �?" used for tel: links
   email: 'hikmaexports@gmail.com',
+  wholesaleHours: '9:00 AM – 9:30 PM',
   address: '83 & 84, Moore St, Mannadi, George Town, Chennai, Greater Chennai, Tamil Nadu 600001',
   addressParts: {
     streetAddress: '83 & 84, Moore St, Mannadi, George Town',
@@ -32,7 +33,7 @@ export const BUSINESS = {
   social: [
     { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
     { key: 'facebook', label: 'Facebook', href: '#' },
-    { key: 'whatsapp', label: 'WhatsApp', href: '#' },
+    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/919840750467?text=Can%20I%20get%20more%20info%20about%20wholesale%20and%20private%20label%3F' },
   ],
   // Lookup helpers — components should resolve by key, never by array index.
   socialByKey: (key) => BUSINESS.social.find((s) => s.key === key),
@@ -67,6 +68,7 @@ export const NAV_LINKS = [
   { to: '/shop', label: 'Shop' },
   { to: '/categories', label: 'Categories' },
   { to: '/wholesale', label: 'Wholesale' },
+  { to: '/guides', label: 'Guides' },
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
   { to: '/track-order', label: 'Track Order' },
@@ -240,12 +242,22 @@ export const ABOUT = {
 // --------------------------------------------------------------------------
 export const HIKMA_EXPORTS = {
   eyebrow: 'Hikma Exports',
-  title: 'Hikma Exports & Hikma Perfumes: Wholesale Fragrance Supply in Chennai',
+  title: 'Hikma Exports: Perfume Wholesaler & Exporter in Chennai',
   intro:
-    'Hikma Exports is the Chennai-based parent company of Arees & Dahab and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers.',
+    'Hikma Exports is the Chennai-based parent company of Arees & Dahab and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers in India and international markets.',
+  quickFacts: [
+    { label: 'Loose attar / fragrance oil MOQ', value: '100 g' },
+    { label: 'Arees & Dahab branded packs', value: '60 pieces across a combined branded order' },
+    { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
+    { label: 'Export', value: 'India and international markets' },
+    { label: 'Private label', value: 'Own-brand, event and function orders' },
+    { label: 'Business documents', value: 'GST-registered business with IEC' },
+  ],
+  exportMarkets: ['Singapore', 'Malaysia', 'UAE', 'Sri Lanka', 'Maldives'],
   introParagraphs: [
     'Hikma Exports operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai. The company combines three decades of perfumery experience with wholesale distribution and international export support.',
     'Hikma Perfumes is the fragrance identity used by Hikma Exports. Arees Perfumes and Dahab are the group\'s retail brands, giving trade buyers and individual customers access to the same fragrance standards.',
+    'Current buyer markets include Singapore, Malaysia, the UAE, Sri Lanka and the Maldives, alongside customers across India. GST and IEC documentation are available for trade and export orders; registration numbers are shared directly with buyers when required.',
   ],
   sections: [
     {
@@ -259,14 +271,29 @@ export const HIKMA_EXPORTS = {
       heading: 'Wholesale Supply & International Export from Chennai',
       paragraphs: [
         'Hikma Exports supplies retailers, perfumers, distributors, gift shops and fragrance brands across India. We also handle international export orders for buyers who need Chennai-made fragrance oils, attars and packaging.',
-        'Share your product list, quantities, preferred pack sizes, labelling requirements and destination. Our team will confirm availability, pricing and dispatch options from Mannadi.',
+        'Current buyer markets include Singapore, Malaysia, the UAE, Sri Lanka and the Maldives. Share your destination, product list and quantities so the team can confirm availability, pricing and dispatch options from Mannadi.',
+      ],
+    },
+    {
+      heading: 'MOQ, Wholesale Desk Hours & Order Terms',
+      paragraphs: [
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so buyers can mix the two brands within the same requirement.',
+        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, pack sizes and destination.',
+        'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
+      ],
+    },
+    {
+      heading: 'Private Label, Events & Function Orders',
+      paragraphs: [
+        'Hikma Exports supports private-label and own-brand orders for retailers, fragrance brands, events and functions. Buyers can discuss labels, bottles, caps, pumps and pack sizes around their requirement.',
+        'Private-label feasibility, minimum quantities and lead time are reviewed per order. Share your artwork, target quantity, event date or launch timeline so the team can confirm the right components and schedule.',
       ],
     },
     {
       heading: 'What Export Buyers Should Share',
       paragraphs: [
         'Send your destination country, product list, required pack sizes, quantities, labelling requirements and preferred shipping terms. The Chennai team will confirm availability, pricing, documentation and dispatch options for your order.',
-        'For buyers planning a private label or custom packaging range, share your artwork, bottle and cap preferences, and target order volume so the team can assess the right components.',
+        'For buyers planning a private-label or custom packaging range, share your artwork, bottle and cap preferences, and target order volume so the team can assess the right components.',
       ],
     },
     {
@@ -311,9 +338,14 @@ export const HIKMA_EXPORTS = {
         'Glass roll-on bottles, spray bottles, caps, pumps and display bottles for brands assembling their own fragrance lines.',
     },
     {
+      title: 'Private Label & Event Orders',
+      description:
+        'Own-brand labels, bottles, caps and packs for retailers, fragrance brands, events and functions, reviewed per order.',
+    },
+    {
       title: 'Wholesale & Export Support',
       description:
-        'Bulk pricing, pack-size planning, order coordination and export order support for trade buyers.',
+        'Bulk pricing, pack-size planning, GST invoicing, IEC documentation and order coordination for trade buyers.',
     },
   ],
   faqs: [
@@ -333,9 +365,19 @@ export const HIKMA_EXPORTS = {
         'Hikma Exports operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, the same location as Arees Perfumes and Dahab.',
     },
     {
+      question: 'What is the minimum order quantity?',
+      answer:
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement.',
+    },
+    {
+      question: 'What are the wholesale desk hours and lead time?',
+      answer:
+        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
+    },
+    {
       question: 'Does Hikma Exports handle international export orders?',
       answer:
-        'Yes. Hikma Exports handles international export orders as well as wholesale and trade supply across India. Share your destination, product list and quantities so the team can confirm pricing and logistics.',
+        'Yes. Hikma Exports supplies buyers across India and international markets including Singapore, Malaysia, the UAE, Sri Lanka and the Maldives. Share your destination, product list and quantities so the team can confirm pricing and logistics.',
     },
     {
       question: 'What products can I buy wholesale from Hikma Exports?',
@@ -353,17 +395,17 @@ export const HIKMA_EXPORTS = {
         'Include your destination country, product list, quantities, required pack sizes, labelling requirements and preferred shipping terms so the team can confirm availability, pricing and dispatch options.',
     },
     {
-      question: 'What are the MOQ, lead time, shipping and payment terms?',
+      question: 'Do you support private label, events and functions?',
       answer:
-        'These depend on the products, quantities and destination. The team confirms MOQ, lead time, shipping terms, payment terms and documentation in the written quotation for your enquiry.',
+        'Yes. Hikma Exports supports private-label and own-brand orders for retailers, fragrance brands, events and functions. Share your artwork, target quantity, event date or launch timeline so the team can confirm feasibility, minimum quantities and lead time.',
     },
     {
-      question: 'Can Hikma Exports supply custom labels and packaging?',
+      question: 'Do you have GST and IEC for trade and export orders?',
       answer:
-        'Share your label artwork, bottle, cap or pump requirements and target order volume. Custom labelling and packaging options are reviewed per order.',
+        'Yes. Hikma Exports is a GST-registered business with an Import Export Code (IEC). Registration numbers and destination-specific documents are shared with buyers as part of the quotation.',
     },
   ],
-  sameAs: [],
+  sameAs: [BUSINESS.socialByKey('instagram').href],
 }
 
 // --------------------------------------------------------------------------
@@ -371,15 +413,121 @@ export const HIKMA_EXPORTS = {
 // --------------------------------------------------------------------------
 export const WHOLESALE = {
   eyebrow: 'B2B & Commercial Supply',
-  title: 'Wholesale Attars & Perfume Oils Supplier in Chennai',
+  title: 'Perfume & Attar Wholesale in Chennai',
   intro:
     'Hikma Exports supplies alcohol-free attars, concentrated fragrance oils, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers from Mannadi, George Town, Chennai.',
+  overviewHeading: 'Wholesale Perfume Supply from Chennai',
+  overviewParagraphs: [
+    'Arees Perfumes supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, event buyers and boutique fragrance brands. Based in Mannadi, George Town, Chennai, and operating under Hallmark of Excellence and Hikma Exports, we combine traditional Arabian perfumery with commercial order support.',
+    'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement. Export orders are handled for buyers in India and international markets.',
+  ],
+  quickFacts: [
+    { label: 'Loose attar / fragrance oil MOQ', value: '100 g' },
+    { label: 'Arees & Dahab branded packs', value: '60 pieces combined' },
+    { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
+    { label: 'Export', value: 'India + Singapore, Malaysia, UAE, Sri Lanka, Maldives' },
+    { label: 'Private label', value: 'Own-brand, event and function orders' },
+    { label: 'Business documents', value: 'GST-registered business with IEC' },
+  ],
+  productRange: [
+    {
+      title: 'Wholesale Roll-on Attars',
+      description:
+        'Ready-to-retail 6ml and 8ml roll-on attar bottles under the Arees and Dahab collections. Branded packs start at 60 pieces across a combined order.',
+      links: [
+        { label: 'View Roll-On Attars', to: '/categories/1' },
+        { label: 'Explore Arees Wholesale', to: '/brand/arees' },
+      ],
+    },
+    {
+      title: 'Bulk Concentrated Fragrance Oils',
+      description:
+        'Pure attar bases and undiluted perfume oils in commercial quantities for blending, decanting and custom perfume creation. Loose oils start at 100 g.',
+      links: [{ label: 'View Fragrance Oils', to: '/categories/10' }],
+    },
+    {
+      title: 'Bottles, Caps & Packaging Solutions',
+      description:
+        'Glass roll-on bottles, spray bottles, aluminium and gold caps, spray pumps and display bottles for brands assembling their own fragrance lines.',
+      links: [{ label: 'Request Packaging Details', to: '/contact' }],
+    },
+    {
+      title: 'Bakhoor & Traditional Incense',
+      description:
+        'Arabian bakhoor chips and aromatic resins for specialty stores, religious occasions, gifting and export orders.',
+      links: [{ label: 'Explore Hikma Exports', to: '/hikma-exports' }],
+    },
+    {
+      title: 'Private Label & Event Orders',
+      description:
+        'Own-brand labels, bottles, caps and packs for retailers, fragrance brands, events and functions. Minimum quantities and lead time are reviewed per order.',
+      links: [{ label: 'Discuss Private Label', to: '/contact' }],
+    },
+    {
+      title: 'Export & Domestic Supply',
+      description:
+        'Wholesale supply across India and export orders to buyers in Singapore, Malaysia, the UAE, Sri Lanka, the Maldives and other confirmed destinations.',
+      links: [{ label: 'Export Enquiry', to: '/hikma-exports' }],
+    },
+  ],
+  tiers: [
+    {
+      badge: 'Starter Tier',
+      heading: '60 – 120 Pieces',
+      description: 'Ideal for independent perfume retailers, boutiques, and initial store stock.',
+    },
+    {
+      badge: 'Commercial Tier',
+      heading: '180 Pieces',
+      description: 'Optimised rates for growing perfume shops and regional distributors.',
+    },
+    {
+      badge: 'Master Wholesale',
+      heading: '216+ Pieces',
+      description: 'Our lowest per-piece wholesale price for volume distributors and bulk trading partners.',
+    },
+  ],
+  tiersNote:
+    'Branded Arees/Dahab packs start at 60 pieces combined. Loose attar and fragrance oil orders start at 100 g. Volume pricing and dispatch lead time are confirmed in the quotation.',
+  process: [
+    {
+      title: 'Browse Real Catalogue',
+      description: 'Explore all 370+ active products with live pricing and variant configurations.',
+    },
+    {
+      title: 'Assemble Order Request',
+      description: 'Add required quantities to your list or reach our desk directly via WhatsApp with your SKU list.',
+    },
+    {
+      title: 'Receive Formal Invoice',
+      description: 'Get a computer-generated GST-compliant invoice specifying exact item rates, quantities, and transport.',
+    },
+    {
+      title: 'Secure Dispatch',
+      description: 'Orders are carefully packed and dispatched through reliable courier and transport networks from Chennai.',
+    },
+  ],
   sections: [
     {
       heading: 'Wholesale Fragrance Supply for Trade Buyers',
       paragraphs: [
         'Our wholesale range covers ready-to-retail 6ml and 8ml roll-on attars, concentrated fragrance oils and attar bases, bakhoor, and glass packaging components. Retailers, perfume brands, gift shops and distributors can source multiple lines from one Chennai supplier.',
         'The catalogue combines the Arees and Dahab collections with bulk fragrance oils for blending, decanting and finished perfume production. Share the scents, pack sizes and quantities you need so the team can confirm availability and wholesale pricing.',
+      ],
+    },
+    {
+      heading: 'MOQ, Wholesale Desk Hours & Order Terms',
+      paragraphs: [
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order.',
+        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, quantities and destination.',
+        'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
+      ],
+    },
+    {
+      heading: 'Private Label, Events & Function Orders',
+      paragraphs: [
+        'Arees Perfumes and Hikma Exports support private-label and own-brand orders for retailers, fragrance brands, events and functions. Buyers can discuss labels, bottles, caps, pumps and pack sizes around their requirement.',
+        'Private-label feasibility, minimum quantities and lead time are reviewed per order. Share your artwork, target quantity, event date or launch timeline so the team can confirm the right components and schedule.',
       ],
     },
     {
@@ -412,6 +560,8 @@ export const WHOLESALE = {
     'Label, bottle, cap or pump requirements',
     'Preferred delivery timeline and shipping terms',
     'Preferred payment terms',
+    'GST details for invoicing, if required',
+    'IEC and destination country for export orders',
   ],
   faqs: [
     {
@@ -420,24 +570,34 @@ export const WHOLESALE = {
         'Hikma Exports supplies alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps and pumps.',
     },
     {
+      question: 'What is the wholesale minimum order quantity?',
+      answer:
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement.',
+    },
+    {
+      question: 'What are the wholesale desk hours and lead time?',
+      answer:
+        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
+    },
+    {
       question: 'Can I order both roll-on attars and fragrance oils in bulk?',
       answer:
         'Yes. The wholesale range includes ready-to-retail 6ml and 8ml roll-on attars as well as concentrated fragrance oils and attar bases for blending and decanting.',
     },
     {
-      question: 'How do I get a wholesale quotation?',
-      answer:
-        'Share your product list, quantities, pack sizes and delivery destination by phone, email or the wholesale enquiry form. The team will confirm availability and pricing.',
-    },
-    {
       question: 'Do you handle export enquiries?',
       answer:
-        'Yes. Hikma Exports handles international export enquiries. Include the destination country, product list, quantities, labelling requirements and preferred shipping terms in your enquiry.',
+        'Yes. Hikma Exports supplies buyers across India and international markets including Singapore, Malaysia, the UAE, Sri Lanka and the Maldives. Include the destination country, product list, quantities, labelling requirements and preferred shipping terms in your enquiry.',
     },
     {
-      question: 'What are your MOQ, lead time and payment terms?',
+      question: 'Do you support private label, events and functions?',
       answer:
-        'MOQ, lead time, shipping terms and payment terms depend on the products, quantities and destination. Share your requirement and the team will confirm the applicable terms in your written quotation.',
+        'Yes. We support private-label and own-brand orders for retailers, fragrance brands, events and functions. Share your artwork, target quantity, event date or launch timeline so the team can confirm feasibility, minimum quantities and lead time.',
+    },
+    {
+      question: 'Do you have GST and IEC for trade and export orders?',
+      answer:
+        'Yes. Hikma Exports is a GST-registered business with an Import Export Code (IEC). Registration numbers and destination-specific documents are shared with buyers as part of the quotation.',
     },
     {
       question: 'Can I request custom labelling or packaging?',
@@ -447,13 +607,102 @@ export const WHOLESALE = {
     {
       question: 'Where is the wholesale office?',
       answer:
-        'The wholesale desk operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001.',
+        'The wholesale desk operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, and is available from 9:00 AM to 9:30 PM.',
     },
   ],
 }
 
 // --------------------------------------------------------------------------
-// CONTACT — Contact page / checkout page headings + side info block
+// SOUTH INDIA �?" regional boutique and local supply landing page
+// --------------------------------------------------------------------------
+export const SOUTH_INDIA = {
+  eyebrow: 'Regional Boutique & Supply Hub',
+  title: 'Attar Shop in Chennai & South India',
+  intro:
+    'Three decades of authentic fragrance craftsmanship rooted in Mannadi, Chennai - serving perfume lovers and businesses across South India.',
+  heritage: {
+    heading: 'Trusted Attar and Perfume Tradition in Chennai & South India',
+    paragraphs: [
+      "Located in Chennai's renowned trading enclave at Moore Street, Mannadi, Arees Perfumes has spent over 30 years supplying high-grade concentrated perfume oils, authentic attars, and bespoke packaging to fragrance enthusiasts across Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, and Telangana.",
+      'South India has a deep, cherished heritage of natural scent appreciation - from traditional Marikolundu and Sandalwood to precious Arabian Oudh, Amber, and floral absolutes. We honour this rich history by formulating alcohol-free perfume oils using pure distillation techniques and small-batch artisan blending.',
+    ],
+  },
+  reasons: [
+    {
+      title: 'Authentic, 100% Alcohol-Free Oils',
+      description:
+        'Every attar in our boutique is free from synthetic dilution, industrial alcohol, and harsh fixatives. Gentle on skin, non-staining on fabrics, and suitable for religious occasions.',
+    },
+    {
+      title: 'Both Retail & Wholesale Under One Roof',
+      description:
+        'Whether you need a single 6ml roll-on for personal daily wear or hundreds of wholesale bottles for a perfume store in Bengaluru, Hyderabad, Kochi, or Madurai, we provide direct pricing without intermediary margins.',
+    },
+    {
+      title: 'Fast, Secure South India Delivery',
+      description:
+        'Strategically positioned in central Chennai with daily dispatches through premier logistics partners, supporting prompt transit across South Indian districts and metropolitan centres.',
+    },
+    {
+      title: 'Extensive 370+ Fragrance Collection',
+      description:
+        'From classic Arabian Oudh and Black Musk to traditional Indian florals, fresh aquatic notes, and luxury bakhoor resins - explore one of South India\'s most comprehensive attar selections.',
+    },
+    {
+      title: 'Wholesale MOQ & Export Support',
+      description:
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order. Export orders are handled for buyers in India and markets including Singapore, Malaysia, the UAE, Sri Lanka and the Maldives.',
+    },
+    {
+      title: 'Private Label for Events & Functions',
+      description:
+        'We support private-label and own-brand orders for retailers, fragrance brands, events and functions. Share your artwork, target quantity and event date so the team can confirm feasibility and lead time.',
+    },
+  ],
+  store: {
+    heading: 'Visit Our Chennai Boutique',
+    addressLabel: 'Boutique Address',
+    landmark: 'Landmark: Opposite Kalaiyam School, Mannadi, George Town',
+    directionsLabel: 'Get Directions on Google Maps',
+    hoursHeading: 'Visiting Hours',
+    hours: [
+      'Monday - Saturday: 10:00 AM - 9:00 PM',
+      'Sunday: Closed / Prior appointment',
+    ],
+    contactHeading: 'Phone & WhatsApp',
+    wholesaleHours: 'Wholesale desk: 9:00 AM - 9:30 PM',
+  },
+  coverage: {
+    heading: 'South India Delivery & Service Coverage',
+    intro:
+      'We deliver carefully packaged retail orders and bulk wholesale consignments to major South Indian regions:',
+    regions: [
+      {
+        title: 'Tamil Nadu',
+        description: 'Chennai, Coimbatore, Madurai, Tiruchirappalli, Salem, Tirunelveli, Vellore, and all districts.',
+      },
+      {
+        title: 'Kerala',
+        description: 'Kochi, Thiruvananthapuram, Kozhikode, Thrissur, Malappuram, Kannur, and statewide express delivery.',
+      },
+      {
+        title: 'Karnataka',
+        description: 'Bengaluru, Mysuru, Mangaluru, Hubballi, Belagavi, and regional commercial centres.',
+      },
+      {
+        title: 'Andhra Pradesh & Telangana',
+        description: 'Hyderabad, Visakhapatnam, Vijayawada, Guntur, Warangal, Tirupati, and Rayalaseema districts.',
+      },
+    ],
+  },
+  cta: {
+    heading: 'Explore Our South India Collections Online',
+    intro: 'Order directly for home delivery or coordinate bulk supply with our Chennai desk.',
+  },
+}
+
+// --------------------------------------------------------------------------
+// CONTACT �?" Contact page / checkout page headings + side info block
 // --------------------------------------------------------------------------
 export const CONTACT = {
   eyebrow: 'Contact Us',
@@ -502,6 +751,7 @@ export const FOOTER = {
       heading: 'Company',
       links: [
         { label: 'About Us', to: '/about' },
+        { label: 'Guides', to: '/guides' },
         { label: 'Contact', to: '/contact' },
         { label: 'Track Order', to: '/track-order' },
       ],

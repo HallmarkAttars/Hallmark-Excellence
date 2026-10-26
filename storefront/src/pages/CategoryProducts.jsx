@@ -7,10 +7,12 @@ import usePagination from '../hooks/usePagination'
 import { getCategoryBySlug, getProductsByCategory } from '../services/mockApi'
 import SEO from '../components/seo/SEO'
 import { buildCategorySeo } from '../utils/seo'
+import { normalizeCategorySlug } from '../utils/categorySlug'
 import './CategoryProducts.css'
 
 export default function CategoryProducts() {
   const { slug } = useParams()
+  const canonicalSlug = normalizeCategorySlug(slug)
   const [searchParams, setSearchParams] = useSearchParams()
   const [category, setCategory] = useState(null)
   const [products, setProducts] = useState([])
@@ -90,7 +92,7 @@ export default function CategoryProducts() {
       <SEO
         title={seoTitle}
         description={seoDesc}
-        canonical={`/categories/${slug}`}
+        canonical={`/categories/${canonicalSlug}`}
         robots={error || (!loading && products.length === 0) ? 'noindex,follow' : 'index,follow'}
         schema={schema}
       />

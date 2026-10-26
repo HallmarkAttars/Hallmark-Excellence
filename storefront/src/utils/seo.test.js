@@ -34,8 +34,14 @@ import {
   buildBrandSeo,
   buildWholesaleSeo,
   buildHikmaExportsSeo,
+  buildSouthIndiaSeo,
+  buildGuidesIndexSeo,
+  buildGuideSeo,
+  buildArticleSchema,
   buildStaticPageSeo,
 } from './seo'
+import { normalizeCategorySlug } from './categorySlug'
+import { GUIDES } from '../data/guides.js'
 
 describe('canonical domain & brand identity', () => {
   it('pins the live www host as the canonical origin', () => {
@@ -56,6 +62,20 @@ describe('canonical domain & brand identity', () => {
     expect(DEFAULT_DESCRIPTION).toContain('Arees Perfumes')
     expect(DEFAULT_DESCRIPTION.length).toBeGreaterThan(50)
     expect(DEFAULT_DESCRIPTION.length).toBeLessThan(180)
+  })
+})
+
+describe('category slug normalization', () => {
+  it('trims whitespace and maps the legacy display-bottles slug', () => {
+    expect(normalizeCategorySlug('Display bottles ')).toBe('display-bottles')
+    expect(normalizeCategorySlug('Display%20bottles%20')).toBe('display-bottles')
+    expect(normalizeCategorySlug('display-bottles')).toBe('display-bottles')
+  })
+
+  it('keeps existing numeric and simple slugs unchanged', () => {
+    expect(normalizeCategorySlug('1')).toBe('1')
+    expect(normalizeCategorySlug('10')).toBe('10')
+    expect(normalizeCategorySlug('Roll on')).toBe('Roll on')
   })
 })
 
@@ -121,6 +141,7 @@ describe('buildSitemapXml', () => {
       categories: [{ slug: null }, { slug: '' }, {}, { slug: 'hidden', is_active: false }],
       brands: [{ slug: undefined }, {}, { slug: 'archived', is_active: false }],
       products: [{ id: null }, {}, { id: 'p-deleted', is_active: false }],
+      guides: [],
     })
     expect(xml).not.toContain('<loc>')
     expect(xml).toContain('</urlset>')
@@ -138,6 +159,33 @@ describe('buildSitemapXml', () => {
     expect(xml).not.toContain('/categories/Roll on<')
     const count = (xml.match(/<loc>https:\/\/www\.areesperfumes\.in\/shop<\/loc>/g) || []).length
     expect(count).toBe(1)
+  })
+
+  it('emits the canonical display-bottles category URL without a trailing space', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://www.areesperfumes.in',
+      pages: [],
+      categories: [{ id: 'c-1', slug: 'Display bottles ', name: 'Canter Bottle' }],
+      brands: [],
+      products: [{ id: 'p-1', category_id: 'c-1' }],
+      guides: [],
+    })
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/display-bottles</loc>')
+    expect(xml).not.toContain('Display%20bottles%20')
+  })
+
+  it('includes the guides index and guide articles', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://www.areesperfumes.in',
+      pages: ['/guides'],
+      categories: [],
+      brands: [],
+      products: [],
+      guides: [{ slug: 'attar-vs-perfume-oil', updated: '2026-10-26' }],
+    })
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/guides</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/guides/attar-vs-perfume-oil</loc>')
+    expect(xml).toContain('<lastmod>2026-10-26</lastmod>')
   })
 
   it('uses updated_at for lastmod and keeps the Arees Luxury brand URL', () => {
@@ -429,7 +477,9 @@ describe('Schema.org JSON-LD Builders', () => {
   describe('Wholesale landing page SEO', () => {
     it('builds wholesale Service, FAQ, and breadcrumb schema', () => {
       const seo = buildWholesaleSeo()
-      expect(seo.title).toContain('Wholesale Attars')
+      expect(seo.title).toContain('Perfume & Attar Wholesale')
+      expect(seo.description).toContain('100 g')
+      expect(seo.description).toContain('60 pieces')
       expect(seo.canonical).toBe('/wholesale')
       expect(seo.schema.map((item) => item['@type'])).toEqual(
         expect.arrayContaining(['Service', 'FAQPage', 'BreadcrumbList'])
@@ -440,7 +490,11 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildWholesaleServiceSchema()
       expect(schema['@type']).toBe('Service')
       expect(schema.provider.name).toBe('Hikma Exports')
-      expect(schema.areaServed).toEqual(expect.arrayContaining(['India', 'Worldwide']))
+      expect(schema.areaServed).toEqual(
+        expect.arrayContaining(['India', 'Singapore', 'United Arab Emirates', 'Maldives'])
+      )
+      expect(schema.description).toContain('100 g')
+      expect(schema.description).toContain('60 pieces')
     })
   })
 
@@ -479,6 +533,47 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(buildStaticPageSeo('about').canonical).toBe('/about')
       expect(buildStaticPageSeo('/hikma-exports').canonical).toBe('/hikma-exports')
       expect(buildStaticPageSeo('missing-page')).toBeNull()
+    })
+  })
+
+  describe('South India landing page SEO', () => {
+    it('builds a local Chennai descriptor with LocalBusiness and breadcrumb schema', () => {
+      const seo = buildSouthIndiaSeo()
+      expect(seo.title).toContain('Chennai')
+      expect(seo.canonical).toBe('/attar-perfume-shop-south-india')
+      expect(seo.schema.map((item) => item['@type'])).toEqual(
+        expect.arrayContaining(['LocalBusiness', 'BreadcrumbList'])
+      )
+      expect(buildStaticPageSeo('attar-perfume-shop-south-india').canonical).toBe(
+        '/attar-perfume-shop-south-india'
+      )
+    })
+  })
+
+  describe('editorial guide SEO', () => {
+    it('builds a guides index descriptor and includes it in static pages', () => {
+      const seo = buildGuidesIndexSeo()
+      expect(seo.canonical).toBe('/guides')
+      expect(seo.title).toContain('Guides')
+      expect(buildStaticPageSeo('guides').canonical).toBe('/guides')
+      expect(STATIC_PAGES).toContain('/guides')
+    })
+
+    it('builds an article descriptor with Article, FAQ and breadcrumb schema', () => {
+      const guide = GUIDES[0]
+      const seo = buildGuideSeo(guide)
+      expect(seo.canonical).toBe(`/guides/${guide.slug}`)
+      expect(seo.type).toBe('article')
+      expect(seo.schema.map((item) => item['@type'])).toEqual(
+        expect.arrayContaining(['Article', 'FAQPage', 'BreadcrumbList'])
+      )
+      expect(seo.schema[0].headline).toBe(guide.title)
+      expect(seo.schema[0].author.name).toBe('Arees Perfumes')
+    })
+
+    it('returns null for an invalid guide', () => {
+      expect(buildGuideSeo(null)).toBeNull()
+      expect(buildArticleSchema({})).toBeNull()
     })
   })
 
