@@ -11,6 +11,15 @@ const ALTER_EXACT_PIECES = `
 alter table products add column if not exists sell_exact_pieces boolean not null default false;
 `
 
+const status = {
+  sell_exact_pieces_schema: 'pending',
+  sell_exact_pieces_error: null,
+}
+
+function getAutoMigrationStatus() {
+  return { ...status }
+}
+
 function isMissingColumnError(error) {
   return Boolean(error && /does not exist|could not find/i.test(error.message))
 }
@@ -20,9 +29,14 @@ async function ensureSellExactPiecesColumn() {
     supabase.from('products').select('sell_exact_pieces').limit(1)
 
   const { error } = await probe()
-  if (!error) return
+  if (!error) {
+    status.sell_exact_pieces_schema = 'ready'
+    return
+  }
 
   if (!isMissingColumnError(error)) {
+    status.sell_exact_pieces_schema = 'error'
+    status.sell_exact_pieces_error = error.message
     console.warn(`[auto-migrations] sell_exact_pieces probe failed: ${error.message}`)
     return
   }
@@ -32,6 +46,8 @@ async function ensureSellExactPiecesColumn() {
   })
 
   if (rpcError) {
+    status.sell_exact_pieces_schema = 'missing'
+    status.sell_exact_pieces_error = rpcError.message
     console.warn(
       `[auto-migrations] sell_exact_pieces still missing; run server/db/migration_add_product_sell_exact_pieces.sql in Supabase: ${rpcError.message}`
     )
@@ -40,12 +56,15 @@ async function ensureSellExactPiecesColumn() {
 
   const { error: after } = await probe()
   if (after) {
+    status.sell_exact_pieces_schema = 'missing'
+    status.sell_exact_pieces_error = after.message
     console.warn(
       `[auto-migrations] sell_exact_pieces migration ran but column is still missing: ${after.message}`
     )
     return
   }
 
+  status.sell_exact_pieces_schema = 'ready'
   console.log('[auto-migrations] sell_exact_pieces column added')
 }
 
@@ -54,8 +73,10 @@ async function runAutoMigrations() {
   try {
     await ensureSellExactPiecesColumn()
   } catch (error) {
+    status.sell_exact_pieces_schema = 'error'
+    status.sell_exact_pieces_error = error.message
     console.warn(`[auto-migrations] skipped: ${error.message}`)
   }
 }
 
-module.exports = { runAutoMigrations }
+module.exports = { runAutoMigrations, getAutoMigrationStatus }

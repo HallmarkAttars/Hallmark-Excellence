@@ -12,6 +12,7 @@ const brandsRoutes = require('./routes/brands.routes')
 const ordersRoutes = require('./routes/orders.routes')
 const authRoutes = require('./routes/auth.routes')
 const uploadRoutes = require('./routes/upload.routes')
+const { getAutoMigrationStatus } = require('./utils/autoMigrations')
 
 const app = express()
 
@@ -70,7 +71,11 @@ app.use(express.json())
 
 // --- Health check -------------------------------------------------------
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' })
+  res.json({
+    status: 'ok',
+    commit: (process.env.RENDER_GIT_COMMIT || 'local').slice(0, 7),
+    ...getAutoMigrationStatus(),
+  })
 })
 
 // --- Routes --------------------------------------------------------------
