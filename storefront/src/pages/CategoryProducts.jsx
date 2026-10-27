@@ -85,7 +85,7 @@ export default function CategoryProducts() {
   // Active-state badge on the combined control — purely presentational.
   const activeCount = (brandFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
 
-  const { title: seoTitle, description: seoDesc, introDesc, schema } = buildCategorySeo(category, slug)
+  const { title: seoTitle, description: seoDesc, introDesc, schema } = buildCategorySeo(category, slug, { products })
 
   return (
     <div className="category-page">

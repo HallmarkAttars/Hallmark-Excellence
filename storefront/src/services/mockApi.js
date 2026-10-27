@@ -4,6 +4,7 @@
 
 import { api } from './api'
 import { normalizeCategorySlug } from '../utils/categorySlug'
+import { brandApiSlug, brandPublicSlug } from '../utils/brandSlug'
 
 // ----------------------------------------------------------------------------
 // Client-side response cache for catalog reads
@@ -69,7 +70,7 @@ export async function getProductsByCategory(slug, options) {
 }
 
 export async function getProductsByBrand(slug, options) {
-  const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
+  const resolvedSlug = brandApiSlug(slug)
   return cachedCatalogRead(`brand-products:${resolvedSlug}`, async () => {
     const data = await api.get(`/brands/${resolvedSlug}/products`)
     return data.products ?? []
@@ -100,11 +101,16 @@ export async function getBrands(options) {
 }
 
 export async function getBrandBySlug(slug, options) {
-  const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
+  const resolvedSlug = brandApiSlug(slug)
+  const publicSlug = brandPublicSlug(resolvedSlug)
   const data = await getBrands(options)
-  const brand = (data.brands ?? data).find((b) => b.slug === resolvedSlug || b.slug === slug) ?? null
-  if (brand && slug === 'arees-luxury') {
-    return { ...brand, name: 'Arees Luxury', slug: 'arees-luxury' }
+  const brand = (data.brands ?? data).find((b) => b.slug === resolvedSlug) ?? null
+  if (brand && publicSlug !== brand.slug) {
+    return {
+      ...brand,
+      name: resolvedSlug === 'oud-al-haramain' ? 'Arees Luxury' : brand.name,
+      slug: publicSlug,
+    }
   }
   return brand
 }

@@ -30,6 +30,10 @@ function setOrCreateLink(rel, href) {
   el.setAttribute('href', href)
 }
 
+function removeMeta(attrName, attrValue) {
+  document.head.querySelector(`meta[${attrName}="${attrValue}"]`)?.remove()
+}
+
 function setOrCreateJsonLd(schema) {
   const existing = document.head.querySelectorAll('script[type="application/ld+json"][data-seo="true"]')
   existing.forEach((node) => node.remove())
@@ -82,17 +86,22 @@ export default function SEO({
     // 3. Robots Directives
     setOrCreateMeta('name', 'robots', robots)
 
-    // 4. Canonical URL (always the live www host, strips query strings)
-    const canonicalPath = canonical != null ? canonical : pathname
-    let cleanCanonical = canonicalPath.startsWith('http')
-      ? canonicalPath.split('?')[0].split('#')[0]
-      : `${CANONICAL_ORIGIN}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`.split('?')[0].split('#')[0]
-    
-    // Normalize root path trailing slash consistency
-    if (cleanCanonical.endsWith('/') && cleanCanonical !== `${CANONICAL_ORIGIN}/`) {
-      cleanCanonical = cleanCanonical.slice(0, -1)
+    // 4. Canonical URL (always the live www host, strips query strings).
+    // An explicit null removes the canonical entirely (for 404 responses).
+    let cleanCanonical = ''
+    if (canonical === null) {
+      document.head.querySelector('link[rel="canonical"]')?.remove()
+    } else {
+      const canonicalPath = canonical ?? pathname
+      cleanCanonical = canonicalPath.startsWith('http')
+        ? canonicalPath.split('?')[0].split('#')[0]
+        : `${CANONICAL_ORIGIN}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`.split('?')[0].split('#')[0]
+
+      if (cleanCanonical.endsWith('/') && cleanCanonical !== `${CANONICAL_ORIGIN}/`) {
+        cleanCanonical = cleanCanonical.slice(0, -1)
+      }
+      setOrCreateLink('canonical', cleanCanonical)
     }
-    setOrCreateLink('canonical', cleanCanonical)
 
     // 5. Open Graph Tags
     const ogImg = image
@@ -104,7 +113,8 @@ export default function SEO({
     setOrCreateMeta('property', 'og:type', type)
     setOrCreateMeta('property', 'og:title', finalTitle)
     setOrCreateMeta('property', 'og:description', finalDesc)
-    setOrCreateMeta('property', 'og:url', cleanCanonical)
+    if (cleanCanonical) setOrCreateMeta('property', 'og:url', cleanCanonical)
+    else removeMeta('property', 'og:url')
     setOrCreateMeta('property', 'og:image', ogImg)
 
     // 6. Twitter Card Tags

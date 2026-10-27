@@ -18,8 +18,9 @@ import { getDefaultVariant } from '../utils/productPricing'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SEO from '../components/seo/SEO'
-import { buildProductSeo } from '../utils/seo'
+import { buildProductSeo, cleanProductName } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
+import { brandPublicSlug } from '../utils/brandSlug'
 import { isFragranceOilProduct } from '../utils/exactPieces'
 import './ProductDetail.css'
 
@@ -182,7 +183,7 @@ export default function ProductDetail({ onAddToCart }) {
         <SEO
           title="Unable to Load Product | Arees Perfumes"
           description="This product could not be loaded. Please try again or browse our attars and fragrance oils."
-          canonical={`/product/${id}`}
+          canonical={null}
           robots="noindex,follow"
         />
         <div className="error-state" role="alert">
@@ -205,7 +206,7 @@ export default function ProductDetail({ onAddToCart }) {
         <SEO
           title="Product Not Found | Arees Perfumes"
           description="The product you requested could not be found. Browse our attars, oud, and fragrance oils."
-          canonical={`/product/${id}`}
+          canonical={null}
           robots="noindex,follow"
         />
         <div className="empty-state">
@@ -547,7 +548,7 @@ export default function ProductDetail({ onAddToCart }) {
         {
           id: product.id,
           productId: product.id,
-          name: product.name,
+          name: cleanProductName(product.name),
           price: Number(product.price),
           image: product.image,
           stock: product.stock != null ? Number(product.stock) : null,
@@ -587,8 +588,11 @@ export default function ProductDetail({ onAddToCart }) {
     }
   }
 
-  const brandTitle = product.brand_name || 'Arees Perfumes'
-  const catTitle = product.category_name || 'Attar'
+  const displayName = cleanProductName(product.name) || 'Product'
+  const brandTitle = cleanProductName(product.brand_name) || 'Arees Perfumes'
+  const catTitle = cleanProductName(product.category_name)
+  const brandPath = `/brand/${brandPublicSlug(product.brand_slug || 'arees')}`
+  const imageAlt = [displayName, brandTitle, catTitle, 'Arees Perfumes'].filter(Boolean).join(' - ')
   const seo = buildProductSeo(product, { variant: activeVariant })
 
   return (
@@ -610,17 +614,17 @@ export default function ProductDetail({ onAddToCart }) {
         {product.brand_name && (
           <>
             <span className="pd-breadcrumb-sep">/</span>
-            <Link to={`/brand/${product.brand_slug || 'arees'}`}>{product.brand_name}</Link>
+            <Link to={brandPath}>{brandTitle}</Link>
           </>
         )}
-        {product.category_name && (
+        {catTitle && (
           <>
             <span className="pd-breadcrumb-sep">/</span>
-            <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{product.category_name}</Link>
+            <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{catTitle}</Link>
           </>
         )}
         <span className="pd-breadcrumb-sep">/</span>
-        <span className="pd-breadcrumb-current" aria-current="page">{product.name}</span>
+        <span className="pd-breadcrumb-current" aria-current="page">{displayName}</span>
       </nav>
 
       <div className="product-detail-layout">
@@ -631,7 +635,7 @@ export default function ProductDetail({ onAddToCart }) {
             {/* Main (LCP) product image — eager, optimized Cloudinary size */}
             <img
               src={cloudinarySrc(product.image, { width: 900 })}
-              alt={`${product.name} - ${brandTitle} ${catTitle} | Arees Perfumes`}
+              alt={imageAlt}
               decoding="async"
               fetchpriority="high"
             />
@@ -641,9 +645,9 @@ export default function ProductDetail({ onAddToCart }) {
         {/* Information — eyebrow · title · rating · price · description */}
         <div className="product-detail-info">
           {(product.brand_name || product.category_name) && (
-            <p className="pd-eyebrow">{product.brand_name || product.category_name}</p>
+            <p className="pd-eyebrow">{cleanProductName(product.brand_name) || catTitle}</p>
           )}
-          <h1 className="pd-title">{product.name}</h1>
+          <h1 className="pd-title">{displayName}</h1>
 
           {product.rating != null && (
             <div className="pd-rating">
@@ -749,7 +753,7 @@ export default function ProductDetail({ onAddToCart }) {
               ) : (
                 <p className="pd-bulk-locked">
                   Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
-                  {product.brand_name || 'brand'} {pieceWord(brandRemaining)} to unlock bulk price
+                  {brandTitle} {pieceWord(brandRemaining)} to unlock bulk price
                 </p>
               )}
             </div>
@@ -903,17 +907,17 @@ export default function ProductDetail({ onAddToCart }) {
             <span className="pd-spec-label">Brand</span>
             <span className="pd-spec-value">
               {product.brand_name ? (
-                <Link to={`/brand/${product.brand_slug || 'arees'}`}>{product.brand_name}</Link>
+                <Link to={brandPath}>{brandTitle}</Link>
               ) : (
                 'Arees Perfumes'
               )}
             </span>
           </div>
-          {product.category_name && (
+          {catTitle && (
             <div className="pd-spec-item">
               <span className="pd-spec-label">Category</span>
               <span className="pd-spec-value">
-                <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{product.category_name}</Link>
+                <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{catTitle}</Link>
               </span>
             </div>
           )}

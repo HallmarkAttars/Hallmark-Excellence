@@ -1,9 +1,10 @@
 // Vercel serverless function — serves /robots.txt (via the /robots.txt → /api/robots rewrite in vercel.json).
 //
 // The disallowed paths reflect the storefront's ACTUAL routes (App.jsx):
-// /cart and /checkout are transactional, /view-order shows a specific order's
-// details, and /api/ + /admin/ guard the API surface. No /login, /register,
-// /account or /search rules exist because those routes don't exist in this app.
+// /api/ and /admin/ guard the API and admin surface. Transactional routes such
+// as /cart, /checkout and /view-order are crawlable but send noindex so search
+// engines can see the directive. No /login, /register, or /search rules exist
+// because those routes don't exist in this app.
 //
 // robots.txt needs no data, so it is always instant; the response is cached by
 // the CDN for a day.

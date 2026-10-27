@@ -29,9 +29,11 @@ import {
   buildFAQSchema,
   buildProductSchema,
   buildBreadcrumbsSchema,
+  buildCollectionPageSchema,
   buildProductSeo,
   buildCategorySeo,
   buildBrandSeo,
+  cleanProductName,
   buildWholesaleSeo,
   buildHikmaExportsSeo,
   buildSouthIndiaSeo,
@@ -188,7 +190,7 @@ describe('buildSitemapXml', () => {
     expect(xml).toContain('<lastmod>2026-10-26</lastmod>')
   })
 
-  it('uses updated_at for lastmod and keeps the Arees Luxury brand URL', () => {
+  it('uses updated_at for lastmod and emits one public Arees Luxury brand URL', () => {
     const xml = buildSitemapXml({
       baseUrl: 'https://www.areesperfumes.in',
       pages: [],
@@ -202,9 +204,9 @@ describe('buildSitemapXml', () => {
       ],
       products: [],
     })
-    expect(xml).toContain('<loc>https://www.areesperfumes.in/brand/oud-al-haramain</loc>')
     expect(xml).toContain('<loc>https://www.areesperfumes.in/brand/arees-luxury</loc>')
-    expect((xml.match(/<lastmod>2026-08-02<\/lastmod>/g) || []).length).toBe(2)
+    expect(xml).not.toContain('/brand/oud-al-haramain</loc>')
+    expect((xml.match(/<lastmod>2026-08-02<\/lastmod>/g) || []).length).toBe(1)
   })
 
   it('lists only categories and brands that have at least one live product', () => {
@@ -231,17 +233,17 @@ describe('buildSitemapXml', () => {
 })
 
 describe('buildRobotsTxt', () => {
-  it('allows public crawling and disallows utility/private paths', () => {
+  it('allows public crawling of noindex utility pages and disallows private paths', () => {
     const robots = buildRobotsTxt('https://www.areesperfumes.in')
     expect(robots).toContain('User-agent: *')
     expect(robots).toContain('Allow: /')
     expect(robots).toContain('Disallow: /api/')
     expect(robots).toContain('Disallow: /admin/')
-    expect(robots).toContain('Disallow: /cart')
-    expect(robots).toContain('Disallow: /checkout')
-    expect(robots).toContain('Disallow: /track-order')
-    expect(robots).toContain('Disallow: /view-order')
-    expect(robots).toContain('Disallow: /account')
+    expect(robots).not.toContain('Disallow: /cart')
+    expect(robots).not.toContain('Disallow: /checkout')
+    expect(robots).not.toContain('Disallow: /track-order')
+    expect(robots).not.toContain('Disallow: /view-order')
+    expect(robots).not.toContain('Disallow: /account')
     expect(robots).toContain('Sitemap: https://www.areesperfumes.in/sitemap.xml')
   })
 
@@ -455,6 +457,21 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.schema[1]['@type']).toBe('BreadcrumbList')
     })
 
+    it('normalizes product whitespace and omits an invented category', () => {
+      const seo = buildProductSeo({
+        id: 'p-clean',
+        name: '  HAWAS   LUXURY  ',
+        brand_name: ' Arees   Luxury ',
+        description: 'A rich oud fragrance oil.',
+        price: 500,
+        is_in_stock: true,
+      })
+      expect(seo.title).toBe('HAWAS LUXURY | Arees Luxury | Arees Perfumes')
+      expect(seo.schema[0].name).toBe('HAWAS LUXURY')
+      expect(seo.schema[0].brand.name).toBe('Arees Luxury')
+      expect(seo.schema[0].category).toBeUndefined()
+    })
+
     it('builds category SEO with an intro description and breadcrumbs', () => {
       const seo = buildCategorySeo(
         { name: 'Fragrance Oils', description: 'Concentrated alcohol-free oils.' },
@@ -463,7 +480,29 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.title).toContain('Fragrance Oils')
       expect(seo.introDesc).toBe('Concentrated alcohol-free oils.')
       expect(seo.canonical).toBe('/categories/fragrance-oils')
-      expect(seo.schema['@type']).toBe('BreadcrumbList')
+      expect(seo.schema[0]['@type']).toBe('BreadcrumbList')
+      expect(seo.schema).toHaveLength(1)
+    })
+
+    it('adds a collection ItemList for category products', () => {
+      const seo = buildCategorySeo(
+        { name: 'Fragrance Oils', description: 'Concentrated alcohol-free oils.' },
+        'fragrance-oils',
+        {
+          products: [
+            { id: 'p-1', name: '  Royal Oud  ' },
+            { id: 'p-2', name: 'Amber Musk' },
+          ],
+        }
+      )
+      const collection = seo.schema[1]
+      expect(collection['@type']).toBe('CollectionPage')
+      expect(collection.mainEntity['@type']).toBe('ItemList')
+      expect(collection.mainEntity.numberOfItems).toBe(2)
+      expect(collection.mainEntity.itemListElement[0].url).toBe(
+        `${CANONICAL_ORIGIN}/product/p-1`
+      )
+      expect(collection.mainEntity.itemListElement[0].name).toBe('Royal Oud')
     })
 
     it('keeps the Arees Luxury brand URL self-canonical', () => {
@@ -471,6 +510,23 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.brandName).toBe('Arees Luxury')
       expect(seo.title).toContain('Arees Luxury')
       expect(seo.canonical).toBe('/brand/arees-luxury')
+    })
+
+    it('canonicalizes the legacy Oud Al Haramain slug to Arees Luxury', () => {
+      const seo = buildBrandSeo({ name: 'Arees Luxury', slug: 'oud-al-haramain' }, 'oud-al-haramain')
+      expect(seo.canonical).toBe('/brand/arees-luxury')
+      expect(seo.brandName).toBe('Arees Luxury')
+    })
+
+    it('adds a collection ItemList for brand products', () => {
+      const seo = buildBrandSeo(
+        { name: 'Arees Luxury', slug: 'oud-al-haramain' },
+        'arees-luxury',
+        { products: [{ id: 'p-3', name: 'Oud Royale' }] }
+      )
+      expect(seo.schema[1]['@type']).toBe('CollectionPage')
+      expect(seo.schema[1].mainEntity.itemListElement).toHaveLength(1)
+      expect(seo.schema[1].mainEntity.itemListElement[0].name).toBe('Oud Royale')
     })
   })
 

@@ -7,6 +7,7 @@ export default function NotFound() {
       <SEO
         title="Page Not Found | Arees Perfumes"
         description="This page could not be found. Browse Arees Perfumes attars, fragrance oils and collections."
+        canonical={null}
         robots="noindex,follow"
       />
       <h1 id="not-found-title">Page not found</h1>

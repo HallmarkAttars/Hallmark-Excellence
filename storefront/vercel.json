@@ -53,7 +53,11 @@
     { "source": "/product/:id", "destination": "/api/meta?type=product&id=:id" },
     { "source": "/categories/:slug", "destination": "/api/meta?type=category&slug=:slug" },
     { "source": "/brand/:slug", "destination": "/api/meta?type=brand&slug=:slug" },
+    { "source": "/cart", "destination": "/api/meta?type=utility&slug=cart" },
+    { "source": "/checkout", "destination": "/api/meta?type=utility&slug=checkout" },
+    { "source": "/track-order", "destination": "/api/meta?type=utility&slug=track-order" },
+    { "source": "/view-order", "destination": "/api/meta?type=utility&slug=view-order" },
     { "source": "/", "destination": "/api/meta?type=page&slug=home" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/api/meta?type=notfound" }
   ]
 }

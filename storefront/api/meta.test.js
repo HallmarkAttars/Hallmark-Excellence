@@ -198,13 +198,36 @@ describe('buildSeoForRoute', () => {
   })
 
   it('resolves the arees-luxury alias to the primary brand', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({
-      brands: [{ id: 'b-1', name: 'Arees Luxury', slug: 'oud-al-haramain' }],
-    })))
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      if (String(url).includes('/products')) {
+        return jsonResponse({ products: [{ id: 'p-1', name: 'Oud Royale' }] })
+      }
+      return jsonResponse({
+        brands: [{ id: 'b-1', name: 'Arees Luxury', slug: 'oud-al-haramain' }],
+      })
+    }))
 
     const result = await buildSeoForRoute({ type: 'brand', slug: 'arees-luxury' })
     expect(result.seo.brandName).toBe('Arees Luxury')
     expect(result.seo.canonical).toBe('/brand/arees-luxury')
+    expect(result.seo.schema[1]['@type']).toBe('CollectionPage')
+    expect(result.seo.schema[1].mainEntity.numberOfItems).toBe(1)
+  })
+
+  it('canonicalizes the legacy Oud Al Haramain brand slug', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({
+      brands: [{ id: 'b-1', name: 'Arees Luxury', slug: 'oud-al-haramain' }],
+    })))
+
+    const result = await buildSeoForRoute({ type: 'brand', slug: 'oud-al-haramain' })
+    expect(result.seo.canonical).toBe('/brand/arees-luxury')
+  })
+
+  it('returns a self-canonical noindex descriptor for utility pages', async () => {
+    const result = await buildSeoForRoute({ type: 'utility', slug: 'cart' })
+    expect(result.status).toBe(200)
+    expect(result.seo.canonical).toBe('/cart')
+    expect(result.seo.robots).toBe('noindex,follow')
   })
 
   it('marks an empty category as noindex and a populated category as indexable', async () => {
@@ -231,6 +254,7 @@ describe('buildSeoForRoute', () => {
     })
     const populated = await buildSeoForRoute({ type: 'category', slug: '1' })
     expect(populated.seo.robots).toBeUndefined()
+    expect(populated.seo.schema[1]['@type']).toBe('CollectionPage')
   })
 
   it('resolves the legacy display-bottles slug to the live category record', async () => {
@@ -388,7 +412,30 @@ describe('meta handler', () => {
     expect(res.headers.location).toBe('https://www.areesperfumes.in/categories/display-bottles')
   })
 
-  it('returns HTTP 404 and noindex for a missing product', async () => {
+  it('redirects the legacy Oud Al Haramain brand slug to Arees Luxury', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/brands')) {
+        return jsonResponse({
+          brands: [{ id: 'b-1', name: 'Arees Luxury', slug: 'oud-al-haramain' }],
+        })
+      }
+      if (value.includes('/brands/oud-al-haramain/products')) {
+        return jsonResponse({ products: [{ id: 'p-1' }] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      { query: { type: 'brand', slug: 'oud-al-haramain' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      res
+    )
+    expect(res.statusCode).toBe(301)
+    expect(res.headers.location).toBe('https://www.areesperfumes.in/brand/arees-luxury')
+  })
+
+  it('returns HTTP 404 and noindex without a canonical for a missing product', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url) => {
       const value = String(url)
       if (value.endsWith('/index.html')) return htmlResponse(shell)
@@ -404,5 +451,7 @@ describe('meta handler', () => {
     expect(res.statusCode).toBe(404)
     expect(res.headers['cache-control']).toBe('no-store')
     expect(res.body).toContain('<meta name="robots" content="noindex,follow" />')
+    expect(res.body).not.toContain('rel="canonical"')
+    expect(res.body).not.toContain('property="og:url"')
   })
 })

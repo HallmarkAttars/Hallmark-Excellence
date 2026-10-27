@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext'
 import { NAV_LINKS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
+import { brandPublicSlug } from '../../utils/brandSlug'
 import SearchOverlay from './SearchOverlay'
 import './Navbar.css'
 
@@ -159,7 +160,7 @@ export default function Navbar() {
                       {sortedBrands.map((brand) => (
                         <NavLink
                           key={brand.slug}
-                          to={`/brand/${brand.slug}`}
+                          to={`/brand/${brandPublicSlug(brand.slug)}`}
                           className={({ isActive }) => `navbar-drop-link ${isActive ? 'is-active' : ''}`}
                           onClick={() => setDropOpen(false)}
                         >
@@ -261,7 +262,7 @@ export default function Navbar() {
                     {sortedBrands.map((brand) => (
                       <NavLink
                         key={brand.slug}
-                        to={`/brand/${brand.slug}`}
+                        to={`/brand/${brandPublicSlug(brand.slug)}`}
                         className={({ isActive }) => `navbar-drawer-sublink ${isActive ? 'is-active' : ''}`}
                         onClick={() => setMenuOpen(false)}
                       >

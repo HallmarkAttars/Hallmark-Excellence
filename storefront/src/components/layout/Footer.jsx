@@ -4,6 +4,7 @@ import { useCart } from '../../context/CartContext'
 import { FOOTER, BUSINESS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
+import { brandPublicSlug } from '../../utils/brandSlug'
 import Reveal from '../../animations/Reveal'
 import './Footer.css'
 
@@ -183,7 +184,7 @@ export default function Footer() {
                       (active brands, admin-ordered), never hard-coded copy. */}
                   {column.heading === 'Shop' &&
                     brandLinks.map((brand) => (
-                      <Link key={brand.slug} to={`/brand/${brand.slug}`}>
+                      <Link key={brand.slug} to={`/brand/${brandPublicSlug(brand.slug)}`}>
                         {brand.name}
                       </Link>
                     ))}

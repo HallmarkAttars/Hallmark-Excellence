@@ -22,7 +22,9 @@ import {
   buildStaticPageSeo,
   buildGuideSeo,
   normalizeCategorySlug,
+  cleanProductName,
 } from '../src/utils/seo.js'
+import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
 import { ABOUT, BUSINESS, CONTACT, HERO, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
@@ -76,11 +78,44 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;')
 }
 
-export function buildNotFoundSeo(path = '/') {
+export function buildNotFoundSeo() {
   return {
     title: 'Page Not Found | Arees Perfumes',
     description: 'The page you requested could not be found. Browse authentic attars, oud, and fragrance oils at Arees Perfumes.',
-    canonical: path || '/',
+    canonical: null,
+    image: DEFAULT_OG_IMAGE,
+    type: 'website',
+    robots: 'noindex,follow',
+    schema: [],
+  }
+}
+
+const UTILITY_PAGE_SEO = {
+  cart: {
+    title: 'Shopping Cart | Arees Perfumes',
+    description: 'Review the attars and fragrance oils in your Arees Perfumes shopping cart.',
+  },
+  checkout: {
+    title: 'Checkout | Arees Perfumes',
+    description: 'Complete your Arees Perfumes order securely.',
+  },
+  'track-order': {
+    title: 'Track Order | Arees Perfumes',
+    description: 'Track the status of your Arees Perfumes order.',
+  },
+  'view-order': {
+    title: 'View Order | Arees Perfumes',
+    description: 'View the details of your Arees Perfumes order.',
+  },
+}
+
+export function buildUtilitySeo(slug) {
+  const key = String(slug || '').trim().toLowerCase()
+  const page = UTILITY_PAGE_SEO[key]
+  if (!page) return null
+  return {
+    ...page,
+    canonical: `/${key}`,
     image: DEFAULT_OG_IMAGE,
     type: 'website',
     robots: 'noindex,follow',
@@ -275,17 +310,17 @@ ${renderContact('Visit or Reach Us')}
 
 export function buildProductBodyHtml(product) {
   if (!product?.name) return ''
-  const brandName = product.brand_name || 'Arees Perfumes'
-  const categoryName = product.category_name || 'Attars'
-  const description =
-    product.description ||
-    `${product.name} is an alcohol-free attar from Arees Perfumes, available for retail and wholesale from Chennai.`
-  const categorySlug = normalizeCategorySlug(product.category_slug || 'attars')
+  const productName = cleanProductName(product.name)
+  const brandName = cleanProductName(product.brand_name) || 'Arees Perfumes'
+  const categoryName = cleanProductName(product.category_name)
+  const categorySlug = categoryName ? normalizeCategorySlug(product.category_slug || 'attars') : ''
+  const description = cleanProductName(product.description)
+    || `${productName} is an alcohol-free fragrance from Arees Perfumes, available for retail and wholesale from Chennai.`
   return `<main data-prerender="true">
-<nav><a href="/">Home</a> / <a href="/shop">Shop</a> / <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a></nav>
-<h1>${escapeHtml(product.name)}</h1>
+<nav><a href="/">Home</a> / <a href="/shop">Shop</a>${categoryName ? ` / <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a>` : ''}</nav>
+<h1>${escapeHtml(productName)}</h1>
 <p>${escapeHtml(description)}</p>
-<p>Brand: ${escapeHtml(brandName)} | Category: ${escapeHtml(categoryName)}</p>
+<p>Brand: ${escapeHtml(brandName)}${categoryName ? ` | Category: ${escapeHtml(categoryName)}` : ''}</p>
 <p>Available for retail and wholesale from Arees Perfumes in Mannadi, Chennai.</p>
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
 </main>`
@@ -293,17 +328,18 @@ export function buildProductBodyHtml(product) {
 
 export function buildCategoryBodyHtml(category, slug, products = []) {
   if (!category?.name) return ''
+  const categoryName = cleanProductName(category.name)
   const canonicalSlug = normalizeCategorySlug(slug)
   const intro =
     category.description ||
-    `Explore authentic ${category.name} from Arees Perfumes, with alcohol-free attars and fragrance oils supplied from Chennai.`
+    `Explore authentic ${categoryName} from Arees Perfumes, with alcohol-free attars and fragrance oils supplied from Chennai.`
   const links = (Array.isArray(products) ? products : [])
     .slice(0, 24)
-    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(product.name)}</a></li>`)
+    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/categories">Categories</a></nav>
-<h1>${escapeHtml(category.name)}</h1>
+<h1>${escapeHtml(categoryName)}</h1>
 <p>${escapeHtml(intro)}</p>
 ${links ? `<h2>Products in this category</h2><ul>${links}</ul>` : ''}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p>
@@ -312,13 +348,14 @@ ${links ? `<h2>Products in this category</h2><ul>${links}</ul>` : ''}
 
 export function buildBrandBodyHtml(brand, slug, products = []) {
   if (!brand?.name) return ''
+  const brandName = cleanProductName(brand.name)
   const links = (Array.isArray(products) ? products : [])
     .slice(0, 24)
-    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(product.name)}</a></li>`)
+    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/brands">Brands</a></nav>
-<h1>${escapeHtml(brand.name)}</h1>
+<h1>${escapeHtml(brandName)}</h1>
 <p>Explore ${escapeHtml(brand.name)} attars and fragrance oils from Arees Perfumes in Chennai.</p>
 ${links ? `<h2>Products by ${escapeHtml(brand.name)}</h2><ul>${links}</ul>` : ''}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
@@ -366,18 +403,20 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
       (item) => normalizeCategorySlug(item.slug) === canonicalSlug
     )
     if (!category) throw httpError(404, 'Category not found')
-    const seo = buildCategorySeo(category, canonicalSlug)
     let products = []
+    let productsChecked = false
     try {
       const productsResult = await fetchJson(
         `/categories/${encodeURIComponent(category.slug)}/products`
       )
       products = Array.isArray(productsResult?.products) ? productsResult.products : []
-      if (products.length === 0) seo.robots = 'noindex,follow'
+      productsChecked = true
     } catch {
       // Keep the category page indexable if the product count check fails;
       // the page itself is still a valid category landing page.
     }
+    const seo = buildCategorySeo(category, canonicalSlug, { products })
+    if (productsChecked && products.length === 0) seo.robots = 'noindex,follow'
     return {
       status: 200,
       seo,
@@ -387,24 +426,28 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
 
   if (type === 'brand') {
     if (!slug) throw httpError(404, 'Missing brand slug')
-    const resolvedSlug = slug === 'arees-luxury' ? 'oud-al-haramain' : slug
+    const apiSlug = brandApiSlug(slug)
+    const publicSlug = brandPublicSlug(slug)
+    if (!apiSlug || !publicSlug) throw httpError(404, 'Brand not found')
     const [data, productsResult] = await Promise.allSettled([
       fetchJson('/brands'),
-      fetchJson(`/brands/${encodeURIComponent(resolvedSlug)}/products`),
+      fetchJson(`/brands/${encodeURIComponent(apiSlug)}/products`),
     ])
     if (data.status === 'rejected') throw data.reason
-    const brand = (data.value?.brands || []).find((item) => String(item.slug) === String(resolvedSlug))
+    const brand = (data.value?.brands || []).find((item) => String(item.slug) === String(apiSlug))
     if (!brand) throw httpError(404, 'Brand not found')
-    const seo = buildBrandSeo(brand, slug)
     let products = []
+    let productsChecked = false
     if (productsResult.status === 'fulfilled') {
       products = Array.isArray(productsResult.value?.products) ? productsResult.value.products : []
-      if (products.length === 0) seo.robots = 'noindex,follow'
+      productsChecked = true
     }
+    const seo = buildBrandSeo(brand, publicSlug, { products })
+    if (productsChecked && products.length === 0) seo.robots = 'noindex,follow'
     return {
       status: 200,
       seo,
-      bodyHtml: buildBrandBodyHtml(brand, slug, products),
+      bodyHtml: buildBrandBodyHtml(brand, publicSlug, products),
     }
   }
 
@@ -430,11 +473,21 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     }
   }
 
+  if (type === 'utility') {
+    const seo = buildUtilitySeo(slug)
+    if (!seo) throw httpError(404, 'Page not found')
+    return {
+      status: 200,
+      seo,
+      bodyHtml: '',
+    }
+  }
+
   throw httpError(404, 'Unknown route')
 }
 
 export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
-  const canonicalUrl = absoluteUrl(seo?.canonical)
+  const canonicalUrl = seo?.canonical ? absoluteUrl(seo.canonical) : ''
   const isHome = canonicalUrl === CANONICAL_ORIGIN || canonicalUrl === `${CANONICAL_ORIGIN}/`
   const imageUrl = absoluteUrl(seo?.image)
   const title = escapeHtml(seo?.title || 'Arees Perfumes')
@@ -450,15 +503,21 @@ export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
     )
     .join('\n')
 
+  const canonicalTag = canonicalUrl
+    ? `<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />`
+    : ''
+  const ogUrlTag = canonicalUrl
+    ? `<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />`
+    : ''
   const head = `<title>${title}</title>
 <meta name="description" content="${description}" />
 <meta name="robots" content="${robots}" />
-<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
+${canonicalTag}
 <meta property="og:site_name" content="Arees Perfumes" />
 <meta property="og:type" content="${type}" />
 <meta property="og:title" content="${title}" />
 <meta property="og:description" content="${description}" />
-<meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+${ogUrlTag}
 <meta property="og:image" content="${escapeHtml(imageUrl)}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${title}" />
@@ -526,18 +585,6 @@ export default async function handler(req, res) {
   const type = String(query.type || '')
   const id = String(query.id || '')
   const slug = String(query.slug || '')
-  const fallbackPath =
-    type === 'product'
-      ? `/product/${id}`
-      : type === 'category'
-        ? `/categories/${slug}`
-        : type === 'brand'
-          ? `/brand/${slug}`
-          : type === 'guide'
-            ? `/guides/${slug}`
-            : type === 'page'
-              ? `/${slug}`
-              : '/'
 
   let status = 200
   let seo
@@ -551,12 +598,12 @@ export default async function handler(req, res) {
   } catch (error) {
     if (error?.status === 404) {
       status = 404
-      seo = buildNotFoundSeo(fallbackPath)
+      seo = buildNotFoundSeo()
     } else {
       console.error('[meta] failed to build SEO:', error)
       status = 503
       seo = {
-        ...buildNotFoundSeo(fallbackPath),
+        ...buildNotFoundSeo(),
         title: 'Temporarily Unavailable | Arees Perfumes',
         description: 'We could not load this page right now. Please try again shortly.',
         robots: 'noindex,nofollow',
@@ -569,6 +616,19 @@ export default async function handler(req, res) {
     type === 'category' &&
     seo?.canonical &&
     seo.canonical !== `/categories/${slug}`
+  ) {
+    res.statusCode = 301
+    res.setHeader('Location', `${CANONICAL_ORIGIN}${seo.canonical}`)
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
+    res.end()
+    return
+  }
+
+  if (
+    status === 200 &&
+    type === 'brand' &&
+    seo?.canonical &&
+    seo.canonical !== `/brand/${slug}`
   ) {
     res.statusCode = 301
     res.setHeader('Location', `${CANONICAL_ORIGIN}${seo.canonical}`)

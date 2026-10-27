@@ -14,6 +14,7 @@ import { GUIDES } from '../data/guides.js'
 import { normalizeCategorySlug } from './categorySlug.js'
 import { isProductInStock } from './stock.js'
 import { cloudinarySrc } from './productImage.js'
+import { brandPublicSlug } from './brandSlug.js'
 
 export { normalizeCategorySlug } from './categorySlug.js'
 
@@ -38,6 +39,10 @@ function normalizeHost(host) {
 
 export function normalizeGuideSlug(slug) {
   return String(slug ?? '').trim().toLowerCase()
+}
+
+export function cleanProductName(value) {
+  return String(value ?? '').replace(/\s+/g, ' ').trim()
 }
 
 // --------------------------------------------------------------------------
@@ -161,10 +166,9 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
     if (!brand?.slug) continue
     if (brand.is_active === false) continue
     if (!brandHasProducts(brand)) continue
-    addEntry(`${base}/brand/${brand.slug}`, brand.updated_at || brand.created_at)
-    if (brand.slug === 'oud-al-haramain') {
-      addEntry(`${base}/brand/arees-luxury`, brand.updated_at || brand.created_at)
-    }
+    const publicSlug = brandPublicSlug(brand.slug)
+    if (!publicSlug) continue
+    addEntry(`${base}/brand/${publicSlug}`, brand.updated_at || brand.created_at)
   }
   for (const product of products) {
     if (!product?.id) continue
@@ -198,11 +202,6 @@ export function buildRobotsTxt(baseUrl) {
     '',
     'Disallow: /api/',
     'Disallow: /admin/',
-    'Disallow: /cart',
-    'Disallow: /checkout',
-    'Disallow: /track-order',
-    'Disallow: /view-order',
-    'Disallow: /account',
     '',
     `Sitemap: ${base}/sitemap.xml`,
     '',
@@ -462,7 +461,10 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
 
   const inStock = isProductInStock(product)
   const availability = inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
-  const brandName = product.brand_name || 'Arees Perfumes'
+  const brandName = cleanProductName(product.brand_name) || 'Arees Perfumes'
+  const productName = cleanProductName(product.name) || 'Product'
+  const categoryName = cleanProductName(product.category_name)
+  const cleanDescription = String(product.description || '').replace(/\s+/g, ' ').trim()
   const productUrl = `${origin}/product/${product.id}`
   const image = cloudinarySrc(product.image, { width: 1200 }) || product.image
 
@@ -471,12 +473,12 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
     return Number.isFinite(value) && value > 0 ? value : 0
   }
   const variantName = (item) => {
-    if (!item) return product.name
+    if (!item) return productName
     const label = item.display_label
       || (item.quantity_value != null && item.quantity_unit
         ? `${item.quantity_value} ${item.quantity_unit}`
         : '')
-    return label ? `${product.name} - ${label}` : product.name
+    return label ? `${productName} - ${label}` : productName
   }
   const offerBase = {
     priceCurrency: 'INR',
@@ -533,16 +535,16 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.name,
+    name: productName,
     image: image ? [image] : [`${origin}/Hero.webp`],
     description:
-      product.description ||
-      `Shop ${product.name} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
+      cleanDescription ||
+      `Shop ${productName} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
     brand: {
       '@type': 'Brand',
       name: brandName,
     },
-    category: product.category_name || 'Attars',
+    ...(categoryName ? { category: categoryName } : {}),
     offers,
     ...(hasVariant ? { hasVariant } : {}),
   }
@@ -554,21 +556,27 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
 export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = null } = {}) {
   if (!product) return null
 
-  const brandTitle = product.brand_name || 'Arees Perfumes'
-  const catTitle = product.category_name || 'Attar'
-  const productName = String(product.name || 'Product')
-  const title = productName.toLowerCase().includes(catTitle.toLowerCase())
-    ? `${productName} | ${brandTitle} | Arees Perfumes`
-    : `${productName} - ${catTitle} | ${brandTitle} | Arees Perfumes`
+  const brandTitle = cleanProductName(product.brand_name) || 'Arees Perfumes'
+  const catTitle = cleanProductName(product.category_name)
+  const productName = cleanProductName(product.name) || 'Product'
+  const title = catTitle
+    ? (productName.toLowerCase().includes(catTitle.toLowerCase())
+        ? `${productName} | ${brandTitle} | Arees Perfumes`
+        : `${productName} - ${catTitle} | ${brandTitle} | Arees Perfumes`)
+    : `${productName} | ${brandTitle} | Arees Perfumes`
 
   const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
+  const lowerCat = catTitle.toLowerCase()
+  const productType = lowerCat
+    ? (lowerCat.includes('oil') ? lowerCat : `${lowerCat} oil`)
+    : 'fragrance'
   let description
   if (cleanDbDesc && cleanDbDesc.length >= 60) {
     description = cleanDbDesc.length > 155 ? `${cleanDbDesc.slice(0, 152).trim()}...` : cleanDbDesc
   } else if (cleanDbDesc) {
-    description = `${cleanDbDesc}. 100% alcohol-free concentrated ${catTitle.toLowerCase()} oil by ${brandTitle}. Order online with delivery across India.`
+    description = `${cleanDbDesc}. 100% alcohol-free concentrated ${productType} by ${brandTitle}. Order online with delivery across India.`
   } else {
-    description = `Discover ${productName} by ${brandTitle}. Authentic alcohol-free ${catTitle.toLowerCase()} formulated for rich, long-lasting scent. Available retail & wholesale.`
+    description = `Discover ${productName} by ${brandTitle}. Authentic alcohol-free concentrated ${productType} formulated for rich, long-lasting scent. Available retail & wholesale.`
   }
 
   const breadcrumbs = [
@@ -577,13 +585,13 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   ]
   if (product.brand_name) {
     breadcrumbs.push({
-      name: product.brand_name,
-      path: `/brand/${product.brand_slug || 'arees'}`,
+      name: cleanProductName(product.brand_name),
+      path: `/brand/${brandPublicSlug(product.brand_slug || 'arees')}`,
     })
   }
-  if (product.category_name) {
+  if (catTitle) {
     breadcrumbs.push({
-      name: product.category_name,
+      name: catTitle,
       path: `/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`,
     })
   }
@@ -602,9 +610,46 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   }
 }
 
+export function buildCollectionPageSchema({
+  name,
+  description,
+  path,
+  products = [],
+  origin = CANONICAL_ORIGIN,
+} = {}) {
+  const collectionName = cleanProductName(name)
+  if (!collectionName || !path) return null
+  const items = (Array.isArray(products) ? products : [])
+    .filter((product) => product?.id)
+    .slice(0, 24)
+  if (items.length === 0) return null
+
+  const url = String(path).startsWith('http')
+    ? String(path)
+    : `${origin}${String(path).startsWith('/') ? path : `/${path}`}`
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: collectionName,
+    description: description || undefined,
+    url,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items.map((product, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${origin}/product/${product.id}`,
+        name: cleanProductName(product.name) || undefined,
+      })),
+    },
+  }
+}
+
 // 4b. Category page SEO descriptor.
-export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN } = {}) {
-  const catName = category?.name || 'Category'
+export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN, products = [] } = {}) {
+  const catName = cleanProductName(category?.name) || 'Category'
   const canonicalSlug = normalizeCategorySlug(slug)
   const lowerSlug = canonicalSlug.toLowerCase()
 
@@ -651,20 +696,30 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN } =
     introDesc,
     canonical: `/categories/${canonicalSlug}`,
     type: 'website',
-    schema: buildBreadcrumbsSchema(breadcrumbs, origin),
+    schema: [
+      buildBreadcrumbsSchema(breadcrumbs, origin),
+      buildCollectionPageSchema({
+        name: catName,
+        description,
+        path: `/categories/${canonicalSlug}`,
+        products,
+        origin,
+      }),
+    ].filter(Boolean),
   }
 }
 
 // 4c. Brand page SEO descriptor.
-export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
-  const lowerSlug = String(slug || '').toLowerCase()
+export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN, products = [] } = {}) {
+  const publicSlug = brandPublicSlug(slug)
+  const lowerSlug = String(publicSlug || '').toLowerCase()
   const isArees = lowerSlug === 'arees'
   const isDahab = lowerSlug === 'dahab'
-  const isLuxury = lowerSlug === 'arees-luxury' || lowerSlug === 'oud-al-haramain'
+  const isLuxury = lowerSlug === 'arees-luxury'
 
   const brandName = isLuxury
     ? 'Arees Luxury'
-    : (brand?.name || (isArees ? 'Arees Perfumes' : isDahab ? 'Dahab Attars' : 'Brand'))
+    : (cleanProductName(brand?.name) || (isArees ? 'Arees Perfumes' : isDahab ? 'Dahab Attars' : 'Brand'))
 
   let title = `${brandName} Perfumes & Attars | Arees Perfumes`
   let description = `Discover authentic ${brandName} fragrances at Arees Perfumes. Pure, 100% alcohol-free concentrated oils delivered across India.`
@@ -683,16 +738,25 @@ export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN } = {}) {
   const breadcrumbs = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
-    { name: brandName, path: `/brand/${slug}` },
+    { name: brandName, path: `/brand/${publicSlug}` },
   ]
 
   return {
     brandName,
     title,
     description,
-    canonical: `/brand/${slug}`,
+    canonical: `/brand/${publicSlug}`,
     type: 'website',
-    schema: buildBreadcrumbsSchema(breadcrumbs, origin),
+    schema: [
+      buildBreadcrumbsSchema(breadcrumbs, origin),
+      buildCollectionPageSchema({
+        name: brandName,
+        description,
+        path: `/brand/${publicSlug}`,
+        products,
+        origin,
+      }),
+    ].filter(Boolean),
   }
 }
 

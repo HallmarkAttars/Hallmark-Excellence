@@ -8,6 +8,7 @@ import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { brandHeroImage } from '../data/content'
 import SEO from '../components/seo/SEO'
 import { buildBrandSeo } from '../utils/seo'
+import { brandPublicSlug } from '../utils/brandSlug'
 import './BrandProducts.css'
 
 export default function BrandProducts() {
@@ -84,17 +85,18 @@ export default function BrandProducts() {
     error,
   })
 
-  const lowerSlug = String(slug || '').toLowerCase()
+  const publicSlug = brandPublicSlug(slug)
+  const lowerSlug = String(publicSlug || '').toLowerCase()
   const isArees = lowerSlug === 'arees'
   const isDahab = lowerSlug === 'dahab'
-  const isLuxury = lowerSlug === 'arees-luxury' || lowerSlug === 'oud-al-haramain'
+  const isLuxury = lowerSlug === 'arees-luxury'
 
   const {
     brandName,
     title: seoTitle,
     description: seoDesc,
     schema: brandSchema,
-  } = buildBrandSeo(brand, slug)
+  } = buildBrandSeo(brand, publicSlug, { products })
 
   let h1Title = brandName
   let headerLabel = `${brandName} Collection`
@@ -125,7 +127,7 @@ export default function BrandProducts() {
       <SEO
         title={seoTitle}
         description={seoDesc}
-        canonical={`/brand/${slug}`}
+        canonical={`/brand/${publicSlug}`}
         robots={error || (!loading && products.length === 0) ? 'noindex,follow' : 'index,follow'}
         schema={brandSchema}
       />

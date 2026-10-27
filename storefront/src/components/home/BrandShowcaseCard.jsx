@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { COLLECTIONS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import { cloudinarySrc } from '../../utils/productImage'
+import { brandPublicSlug } from '../../utils/brandSlug'
 import './BrandShowcaseCard.css'
 
 // Full-image luxury brand card for the homepage "Our Brands" showcase.
@@ -16,8 +17,9 @@ import './BrandShowcaseCard.css'
 //   - "featured": the first two brands of each group of five — large 50% cards.
 //   - "standard": the next three — 33% cards.
 export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
-  const slug = brand.slug
-  const fallback = COLLECTIONS[slug] || COLLECTIONS.arees
+  const apiSlug = brand.slug
+  const slug = brandPublicSlug(apiSlug)
+  const fallback = COLLECTIONS[apiSlug] || COLLECTIONS[slug] || COLLECTIONS.arees
 
   const title = brand.name || fallback.lines?.[0] || fallback.eyebrow
   const description = brand.description || fallback.description || null
@@ -25,6 +27,7 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
     brand.card_image_url ||
     brand.cover_image_url ||
     brand.banner_image_url ||
+    IMAGES.collections[apiSlug] ||
     IMAGES.collections[slug] ||
     null
 

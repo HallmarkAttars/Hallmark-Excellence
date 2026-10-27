@@ -62,6 +62,30 @@ describe('SEO component', () => {
     expect(robots?.getAttribute('content')).toBe('noindex,nofollow')
   })
 
+  it('removes the canonical and og:url when canonical is explicitly null', () => {
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<link rel="canonical" href="https://www.areesperfumes.in/old" data-seo="true" />'
+    )
+    document.head.insertAdjacentHTML(
+      'beforeend',
+      '<meta property="og:url" content="https://www.areesperfumes.in/old" data-seo="true" />'
+    )
+
+    render(
+      <MemoryRouter initialEntries={['/missing']}>
+        <SEO
+          title="Page Not Found | Arees Perfumes"
+          robots="noindex,follow"
+          canonical={null}
+        />
+      </MemoryRouter>
+    )
+
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull()
+    expect(document.head.querySelector('meta[property="og:url"]')).toBeNull()
+  })
+
   it('renders Open Graph and Twitter Card tags', () => {
     render(
       <MemoryRouter initialEntries={['/product/p1']}>
