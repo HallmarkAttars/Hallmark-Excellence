@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import CinematicHero from '../components/home/CinematicHero'
-import { collectBrandHeroImages } from '../utils/brandHeroImages'
+import { buildHomeHeroImages } from '../utils/homeHeroImages'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
 import BrandShowcaseCard from '../components/home/BrandShowcaseCard'
@@ -61,13 +61,10 @@ export default function Home() {
   // fetched above.
   const featuredProducts = products.filter((p) => p.is_featured === true)
 
-  // Dynamically collect all available brand and product hero images from
-  // database brands, admin-configured imagery, and catalog content.
-  // When an admin adds a new brand/image in the admin panel, it automatically
-  // participates in the continuous hero rotation without any code change.
-  const heroImages = useMemo(() => {
-    return collectBrandHeroImages(brands, featuredProducts)
-  }, [brands, featuredProducts])
+  // Curated hero: real Arees / Dahab product photography only. Deliberately
+  // independent of the database brand rows, whose seeded images are stock
+  // photography rather than our bottles.
+  const heroImages = buildHomeHeroImages()
 
   const homeSchema = [
     buildOrganizationSchema(),
@@ -83,8 +80,7 @@ export default function Home() {
         canonical="/"
         schema={homeSchema}
       />
-      {/* Hero renders immediately with continuous cinematic brand transitions
-          cycling smoothly through all available brand images. */}
+      {/* Hero renders immediately from the curated product photography set. */}
       <CinematicHero images={heroImages} />
 
       {loading ? (

@@ -103,6 +103,47 @@ describe('CinematicHero Component', () => {
     expect(container.querySelector('.cinematic-hero-slide--active img').getAttribute('src')).toBe('/brand-b.webp')
   })
 
+  it('applies per-slide focal points and brightness', () => {
+    const customImages = [
+      {
+        src: '/brand-a.webp',
+        mobileWebp: '/brand-a-mobile.webp',
+        alt: 'Brand A product',
+        focus: '62% 44%',
+        mobileFocus: '55% 32%',
+        brightness: 0.82,
+      },
+    ]
+
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero images={customImages} />
+      </MemoryRouter>
+    )
+
+    const img = container.querySelector('.cinematic-hero-slide--active img')
+    expect(img.style.getPropertyValue('--hero-focus')).toBe('62% 44%')
+    expect(img.style.getPropertyValue('--hero-mobile-focus')).toBe('55% 32%')
+    expect(img.style.getPropertyValue('--hero-image-brightness')).toBe('0.82')
+
+    const mobileSource = container.querySelector('.cinematic-hero-picture source[media]')
+    expect(mobileSource.getAttribute('srcset')).toBe('/brand-a-mobile.webp')
+  })
+
+  it('falls back to the curated product hero instead of database imagery', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero />
+      </MemoryRouter>
+    )
+
+    const img = container.querySelector('.cinematic-hero-slide--active img')
+    expect(img.getAttribute('src')).toBe('/Hero.webp')
+
+    const mobileSource = container.querySelector('.cinematic-hero-picture source[media]')
+    expect(mobileSource.getAttribute('srcset')).toBe('/Hero-mobile.webp')
+  })
+
   it('cycles infinitely back to slide 0 without resetting or breaking', async () => {
     const customImages = [
       '/brand-1.webp',

@@ -81,9 +81,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: var(--hero-focus, center);
   background-size: cover;
-  background-position: center;
+  background-position: var(--hero-focus, center);
+  filter: brightness(var(--hero-image-brightness, 1));
   display: block;
 }
 
@@ -197,8 +198,8 @@
 
 @media (max-width: 767px) {
   .cinematic-hero-img {
-    object-position: center 38%;
-    background-position: center 38%;
+    object-position: var(--hero-mobile-focus, center 38%);
+    background-position: var(--hero-mobile-focus, center 38%);
   }
 
   .cinematic-hero-media {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { HERO } from '../../data/content'
 import { IMAGES } from '../../config/assets'
-import { collectBrandHeroImages } from '../../utils/brandHeroImages'
+import { buildHomeHeroImages } from '../../utils/homeHeroImages'
 import './Hero.css'
 import './CinematicHero.css'
 
@@ -15,18 +15,16 @@ const MOTION_VARIANTS_COUNT = 6
  * and continuous seamless brand image transitions.
  *
  * @param {Object} props
- * @param {Array<string|Object>} [props.images] - Dynamic image collection (strings or {src, webp, alt})
- * @param {Array<Object>} [props.brands] - Optional brand array from database
+ * @param {Array<string|Object>} [props.images] - Dynamic image collection (strings or {src, mobileWebp, alt, focus, mobileFocus, brightness})
  * @param {number} [props.displayDuration=5500] - Display duration per slide in ms
  * @param {number} [props.fadeDuration=1800] - Crossfade transition duration in ms
  */
 export default function CinematicHero({
   images,
-  brands,
   displayDuration = DEFAULT_DISPLAY_DURATION,
   fadeDuration = DEFAULT_FADE_DURATION,
 }) {
-  // Normalize images: supports raw URL strings, objects, or dynamic brand collection fallback
+  // Normalize images: supports raw URL strings, objects, or the curated fallback
   const slideList = useMemo(() => {
     if (Array.isArray(images) && images.length > 0) {
       return images
@@ -55,14 +53,17 @@ export default function CinematicHero({
                 ? 'Arees Perfumes — Hallmark luxury perfume and attar collection'
                 : 'Luxury Perfume & Attar Collection'),
             brandName: item.brandName || item.name || null,
+            focus: item.focus || null,
+            mobileFocus: item.mobileFocus || null,
+            brightness: item.brightness ?? 1,
           }
         })
         .filter((img) => Boolean(img?.src))
     }
 
-    // Default dynamic collection from brands + catalog
-    return collectBrandHeroImages(brands)
-  }, [images, brands])
+    // Defensive fallback: the same curated product rotation the homepage uses.
+    return buildHomeHeroImages()
+  }, [images])
 
   // Fallback safe slide
   const validSlides = slideList.length > 0 ? slideList : [
@@ -72,6 +73,9 @@ export default function CinematicHero({
       mobileWebp: IMAGES.heroBackgroundMobile,
       alt: 'Arees Perfumes — Hallmark luxury perfume and attar collection',
       brandName: 'Arees Perfumes',
+      focus: '85% 40%',
+      mobileFocus: '50% 42%',
+      brightness: 1,
     },
   ]
 
@@ -99,9 +103,17 @@ export default function CinematicHero({
     const nextIdx = (activeSlide.index + 1) % totalSlides
     const nextNextIdx = (activeSlide.index + 2) % totalSlides
 
+    const isMobileViewport =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(max-width: 767px)').matches
+
     const preload = (slide) => {
       if (!slide) return
-      const targetSrc = slide.webp || slide.src
+      // On phones preload the portrait crop, matching the <source> the
+      // browser will actually request.
+      const targetSrc =
+        (isMobileViewport && slide.mobileWebp) || slide.webp || slide.src
       if (targetSrc && typeof window !== 'undefined' && typeof Image !== 'undefined') {
         const img = new Image()
         img.src = targetSrc
@@ -154,6 +166,11 @@ export default function CinematicHero({
   // Render individual slide picture/img
   const renderSlideMedia = (slideIndex, isFirst = false) => {
     const slide = validSlides[slideIndex] || validSlides[0]
+    const imageStyle = {
+      '--hero-focus': slide.focus || 'center',
+      '--hero-mobile-focus': slide.mobileFocus || slide.focus || 'center 38%',
+      '--hero-image-brightness': slide.brightness ?? 1,
+    }
     return (
       <picture className="hero-picture cinematic-hero-picture">
         {slide.mobileWebp && (
@@ -164,6 +181,7 @@ export default function CinematicHero({
           src={slide.src}
           alt={slide.alt || 'Arees Perfumes — Hallmark luxury perfume and attar collection'}
           className="hero-img hero-bg cinematic-hero-img"
+          style={imageStyle}
           fetchpriority={isFirst ? 'high' : 'auto'}
           decoding="async"
         />

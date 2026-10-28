@@ -16,7 +16,7 @@ describe('Hero Component', () => {
       </MemoryRouter>
     )
 
-    const img = screen.getByRole('img', { name: /Hallmark luxury perfume and attar collection/i })
+    const img = screen.getByRole('img', { name: /Aseel attar and Pink Musk roll-on collection/i })
     expect(img).toBeTruthy()
     expect(img.getAttribute('src')).toBe(IMAGES.heroBackground)
     expect(img.getAttribute('fetchpriority')).toBe('high')
