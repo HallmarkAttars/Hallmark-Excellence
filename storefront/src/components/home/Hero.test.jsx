@@ -9,7 +9,7 @@ import { IMAGES } from '../../config/assets'
 describe('Hero Component', () => {
   afterEach(() => cleanup())
 
-  it('renders hero image with picture element, source, and img', () => {
+  it('renders the framed hero artwork with picture element, source, and img', () => {
     render(
       <MemoryRouter>
         <Hero />
@@ -21,8 +21,11 @@ describe('Hero Component', () => {
     expect(img.getAttribute('src')).toBe(IMAGES.heroBackground)
     expect(img.getAttribute('fetchpriority')).toBe('high')
     expect(img.getAttribute('decoding')).toBe('async')
-    expect(img.classList.contains('hero-img')).toBe(true)
-    expect(img.classList.contains('hero-bg')).toBe(true)
+    expect(img.classList.contains('cinematic-showcase-art')).toBe(true)
+
+    const mobileSource = document.querySelector('.cinematic-showcase-picture source[media]')
+    expect(mobileSource).toBeTruthy()
+    expect(mobileSource.getAttribute('srcset')).toBe(IMAGES.heroBackgroundMobile)
   })
 
   it('renders title, tagline, and CTA links', () => {

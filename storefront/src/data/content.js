@@ -470,6 +470,15 @@ export const WHOLESALE = {
       links: [{ label: 'Export Enquiry', to: '/hikma-exports' }],
     },
   ],
+  packagingShowcase: {
+    src: '/wholesale/rollon-bottle-range.webp',
+    srcSet:
+      '/wholesale/rollon-bottle-range-900.webp 900w, /wholesale/rollon-bottle-range.webp 1536w',
+    sizes: '(max-width: 900px) 92vw, 1000px',
+    alt: 'Arees roll-on bottle range in 2ml to 24ml with patti, gold patti and colour finishes',
+    caption:
+      'Roll-on bottle formats: patti, 6ml/8ml, super patti, gold patti and colour bottles in 2ml–24ml.',
+  },
   tiers: [
     {
       badge: 'Starter Tier',

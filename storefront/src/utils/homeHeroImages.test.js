@@ -9,9 +9,9 @@ describe('buildHomeHeroImages', () => {
     expect(images.map((img) => img.brandName)).toEqual([
       'Arees Perfumes',
       'Arees 12ml',
-      'Arees Luxury',
+      'Arees 8ml Roll-On',
       'Arees Bakhoor',
-      'Dahab 6ml',
+      'Arees 1kg Bulk',
     ])
   })
 
@@ -20,9 +20,10 @@ describe('buildHomeHeroImages', () => {
 
     expect(first.src).toBe('/Hero.webp')
     expect(first.mobileWebp).toBe('/Hero-mobile.webp')
+    expect(first.blur).toBe('/hero/hero-signature-blur.webp')
   })
 
-  it('uses only local product photography (no stock or remote images)', () => {
+  it('uses only local product photography and graphics', () => {
     const images = buildHomeHeroImages()
 
     for (const image of images) {
@@ -30,12 +31,26 @@ describe('buildHomeHeroImages', () => {
       expect(image.src.endsWith('.webp')).toBe(true)
       expect(image.mobileWebp.startsWith('/')).toBe(true)
       expect(image.mobileWebp.endsWith('-mobile.webp')).toBe(true)
+      expect(image.blur.startsWith('/hero/')).toBe(true)
+      expect(image.blur.endsWith('-blur.webp')).toBe(true)
       expect(image.src).not.toContain('unsplash')
       expect(image.mobileWebp).not.toContain('unsplash')
     }
   })
 
-  it('supplies desktop and mobile framing plus brightness per slide', () => {
+  it('uses the framed showcase layout without cropping catalogue graphics', () => {
+    const images = buildHomeHeroImages()
+
+    for (const image of images) {
+      expect(image.layout).toBe('showcase')
+      expect(image.duration).toBeGreaterThanOrEqual(5500)
+    }
+
+    expect(images[0].fit).toBe('cover')
+    expect(images.slice(1).every((image) => image.fit === 'contain')).toBe(true)
+  })
+
+  it('supplies framing, brightness and descriptive alt text per slide', () => {
     for (const image of buildHomeHeroImages()) {
       expect(image.focus).toMatch(/^\d+% \d+%$/)
       expect(image.mobileFocus).toMatch(/^\d+% \d+%$/)
@@ -48,6 +63,6 @@ describe('buildHomeHeroImages', () => {
   it('returns fresh copies so consumers cannot mutate the curated set', () => {
     const first = buildHomeHeroImages()
     first[1].src = '/mutated.webp'
-    expect(buildHomeHeroImages()[1].src).toBe('/arees12ml-hero.webp')
+    expect(buildHomeHeroImages()[1].src).toBe('/hero/luxury-12ml.webp')
   })
 })

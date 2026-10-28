@@ -9,15 +9,23 @@ import './CinematicHero.css'
 const DEFAULT_DISPLAY_DURATION = 5500 // ~5.5s display before crossfade starts
 const DEFAULT_FADE_DURATION = 1800 // 1.8s smooth crossfade
 const MOTION_VARIANTS_COUNT = 6
+const MOBILE_MEDIA = '(max-width: 767px)'
+
+const fallbackAlt = 'Arees Perfumes — Hallmark luxury perfume and attar collection'
 
 /**
- * CinematicHero — Luxury perfume cinematic slideshow with Ken Burns camera movement
- * and continuous seamless brand image transitions.
+ * CinematicHero — Luxury perfume cinematic slideshow with Ken Burns camera
+ * movement and continuous seamless brand image transitions.
+ *
+ * Two slide layouts are supported:
+ * - photo: the classic full-bleed image
+ * - showcase: a framed, uncropped artwork over a blurred copy of the same
+ *   image, used for catalogue graphics that contain their own logo and text.
  *
  * @param {Object} props
- * @param {Array<string|Object>} [props.images] - Dynamic image collection (strings or {src, mobileWebp, alt, focus, mobileFocus, brightness})
- * @param {number} [props.displayDuration=5500] - Display duration per slide in ms
- * @param {number} [props.fadeDuration=1800] - Crossfade transition duration in ms
+ * @param {Array<string|Object>} [props.images] - Dynamic image collection
+ * @param {number} [props.displayDuration=5500] - Default display duration per slide
+ * @param {number} [props.fadeDuration=1800] - Crossfade transition duration
  */
 export default function CinematicHero({
   images,
@@ -33,29 +41,43 @@ export default function CinematicHero({
           if (typeof item === 'string') {
             const isWebp = item.endsWith('.webp')
             return {
+              layout: 'photo',
               src: item,
               webp: isWebp ? item : null,
-              mobileWebp: index === 0 ? IMAGES.heroBackgroundMobile : null,
+              mobileWebp: null,
+              blur: null,
               alt:
                 index === 0
-                  ? 'Arees Perfumes — Hallmark luxury perfume and attar collection'
+                  ? fallbackAlt
                   : `Luxury Perfume & Attar Collection ${index + 1}`,
               brandName: null,
+              focus: null,
+              mobileFocus: null,
+              brightness: 1,
+              fit: 'cover',
+              mobileFit: 'cover',
+              duration: null,
             }
           }
+          const fit = item.fit || 'cover'
           return {
+            layout: item.layout === 'showcase' ? 'showcase' : 'photo',
             src: item.src || item.url || item.image || item.cover_image_url || '',
-            webp: item.webp || (typeof item.src === 'string' && item.src.endsWith('.webp') ? item.src : null),
-            mobileWebp: item.mobileWebp || (index === 0 ? IMAGES.heroBackgroundMobile : null),
+            webp:
+              item.webp ||
+              (typeof item.src === 'string' && item.src.endsWith('.webp') ? item.src : null),
+            mobileWebp: item.mobileWebp || null,
+            blur: item.blur || null,
             alt:
               item.alt ||
-              (index === 0
-                ? 'Arees Perfumes — Hallmark luxury perfume and attar collection'
-                : 'Luxury Perfume & Attar Collection'),
+              (index === 0 ? fallbackAlt : 'Luxury Perfume & Attar Collection'),
             brandName: item.brandName || item.name || null,
             focus: item.focus || null,
             mobileFocus: item.mobileFocus || null,
             brightness: item.brightness ?? 1,
+            fit,
+            mobileFit: item.mobileFit || fit,
+            duration: Number.isFinite(item.duration) ? item.duration : null,
           }
         })
         .filter((img) => Boolean(img?.src))
@@ -68,14 +90,19 @@ export default function CinematicHero({
   // Fallback safe slide
   const validSlides = slideList.length > 0 ? slideList : [
     {
+      layout: 'showcase',
       src: IMAGES.heroBackground,
       webp: IMAGES.heroBackgroundWebp,
       mobileWebp: IMAGES.heroBackgroundMobile,
-      alt: 'Arees Perfumes — Hallmark luxury perfume and attar collection',
+      blur: '/hero/hero-signature-blur.webp',
+      alt: fallbackAlt,
       brandName: 'Arees Perfumes',
       focus: '85% 40%',
       mobileFocus: '50% 42%',
       brightness: 1,
+      fit: 'cover',
+      mobileFit: 'cover',
+      duration: null,
     },
   ]
 
@@ -94,8 +121,9 @@ export default function CinematicHero({
   const [isTransitioning, setIsTransitioning] = useState(false)
 
   const stepCounterRef = useRef(0)
-  const timerRef = useRef(null)
-  const fadeCleanupRef = useRef(null)
+  const activeLayout = validSlides[activeSlide.index]?.layout || 'photo'
+  const activeDuration =
+    validSlides[activeSlide.index]?.duration ?? displayDuration
 
   // Preload upcoming images in the background after initial render settles
   useEffect(() => {
@@ -106,17 +134,19 @@ export default function CinematicHero({
     const isMobileViewport =
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
-      window.matchMedia('(max-width: 767px)').matches
+      window.matchMedia(MOBILE_MEDIA).matches
 
     const preload = (slide) => {
       if (!slide) return
-      // On phones preload the portrait crop, matching the <source> the
-      // browser will actually request.
       const targetSrc =
         (isMobileViewport && slide.mobileWebp) || slide.webp || slide.src
       if (targetSrc && typeof window !== 'undefined' && typeof Image !== 'undefined') {
         const img = new Image()
         img.src = targetSrc
+      }
+      if (slide.blur && typeof window !== 'undefined' && typeof Image !== 'undefined') {
+        const img = new Image()
+        img.src = slide.blur
       }
     }
 
@@ -141,7 +171,7 @@ export default function CinematicHero({
     return () => clearTimeout(timer)
   }, [outgoingSlide, fadeDuration])
 
-  // Schedule next slide transition after displayDuration
+  // Schedule next slide transition after this slide's display duration
   useEffect(() => {
     if (totalSlides <= 1) return
 
@@ -158,28 +188,73 @@ export default function CinematicHero({
         variant: nextVariant,
         key: nextKey,
       })
-    }, displayDuration)
+    }, activeDuration)
 
     return () => clearTimeout(timer)
-  }, [activeSlide, displayDuration, totalSlides])
+  }, [activeSlide, activeDuration, totalSlides])
 
-  // Render individual slide picture/img
+  const motionClassFor = (slideIndex, variant) => {
+    const slide = validSlides[slideIndex]
+    if (slide?.layout === 'showcase') return 'cinematic-motion-static'
+    return totalSlides > 1
+      ? `cinematic-motion-${variant}`
+      : 'cinematic-motion-single'
+  }
+
+  // Render individual slide media
   const renderSlideMedia = (slideIndex, isFirst = false) => {
     const slide = validSlides[slideIndex] || validSlides[0]
     const imageStyle = {
       '--hero-focus': slide.focus || 'center',
       '--hero-mobile-focus': slide.mobileFocus || slide.focus || 'center 38%',
       '--hero-image-brightness': slide.brightness ?? 1,
+      '--hero-art-fit': slide.fit || 'contain',
+      '--hero-mobile-art-fit': slide.mobileFit || slide.fit || 'contain',
     }
+
+    if (slide.layout === 'showcase') {
+      return (
+        <div className="cinematic-showcase">
+          <img
+            className="cinematic-showcase-backdrop"
+            src={slide.blur || slide.src}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+          />
+          <div className="cinematic-showcase-panel">
+            <picture className="cinematic-showcase-picture">
+              {slide.mobileWebp && (
+                <source media={MOBILE_MEDIA} type="image/webp" srcSet={slide.mobileWebp} />
+              )}
+              {slide.webp && <source type="image/webp" srcSet={slide.webp} />}
+              <img
+                src={slide.src}
+                alt={slide.alt || fallbackAlt}
+                className={`cinematic-showcase-art cinematic-showcase-art--${
+                  slide.fit === 'cover' ? 'cover' : 'contain'
+                } cinematic-showcase-art--mobile-${
+                  slide.mobileFit === 'cover' ? 'cover' : 'contain'
+                }`}
+                style={imageStyle}
+                fetchpriority={isFirst ? 'high' : 'auto'}
+                decoding="async"
+              />
+            </picture>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <picture className="hero-picture cinematic-hero-picture">
         {slide.mobileWebp && (
-          <source media="(max-width: 767px)" type="image/webp" srcSet={slide.mobileWebp} />
+          <source media={MOBILE_MEDIA} type="image/webp" srcSet={slide.mobileWebp} />
         )}
         {slide.webp && <source type="image/webp" srcSet={slide.webp} />}
         <img
           src={slide.src}
-          alt={slide.alt || 'Arees Perfumes — Hallmark luxury perfume and attar collection'}
+          alt={slide.alt || fallbackAlt}
           className="hero-img hero-bg cinematic-hero-img"
           style={imageStyle}
           fetchpriority={isFirst ? 'high' : 'auto'}
@@ -190,10 +265,10 @@ export default function CinematicHero({
   }
 
   return (
-    <section className="hero">
-      {/* Background Image Layer: contains continuous cinematic brand slideshow */}
+    <section className={`hero hero--${activeLayout}`}>
+      {/* Background image layer: contains the continuous cinematic slideshow */}
       <div className="hero-background-layer">
-        {/* Outgoing slide: stays at full opacity underneath during crossfade while continuing its motion */}
+        {/* Outgoing slide: stays at full opacity underneath during crossfade */}
         {outgoingSlide && (
           <div
             key={outgoingSlide.key}
@@ -201,14 +276,17 @@ export default function CinematicHero({
             style={{ '--fade-duration': `${fadeDuration}ms` }}
           >
             <div
-              className={`cinematic-hero-media cinematic-motion-${outgoingSlide.variant}`}
+              className={`cinematic-hero-media ${motionClassFor(
+                outgoingSlide.index,
+                outgoingSlide.variant
+              )}`}
             >
               {renderSlideMedia(outgoingSlide.index)}
             </div>
           </div>
         )}
 
-        {/* Active / Incoming slide */}
+        {/* Active / incoming slide */}
         <div
           key={activeSlide.key}
           className={`cinematic-hero-slide cinematic-hero-slide--active ${
@@ -217,21 +295,23 @@ export default function CinematicHero({
           style={{ '--fade-duration': `${fadeDuration}ms` }}
         >
           <div
-            className={`cinematic-hero-media ${
-              totalSlides > 1
-                ? `cinematic-motion-${activeSlide.variant}`
-                : 'cinematic-motion-single'
-            }`}
+            className={`cinematic-hero-media ${motionClassFor(
+              activeSlide.index,
+              activeSlide.variant
+            )}`}
           >
-            {renderSlideMedia(activeSlide.index, activeSlide.index === 0 && !outgoingSlide)}
+            {renderSlideMedia(
+              activeSlide.index,
+              activeSlide.index === 0 && !outgoingSlide
+            )}
           </div>
         </div>
       </div>
 
-      {/* Dark Cinematic Overlay: remains ABOVE images and BELOW text/buttons */}
+      {/* Dark cinematic overlay: above images, below text/buttons */}
       <div className="hero-overlay" aria-hidden="true" />
 
-      {/* Existing Hero Content: fixed typography and buttons (do NOT move with background) */}
+      {/* Fixed hero content */}
       <div className="hero-content">
         <h1 className="hero-title hero-reveal hero-reveal-1">
           {HERO.title.map((line, i) => (

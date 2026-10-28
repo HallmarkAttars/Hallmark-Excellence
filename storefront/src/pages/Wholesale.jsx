@@ -61,6 +61,36 @@ export default function Wholesale() {
               </div>
             ))}
           </div>
+
+          <figure className="wholesale-showcase">
+            <a
+              href={WHOLESALE.packagingShowcase.src}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wholesale-showcase-image-link"
+              aria-label="Open the full-size Arees roll-on bottle range"
+            >
+              <img
+                src={WHOLESALE.packagingShowcase.src}
+                srcSet={WHOLESALE.packagingShowcase.srcSet}
+                sizes={WHOLESALE.packagingShowcase.sizes}
+                alt={WHOLESALE.packagingShowcase.alt}
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+            <figcaption>
+              <span>{WHOLESALE.packagingShowcase.caption}</span>
+              <a
+                href={WHOLESALE.packagingShowcase.src}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="wholesale-showcase-link"
+              >
+                View full size -&gt;
+              </a>
+            </figcaption>
+          </figure>
         </section>
 
         <section className="wholesale-tiers-section">

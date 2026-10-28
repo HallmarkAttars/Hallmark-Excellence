@@ -260,3 +260,115 @@
     animation-duration: 800ms !important;
   }
 }
+
+/* ============================================================
+   Showcase slides - framed catalogue artwork
+   ============================================================ */
+
+.cinematic-motion-static {
+  animation: none;
+}
+
+.cinematic-showcase {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Blurred, darkened copy of the artwork fills the hero behind the frame */
+.cinematic-showcase-backdrop {
+  position: absolute;
+  inset: -8%;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  filter: blur(36px) brightness(0.36) saturate(1.08);
+  transform: scale(1.04);
+  animation: cinematic-showcase-drift 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes cinematic-showcase-drift {
+  0% {
+    transform: scale(1.04) translate3d(-0.6%, 0, 0);
+  }
+  100% {
+    transform: scale(1.10) translate3d(0.6%, 0, 0);
+  }
+}
+
+/* Desktop: artwork panel sits to the right of the fixed copy */
+.cinematic-showcase-panel {
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: 46%;
+  right: clamp(24px, 4vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cinematic-showcase-picture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.cinematic-showcase-art {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: var(--hero-focus, center);
+  border: 1px solid rgba(201, 169, 97, 0.55);
+  border-radius: 2px;
+  background: #0c0a08;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  filter: brightness(var(--hero-image-brightness, 1));
+}
+
+.cinematic-showcase-art--cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tablet and mobile: the same panel becomes a stage above the copy */
+@media (max-width: 1023px) {
+  .cinematic-showcase-panel {
+    top: clamp(12px, 2.5vw, 24px);
+    left: clamp(16px, 5vw, 48px);
+    right: clamp(16px, 5vw, 48px);
+    bottom: auto;
+    height: var(--showcase-stage-h, 280px);
+  }
+
+  .cinematic-showcase-art--mobile-contain {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .cinematic-showcase-art--mobile-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-showcase-backdrop,
+  .cinematic-motion-static {
+    animation: none !important;
+    transform: none !important;
+  }
+}

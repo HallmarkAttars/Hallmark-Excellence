@@ -240,3 +240,58 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* ---------- Roll-on bottle range spec sheet ---------- */
+.wholesale-showcase {
+  margin: 36px 0 0;
+  padding: clamp(12px, 2vw, 20px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.wholesale-showcase-image-link {
+  display: block;
+  border-radius: calc(var(--radius) - 4px);
+  overflow: hidden;
+}
+
+.wholesale-showcase img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+.wholesale-showcase figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.wholesale-showcase-link {
+  color: var(--gold-deep);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wholesale-showcase-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .wholesale-showcase {
+    margin-top: 28px;
+  }
+
+  .wholesale-showcase figcaption {
+    font-size: 0.8rem;
+  }
+}

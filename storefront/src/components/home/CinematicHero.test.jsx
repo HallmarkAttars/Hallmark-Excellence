@@ -4,7 +4,6 @@ import { render, screen, act, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import CinematicHero from './CinematicHero'
 import { HERO } from '../../data/content'
-import { IMAGES } from '../../config/assets'
 
 describe('CinematicHero Component', () => {
   beforeEach(() => {
@@ -137,11 +136,90 @@ describe('CinematicHero Component', () => {
       </MemoryRouter>
     )
 
-    const img = container.querySelector('.cinematic-hero-slide--active img')
+    const img = container.querySelector(
+      '.cinematic-hero-slide--active .cinematic-showcase-art'
+    )
     expect(img.getAttribute('src')).toBe('/Hero.webp')
 
-    const mobileSource = container.querySelector('.cinematic-hero-picture source[media]')
+    const mobileSource = container.querySelector('.cinematic-showcase-picture source[media]')
     expect(mobileSource.getAttribute('srcset')).toBe('/Hero-mobile.webp')
+  })
+
+  it('renders the curated hero as framed showcase slides with a blurred backdrop', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero />
+      </MemoryRouter>
+    )
+
+    expect(container.querySelector('.hero--showcase')).toBeTruthy()
+
+    const backdrop = container.querySelector('.cinematic-showcase-backdrop')
+    expect(backdrop).toBeTruthy()
+    expect(backdrop.getAttribute('aria-hidden')).toBe('true')
+    expect(backdrop.getAttribute('src')).toBe('/hero/hero-signature-blur.webp')
+
+    const art = container.querySelector('.cinematic-showcase-art')
+    expect(art).toBeTruthy()
+    expect(art.getAttribute('src')).toBe('/Hero.webp')
+    expect(art.getAttribute('fetchpriority')).toBe('high')
+  })
+
+  it('honours per-slide display durations', () => {
+    const timedImages = [
+      {
+        src: '/brand-a.webp',
+        layout: 'showcase',
+        mobileWebp: '/brand-a-mobile.webp',
+        blur: '/brand-a-blur.webp',
+        duration: 3000,
+      },
+      {
+        src: '/brand-b.webp',
+        layout: 'showcase',
+        mobileWebp: '/brand-b-mobile.webp',
+        blur: '/brand-b-blur.webp',
+        duration: 9000,
+      },
+    ]
+
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero images={timedImages} displayDuration={5000} fadeDuration={1800} />
+      </MemoryRouter>
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(2999)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--outgoing')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    const incoming = container.querySelector('.cinematic-hero-slide--incoming')
+    expect(incoming.querySelector('.cinematic-showcase-art').getAttribute('src')).toBe(
+      '/brand-b.webp'
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(1800)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--active .cinematic-showcase-art').getAttribute('src')).toBe(
+      '/brand-b.webp'
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(7199)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--outgoing')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--incoming .cinematic-showcase-art').getAttribute('src')).toBe(
+      '/brand-a.webp'
+    )
   })
 
   it('cycles infinitely back to slide 0 without resetting or breaking', async () => {

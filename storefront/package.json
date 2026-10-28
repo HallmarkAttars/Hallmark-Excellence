@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "optimize-assets": "node scripts/optimize-assets.mjs",
-    "hero:mobile": "node scripts/generate-hero-mobile.mjs"
+    "hero:mobile": "node scripts/generate-hero-mobile.mjs",
+    "hero:graphics": "node scripts/generate-hero-graphics.mjs"
   },
   "dependencies": {
     "jspdf": "^4.2.1",
