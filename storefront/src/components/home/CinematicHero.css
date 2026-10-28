@@ -275,14 +275,15 @@
   overflow: hidden;
 }
 
-/* Blurred, darkened copy of the artwork fills the hero behind the frame */
+/* Blurred copy of the artwork fills the stage around the framed image, so
+   wide catalogue graphics read as a soft matte rather than black bars. */
 .cinematic-showcase-backdrop {
   position: absolute;
-  inset: -8%;
+  inset: -10%;
   width: auto;
   height: auto;
   object-fit: cover;
-  filter: blur(36px) brightness(0.36) saturate(1.08);
+  filter: blur(44px) brightness(0.5) saturate(1.12);
   transform: scale(1.04);
   animation: cinematic-showcase-drift 16s ease-in-out infinite alternate;
   will-change: transform;
@@ -297,16 +298,26 @@
   }
 }
 
-/* Desktop: artwork panel sits to the right of the fixed copy */
+/* Desktop: a consistent 6:5 gallery plate sits to the right of the copy.
+   The frame stays put while each image uses as much of the plate as its
+   native aspect ratio allows. */
 .cinematic-showcase-panel {
   position: absolute;
-  top: 8%;
-  bottom: 8%;
-  left: 46%;
-  right: clamp(24px, 4vw, 64px);
+  top: 50%;
+  left: auto;
+  right: clamp(24px, 3vw, 64px);
+  width: min(54%, 1000px);
+  height: auto;
+  aspect-ratio: 6 / 5;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(201, 169, 97, 0.42);
+  background: rgba(12, 10, 8, 0.16);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .cinematic-showcase-picture {
@@ -325,12 +336,6 @@
   max-height: 100%;
   object-fit: contain;
   object-position: var(--hero-focus, center);
-  border: 1px solid rgba(201, 169, 97, 0.55);
-  border-radius: 2px;
-  background: #0c0a08;
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
   filter: brightness(var(--hero-image-brightness, 1));
 }
 
@@ -340,14 +345,25 @@
   object-fit: cover;
 }
 
-/* Tablet and mobile: the same panel becomes a stage above the copy */
+/* Tablet and mobile: the same 6:5 plate becomes a stage above the copy.
+   Deriving both width and height from the viewport keeps the image and the
+   copy in the same rhythm on every phone, instead of shrinking square
+   catalogue graphics into a short letterbox on small screens. */
 @media (max-width: 1023px) {
+  .hero--showcase {
+    --showcase-stage-w: min(calc(100vw - clamp(32px, 10vw, 96px)), 600px);
+    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
+  }
+
   .cinematic-showcase-panel {
     top: clamp(12px, 2.5vw, 24px);
-    left: clamp(16px, 5vw, 48px);
-    right: clamp(16px, 5vw, 48px);
+    left: 50%;
+    right: auto;
     bottom: auto;
-    height: var(--showcase-stage-h, 280px);
+    width: var(--showcase-stage-w);
+    height: auto;
+    aspect-ratio: 6 / 5;
+    transform: translateX(-50%);
   }
 
   .cinematic-showcase-art--mobile-contain {
@@ -362,6 +378,36 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+}
+
+/* Compact laptops: leave the copy column enough room for both CTAs. */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .cinematic-showcase-panel {
+    width: min(48%, 1000px);
+  }
+}
+
+@media (max-width: 767px) {
+  .cinematic-showcase-panel {
+    left: 20px;
+    right: 20px;
+    width: auto;
+    transform: none;
+  }
+}
+
+/* Short phones need a compact stage so both CTAs stay above the fixed
+   bottom navigation. The image still spans the full content width. */
+@media (max-width: 360px) {
+  .hero--showcase {
+    --showcase-stage-w: calc(100vw - 40px);
+    --showcase-stage-h: 220px;
+  }
+
+  .cinematic-showcase-panel {
+    height: var(--showcase-stage-h);
+    aspect-ratio: auto;
   }
 }
 

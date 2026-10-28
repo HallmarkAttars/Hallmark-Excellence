@@ -6,10 +6,11 @@
 // show Unsplash art instead of the actual bottles.
 //
 // The four catalogue graphics contain the AREES logo, product names and trust
-// badges, so they are shown uncropped inside a framed panel (`fit: 'contain'`)
-// over a blurred, darkened copy of the same image. The first slide is a clean
-// photograph and fills its panel (`fit: 'cover'`). Desktop keeps the copy on
-// the left; tablet and mobile stack the artwork above the copy.
+// badges, so they are shown uncropped inside a 6:5 gallery stage (`fit:
+// 'contain'`). The first slide is a clean photograph and fills that stage
+// (`fit: 'cover'`). A blurred copy of each image fills the stage around the
+// artwork, so wide graphics never read as letterboxed on black. Desktop keeps
+// the copy on the left; tablet and mobile stack the artwork above the copy.
 //
 // `focus` / `mobileFocus` are object-position values used when `fit` is
 // `cover`. `duration` overrides the global hero display duration per slide.
@@ -25,7 +26,7 @@ const HOME_HERO_SLIDES = [
     fit: 'cover',
     mobileFit: 'cover',
     focus: '85% 40%',
-    mobileFocus: '50% 42%',
+    mobileFocus: '62% 58%',
     brightness: 1,
     duration: 5500,
   },

@@ -90,6 +90,16 @@
   max-width: 12ch;
 }
 
+/* Keep the headline in the copy column instead of letting the wider gallery
+   plate force awkward single-word lines. */
+.hero--showcase .hero-title {
+  max-width: 15ch;
+}
+
+.hero--showcase .hero-tagline {
+  max-width: min(31rem, 36vw, 500px);
+}
+
 .hero-tagline {
   color: rgba(248, 243, 234, 0.86);
   font-size: 1.02rem;
@@ -152,7 +162,8 @@
 
   /* Showcase: artwork above, copy below, content defines the height */
   .hero--showcase {
-    --showcase-stage-h: clamp(260px, 38svh, 440px);
+    --showcase-stage-w: min(calc(100vw - clamp(32px, 10vw, 96px)), 600px);
+    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
     display: block;
     aspect-ratio: auto;
     min-height: 0;
@@ -238,7 +249,8 @@
   }
 
   .hero--showcase {
-    --showcase-stage-h: clamp(190px, 34svh, 320px);
+    --showcase-stage-w: calc(100vw - 40px);
+    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
     display: block;
     aspect-ratio: auto;
     min-height: 0;
@@ -300,7 +312,16 @@
   }
 
   .hero--showcase .hero-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
     margin-top: 20px;
+  }
+
+  .hero--showcase .hero-btn {
+    padding-inline: 10px;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
   }
 
   .hero--photo .hero-actions {
@@ -349,7 +370,18 @@
   }
 
   .hero--showcase {
-    --showcase-stage-h: clamp(170px, 30svh, 260px);
+    --showcase-stage-w: calc(100vw - 40px);
+    --showcase-stage-h: 220px;
+  }
+
+  .hero--showcase .hero-actions {
+    gap: 8px;
+  }
+
+  .hero--showcase .hero-btn {
+    padding-inline: 6px;
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
   }
 
   .hero--showcase .hero-title,
@@ -418,11 +450,19 @@
   }
 
   .hero--showcase {
-    --showcase-stage-h: 160px;
+    --showcase-stage-w: min(34vw, 260px);
+    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
+  }
+
+  .hero--showcase .cinematic-showcase-panel {
+    left: 50%;
+    right: auto;
+    width: var(--showcase-stage-w);
+    transform: translateX(-50%);
   }
 
   .hero--showcase .hero-content {
-    padding-top: calc(var(--showcase-stage-h) + 28px);
+    padding-top: calc(var(--showcase-stage-h) + 20px);
     padding-bottom: 24px;
   }
 
