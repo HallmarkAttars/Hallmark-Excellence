@@ -85,6 +85,7 @@ export default function Footer() {
     Shop: false,
     Company: false,
     Contact: false,
+    Legal: false,
   })
 
   useEffect(() => {

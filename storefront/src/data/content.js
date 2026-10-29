@@ -765,6 +765,14 @@ export const FOOTER = {
         { label: 'Track Order', to: '/track-order' },
       ],
     },
+    {
+      heading: 'Legal',
+      links: [
+        { label: 'Privacy & Cookies', to: '/privacy-policy' },
+        { label: 'Terms of Service', to: '/terms' },
+        { label: 'Shipping & Returns', to: '/shipping-returns' },
+      ],
+    },
   ],
   copyright: `© ${new Date().getFullYear()} Hikma Exports (Arees & Dahab). All rights reserved.`,
 }

@@ -218,6 +218,7 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Arees Perfumes',
+    legalName: 'Hikma Exports',
     alternateName: ['Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
     description:
       'Arees Perfumes is a Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
@@ -230,6 +231,14 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     logo: `${origin}/HE%20color%20Logo.png`,
     email: 'hikmaexports@gmail.com',
     telephone: '+919840750467',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      telephone: '+919840750467',
+      email: 'hikmaexports@gmail.com',
+      areaServed: ['IN'],
+      availableLanguage: ['English', 'Tamil', 'Hindi'],
+    },
     address: {
       '@type': 'PostalAddress',
       streetAddress: '83 & 84, Moore St, Mannadi, George Town',
@@ -298,14 +307,6 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
     hasMap: BUSINESS.mapDirectionsUrl,
     sameAs: [BUSINESS.socialByKey('instagram').href],
     areaServed: ['Chennai', 'Tamil Nadu', 'South India', 'India'],
-    openingHoursSpecification: [
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-        opens: '10:00',
-        closes: '21:00',
-      },
-    ],
   }
 }
 

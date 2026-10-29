@@ -1020,6 +1020,13 @@ export default function Contact() {
                   <button className="btn btn-primary checkout-submit" type="submit" disabled={submitting}>
                     <LockIcon size={15} /> {submitting ? 'Placing Order…' : 'Place Order'}
                   </button>
+                  <p className="checkout-legal-links">
+                    <Link to="/privacy-policy">Privacy &amp; Cookies</Link>
+                    <span aria-hidden="true">·</span>
+                    <Link to="/terms">Terms of Service</Link>
+                    <span aria-hidden="true">·</span>
+                    <Link to="/shipping-returns">Shipping &amp; Returns</Link>
+                  </p>
                 </form>
               </div>
             </div>

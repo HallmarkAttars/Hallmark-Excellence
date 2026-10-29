@@ -195,7 +195,7 @@ a.footer-contact-row:hover { color: var(--gold-light); }
 @media (min-width: 1024px) {
   .footer-inner { padding: 64px 56px 56px; }
   .footer-grid {
-    grid-template-columns: 1.6fr 0.9fr 0.9fr 1.6fr;
+    grid-template-columns: 1.5fr 0.75fr 0.75fr 0.75fr 0.75fr 1.35fr;
     gap: 60px;
   }
   .footer-bottom-inner { padding: 20px 56px; }

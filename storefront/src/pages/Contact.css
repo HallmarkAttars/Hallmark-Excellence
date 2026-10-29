@@ -518,6 +518,27 @@
   border-color: var(--charcoal);
 }
 
+.checkout-legal-links {
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  color: var(--charcoal-soft);
+  text-align: center;
+}
+
+.checkout-legal-links a {
+  color: var(--gold-deep);
+  text-decoration: none;
+}
+
+.checkout-legal-links a:hover {
+  text-decoration: underline;
+}
+
+.checkout-legal-links span {
+  color: var(--line-strong);
+  margin: 0 8px;
+}
+
 /* ---------- Payment Method selection (no gateway) ---------- */
 .checkout-payment {
   display: flex;

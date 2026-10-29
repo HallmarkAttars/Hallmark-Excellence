@@ -31,6 +31,7 @@ const Retail = lazy(() => import('./pages/Retail'))
 const SouthIndia = lazy(() => import('./pages/SouthIndia'))
 const Guides = lazy(() => import('./pages/Guides'))
 const GuideArticle = lazy(() => import('./pages/GuideArticle'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Scroll the window back to the top on every route change — the single scroll
@@ -94,6 +95,9 @@ function PageContent() {
             <Route path="/south-india" element={<SouthIndia />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/:slug" element={<GuideArticle />} />
+            <Route path="/privacy-policy" element={<LegalPage slug="privacy-policy" />} />
+            <Route path="/terms" element={<LegalPage slug="terms" />} />
+            <Route path="/shipping-returns" element={<LegalPage slug="shipping-returns" />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/view-order" element={<ViewOrder />} />

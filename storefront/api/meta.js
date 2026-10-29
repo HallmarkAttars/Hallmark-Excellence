@@ -107,6 +107,18 @@ const UTILITY_PAGE_SEO = {
     title: 'View Order | Arees Perfumes',
     description: 'View the details of your Arees Perfumes order.',
   },
+  'privacy-policy': {
+    title: 'Privacy & Cookies Policy | Arees Perfumes',
+    description: 'How Arees Perfumes and Hikma Exports collect, use, share and protect the personal, order and analytics data you share on this website.',
+  },
+  terms: {
+    title: 'Terms of Service | Arees Perfumes',
+    description: 'Terms for buying from Arees Perfumes online, including payment, delivery, returns, international orders and the legal entity behind the storefront.',
+  },
+  'shipping-returns': {
+    title: 'Shipping & Returns | Arees Perfumes',
+    description: 'Delivery, dispatch, international shipping, returns and refund rules for online retail orders from Arees Perfumes and Hikma Exports in Chennai.',
+  },
 }
 
 export function buildUtilitySeo(slug) {
