@@ -21,9 +21,9 @@ describe('Hero Component', () => {
     expect(img.getAttribute('src')).toBe(IMAGES.heroBackground)
     expect(img.getAttribute('fetchpriority')).toBe('high')
     expect(img.getAttribute('decoding')).toBe('async')
-    expect(img.classList.contains('cinematic-showcase-art')).toBe(true)
+    expect(img.classList.contains('hero-img')).toBe(true)
 
-    const mobileSource = document.querySelector('.cinematic-showcase-picture source[media]')
+    const mobileSource = document.querySelector('.hero-picture source[media]')
     expect(mobileSource).toBeTruthy()
     expect(mobileSource.getAttribute('srcset')).toBe(IMAGES.heroBackgroundMobile)
   })

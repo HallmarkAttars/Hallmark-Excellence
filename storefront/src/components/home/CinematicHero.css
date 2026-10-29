@@ -1,9 +1,8 @@
 /* ============================================================
-   CinematicHero.css — Continuous Brand Image Transition
-   Luxury perfume cinematic slideshow with Ken Burns effect
+   CinematicHero.css — Continuous brand image transition
+   Full-bleed perfume photography with a slow Ken Burns camera.
    ============================================================ */
 
-/* Background layer container — sits below dark overlay (z-index: 0) */
 .hero-background-layer {
   position: absolute;
   inset: 0;
@@ -12,10 +11,9 @@
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
-  background-color: #0c0a08; /* Luxury deep dark ink base */
+  background-color: #0c0a08;
 }
 
-/* Individual slide wrapper — manages opacity & crossfading */
 .cinematic-hero-slide {
   position: absolute;
   inset: 0;
@@ -26,19 +24,16 @@
   contain: paint layout;
 }
 
-/* Active slide (holding state) */
 .cinematic-hero-slide--active {
   z-index: 1;
   opacity: 1;
 }
 
-/* Outgoing slide (bottom layer during crossfade) — keeps running its motion */
 .cinematic-hero-slide--outgoing {
   z-index: 1;
   opacity: 1;
 }
 
-/* Incoming slide (top layer during crossfade) — smoothly dissolves in */
 .cinematic-hero-slide--incoming {
   z-index: 2;
   opacity: 0;
@@ -54,7 +49,6 @@
   }
 }
 
-/* Inner media wrapper — carries the Ken Burns camera movement */
 .cinematic-hero-media {
   position: absolute;
   inset: 0;
@@ -66,7 +60,6 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Slide picture and image elements */
 .cinematic-hero-picture {
   position: absolute;
   inset: 0;
@@ -88,12 +81,6 @@
   display: block;
 }
 
-/* ------------------------------------------------------------
-   Ken Burns Camera Motion Variants
-   Slow, elegant, subtle camera movements through luxury campaign
-   ------------------------------------------------------------ */
-
-/* Variant 1: Slow subtle zoom-in with gentle drift to the right */
 .cinematic-motion-0 {
   animation: cinematic-kb-1 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -107,7 +94,6 @@
   }
 }
 
-/* Variant 2: Slow subtle zoom-out with gentle drift to the left */
 .cinematic-motion-1 {
   animation: cinematic-kb-2 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -121,7 +107,6 @@
   }
 }
 
-/* Variant 3: Slow subtle upward camera movement with very slight zoom */
 .cinematic-motion-2 {
   animation: cinematic-kb-3 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -135,7 +120,6 @@
   }
 }
 
-/* Variant 4: Slow subtle downward camera movement with very slight zoom-out */
 .cinematic-motion-3 {
   animation: cinematic-kb-4 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -149,7 +133,6 @@
   }
 }
 
-/* Variant 5: Subtle diagonal movement (up-right) */
 .cinematic-motion-4 {
   animation: cinematic-kb-5 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -163,7 +146,6 @@
   }
 }
 
-/* Variant 6: Subtle diagonal movement (down-left) */
 .cinematic-motion-5 {
   animation: cinematic-kb-6 8500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
@@ -177,7 +159,6 @@
   }
 }
 
-/* Single-image subtle breathing (if only 1 image exists) */
 .cinematic-motion-single {
   animation: cinematic-kb-single 14000ms ease-in-out infinite alternate;
 }
@@ -191,22 +172,23 @@
   }
 }
 
-/* ------------------------------------------------------------
-   Mobile & Responsive Viewports
-   Maintains product recognition and prevents aggressive cropping
-   ------------------------------------------------------------ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .cinematic-hero-img {
+    object-position: var(--hero-tablet-focus, var(--hero-focus, center));
+    background-position: var(--hero-tablet-focus, var(--hero-focus, center));
+  }
+}
 
 @media (max-width: 767px) {
   .cinematic-hero-img {
-    object-position: var(--hero-mobile-focus, center 38%);
-    background-position: var(--hero-mobile-focus, center 38%);
+    object-position: var(--hero-mobile-focus, center 42%);
+    background-position: var(--hero-mobile-focus, center 42%);
   }
 
   .cinematic-hero-media {
     transform-origin: center 40%;
   }
 
-  /* Slightly tighter scale range on mobile to preserve perfume bottle framing */
   @keyframes cinematic-kb-1 {
     0% { transform: scale(1.03) translate3d(-1%, 0, 0); }
     100% { transform: scale(1.08) translate3d(1%, 0, 0); }
@@ -238,11 +220,6 @@
   }
 }
 
-/* ------------------------------------------------------------
-   Reduced Motion
-   Respects user preferences: disables camera pan/zoom
-   ------------------------------------------------------------ */
-
 @media (prefers-reduced-motion: reduce) {
   .cinematic-hero-media,
   .cinematic-motion-0,
@@ -258,163 +235,5 @@
 
   .cinematic-hero-slide--incoming {
     animation-duration: 800ms !important;
-  }
-}
-
-/* ============================================================
-   Showcase slides - framed catalogue artwork
-   ============================================================ */
-
-.cinematic-motion-static {
-  animation: none;
-}
-
-.cinematic-showcase {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-/* Blurred copy of the artwork fills the stage around the framed image, so
-   wide catalogue graphics read as a soft matte rather than black bars. */
-.cinematic-showcase-backdrop {
-  position: absolute;
-  inset: -10%;
-  width: auto;
-  height: auto;
-  object-fit: cover;
-  filter: blur(44px) brightness(0.5) saturate(1.12);
-  transform: scale(1.04);
-  animation: cinematic-showcase-drift 16s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
-@keyframes cinematic-showcase-drift {
-  0% {
-    transform: scale(1.04) translate3d(-0.6%, 0, 0);
-  }
-  100% {
-    transform: scale(1.10) translate3d(0.6%, 0, 0);
-  }
-}
-
-/* Desktop: a consistent 6:5 gallery plate sits to the right of the copy.
-   The frame stays put while each image uses as much of the plate as its
-   native aspect ratio allows. */
-.cinematic-showcase-panel {
-  position: absolute;
-  top: 50%;
-  left: auto;
-  right: clamp(24px, 3vw, 64px);
-  width: min(54%, 1000px);
-  height: auto;
-  aspect-ratio: 6 / 5;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(201, 169, 97, 0.42);
-  background: rgba(12, 10, 8, 0.16);
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-}
-
-.cinematic-showcase-picture {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.cinematic-showcase-art {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  object-position: var(--hero-focus, center);
-  filter: brightness(var(--hero-image-brightness, 1));
-}
-
-.cinematic-showcase-art--cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Tablet and mobile: the same 6:5 plate becomes a stage above the copy.
-   Deriving both width and height from the viewport keeps the image and the
-   copy in the same rhythm on every phone, instead of shrinking square
-   catalogue graphics into a short letterbox on small screens. */
-@media (max-width: 1023px) {
-  .hero--showcase {
-    --showcase-stage-w: min(calc(100vw - clamp(32px, 10vw, 96px)), 600px);
-    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
-  }
-
-  .cinematic-showcase-panel {
-    top: clamp(12px, 2.5vw, 24px);
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    width: var(--showcase-stage-w);
-    height: auto;
-    aspect-ratio: 6 / 5;
-    transform: translateX(-50%);
-  }
-
-  .cinematic-showcase-art--mobile-contain {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .cinematic-showcase-art--mobile-cover {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-/* Compact laptops: leave the copy column enough room for both CTAs. */
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .cinematic-showcase-panel {
-    width: min(48%, 1000px);
-  }
-}
-
-@media (max-width: 767px) {
-  .cinematic-showcase-panel {
-    left: 20px;
-    right: 20px;
-    width: auto;
-    transform: none;
-  }
-}
-
-/* Short phones need a compact stage so both CTAs stay above the fixed
-   bottom navigation. The image still spans the full content width. */
-@media (max-width: 360px) {
-  .hero--showcase {
-    --showcase-stage-w: calc(100vw - 40px);
-    --showcase-stage-h: 220px;
-  }
-
-  .cinematic-showcase-panel {
-    height: var(--showcase-stage-h);
-    aspect-ratio: auto;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cinematic-showcase-backdrop,
-  .cinematic-motion-static {
-    animation: none !important;
-    transform: none !important;
   }
 }

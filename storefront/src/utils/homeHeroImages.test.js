@@ -38,16 +38,21 @@ describe('buildHomeHeroImages', () => {
     }
   })
 
-  it('uses the framed showcase layout without cropping catalogue graphics', () => {
+  it('uses the curated product slides in a photo layout', () => {
     const images = buildHomeHeroImages()
 
-    for (const image of images) {
-      expect(image.layout).toBe('showcase')
-      expect(image.duration).toBeGreaterThanOrEqual(5500)
-    }
+    expect(images).toHaveLength(5)
+    expect(images[0].src).toBe('/Hero.webp')
+    expect(images[1].src).toBe('/arees12ml-hero.webp')
+    expect(images[2].src).toBe('/areesluxury-hero.webp')
+    expect(images[3].src).toBe('/bakhoor-hero.webp')
+    expect(images[4].src).toBe('/Dahab-hero.webp')
 
-    expect(images[0].fit).toBe('cover')
-    expect(images.slice(1).every((image) => image.fit === 'contain')).toBe(true)
+    for (const image of images) {
+      expect(image.focus).toMatch(/^\d+% \d+%$/)
+      expect(image.mobileFocus).toMatch(/^\d+% \d+%$/)
+      expect(image.brightness).toBeGreaterThan(0)
+    }
   })
 
   it('supplies framing, brightness and descriptive alt text per slide', () => {
@@ -63,6 +68,6 @@ describe('buildHomeHeroImages', () => {
   it('returns fresh copies so consumers cannot mutate the curated set', () => {
     const first = buildHomeHeroImages()
     first[1].src = '/mutated.webp'
-    expect(buildHomeHeroImages()[1].src).toBe('/hero/luxury-12ml.webp')
+    expect(buildHomeHeroImages()[1].src).toBe('/arees12ml-hero.webp')
   })
 })

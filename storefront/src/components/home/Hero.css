@@ -1,6 +1,6 @@
 /* ============================================================
-   Hero — wide editorial composition
-   Responsive across all desktop, tablet, and mobile viewports.
+   Hero — full-bleed editorial composition
+   Responsive across desktop, tablet, and mobile viewports.
    ============================================================ */
 
 .hero {
@@ -8,14 +8,11 @@
   display: flex;
   align-items: center;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 620px;
-  max-height: calc(100svh - var(--header-h, 80px));
+  min-height: clamp(640px, calc(100svh - var(--header-h, 80px)), 860px);
   background: var(--ink);
   overflow: hidden;
 }
 
-/* Picture container wrapping source + img */
 .hero-picture {
   position: absolute;
   inset: 0;
@@ -26,7 +23,6 @@
   z-index: 0;
 }
 
-/* The photo hero image — covers container and aligns to showcase products */
 .hero-img,
 .hero-bg {
   position: absolute;
@@ -34,39 +30,33 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 85% 40%;
+  object-position: var(--hero-focus, center);
   background-size: cover;
-  background-position: 85% 40%;
+  background-position: var(--hero-focus, center);
   background-repeat: no-repeat;
   display: block;
 }
 
-/* Editorial dark overlay for the full-bleed photo layout */
 .hero-overlay {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    rgba(20, 17, 13, 0.88) 0%,
-    rgba(20, 17, 13, 0.68) 42%,
-    rgba(20, 17, 13, 0.22) 72%,
-    rgba(20, 17, 13, 0.45) 100%
-  );
-}
-
-/* Showcase layout: the framed artwork sits on the right, the copy stays left */
-.hero--showcase .hero-overlay {
-  background: linear-gradient(
-    100deg,
-    rgba(20, 17, 13, 0.94) 0%,
-    rgba(20, 17, 13, 0.86) 34%,
-    rgba(20, 17, 13, 0.58) 43%,
-    rgba(20, 17, 13, 0.16) 50%,
-    rgba(20, 17, 13, 0.10) 90%,
-    rgba(20, 17, 13, 0.26) 100%
-  );
+  background:
+    linear-gradient(
+      0deg,
+      rgba(12, 9, 7, 0.62) 0%,
+      rgba(12, 9, 7, 0.16) 30%,
+      rgba(12, 9, 7, 0) 58%
+    ),
+    linear-gradient(
+      100deg,
+      rgba(15, 12, 9, 0.94) 0%,
+      rgba(15, 12, 9, 0.84) 24%,
+      rgba(15, 12, 9, 0.58) 44%,
+      rgba(15, 12, 9, 0.12) 68%,
+      rgba(15, 12, 9, 0.3) 100%
+    );
 }
 
 .hero-content {
@@ -75,37 +65,30 @@
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: clamp(48px, 6vh, 64px) 32px;
+  padding: clamp(64px, 8vh, 96px) 32px;
   color: var(--cream);
   box-sizing: border-box;
 }
 
 .hero-title {
   color: var(--cream);
-  font-size: clamp(3rem, 4.5vw, 4rem); /* desktop 48–64px */
-  line-height: 1.05;
+  font-size: clamp(3rem, 4.7vw, 4.25rem);
+  line-height: 1.02;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  margin: 0 0 22px;
-  max-width: 12ch;
-}
-
-/* Keep the headline in the copy column instead of letting the wider gallery
-   plate force awkward single-word lines. */
-.hero--showcase .hero-title {
-  max-width: 15ch;
-}
-
-.hero--showcase .hero-tagline {
-  max-width: min(31rem, 36vw, 500px);
+  letter-spacing: -0.025em;
+  margin: 0 0 24px;
+  max-width: 720px;
+  text-wrap: balance;
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.32);
 }
 
 .hero-tagline {
-  color: rgba(248, 243, 234, 0.86);
-  font-size: 1.02rem;
+  color: rgba(248, 243, 234, 0.9);
+  font-size: 1.06rem;
   line-height: 1.65;
-  max-width: min(33rem, calc(44vw - 48px));
-  margin: 0 0 34px;
+  max-width: min(34rem, 46vw);
+  margin: 0 0 36px;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.36);
 }
 
 .hero-actions {
@@ -117,124 +100,86 @@
 
 .hero-btn-arrow { font-size: 1.05em; line-height: 1; }
 
-/* ---------- Primary CTA — "SHOP THE COLLECTION" ---------- */
 .hero-btn-primary {
   background: var(--white);
   color: var(--ink);
   border-color: var(--white);
 }
 .hero-btn-primary:hover {
-  background: #f5f1e8; /* soft warm cream */
+  background: #f5f1e8;
   border-color: #f5f1e8;
   color: var(--ink);
 }
 
-/* ---------- Tablet (768px – 1023px) ---------- */
 @media (min-width: 768px) and (max-width: 1023px) {
   .hero--photo {
-    aspect-ratio: auto;
-    max-height: none;
-    min-height: clamp(560px, 62vh, 680px);
+    min-height: clamp(560px, 70svh, 720px);
   }
-  .hero--photo .hero-img,
-  .hero--photo .hero-bg {
-    object-position: 78% center;
-    background-position: 78% center;
+
+  .hero--photo .hero-overlay {
+    background:
+      linear-gradient(
+        0deg,
+        rgba(12, 9, 7, 0.58) 0%,
+        rgba(12, 9, 7, 0.12) 32%,
+        rgba(12, 9, 7, 0) 58%
+      ),
+      linear-gradient(
+        100deg,
+        rgba(15, 12, 9, 0.95) 0%,
+        rgba(15, 12, 9, 0.86) 34%,
+        rgba(15, 12, 9, 0.58) 52%,
+        rgba(15, 12, 9, 0.1) 76%,
+        rgba(15, 12, 9, 0.3) 100%
+      );
   }
+
   .hero--photo .hero-content {
     max-width: 520px;
     margin: 0;
     padding: 56px 28px;
   }
+
   .hero--photo .hero-title {
-    font-size: clamp(2.4rem, 4.4vw, 2.75rem);
+    font-size: clamp(2.35rem, 4.4vw, 2.75rem);
+    max-width: 480px;
+    margin-bottom: 18px;
   }
+
   .hero--photo .hero-tagline {
-    max-width: 440px;
+    max-width: 390px;
+    margin-bottom: 28px;
   }
+
   .hero--photo .hero-actions {
     flex-direction: row;
     flex-wrap: wrap;
   }
+
   .hero--photo .hero-btn {
     width: auto;
   }
-
-  /* Showcase: artwork above, copy below, content defines the height */
-  .hero--showcase {
-    --showcase-stage-w: min(calc(100vw - clamp(32px, 10vw, 96px)), 600px);
-    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
-    display: block;
-    aspect-ratio: auto;
-    min-height: 0;
-    max-height: none;
-  }
-
-  .hero--showcase .hero-content {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: calc(var(--showcase-stage-h) + 40px) 32px clamp(36px, 5vh, 52px);
-  }
-
-  .hero--showcase .hero-title {
-    font-size: clamp(2.2rem, 5.6vw, 2.75rem);
-    max-width: none;
-    margin-bottom: 16px;
-  }
-
-  .hero--showcase .hero-tagline {
-    max-width: 560px;
-    margin-bottom: 26px;
-  }
-
-  .hero--showcase .hero-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .hero--showcase .hero-btn {
-    width: auto;
-  }
-
-  .hero--showcase .hero-overlay {
-    background: linear-gradient(
-      180deg,
-      rgba(15, 12, 9, 0.05) 0%,
-      rgba(15, 12, 9, 0.08) calc(var(--showcase-stage-h) - 8px),
-      rgba(15, 12, 9, 0.20) calc(var(--showcase-stage-h) + 8px),
-      rgba(15, 12, 9, 0.58) calc(var(--showcase-stage-h) + 38px),
-      rgba(15, 12, 9, 0.94) calc(var(--showcase-stage-h) + 78px),
-      rgba(15, 12, 9, 0.96) 100%
-    );
-  }
 }
 
-/* ---------- Mobile (<= 767px) ---------- */
 @media (max-width: 767px) {
   .hero--photo {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    aspect-ratio: auto;
-    max-height: none;
-    min-height: clamp(520px, 78svh, 620px);
+    min-height: clamp(560px, 82svh, 720px);
     padding: 0;
   }
 
-  .hero--photo .hero-img,
-  .hero--photo .hero-bg {
-    object-position: 60% 35%;
-    background-position: 60% 35%;
-  }
-
   .hero--photo .hero-overlay {
-    background: linear-gradient(
-      180deg,
-      rgba(15, 12, 9, 0.90) 0%,
-      rgba(15, 12, 9, 0.78) 40%,
-      rgba(15, 12, 9, 0.48) 72%,
-      rgba(15, 12, 9, 0.85) 100%
-    );
+    background:
+      linear-gradient(
+        180deg,
+        rgba(12, 9, 7, 0.28) 0%,
+        rgba(12, 9, 7, 0.06) 30%,
+        rgba(12, 9, 7, 0.42) 52%,
+        rgba(12, 9, 7, 0.88) 72%,
+        rgba(12, 9, 7, 0.98) 100%
+      );
   }
 
   .hero--photo .hero-content {
@@ -244,91 +189,35 @@
     flex-direction: column;
     width: 100%;
     max-width: none;
-    padding: clamp(52px, 10vw, 72px) 20px clamp(32px, 7vw, 42px);
+    padding: 160px 20px calc(34px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
   }
 
-  .hero--showcase {
-    --showcase-stage-w: calc(100vw - 40px);
-    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
-    display: block;
-    aspect-ratio: auto;
-    min-height: 0;
-    max-height: none;
-    padding: 0;
-  }
-
-  .hero--showcase .hero-content {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: calc(var(--showcase-stage-h) + 20px) 20px clamp(32px, 7vw, 42px);
-    box-sizing: border-box;
-  }
-
-  .hero--showcase .hero-title,
   .hero--photo .hero-title {
-    font-family: var(--font-display);
-    font-weight: 500;
-    line-height: 1.08;
-    max-width: none;
+    font-size: clamp(2.15rem, 9.2vw, 2.75rem);
+    line-height: 1.04;
+    max-width: 12ch;
     margin: 0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.82);
   }
 
-  .hero--showcase .hero-title {
-    font-size: clamp(32px, 8.8vw, 42px);
-  }
-
-  .hero--photo .hero-title {
-    font-size: clamp(34px, 9.2vw, 44px);
-  }
-
-  .hero--showcase .hero-tagline,
   .hero--photo .hero-tagline {
+    margin: 16px 0 0;
     font-size: 14.5px;
     line-height: 1.55;
     max-width: 340px;
     color: rgba(248, 243, 234, 0.95);
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.86);
   }
 
-  .hero--showcase .hero-tagline {
-    margin: 16px 0 0;
-  }
-
-  .hero--photo .hero-tagline {
-    margin: 18px 0 0;
-  }
-
-  .hero--showcase .hero-actions,
   .hero--photo .hero-actions {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 10px;
-  }
-
-  .hero--showcase .hero-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
     gap: 10px;
     margin-top: 20px;
   }
 
-  .hero--showcase .hero-btn {
-    padding-inline: 10px;
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
-  }
-
-  .hero--photo .hero-actions {
-    margin-top: 24px;
-  }
-
-  .hero--showcase .hero-btn,
   .hero--photo .hero-btn {
     width: 100%;
     height: 48px;
@@ -337,156 +226,82 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+    padding: 0 8px;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
   }
 
-  .hero--photo .hero-actions .btn-outline-light,
-  .hero--showcase .hero-actions .btn-outline-light {
+  .hero--photo .hero-actions .btn-outline-light {
     background: rgba(15, 12, 9, 0.55);
     border-color: rgba(255, 255, 255, 0.55);
     color: var(--white);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
-
-  .hero--showcase .hero-overlay {
-    background: linear-gradient(
-      180deg,
-      rgba(15, 12, 9, 0.05) 0%,
-      rgba(15, 12, 9, 0.08) calc(var(--showcase-stage-h) - 8px),
-      rgba(15, 12, 9, 0.20) calc(var(--showcase-stage-h) + 8px),
-      rgba(15, 12, 9, 0.58) calc(var(--showcase-stage-h) + 36px),
-      rgba(15, 12, 9, 0.94) calc(var(--showcase-stage-h) + 76px),
-      rgba(15, 12, 9, 0.96) 100%
-    );
-  }
 }
 
-/* ---------- Very small phones (<= 360px) ---------- */
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .hero--photo {
-    min-height: clamp(480px, 80svh, 540px);
+    min-height: clamp(540px, 84svh, 640px);
   }
 
-  .hero--showcase {
-    --showcase-stage-w: calc(100vw - 40px);
-    --showcase-stage-h: 220px;
-  }
-
-  .hero--showcase .hero-actions {
-    gap: 8px;
-  }
-
-  .hero--showcase .hero-btn {
-    padding-inline: 6px;
-    font-size: 0.66rem;
-    letter-spacing: 0.03em;
-  }
-
-  .hero--showcase .hero-title,
-  .hero--photo .hero-title {
-    font-size: clamp(30px, 9vw, 36px);
-  }
-
-  .hero--showcase .hero-tagline,
-  .hero--photo .hero-tagline {
-    font-size: 13px;
-  }
-
-  .hero--showcase .hero-tagline {
-    margin-top: 12px;
-  }
-
-  .hero--showcase .hero-content,
   .hero--photo .hero-content {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding: 150px 14px calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
-  .hero--showcase .hero-content {
-    padding-top: calc(var(--showcase-stage-h) + 16px);
+  .hero--photo .hero-title {
+    font-size: clamp(1.95rem, 9vw, 2.25rem);
+    max-width: 11ch;
   }
 
-  .hero--showcase .hero-btn,
+  .hero--photo .hero-tagline {
+    margin-top: 14px;
+    font-size: 13px;
+    max-width: 320px;
+  }
+
+  .hero--photo .hero-actions {
+    gap: 8px;
+    margin-top: 18px;
+  }
+
   .hero--photo .hero-btn {
     height: 44px;
     min-height: 44px;
+    padding: 0 6px;
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
   }
 }
 
-/* ---------- Landscape phones ---------- */
-@media (max-height: 480px) and (orientation: landscape) {
+@media (max-height: 520px) and (orientation: landscape) {
   .hero--photo {
     min-height: 100svh;
   }
 
   .hero--photo .hero-content {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    max-width: 58vw;
+    padding: 24px 28px;
   }
 
-  .hero--photo .hero-title {
-    font-size: clamp(1.6rem, 4.5vw, 2rem);
-    margin-bottom: 8px;
-  }
-
-  .hero--photo .hero-tagline {
-    margin-top: 8px;
-    margin-bottom: 12px;
-    font-size: 13px;
-  }
-
-  .hero--photo .hero-actions {
-    flex-direction: row;
-    margin-top: 14px;
-  }
-
-  .hero--photo .hero-btn {
-    width: auto;
-    height: 42px;
-    min-height: 42px;
-    padding: 0 24px;
-  }
-
-  .hero--showcase {
-    --showcase-stage-w: min(34vw, 260px);
-    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
-  }
-
-  .hero--showcase .cinematic-showcase-panel {
-    left: 50%;
-    right: auto;
-    width: var(--showcase-stage-w);
-    transform: translateX(-50%);
-  }
-
-  .hero--showcase .hero-content {
-    padding-top: calc(var(--showcase-stage-h) + 20px);
-    padding-bottom: 24px;
-  }
-
-  .hero--showcase .hero-title,
   .hero--photo .hero-title {
     font-size: clamp(1.7rem, 4.2vw, 2rem);
+    max-width: 480px;
     margin-bottom: 8px;
   }
 
-  .hero--showcase .hero-tagline,
   .hero--photo .hero-tagline {
     margin-top: 8px;
     margin-bottom: 12px;
     font-size: 13px;
-    max-width: 520px;
+    max-width: 480px;
   }
 
-  .hero--showcase .hero-actions,
   .hero--photo .hero-actions {
     flex-direction: row;
     margin-top: 12px;
   }
 
-  .hero--showcase .hero-btn,
   .hero--photo .hero-btn {
     width: auto;
     height: 42px;
