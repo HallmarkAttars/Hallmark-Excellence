@@ -1052,6 +1052,9 @@ export default function Contact() {
                   <span>Delivery / Transport</span>
                   <span className="order-summary-delivery">To be confirmed</span>
                 </div>
+                <div className="order-summary-row order-summary-note">
+                  <span>Transport Charges are Excluded</span>
+                </div>
                 <div className="order-summary-row order-summary-total">
                   <span>Total</span>
                   <span>₹{checkout.total.toLocaleString('en-IN')}</span>
