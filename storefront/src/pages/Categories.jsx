@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Reveal from '../animations/Reveal'
 import { getCategories } from '../services/mockApi'
 import { CATEGORIES_PAGE } from '../data/content'
+import { cloudinarySrc } from '../utils/productImage'
 // Single source of truth for the premium category-card look — the homepage
 // CategoryGrid imports the same file, so both surfaces stay consistent.
 import '../components/home/CategoryGrid.css'
@@ -42,24 +43,40 @@ export default function Categories() {
           <SkeletonCategoryGrid count={8} />
         ) : (
           <Reveal className="category-scroll stagger-fade categories-page">
-            {categories.map((cat) => (
-              <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
-                {/* Upper portion — category image */}
-                <span className="category-media">
-                  <span
-                    className="category-image"
-                    style={{ backgroundImage: `url(${cat.image})` }}
-                    role="img"
-                    aria-label={cat.name}
-                  />
-                </span>
-                {/* Footer — name + arrow */}
-                <span className="category-footer">
-                  <span className="category-name">{cat.name}</span>
-                  <span className="category-arrow" aria-hidden="true">→</span>
-                </span>
-              </Link>
-            ))}
+            {categories.map((cat) => {
+              const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
+              return (
+                <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
+                  {/* Upper portion — category image. Optimized real <img>
+                      (f_auto,q_auto,w_500) instead of a full-resolution CSS
+                      background URL, with lazy decoding. */}
+                  <span className="category-media">
+                    {imgSrc ? (
+                      <img
+                        className="category-image"
+                        src={imgSrc}
+                        alt={cat.name}
+                        loading="lazy"
+                        decoding="async"
+                        width="400"
+                        height="300"
+                      />
+                    ) : (
+                      <span
+                        className="category-image"
+                        role="img"
+                        aria-label={cat.name}
+                      />
+                    )}
+                  </span>
+                  {/* Footer — name + arrow */}
+                  <span className="category-footer">
+                    <span className="category-name">{cat.name}</span>
+                    <span className="category-arrow" aria-hidden="true">→</span>
+                  </span>
+                </Link>
+              )
+            })}
           </Reveal>
         )}
       </div>

@@ -15,9 +15,9 @@
   right: 0;
   width: 100%;
   z-index: 98; /* Stays above general content; below modal dialogs and toasts */
-  background: rgba(248, 243, 232, 0.96);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  /* Perf: no backdrop-filter on mobile — a near-opaque bar reads the same
+     and avoids forcing continuous GPU blur of everything scrolling behind it. */
+  background: #f8f3e8;
   border-top: 1px solid var(--line, rgba(184, 137, 56, 0.18));
   box-shadow: 0 -4px 20px rgba(29, 25, 20, 0.08);
   border-radius: 16px 16px 0 0;

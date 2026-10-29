@@ -343,11 +343,11 @@
 
   .hero--photo .hero-actions .btn-outline-light,
   .hero--showcase .hero-actions .btn-outline-light {
-    background: rgba(15, 12, 9, 0.55);
+    /* Perf: no backdrop blur on mobile — it re-filters the crossfading hero
+       every frame. A more opaque tint reads the same over photos. */
+    background: rgba(15, 12, 9, 0.72);
     border-color: rgba(255, 255, 255, 0.55);
     color: var(--white);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
   }
 
   .hero--showcase .hero-overlay {

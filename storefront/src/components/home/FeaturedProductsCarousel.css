@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
   cursor: pointer;
   outline: none;
   transition: filter 0.25s ease;
@@ -331,6 +331,19 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: #85591a;
+}
+
+/* ---------- Mobile GPU-friendliness ---------- */
+/* Perf: the radial gradients are already feathered to transparent — the extra
+   CSS blur filters rasterize large layers on weak mobile GPUs for very little
+   visual gain. JS-side per-frame depth blur is also disabled under 768px. */
+@media (max-width: 767px) {
+  .carousel-ambient-backlight,
+  .platform-center-spotlight,
+  .carousel-bottle-shadow,
+  .carousel-orbit-item.is-active-front .carousel-bottle-shadow {
+    filter: none;
+  }
 }
 
 /* ---------- Circular Gold Navigation Arrows ---------- */

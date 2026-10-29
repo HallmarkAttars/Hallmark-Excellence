@@ -49,6 +49,37 @@ export async function getProducts(options) {
   return cachedCatalogRead('products', async () => (await api.get('/products')).products ?? [], options)
 }
 
+// Lightweight card-only fetch for home-page highlights (hero orbit, social
+// strip). Uses the server's ?summary=true&featured=true&limit=N fast path:
+// no variants, no description text — a fraction of the full catalog payload.
+// Falls back to the full catalog read on older deployments that don't yet
+// understand the query params.
+export async function getFeaturedProducts({ limit = 18, refresh = false } = {}) {
+  return cachedCatalogRead(
+    `products:featured:${limit}`,
+    async () => {
+      let list
+      try {
+        const data = await api.get(
+          `/products?summary=true&featured=true&limit=${limit}`
+        )
+        list = data.products ?? []
+        if (!Array.isArray(list) || list.length === 0) throw new Error('EMPTY')
+        // Older server deployments ignore the query params and return the
+        // whole catalog — normalize by filtering + slicing client-side too.
+        const featuredOnly = list.filter((p) => p.is_featured)
+        return (featuredOnly.length > 0 ? featuredOnly : list).slice(0, limit)
+      } catch {
+        // Old deployments/network errors: fall back to the full catalog read.
+        const all = (await api.get('/products')).products ?? []
+        const featuredOnly = all.filter((p) => p.is_featured)
+        return (featuredOnly.length > 0 ? featuredOnly : all).slice(0, limit)
+      }
+    },
+    { refresh }
+  )
+}
+
 export async function getProductById(id, options) {
   return cachedCatalogRead(`product:${id}`, async () => {
     const data = await api.get(`/products/${id}`)

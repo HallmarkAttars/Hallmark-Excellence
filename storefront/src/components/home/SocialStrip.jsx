@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import Reveal from '../../animations/Reveal'
@@ -8,28 +8,40 @@ import './SocialStrip.css'
 export default function SocialStrip({ products }) {
   const items = (products || []).slice(0, 6)
   const carouselRef = useRef(null)
+  const scrollRafRef = useRef(0)
+  const activeIndexRef = useRef(0)
   const [activeIndex, setActiveIndex] = useState(0)
 
-  // Track active slide on mobile horizontal scroll
+  useEffect(() => () => {
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current)
+  }, [])
+
   const handleScroll = () => {
-    const el = carouselRef.current
-    if (!el) return
-    const children = Array.from(el.children)
-    if (children.length === 0) return
+    if (scrollRafRef.current) return
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = 0
+      const el = carouselRef.current
+      if (!el) return
+      const children = Array.from(el.children)
+      if (children.length === 0) return
 
-    const center = el.scrollLeft + el.offsetWidth / 2
-    let closestIndex = 0
-    let minDistance = Infinity
+      const center = el.scrollLeft + el.offsetWidth / 2
+      let closestIndex = 0
+      let minDistance = Infinity
 
-    children.forEach((child, idx) => {
-      const childCenter = child.offsetLeft + child.offsetWidth / 2
-      const dist = Math.abs(center - childCenter)
-      if (dist < minDistance) {
-        minDistance = dist
-        closestIndex = idx
+      children.forEach((child, idx) => {
+        const childCenter = child.offsetLeft + child.offsetWidth / 2
+        const dist = Math.abs(center - childCenter)
+        if (dist < minDistance) {
+          minDistance = dist
+          closestIndex = idx
+        }
+      })
+      if (closestIndex !== activeIndexRef.current) {
+        activeIndexRef.current = closestIndex
+        setActiveIndex(closestIndex)
       }
     })
-    setActiveIndex(closestIndex)
   }
 
   const scrollToSlide = (idx) => {

@@ -206,6 +206,21 @@
     transform-origin: center 40%;
   }
 
+  /* Perf: stop the continuous Ken Burns / drift camera movement on mobile —
+     large full-bleed images re-composited every frame are expensive and the
+     crossfade itself already reads as cinematic. Static transforms remain. */
+  .cinematic-hero-media,
+  .cinematic-motion-0,
+  .cinematic-motion-1,
+  .cinematic-motion-2,
+  .cinematic-motion-3,
+  .cinematic-motion-4,
+  .cinematic-motion-5,
+  .cinematic-motion-single,
+  .cinematic-showcase-backdrop {
+    animation: none !important;
+  }
+
   /* Slightly tighter scale range on mobile to preserve perfume bottle framing */
   @keyframes cinematic-kb-1 {
     0% { transform: scale(1.03) translate3d(-1%, 0, 0); }

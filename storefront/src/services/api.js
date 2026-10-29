@@ -13,12 +13,16 @@ async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
 
   let res
   try {
+    // Only send Content-Type when there is a body. A Content-Type header on
+    // bodyless GETs triggers a pointless CORS preflight on every read.
+    const fetchHeaders =
+      body !== undefined || (headers && Object.keys(headers).length > 0)
+        ? { 'Content-Type': 'application/json', ...headers }
+        : { ...headers }
+
     res = await fetch(url, {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers,
-      },
+      headers: fetchHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     })

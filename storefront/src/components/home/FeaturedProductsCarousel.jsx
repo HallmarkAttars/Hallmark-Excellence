@@ -64,6 +64,7 @@ export default function FeaturedProductsCarousel({
 
   // Refs for 60/120fps continuous animation without triggering React re-renders on every frame
   const stageRef = useRef(null)
+  const wrapperRef = useRef(null)
   const itemRefs = useRef([])
   const baseAngleRef = useRef(0)
   const targetAngleRef = useRef(0)
@@ -74,6 +75,12 @@ export default function FeaturedProductsCarousel({
   const reducedMotionRef = useRef(false)
   const touchStartXRef = useRef(0)
   const touchCurrentXRef = useRef(0)
+  const isVisibleRef = useRef(false)
+  const isHiddenRef = useRef(false)
+  const needsInitialPaintRef = useRef(true)
+  const dynamicEffectsRef = useRef(true)
+  const maxFpsRef = useRef(60)
+  const resizeRafRef = useRef(0)
 
   // Dynamic responsive orbit radius calculation according to viewport width
   const updateResponsiveRadii = useCallback(() => {
@@ -102,29 +109,60 @@ export default function FeaturedProductsCarousel({
     reducedMotionRef.current = Boolean(mq?.matches)
     const handler = (e) => {
       reducedMotionRef.current = Boolean(e.matches)
+      if (!e.matches) needsInitialPaintRef.current = true
     }
     mq?.addEventListener?.('change', handler)
     return () => mq?.removeEventListener?.('change', handler)
   }, [])
 
-  // Resize listener
+  // Resize listener (rAF-throttled)
   useEffect(() => {
     updateResponsiveRadii()
-    window.addEventListener('resize', updateResponsiveRadii)
-    return () => window.removeEventListener('resize', updateResponsiveRadii)
+    const onResize = () => {
+      if (resizeRafRef.current) return
+      resizeRafRef.current = requestAnimationFrame(() => {
+        resizeRafRef.current = 0
+        updateResponsiveRadii()
+        needsInitialPaintRef.current = true
+      })
+    }
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (resizeRafRef.current) {
+        cancelAnimationFrame(resizeRafRef.current)
+        resizeRafRef.current = 0
+      }
+    }
   }, [updateResponsiveRadii])
 
-  // Pause when browser tab is inactive to preserve performance
+  // Pause when offscreen or tab hidden. Reduced motion paints once, then stops.
   useEffect(() => {
+    isHiddenRef.current = Boolean(document.hidden)
     const handleVisibility = () => {
-      if (document.hidden) {
-        isHoveredRef.current = true
-      } else {
-        isHoveredRef.current = false
-      }
+      isHiddenRef.current = Boolean(document.hidden)
+      if (!isHiddenRef.current) needsInitialPaintRef.current = true
     }
     document.addEventListener('visibilitychange', handleVisibility)
     return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      isVisibleRef.current = true
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        isVisibleRef.current = Boolean(entry?.isIntersecting)
+        if (isVisibleRef.current) needsInitialPaintRef.current = true
+      },
+      { threshold: 0 }
+    )
+    io.observe(el)
+    return () => io.disconnect()
   }, [])
 
   // Mathematical positioning for all products along the single elliptical orbit
@@ -167,7 +205,7 @@ export default function FeaturedProductsCarousel({
         }
 
         const zIndex = Math.round(10 + 90 * depth)
-        const blur = (1 - depth) * 1.8
+        const blur = dynamicEffectsRef.current ? (1 - depth) * 1.8 : 0
         const isFront = depth > 0.88
 
         const el = itemRefs.current[i]
@@ -176,7 +214,11 @@ export default function FeaturedProductsCarousel({
           el.style.transform = `translate3d(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px), 0) scale(${scale.toFixed(3)})`
           el.style.opacity = opacity.toFixed(2)
           el.style.zIndex = zIndex
-          el.style.filter = blur > 0.35 ? `blur(${blur.toFixed(1)}px)` : 'none'
+          if (blur > 0.35) {
+            el.style.filter = `blur(${blur.toFixed(1)}px)`
+          } else if (el.style.filter) {
+            el.style.filter = ''
+          }
           el.classList.toggle('is-active-front', isFront)
         }
       }
@@ -194,10 +236,33 @@ export default function FeaturedProductsCarousel({
   useEffect(() => {
     let animId
     let lastTime = performance.now()
+    let lastFrameTime = 0
+    const frameInterval = maxFpsRef.current >= 60 ? 0 : Math.round(1000 / Math.max(1, maxFpsRef.current))
+
+    const paintOnce = (now) => {
+      applyTransforms(baseAngleRef.current)
+      needsInitialPaintRef.current = false
+      lastTime = now
+    }
 
     const tick = (now) => {
+      const isPaused =
+        !isVisibleRef.current || isHiddenRef.current || reducedMotionRef.current
+
+      if (isPaused) {
+        if (needsInitialPaintRef.current) paintOnce(now)
+        animId = requestAnimationFrame(tick)
+        return
+      }
+
       const dt = Math.min(now - lastTime, 50)
       lastTime = now
+
+      if (frameInterval > 0 && now - lastFrameTime < frameInterval) {
+        animId = requestAnimationFrame(tick)
+        return
+      }
+      lastFrameTime = now
 
       if (isManualRef.current) {
         // Smooth luxury spring interpolation towards target product
@@ -210,8 +275,7 @@ export default function FeaturedProductsCarousel({
         }
       } else if (
         !isHoveredRef.current &&
-        !isDraggingRef.current &&
-        !reducedMotionRef.current
+        !isDraggingRef.current
       ) {
         // Continuous, smooth, slow circular orbit rotation:
         // angle decreases continuously so products travel around the ellipse
@@ -300,6 +364,7 @@ export default function FeaturedProductsCarousel({
 
   return (
     <div
+      ref={wrapperRef}
       className="carousel-orbit-wrapper"
       onMouseEnter={() => {
         isHoveredRef.current = true

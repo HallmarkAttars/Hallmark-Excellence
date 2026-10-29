@@ -86,10 +86,11 @@
 }
 
 /* ---------- Quick View (bottom-right over the image) ----------
-   Small floating glass control: a translucent white disc (backdrop blur)
-   with a dark eye glyph, so it reads cleanly over both light and dark
-   product photos without dominating the image. 32×32px, perfectly
-   centred glyph, gentle opacity + scale lift on hover. */
+   Small floating glass control: a translucent white disc with a dark eye
+   glyph, so it reads cleanly over both light and dark product photos
+   without dominating the image. 32×32px, perfectly centred glyph, gentle
+   opacity + scale lift on hover. Perf: solid translucent fill — no
+   backdrop blur (a blurred backdrop RASTERIZES on mobile for each card). */
 .product-card-quickview {
   position: absolute;
   right: 12px;
@@ -102,9 +103,7 @@
   height: 32px;
   padding: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.42);
-  -webkit-backdrop-filter: blur(8px) saturate(150%);
-  backdrop-filter: blur(8px) saturate(150%);
+  background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: 0 2px 10px rgba(29, 25, 20, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.45);

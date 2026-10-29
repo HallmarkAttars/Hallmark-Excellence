@@ -34,6 +34,25 @@ const PRODUCT_SELECT_BASE = `
   brands ( id, name, slug )
 `
 
+// Lightweight card-only select for listing endpoints (?summary=true). Skips
+// the heavy description text and sell_exact_pieces so cards/hero orbits fetch
+// only what they render.
+const PRODUCT_SUMMARY_SELECT = `
+  id, name, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
+  category_id, brand_id, image,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
+// Fallback for the summary select on pre-migration databases (pricing /
+// rating / is_in_stock columns missing).
+const PRODUCT_SUMMARY_SELECT_BASE = `
+  id, name, price, is_featured, stock,
+  category_id, brand_id, image,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
 // Admin-facing select: also includes the manual display_order column (added
 // by migration_add_display_order.sql) so the admin list can show a position
 // column and the edit form can display/set the current position.
@@ -75,15 +94,17 @@ async function selectProducts(build) {
 // order (then newest). Degrades gracefully at each migration boundary:
 // display_order missing -> newest-first ordering; pricing columns missing
 // -> base select. NEVER alphabetical.
-async function selectPublicProducts(build) {
-  let res = await build(PRODUCT_SELECT, true)
+async function selectPublicProducts(build, selectOverride) {
+  const select = selectOverride || PRODUCT_SELECT
+  const baseSelect = selectOverride ? PRODUCT_SUMMARY_SELECT_BASE : PRODUCT_SELECT_BASE
+  let res = await build(select, true)
   if (isMissingOrderColumnError(res.error)) {
     console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
-    res = await build(PRODUCT_SELECT, false)
+    res = await build(select, false)
   }
   if (isMissingColumnError(res.error)) {
     console.warn('[products] Pricing/rating columns missing in the products table (compare_at_price, rating, review_count). Run server/db/migration_add_pricing_fields.sql and migration_add_ratings.sql in the Supabase SQL editor to enable these fields.')
-    res = await build(PRODUCT_SELECT_BASE, false)
+    res = await build(baseSelect, false)
   }
   return res
 }
@@ -305,9 +326,24 @@ function flattenProduct(row) {
 
 // GET /api/products
 // Public. Only active products. Supports ?category_id= &brand_id= &search= &sort=
+// Lightweight card-only listing with ?summary=true (+ ?featured=true&limit=N)
+// — skips variants/description and returns only card fields.
 async function getProducts(req, res) {
   try {
-    const { category_id, brand_id, search, sort } = req.query
+    const {
+      category_id,
+      brand_id,
+      search,
+      sort,
+      featured,
+      limit,
+      summary,
+    } = req.query
+    const isSummary = summary === 'true' || summary === '1'
+    const isFeatured = featured === 'true' || featured === '1'
+    const limitValue = Number.isFinite(Number(limit))
+      ? Math.min(Math.max(Math.floor(Number(limit)), 1), 50)
+      : 50
 
     const { data, error } = await selectPublicProducts((select, useDisplayOrder) => {
       let q = supabase
@@ -317,6 +353,7 @@ async function getProducts(req, res) {
 
       if (category_id) q = q.eq('category_id', category_id)
       if (brand_id) q = q.eq('brand_id', brand_id)
+      if (isFeatured) q = q.eq('is_featured', true)
       if (search) q = q.ilike('name', `%${search}%`)
 
       if (sort === 'price_asc') {
@@ -330,8 +367,10 @@ async function getProducts(req, res) {
         q = applyProductOrder(q, useDisplayOrder)
       }
 
+      if (isSummary) q = q.limit(limitValue)
+
       return q
-    })
+    }, isSummary ? PRODUCT_SUMMARY_SELECT : undefined)
 
     if (error) {
       console.error('getProducts error:', error)
@@ -339,6 +378,14 @@ async function getProducts(req, res) {
     }
 
     const rows = data.map(flattenProduct)
+
+    if (isSummary) {
+      // Card listings only need the price from the products table itself;
+      // variant attaches are skipped entirely (the whole point of summary).
+      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+      return res.json({ products: rows })
+    }
+
     // Fetch variants separately so listing works regardless of PostgREST
     // relationship inference.
     let variantsByProduct = {}

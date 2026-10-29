@@ -119,22 +119,41 @@ export default function CinematicHero({
   })
   const [outgoingSlide, setOutgoingSlide] = useState(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia(MOBILE_MEDIA).matches
+  )
+
+  // Track mobile viewport so crossfade length + preload behaviour can be
+  // tuned cheaply on small screens (no CSS reflow, just timer math).
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const mq = window.matchMedia(MOBILE_MEDIA)
+    const handler = (e) => setIsMobileViewport(Boolean(e.matches))
+    mq?.addEventListener?.('change', handler)
+    return () => mq?.removeEventListener?.('change', handler)
+  }, [])
+
+  // Shorter crossfade on mobile: the fade-in animation is capped to 1000ms so
+  // large full-bleed layers spend less time composited mid-transition.
+  const effectiveFadeDuration = isMobileViewport
+    ? Math.min(fadeDuration, 1000)
+    : fadeDuration
 
   const stepCounterRef = useRef(0)
   const activeLayout = validSlides[activeSlide.index]?.layout || 'photo'
   const activeDuration =
     validSlides[activeSlide.index]?.duration ?? displayDuration
 
-  // Preload upcoming images in the background after initial render settles
+  // Preload upcoming images in the background after initial render settles.
+  // On mobile only the immediate next slide is preloaded and only well after
+  // first paint — the 76–117KB hero assets never compete with LCP bandwidth.
   useEffect(() => {
     if (totalSlides <= 1) return
     const nextIdx = (activeSlide.index + 1) % totalSlides
     const nextNextIdx = (activeSlide.index + 2) % totalSlides
-
-    const isMobileViewport =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia(MOBILE_MEDIA).matches
 
     const preload = (slide) => {
       if (!slide) return
@@ -144,32 +163,35 @@ export default function CinematicHero({
         const img = new Image()
         img.src = targetSrc
       }
-      if (slide.blur && typeof window !== 'undefined' && typeof Image !== 'undefined') {
+      if (!isMobileViewport && slide.blur && typeof window !== 'undefined' && typeof Image !== 'undefined') {
         const img = new Image()
         img.src = slide.blur
       }
     }
 
-    const timer = setTimeout(() => {
-      preload(validSlides[nextIdx])
-      if (totalSlides > 2) {
-        preload(validSlides[nextNextIdx])
-      }
-    }, 2500)
+    const timer = setTimeout(
+      () => {
+        preload(validSlides[nextIdx])
+        if (!isMobileViewport && totalSlides > 2) {
+          preload(validSlides[nextNextIdx])
+        }
+      },
+      isMobileViewport ? 5000 : 2500
+    )
 
     return () => clearTimeout(timer)
-  }, [activeSlide.index, totalSlides, validSlides])
+  }, [activeSlide.index, totalSlides, validSlides, isMobileViewport])
 
-  // Clean up outgoing slide after crossfade completes (fadeDuration)
+  // Clean up outgoing slide after crossfade completes (effectiveFadeDuration)
   useEffect(() => {
     if (!outgoingSlide) return
     const timer = setTimeout(() => {
       setOutgoingSlide(null)
       setIsTransitioning(false)
-    }, fadeDuration)
+    }, effectiveFadeDuration)
 
     return () => clearTimeout(timer)
-  }, [outgoingSlide, fadeDuration])
+  }, [outgoingSlide, effectiveFadeDuration])
 
   // Schedule next slide transition after this slide's display duration
   useEffect(() => {
@@ -273,7 +295,7 @@ export default function CinematicHero({
           <div
             key={outgoingSlide.key}
             className="cinematic-hero-slide cinematic-hero-slide--outgoing"
-            style={{ '--fade-duration': `${fadeDuration}ms` }}
+            style={{ '--fade-duration': `${effectiveFadeDuration}ms` }}
           >
             <div
               className={`cinematic-hero-media ${motionClassFor(
@@ -292,7 +314,7 @@ export default function CinematicHero({
           className={`cinematic-hero-slide cinematic-hero-slide--active ${
             isTransitioning ? 'cinematic-hero-slide--incoming' : ''
           }`}
-          style={{ '--fade-duration': `${fadeDuration}ms` }}
+          style={{ '--fade-duration': `${effectiveFadeDuration}ms` }}
         >
           <div
             className={`cinematic-hero-media ${motionClassFor(

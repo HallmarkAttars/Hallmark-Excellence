@@ -32,6 +32,9 @@ export function useMobileBrandStack(containerRef) {
     let isObserving = false
     let isTicking = false
     let cachedCards = []
+    let ioVisible = false
+    let lastStackKey = new WeakMap()
+    let resizeRaf = 0
 
     const cleanupStyles = () => {
       if (cachedCards && cachedCards.length > 0) {
@@ -42,6 +45,9 @@ export function useMobileBrandStack(containerRef) {
           card.style.removeProperty('pointer-events')
         })
       }
+      // Cached keys must go too, otherwise a re-entry would think the
+      // (just-removed) inline values are still current and skip rewriting.
+      lastStackKey = new WeakMap()
     }
 
     const updateStack = () => {
@@ -100,25 +106,47 @@ export function useMobileBrandStack(containerRef) {
         }
 
         const targetEl = cardData[i].card
-        targetEl.style.setProperty('--stack-scale', scale.toFixed(3))
-        targetEl.style.setProperty('--stack-y', `${y.toFixed(1)}px`)
-        targetEl.style.setProperty('--stack-opacity', opacity.toFixed(3))
 
-        // When invisible, disable pointer events so clicks pass cleanly
-        if (opacity <= 0.02) {
-          targetEl.style.pointerEvents = 'none'
-        } else {
-          targetEl.style.removeProperty('pointer-events')
+        // Change-detection: only write the three CSS custom properties when
+        // they actually differ, so continuous scrolling stops issuing
+        // redundant inline-style mutations on every frame.
+        const key = `${scale.toFixed(3)}|${y.toFixed(1)}|${opacity.toFixed(3)}`
+        if (lastStackKey.get(targetEl) !== key) {
+          lastStackKey.set(targetEl, key)
+          targetEl.style.setProperty('--stack-scale', scale.toFixed(3))
+          targetEl.style.setProperty('--stack-y', `${y.toFixed(1)}px`)
+          targetEl.style.setProperty('--stack-opacity', opacity.toFixed(3))
+
+          // When invisible, disable pointer events so clicks pass cleanly
+          if (opacity <= 0.02) {
+            targetEl.style.pointerEvents = 'none'
+          } else {
+            targetEl.style.removeProperty('pointer-events')
+          }
         }
       }
+    }
+
+    const startScroll = () => {
+      if (isObserving) return
+      window.addEventListener('scroll', onScroll, { passive: true })
+      isObserving = true
+      updateStack()
+    }
+
+    const stopScroll = () => {
+      if (!isObserving) return
+      window.removeEventListener('scroll', onScroll)
+      isObserving = false
     }
 
     const onScroll = () => {
       if (!isTicking) {
         isTicking = true
         requestAnimationFrame(() => {
-          updateStack()
           isTicking = false
+          if (!isObserving || document.hidden) return
+          updateStack()
         })
       }
     }
@@ -128,17 +156,11 @@ export function useMobileBrandStack(containerRef) {
       io = new IntersectionObserver(
         (entries) => {
           const entry = entries[0]
-          if (entry?.isIntersecting && isMobile() && !prefersReducedMotion()) {
-            if (!isObserving) {
-              window.addEventListener('scroll', onScroll, { passive: true })
-              isObserving = true
-              updateStack()
-            }
+          ioVisible = Boolean(entry?.isIntersecting)
+          if (ioVisible && isMobile() && !prefersReducedMotion() && !document.hidden) {
+            startScroll()
           } else {
-            if (isObserving) {
-              window.removeEventListener('scroll', onScroll)
-              isObserving = false
-            }
+            stopScroll()
           }
         },
         { rootMargin: '160px 0px 160px 0px' }
@@ -146,17 +168,30 @@ export function useMobileBrandStack(containerRef) {
       io.observe(container)
     } else {
       // Fallback if IntersectionObserver is not available
-      window.addEventListener('scroll', onScroll, { passive: true })
-      isObserving = true
-      updateStack()
+      ioVisible = true
+      startScroll()
     }
 
-    const onResize = () => {
-      if (isMobile() && !prefersReducedMotion()) {
-        updateStack()
-      } else {
-        cleanupStyles()
+    // Pausing during background tabs keeps zero work when not being seen.
+    const onVisibility = () => {
+      if (document.hidden) {
+        stopScroll()
+      } else if (ioVisible && isMobile() && !prefersReducedMotion()) {
+        startScroll()
       }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    const onResize = () => {
+      if (resizeRaf) return
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0
+        if (isMobile() && !prefersReducedMotion()) {
+          updateStack()
+        } else {
+          cleanupStyles()
+        }
+      })
     }
     window.addEventListener('resize', onResize, { passive: true })
 
@@ -165,10 +200,10 @@ export function useMobileBrandStack(containerRef) {
 
     return () => {
       if (io) io.disconnect()
-      if (isObserving) {
-        window.removeEventListener('scroll', onScroll)
-      }
+      stopScroll()
+      document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('resize', onResize)
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
       cleanupStyles()
     }
   }, [containerRef])
