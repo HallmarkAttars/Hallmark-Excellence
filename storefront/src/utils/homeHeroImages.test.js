@@ -22,12 +22,11 @@ describe('buildHomeHeroImages', () => {
     ])
   })
 
-  it('starts with the supplied 8ml roll-on graphic and its mobile crop', () => {
+  it('starts with the supplied 8ml roll-on graphic and its mobile asset', () => {
     const [first] = buildHomeHeroImages()
 
     expect(first.src).toBe('/hero/rollon-8ml.webp')
     expect(first.mobileWebp).toBe('/hero/rollon-8ml-mobile.webp')
-    expect(first.blur).toBe('/hero/rollon-8ml-blur.webp')
   })
 
   it('uses only local supplied assets', () => {
@@ -38,26 +37,26 @@ describe('buildHomeHeroImages', () => {
       expect(image.src.endsWith('.webp')).toBe(true)
       expect(image.mobileWebp.startsWith('/')).toBe(true)
       expect(image.mobileWebp.endsWith('.webp')).toBe(true)
-      expect(image.blur.startsWith('/')).toBe(true)
-      expect(image.blur.endsWith('.webp')).toBe(true)
       expect(image.src).not.toContain('unsplash')
       expect(image.mobileWebp).not.toContain('unsplash')
     }
   })
 
-  it('uses the framed showcase layout so no catalogue graphic is cropped', () => {
+  it('renders every slide full-bleed on desktop and mobile', () => {
     const images = buildHomeHeroImages()
 
     for (const image of images) {
-      expect(image.layout).toBe('showcase')
-      expect(image.fit).toBe('contain')
-      expect(image.mobileFit).toBe('contain')
+      expect(image.layout).toBe('photo')
+      expect(image.fit).toBe('cover')
+      expect(image.mobileFit).toBe('cover')
       expect(image.duration).toBe(7000)
     }
   })
 
-  it('supplies alt text and uniform brightness per slide', () => {
+  it('supplies focal points, alt text and uniform brightness per slide', () => {
     for (const image of buildHomeHeroImages()) {
+      expect(image.focus).toMatch(/^\d+% \d+%$/)
+      expect(image.mobileFocus).toMatch(/^\d+% \d+%$/)
       expect(typeof image.brightness).toBe('number')
       expect(image.brightness).toBeGreaterThan(0)
       expect(image.alt.length).toBeGreaterThan(0)

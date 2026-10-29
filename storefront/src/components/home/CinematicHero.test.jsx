@@ -137,34 +137,34 @@ describe('CinematicHero Component', () => {
     )
 
     const img = container.querySelector(
-      '.cinematic-hero-slide--active .cinematic-showcase-art'
+      '.cinematic-hero-slide--active .cinematic-hero-img'
     )
     expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
 
     const mobileSource = container.querySelector(
-      '.cinematic-showcase-picture source[media]'
+      '.cinematic-hero-picture source[media]'
     )
     expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
   })
 
-  it('renders the curated hero as framed showcase slides with a blurred backdrop', () => {
+  it('renders the curated hero as full-bleed photo slides', () => {
     const { container } = render(
       <MemoryRouter>
         <CinematicHero />
       </MemoryRouter>
     )
 
-    expect(container.querySelector('.hero--showcase')).toBeTruthy()
+    expect(container.querySelector('.hero--photo')).toBeTruthy()
+    expect(container.querySelector('.cinematic-showcase')).toBeNull()
 
-    const backdrop = container.querySelector('.cinematic-showcase-backdrop')
-    expect(backdrop).toBeTruthy()
-    expect(backdrop.getAttribute('aria-hidden')).toBe('true')
-    expect(backdrop.getAttribute('src')).toBe('/hero/rollon-8ml-blur.webp')
+    const img = container.querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
+    expect(img).toBeTruthy()
+    expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
+    expect(img.getAttribute('fetchpriority')).toBe('high')
+    expect(img.style.getPropertyValue('--hero-mobile-focus')).toBe('50% 42%')
 
-    const art = container.querySelector('.cinematic-showcase-art')
-    expect(art).toBeTruthy()
-    expect(art.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
-    expect(art.getAttribute('fetchpriority')).toBe('high')
+    const mobileSource = container.querySelector('.cinematic-hero-picture source[media]')
+    expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
   })
 
   it('cycles through the five curated catalogue graphics with crossfade', () => {
@@ -185,7 +185,7 @@ describe('CinematicHero Component', () => {
     for (let i = 0; i < expectedSlides.length; i += 1) {
       expect(
         container
-          .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
+          .querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
           .getAttribute('src')
       ).toBe(expectedSlides[i])
 
@@ -197,13 +197,53 @@ describe('CinematicHero Component', () => {
     // After the last slide the rotation loops back to the first graphic.
     expect(
       container
-        .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
+        .querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
         .getAttribute('src')
     ).toBe(expectedSlides[0])
   })
 
   it('honours per-slide display durations', () => {
-    // Display‑duration checks have been moved to the full‑bleed hero tests.
+    const timedImages = [
+      { src: '/brand-a.webp', duration: 3000 },
+      { src: '/brand-b.webp', duration: 9000 },
+    ]
+
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero images={timedImages} displayDuration={5000} fadeDuration={1800} />
+      </MemoryRouter>
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(2999)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--outgoing')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--incoming img').getAttribute('src')).toBe(
+      '/brand-b.webp'
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(1800)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--active img').getAttribute('src')).toBe(
+      '/brand-b.webp'
+    )
+
+    act(() => {
+      vi.advanceTimersByTime(7199)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--outgoing')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(container.querySelector('.cinematic-hero-slide--incoming img').getAttribute('src')).toBe(
+      '/brand-a.webp'
+    )
   })
 
   it('cycles infinitely back to slide 0 without resetting or breaking', async () => {
