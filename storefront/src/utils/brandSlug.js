@@ -1,9 +1,11 @@
 const BRAND_API_SLUGS = new Map([
   ['arees-luxury', 'oud-al-haramain'],
+  ['bakhoor', 'misk-al-arab'],
 ])
 
 const BRAND_PUBLIC_SLUGS = new Map([
   ['oud-al-haramain', 'arees-luxury'],
+  ['misk-al-arab', 'bakhoor'],
 ])
 
 function normalizeBrandSlug(slug) {
