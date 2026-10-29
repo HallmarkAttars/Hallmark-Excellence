@@ -4,7 +4,6 @@ import { render, screen, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Hero from './Hero'
 import { HERO } from '../../data/content'
-import { IMAGES } from '../../config/assets'
 
 describe('Hero Component', () => {
   afterEach(() => cleanup())
@@ -16,16 +15,18 @@ describe('Hero Component', () => {
       </MemoryRouter>
     )
 
-    const img = screen.getByRole('img', { name: /Aseel attar and Pink Musk roll-on collection/i })
+    const img = screen.getByRole('img', { name: /Arees 8ml roll-on attars/i })
     expect(img).toBeTruthy()
-    expect(img.getAttribute('src')).toBe(IMAGES.heroBackground)
+    expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
     expect(img.getAttribute('fetchpriority')).toBe('high')
     expect(img.getAttribute('decoding')).toBe('async')
-    expect(img.classList.contains('hero-img')).toBe(true)
+    expect(img.classList.contains('cinematic-showcase-art')).toBe(true)
 
-    const mobileSource = document.querySelector('.hero-picture source[media]')
+    const mobileSource = document.querySelector(
+      '.cinematic-showcase-picture source[media]'
+    )
     expect(mobileSource).toBeTruthy()
-    expect(mobileSource.getAttribute('srcset')).toBe(IMAGES.heroBackgroundMobile)
+    expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
   })
 
   it('renders title, tagline, and CTA links', () => {

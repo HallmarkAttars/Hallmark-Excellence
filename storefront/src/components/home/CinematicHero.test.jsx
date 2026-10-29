@@ -129,7 +129,7 @@ describe('CinematicHero Component', () => {
     expect(mobileSource.getAttribute('srcset')).toBe('/brand-a-mobile.webp')
   })
 
-  it('falls back to the curated product hero instead of database imagery', () => {
+  it('falls back to the curated catalogue hero instead of database imagery', () => {
     const { container } = render(
       <MemoryRouter>
         <CinematicHero />
@@ -137,16 +137,69 @@ describe('CinematicHero Component', () => {
     )
 
     const img = container.querySelector(
-      '.cinematic-hero-slide--active .hero-img'
+      '.cinematic-hero-slide--active .cinematic-showcase-art'
     )
-    expect(img.getAttribute('src')).toBe('/Hero.webp')
+    expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
 
-    const mobileSource = container.querySelector('.hero-picture source[media]')
-    expect(mobileSource.getAttribute('srcset')).toBe('/Hero-mobile.webp')
+    const mobileSource = container.querySelector(
+      '.cinematic-showcase-picture source[media]'
+    )
+    expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
   })
 
   it('renders the curated hero as framed showcase slides with a blurred backdrop', () => {
-    // Showcase-specific assertions removed – the hero now uses a full-bleed photo layout.
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero />
+      </MemoryRouter>
+    )
+
+    expect(container.querySelector('.hero--showcase')).toBeTruthy()
+
+    const backdrop = container.querySelector('.cinematic-showcase-backdrop')
+    expect(backdrop).toBeTruthy()
+    expect(backdrop.getAttribute('aria-hidden')).toBe('true')
+    expect(backdrop.getAttribute('src')).toBe('/hero/rollon-8ml-blur.webp')
+
+    const art = container.querySelector('.cinematic-showcase-art')
+    expect(art).toBeTruthy()
+    expect(art.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
+    expect(art.getAttribute('fetchpriority')).toBe('high')
+  })
+
+  it('cycles through the five curated catalogue graphics with crossfade', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero displayDuration={7000} fadeDuration={1800} />
+      </MemoryRouter>
+    )
+
+    const expectedSlides = [
+      '/hero/rollon-8ml.webp',
+      '/hero/bakhoor.webp',
+      '/hero/bulk-1kg.webp',
+      '/hero/luxury-12ml.webp',
+      '/wholesale/rollon-bottle-range.webp',
+    ]
+
+    for (let i = 0; i < expectedSlides.length; i += 1) {
+      expect(
+        container
+          .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
+          .getAttribute('src')
+      ).toBe(expectedSlides[i])
+
+      act(() => {
+        vi.advanceTimersByTime(7000)
+      })
+    }
+
+    // After the last slide the rotation loops back to the first graphic.
+    expect(
+      container
+        .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
+        .getAttribute('src')
+    ).toBe(expectedSlides[0])
   })
 
   it('honours per-slide display durations', () => {
