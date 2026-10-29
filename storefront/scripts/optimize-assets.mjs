@@ -25,7 +25,7 @@ const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..',
 //               the legacy-browser fallback (Hero.jsx uses image-set)
 //   about-image about page story photo
 const JOBS = [
-  { file: 'HE color Logo.png', width: 400 },
+  { file: 'WhatsApp Image 2026-10-29 at 10.04.11 PM.jpeg', width: 400 },
   { file: 'HE white Logo.png', width: 400 },
   { file: 'HE logo black.png', width: 400 },
   { file: 'HE logo white.png', width: 400 },

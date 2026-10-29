@@ -15,7 +15,7 @@
 
 export const IMAGES = {
   // Brand logos
-  logo: '/HE color Logo.png', // Navbar (light background)
+  logo: '/WhatsApp Image 2026-10-29 at 10.04.11 PM.jpeg', // Navbar (light background)
   logoLight: '/HE white Logo.png', // Footer (dark background)
 
   // Hero — full-bleed background image (dark overlay is applied in CSS).

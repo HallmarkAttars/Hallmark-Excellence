@@ -228,7 +228,7 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
       url: origin,
     },
     url: origin,
-    logo: `${origin}/HE%20color%20Logo.png`,
+    logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
     email: 'hikmaexports@gmail.com',
     telephone: '+919840750467',
     contactPoint: {
@@ -265,7 +265,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
       name: 'Arees Perfumes',
       logo: {
         '@type': 'ImageObject',
-        url: `${origin}/HE%20color%20Logo.png`,
+        url: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
       },
     },
   }
@@ -325,7 +325,7 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
     description:
       'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of Arees & Dahab. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
     url: `${origin}/hikma-exports`,
-    logo: `${origin}/HE%20color%20Logo.png`,
+    logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
     email: BUSINESS.email,
     telephone: BUSINESS.phoneTel,
     address: {
@@ -869,7 +869,7 @@ export function buildArticleSchema(guide, { origin = CANONICAL_ORIGIN } = {}) {
       name: 'Arees Perfumes',
       logo: {
         '@type': 'ImageObject',
-        url: `${origin}/HE%20color%20Logo.png`,
+        url: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
       },
     },
     mainEntityOfPage: {
