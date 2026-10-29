@@ -13,7 +13,7 @@ export default function LegalPage({ slug }) {
         title={page.metaTitle}
         description={page.metaDescription}
         canonical={`/${slug}`}
-        robots="noindex,nofollow"
+        robots="noindex,follow"
         schema={buildBreadcrumbsSchema([
           { name: 'Home', path: '/' },
           { name: page.title, path: `/${slug}` },
