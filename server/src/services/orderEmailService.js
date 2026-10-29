@@ -281,8 +281,8 @@ async function sendOrderEmails({ order }) {
       console.log(`[ORDER EMAIL] Skipped customer confirmation email: no customer email for ${orderNumber}`)
     }
 
-    // 2) Admin notification — always to ADMIN_EMAIL (infohallmarkexcellence@gmail.com).
-    const adminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase()
+    // 2) Admin notification — always to ADMIN_EMAIL (hikmaexports@gmail.com).
+    const adminEmail = (process.env.ADMIN_EMAIL || 'hikmaexports@gmail.com').trim().toLowerCase()
     if (validateEmailSyntax(adminEmail)) {
       emails.push({
         tag: 'Admin email',
