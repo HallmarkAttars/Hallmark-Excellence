@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { CartProvider } from './context/CartContext'
 import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
@@ -127,6 +128,7 @@ export default function App() {
             {/* Mobile Fixed Bottom Navigation — rendered once at the storefront
                 root, displays on mobile/tablet breakpoints (<1025px) */}
             <MobileBottomNav />
+            <Analytics />
           </BrowserRouter>
         </ToastProvider>
       </CartProvider>
