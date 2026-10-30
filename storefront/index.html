@@ -88,6 +88,9 @@
     <!-- Preload homepage LCP Hero image responsive to viewport -->
     <link rel="preload" as="image" href="/hero/rollon-8ml-mobile.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high" />
     <link rel="preload" as="image" href="/hero/rollon-8ml.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high" />
+    <!-- LCP image (PSI tracks the navbar logo, not the hero) — preload so it
+         renders as soon as React mounts instead of waiting for the JS path. -->
+    <link rel="preload" as="image" href="/logo-nav.webp" type="image/webp" fetchpriority="high" />
     <!-- Self-hosted variable font (@font-face lives in index.css). Preload here
          so the LCP heading never waits on a third-party font CSS + file chain. -->
     <link rel="preload" href="/fonts/plus-jakarta-sans-latin-wght.woff2" as="font" type="font/woff2" crossorigin />

@@ -15,7 +15,8 @@
 
 export const IMAGES = {
   // Brand logos
-  logo: '/HE color Logo.png', // Navbar (light background)
+  logo: '/HE color Logo.png', // Invoices (jsPDF) — PNG required
+  logoNav: '/logo-nav.webp', // Navbar — 200x134 WebP (displayed 81px/66px), preloaded as the tracked LCP image
   logoLight: '/HE white Logo.png', // Footer (dark background)
 
   // Hero — full-bleed background image (dark overlay is applied in CSS).
