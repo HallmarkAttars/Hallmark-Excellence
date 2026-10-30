@@ -115,7 +115,11 @@ export default function MobileBottomNav() {
             <span className="mobile-bottom-nav-icon-wrap">
               {item.icon}
               {item.badge != null && (
-                <span className="mobile-bottom-nav-badge" aria-label={`${item.badge} items in cart`}>
+                <span
+                  className="mobile-bottom-nav-badge"
+                  aria-live="polite"
+                  aria-label={`${item.badge} items in cart`}
+                >
                   {item.badge > 99 ? '99+' : item.badge}
                 </span>
               )}

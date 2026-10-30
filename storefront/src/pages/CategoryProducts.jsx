@@ -137,6 +137,7 @@ export default function CategoryProducts() {
               resetToFirstPage()
             }}
             activeCount={activeCount}
+            resultCount={loading ? undefined : visibleProducts.length}
           />
         </div>
 

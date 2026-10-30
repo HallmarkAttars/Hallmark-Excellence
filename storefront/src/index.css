@@ -259,7 +259,11 @@ a, button { -webkit-tap-highlight-color: transparent; }
 
 /* Mobile buttons: 11–12px, still tappable (44px targets) */
 @media (max-width: 767px) {
-  .btn { font-size: 0.72rem; }
+  .btn {
+    font-size: 0.72rem;
+    padding: 16px 32px;
+    min-height: 44px;
+  }
 }
 
 /* ---------- Section scaffolding ---------- */

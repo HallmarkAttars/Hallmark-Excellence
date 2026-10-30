@@ -17,6 +17,7 @@ import { getStockStatus, isProductInStock } from '../utils/stock'
 import { getDefaultVariant } from '../utils/productPricing'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
+import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
 import SEO from '../components/seo/SEO'
 import { buildProductSeo, cleanProductName } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
@@ -96,7 +97,7 @@ export default function ProductDetail({ onAddToCart }) {
   const { addItem, brandPieces, bulkRules } = useCart()
   const { notifyAddSuccess, notifyAddError } = useToast()
   const [product, setProduct] = useState(null)
-  const [related, setRelated] = useState([])
+  const [related, setRelated] = useState(null)
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
   // `quantity` is the number of selected packs/rolls (Gram, ML and sealed
@@ -168,7 +169,7 @@ export default function ProductDetail({ onAddToCart }) {
             )
             setPieceDraft(null)
           }
-          getRelatedProducts(p).then(setRelated).catch(() => {})
+          getRelatedProducts(p).then(setRelated).catch(() => setRelated([]))
         }
       })
       .catch((err) => {
@@ -932,7 +933,13 @@ export default function ProductDetail({ onAddToCart }) {
         </div>
       </section>
 
-      {related.length > 0 && (
+      {related === null && (
+        <div className="product-detail-related">
+          <h2>You May Also Like</h2>
+          <SkeletonProductGrid />
+        </div>
+      )}
+      {related !== null && related.length > 0 && (
         <div className="product-detail-related">
           <h2>You May Also Like</h2>
           <ProductGrid products={related} />

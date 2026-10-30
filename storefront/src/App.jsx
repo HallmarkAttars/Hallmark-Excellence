@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import StickyWhatsApp from './components/ui/StickyWhatsApp'
+import BackToTop from './components/ui/BackToTop'
 import MobileBottomNav from './components/layout/MobileBottomNav'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 
@@ -124,6 +125,9 @@ export default function App() {
                 root so it appears on every customer-facing page. The admin app
                 is a separate build, so it never appears there. */}
             <StickyWhatsApp />
+            {/* Floating back-to-top — root-level like the WhatsApp button;
+                only appears after scrolling, so short pages never show it. */}
+            <BackToTop />
             {/* Mobile Fixed Bottom Navigation — rendered once at the storefront
                 root, displays on mobile/tablet breakpoints (<1025px) */}
             <MobileBottomNav />

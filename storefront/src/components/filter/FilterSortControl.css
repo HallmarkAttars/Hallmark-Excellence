@@ -65,6 +65,15 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.filter-sort-combined-count {
+  flex-shrink: 0;
+  color: #7a6f60;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 /* Desktop: compact control */
 @media (min-width: 768px) {

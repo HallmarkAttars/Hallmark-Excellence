@@ -153,6 +153,7 @@ export default function Shop() {
               resetToFirstPage()
             }}
             activeCount={activeCount}
+            resultCount={loading ? undefined : visibleProducts.length}
           />
         </div>
 

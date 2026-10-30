@@ -175,6 +175,7 @@ export default function BrandProducts() {
               resetToFirstPage()
             }}
             activeCount={activeCount}
+            resultCount={loading ? undefined : visibleProducts.length}
           />
         </div>
 

@@ -65,6 +65,10 @@ export default function FilterSortControl({
   sortValue = 'default',
   onSortChange = () => {},
   activeCount = 0,
+  // Live result count — e.g. { filteredProducts.length } passed only after
+  // data loads (undefined while loading) so the "12 items" hint never shows
+  // a stale/zero value during fetch.
+  resultCount,
   btnAriaLabel = 'Filter & Sort',
   dialogAriaLabel = 'Filter and sort',
 }) {
@@ -177,6 +181,11 @@ export default function FilterSortControl({
             </span>
           )}
         </span>
+        {resultCount != null && (
+          <span className="filter-sort-combined-count">
+            {resultCount} {resultCount === 1 ? 'item' : 'items'}
+          </span>
+        )}
         <Chevron />
       </button>
 
