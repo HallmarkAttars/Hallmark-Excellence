@@ -498,6 +498,60 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
   throw httpError(404, 'Unknown route')
 }
 
+// ---------------------------------------------------------------------------
+// Seorce tag gating (environment + route)
+// ---------------------------------------------------------------------------
+// The Seorce SEO/analytics tag lives in the index.html shell, so it would
+// otherwise be served on EVERY route through this function. We gate it here:
+//   • production host only (www / apex) — keeps Vercel previews and local
+//     dev out of Seorce's analytics (their script has no opt-out flag);
+//   • never on noindex/PII routes: /track-order (accepts ?order_id= deep
+//     links), /view-order, the legal pages, and 404/503/error shells.
+// Cart and checkout stay ACTIVE (their URLs carry no personal data) so the
+// funnel analytics still get conversion context. This is server-side gating
+// for document loads — a loaded script can still follow a client-side
+// route change made later in the same session; those paths carry no order
+// identifiers in their URL, so no PII is exposed to Seorce there.
+const SEORCE_EXCLUDED_UTILITY_SLUGS = new Set([
+  'track-order',
+  'view-order',
+  'privacy-policy',
+  'terms',
+  'shipping-returns',
+])
+
+// Anchored on the src attribute so only the vendor tag (never other scripts)
+// is matched.
+const SEORCE_TAG_RE = /<script[^>]*src=["'][^"']*scripts\.seorce\.com[^"']*["'][^>]*>\s*<\/script>/i
+const SEORCE_HINT_RE = /<link[^>]+scripts\.seorce\.com[^>]*>/gi
+
+function hostAllowsSeorce(req) {
+  const headers = req?.headers || {}
+  const rawHost = String(headers['x-forwarded-host'] || headers.host || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+    .split(':')[0]
+  // www and apex are the same production site; anything else (previews,
+  // localhost, staging) is excluded.
+  return rawHost.replace(/^www\./i, '') === 'areesperfumes.in'
+}
+
+function routeAllowsSeorce(status, type, slug) {
+  if (status !== 200) return false
+  if (type === 'notfound') return false
+  if (type === 'utility' && SEORCE_EXCLUDED_UTILITY_SLUGS.has(String(slug || '').trim().toLowerCase())) {
+    return false
+  }
+  return true
+}
+
+function stripSeorceTags(shell) {
+  return String(shell || '')
+    .replace(SEORCE_TAG_RE, '')
+    .replace(SEORCE_HINT_RE, '')
+}
+
 export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
   const canonicalUrl = seo?.canonical ? absoluteUrl(seo.canonical) : ''
   const isHome = canonicalUrl === CANONICAL_ORIGIN || canonicalUrl === `${CANONICAL_ORIGIN}/`
@@ -661,7 +715,8 @@ export default async function handler(req, res) {
     return
   }
 
-  const html = injectSeoHtml(shell, seo, status === 200 ? bodyHtml : '')
+  const keepSeorce = hostAllowsSeorce(req) && routeAllowsSeorce(status, type, slug)
+  const html = injectSeoHtml(keepSeorce ? shell : stripSeorceTags(shell), seo, status === 200 ? bodyHtml : '')
   res.statusCode = status
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader(

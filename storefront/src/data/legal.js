@@ -28,15 +28,18 @@ export const LEGAL_PAGES = {
         ],
       },
       {
-        heading: 'Google Analytics, cookies and local storage',
+        heading: 'Google Analytics, Seorce, cookies and local storage',
         paragraphs: [
           'This website uses Google Analytics to understand traffic and improve the store. Google Analytics may use cookies or browser storage to measure session counts, page views, scroll depth, approximate location, device type and actions during a visit.',
+          'The site also uses Seorce, a search-optimisation and analytics service, to measure visitor behaviour and surface technical or on-page SEO fixes. Seorce receives the web address and referring page of each visit, and recognises repeat visits using browser signals such as screen size, language, timezone and device graphics capabilities instead of cookies. It does not receive your name, address, phone number, order contents or payment details, and order-tracking pages are excluded from it.',
+          'Seorce may also measure engagement such as clicks, scrolling and terms typed into on-site search; obvious email addresses and phone numbers are removed from such text before it is stored.',
           'We keep personal details such as your name, address, phone number or email out of the analytics tags. The analytics data is used in aggregate to understand how the store is used, not to identify you.',
           'Your browser may also store small keys during browsing, such as the current cart state or checkout context, so that you can move between pages without losing your selections.',
         ],
         points: [
           'No consent banner is shown. By continuing to use the site, you accept this analytics disclosure.',
-          'You can reduce or block these cookies using your browser settings, privacy tools or sources such as the Google Analytics opt-out browser.',
+          'Seorce and Google Analytics keep temporary session information in your browser storage during a visit; closing your browser or clearing site data removes it.',
+          'You can reduce or block these services using your browser settings, privacy tools, or blockers such as the Google Analytics opt-out browser.',
         ],
       },
       {
