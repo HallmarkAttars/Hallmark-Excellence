@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import CinematicHero from '../components/home/CinematicHero'
 import { buildHomeHeroImages } from '../utils/homeHeroImages'
 import Reveal from '../animations/Reveal'
@@ -9,7 +10,7 @@ import SkeletonCollectionBanner from '../components/skeleton/SkeletonCollectionB
 import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
 import SkeletonSocialStrip from '../components/skeleton/SkeletonSocialStrip'
 import { getCategories, getBrands, getFeaturedProducts } from '../services/mockApi'
-import { HOME_BRANDS } from '../data/content'
+import { HOME_CATEGORIES, HOME_BRANDS } from '../data/content'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
 import { useMobileBrandStack } from '../hooks/useMobileBrandStack'
 import SEO from '../components/seo/SEO'
@@ -133,12 +134,35 @@ export default function Home() {
       {/* Hero renders immediately from the curated product photography set. */}
       <CinematicHero images={heroImages} />
 
-      {/* Categories + brands fetches are small — render as each lands. */}
-      {categories === null ? (
-        <SkeletonCategoryGrid count={6} />
-      ) : (
-        categories.length > 0 && <CategoryGrid categories={categories} />
-      )}
+      {/* "Shop by Category" heading paints immediately — it is the mobile LCP
+          element, so it must never wait on the categories API response or the
+          scroll-reveal fade. Only the grid cards themselves are data-gated. */}
+      <section className="section category-section">
+        <div className="container">
+          <div className="category-section-head">
+            <div className="category-head-text">
+              {HOME_CATEGORIES.eyebrow && (
+                <p className="category-eyebrow">{HOME_CATEGORIES.eyebrow}</p>
+              )}
+              <h2 className="category-title">{HOME_CATEGORIES.title}</h2>
+              {HOME_CATEGORIES.subtitle && (
+                <p className="category-subtitle">{HOME_CATEGORIES.subtitle}</p>
+              )}
+            </div>
+            <div className="category-head-action">
+              <Link to={HOME_CATEGORIES.viewAll.to} className="category-view-all">
+                <span className="category-view-all-text">{HOME_CATEGORIES.viewAll.label}</span>
+                <span className="category-view-all-arrow" aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </div>
+          {categories === null ? (
+            <SkeletonCategoryGrid count={6} />
+          ) : (
+            categories.length > 0 && <CategoryGrid categories={categories} />
+          )}
+        </div>
+      </section>
 
       {(brands === null || (brands && brands.length > 0)) && (
         brands === null ? (

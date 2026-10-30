@@ -66,7 +66,7 @@ async function run() {
     })
     await render(srcPath, path.join(HERO_OUT, `${job.name}-mobile.webp`), {
       width: 900,
-      quality: 78,
+      quality: 62,
     })
     await render(srcPath, path.join(HERO_OUT, `${job.name}-blur.webp`), {
       width: 96,

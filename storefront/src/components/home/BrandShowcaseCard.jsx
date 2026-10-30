@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { COLLECTIONS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
-import { cloudinarySrc } from '../../utils/productImage'
+import { cloudinarySrc, cloudinarySrcSet } from '../../utils/productImage'
 import { brandPublicSlug } from '../../utils/brandSlug'
 import './BrandShowcaseCard.css'
 
@@ -31,9 +31,16 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
     IMAGES.collections[slug] ||
     null
 
+  // Mobile card ~92vw (≈380px CSS, up to 3x DPR) — w_400 covers it. Desktop
+  // reaches w_900 for the 50% "featured" cards. srcSet + sizes let each
+  // viewport pick the smallest variant that covers its own DPR, cutting
+  // ~150KB from the initial mobile load instead of always fetching w_900.
   const image = rawImage
     ? cloudinarySrc(rawImage, { width: variant === 'featured' ? 900 : 600 })
     : null
+  const imageSrcSet = rawImage
+    ? cloudinarySrcSet(rawImage, variant === 'featured' ? [400, 600, 900] : [300, 450, 600])
+    : undefined
 
   return (
     <Link
@@ -45,9 +52,12 @@ export default function BrandShowcaseCard({ brand, variant = 'standard' }) {
         <img
           className="brand-showcase-img"
           src={image}
+          srcSet={imageSrcSet}
+          sizes="(max-width: 767px) 92vw, (max-width: 1024px) 50vw, 700px"
           alt={`${brand.name} Perfumes & Attars Collection`}
           loading="lazy"
           decoding="async"
+          fetchpriority="low"
         />
       ) : (
         <span className="brand-showcase-monogram" aria-hidden="true">

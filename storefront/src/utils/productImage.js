@@ -29,3 +29,19 @@ export function cloudinarySrc(url, { width = 600 } = {}) {
   const rest = url.slice(idx + CLOUDINARY_UPLOAD.length)
   return `${prefix}f_auto,q_auto,w_${width}/${rest}`
 }
+
+/**
+ * Return a srcSet for the given widths so browsers on small screens download
+ * the smallest variant that still covers their device pixel ratio. Non-
+ * Cloudinary URLs return undefined so the plain `src` stays the single source.
+ * @param {string|null|undefined} url   original image URL
+ * @param {number[]} [widths]           per-variant widths (small → large)
+ * @returns {string|undefined}
+ */
+export function cloudinarySrcSet(url, widths = [400, 600, 900]) {
+  if (!url || typeof url !== 'string') return undefined
+  if (url.indexOf(CLOUDINARY_UPLOAD) === -1) return undefined
+  return widths
+    .map((width) => `${cloudinarySrc(url, { width })} ${width}w`)
+    .join(', ')
+}

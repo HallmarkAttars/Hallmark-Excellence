@@ -3,6 +3,21 @@
    Luxury attar house · warm cream / muted gold / deep brown
    ============================================================ */
 
+/* Self-hosted Plus Jakarta Sans (latin, variable wght instance, OFL licence).
+   One 27KB file replaces the Google Fonts CSS request + two third-party
+   origins; the preload in index.html moves it to the top of the network
+   queue so the LCP heading never paints with a late-swapping webfont. */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/plus-jakarta-sans-latin-wght.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   --cream: #F8F3E8;          /* main background */
   --cream-soft: #FBF8F1;     /* secondary cream */

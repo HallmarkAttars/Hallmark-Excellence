@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import Reveal from '../../animations/Reveal'
-import { HOME_CATEGORIES } from '../../data/content'
-import { cloudinarySrc } from '../../utils/productImage'
+import { cloudinarySrc, cloudinarySrcSet } from '../../utils/productImage'
 import { normalizeCategorySlug } from '../../utils/categorySlug'
 import './CategoryGrid.css'
 
+// Grid body only — the section wrapper + heading live in the parent (Home)
+// so the "Shop by Category" heading paints immediately instead of waiting
+// on the categories API and a scroll-reveal fade (LCP critical path).
 export default function CategoryGrid({ categories }) {
   const all = categories || []
 
@@ -13,61 +15,43 @@ export default function CategoryGrid({ categories }) {
   const visibleCategories = all.slice(0, 6)
 
   return (
-    <Reveal as="section" className="section category-section">
-      <div className="container">
-        <div className="category-section-head">
-          <div className="category-head-text">
-            {HOME_CATEGORIES.eyebrow && (
-              <p className="category-eyebrow">{HOME_CATEGORIES.eyebrow}</p>
-            )}
-            <h2 className="category-title">{HOME_CATEGORIES.title}</h2>
-            {HOME_CATEGORIES.subtitle && (
-              <p className="category-subtitle">{HOME_CATEGORIES.subtitle}</p>
-            )}
-          </div>
-          <div className="category-head-action">
-            <Link to={HOME_CATEGORIES.viewAll.to} className="category-view-all">
-              <span className="category-view-all-text">{HOME_CATEGORIES.viewAll.label}</span>
-              <span className="category-view-all-arrow" aria-hidden="true">→</span>
+    <Reveal className="category-grid stagger-fade">
+      {visibleCategories.map((cat) => {
+        const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
+        const imgSrcSet = cat.image ? cloudinarySrcSet(cat.image, [300, 400, 500]) : undefined
+        return (
+          <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
+            {/* Upper portion — category image */}
+            <span className="category-media">
+              {imgSrc ? (
+                <img
+                  className="category-image"
+                  src={imgSrc}
+                  srcSet={imgSrcSet}
+                  sizes="(max-width: 767px) 45vw, 300px"
+                  alt={cat.name}
+                  loading="lazy"
+                  decoding="async"
+                  fetchpriority="low"
+                  width="400"
+                  height="300"
+                />
+              ) : (
+                  <span
+                    className="category-image"
+                    role="img"
+                    aria-label={cat.name}
+                  />
+                )}
+              </span>
+              {/* Footer — name + arrow */}
+              <span className="category-footer">
+                <span className="category-name">{cat.name}</span>
+                <span className="category-arrow" aria-hidden="true">→</span>
+              </span>
             </Link>
-          </div>
-        </div>
-
-        <div className="category-grid stagger-fade">
-          {visibleCategories.map((cat) => {
-            const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
-            return (
-              <Link key={cat.id} to={`/categories/${normalizeCategorySlug(cat.slug)}`} className="category-card">
-                {/* Upper portion — category image */}
-                <span className="category-media">
-                  {imgSrc ? (
-                    <img
-                      className="category-image"
-                      src={imgSrc}
-                      alt={cat.name}
-                      loading="lazy"
-                      decoding="async"
-                      width="400"
-                      height="300"
-                    />
-                  ) : (
-                    <span
-                      className="category-image"
-                      role="img"
-                      aria-label={cat.name}
-                    />
-                  )}
-                </span>
-                {/* Footer — name + arrow */}
-                <span className="category-footer">
-                  <span className="category-name">{cat.name}</span>
-                  <span className="category-arrow" aria-hidden="true">→</span>
-                </span>
-              </Link>
-            )
-          })}
-        </div>
-      </div>
+          )
+        })}
     </Reveal>
   )
 }
