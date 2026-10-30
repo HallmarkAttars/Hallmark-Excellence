@@ -43,10 +43,14 @@
       })();
     </script>
     <!-- Seorce — SEO fix engine + web analytics (projectId below is required by Seorce).
-         defer keeps it out of the critical path. api/meta.js strips this tag on
-         non-production hosts and on PII/noindex routes (/track-order, /view-order,
-         legal pages, 404) so order deep-link URLs never reach Seorce. -->
-    <script src="https://scripts.seorce.com/api?projectId=6ae2ec4dc4313465e0a4787b" defer data-uuid="6ae2ec4dc4313465e0a4787b"></script>
+         async keeps it off the app's boot path: a deferred script executes in
+         document order BEFORE the module bundle, so even a slow or hung Seorce
+         fetch used to delay first paint by seconds (PSI trace: status -1 for
+         10s -> SI 13.6s). With async a stalled request only affects itself.
+         api/meta.js strips this tag on non-production hosts and on PII/noindex
+         routes (/track-order, /view-order, legal pages, 404) so order
+         deep-link URLs never reach Seorce. -->
+    <script src="https://scripts.seorce.com/api?projectId=6ae2ec4dc4313465e0a4787b" async data-uuid="6ae2ec4dc4313465e0a4787b"></script>
     <meta name="description" content="Shop authentic attars, oud and fragrance oils from Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees &amp; Dahab, Chennai." />
     <!-- ONE canonical domain: the live www host. The apex redirects here. -->
     <link rel="canonical" href="https://www.areesperfumes.in/" />
