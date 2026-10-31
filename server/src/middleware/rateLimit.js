@@ -82,4 +82,21 @@ const reviewLimiter = makeLimiter({
   keyGenerator: async (req) => clientKey(req),
 })
 
-module.exports = { loginIpLimiter, loginEmailLimiter, orderLimiter, trackingLimiter, reviewLimiter }
+// --- GET /api/reviews/public -------------------------------------------------
+// Read-only feed of approved, consented reviews for the storefront strip.
+// Redis-like heavy reads are not a risk (single indexed query), but a light
+// ceiling stops scraping of the whole moderation-approved corpus.
+const reviewReadLimiter = makeLimiter({
+  windowMs: 10 * 60 * 1000,
+  limit: 60,
+  keyGenerator: async (req) => clientKey(req),
+})
+
+module.exports = {
+  loginIpLimiter,
+  loginEmailLimiter,
+  orderLimiter,
+  trackingLimiter,
+  reviewLimiter,
+  reviewReadLimiter,
+}

@@ -112,6 +112,48 @@ async function createReview(req, res) {
   }
 }
 
+// --- GET /api/reviews/public (storefront "customer love" strip) -------------
+// Customer-safe projection ONLY: approved reviews whose owner gave display
+// consent, first name only (display, like the on-site showcase), no order
+// numbers / phones / emails / any phone-derived fields resolve to their
+// message-associated client identity. Rows without a written text are
+// excluded — a review strip needs words, not just stars. A missing table
+// (migration not run yet) degrades to an empty list, never a 500 splash.
+async function listPublicReviews(req, res) {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 24)
+
+    const { data, error } = await supabase
+      .from('order_reviews')
+      .select('rating, review_text, customer_name, created_at')
+      .eq('status', 'approved')
+      .eq('consent_show', true)
+      .ne('review_text', '')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      if (/does not exist|could not find/i.test(error.message)) {
+        return res.json({ reviews: [] })
+      }
+      console.error('[reviews] public list error:', error.message)
+      return res.status(500).json({ error: 'Could not load reviews right now.' })
+    }
+
+    return res.json({
+      reviews: (data || []).map((r) => ({
+        rating: Number(r.rating) || 0,
+        review_text: r.review_text || '',
+        first_name: String(r.customer_name || 'Customer').trim().split(/\s+/)[0] || 'Customer',
+        created_at: r.created_at,
+      })),
+    })
+  } catch (err) {
+    console.error('[reviews] public list fatal:', err)
+    return res.status(500).json({ error: 'Could not load reviews right now.' })
+  }
+}
+
 // --- GET /api/admin/reviews?status=pending|approved|rejected|all ------------
 async function listReviews(req, res) {
   try {
@@ -238,4 +280,4 @@ async function deleteReview(req, res) {
   }
 }
 
-module.exports = { createReview, listReviews, moderateReview, deleteReview }
+module.exports = { createReview, listPublicReviews, listReviews, moderateReview, deleteReview }

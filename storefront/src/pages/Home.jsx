@@ -26,6 +26,7 @@ import {
 // of the initial Home bundle and only mounts when the visitor scrolls close.
 const LazyFeaturedProducts = lazy(() => import('../components/home/FeaturedProducts'))
 const LazySocialStrip = lazy(() => import('../components/home/SocialStrip'))
+const LazyCustomerLove = lazy(() => import('../components/home/CustomerLove'))
 
 // Defers rendering (and mounting) of below-the-fold sections until the
 // browser is close to them. No IntersectionObserver → renders immediately,
@@ -215,6 +216,12 @@ export default function Home() {
       <DeferredSection placeholder={<SkeletonSocialStrip />}>
         <Suspense fallback={<SkeletonSocialStrip />}>
           {featured && featured.length > 0 && <LazySocialStrip products={featuredProducts} />}
+        </Suspense>
+      </DeferredSection>
+
+      <DeferredSection placeholder={null}>
+        <Suspense fallback={null}>
+          <LazyCustomerLove />
         </Suspense>
       </DeferredSection>
 

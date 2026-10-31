@@ -1,0 +1,79 @@
+/* CustomerLove — home strip of moderated on-site order reviews. */
+.customer-love-section {
+  padding: 34px 0 44px;
+  background: var(--cream-deep);
+}
+
+.customer-love-head {
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 26px;
+}
+
+.customer-love-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+
+.customer-love-title {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: var(--charcoal);
+}
+
+.customer-love-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--charcoal-soft);
+}
+
+/* ---------- Cards ---------- */
+.customer-love-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.customer-love-card {
+  margin: 0;
+  padding: 18px 20px;
+  background: var(--cream);
+  border: 1px solid #e3d9c4;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.customer-love-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.customer-love-stars .is-on  { color: var(--gold-deep); }
+.customer-love-stars .is-off { color: var(--cream-deep); }
+
+.customer-love-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--charcoal);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.customer-love-name {
+  margin-top: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--charcoal-soft);
+}
