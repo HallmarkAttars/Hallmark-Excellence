@@ -1316,3 +1316,73 @@
   }
   .order-summary-item-img { width: 72px; height: 72px; }
 }
+
+/* Checkout progress indicator — goal-gradient / serial-position UX */
+.checkout-progress {
+  margin: 16px auto 24px;
+  max-width: 768px;
+  padding: 0 16px;
+}
+.checkout-progress-list {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.checkout-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.checkout-progress-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--charcoal-soft);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.checkout-progress-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+}
+.checkout-progress-step.is-complete .checkout-progress-marker {
+  background: var(--gold-deep);
+  color: var(--white);
+}
+.checkout-progress-step.is-complete .checkout-progress-label {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+.checkout-progress-step.is-active .checkout-progress-marker {
+  background: var(--ink);
+  color: var(--white);
+}
+.checkout-progress-step.is-active .checkout-progress-label {
+  color: var(--charcoal);
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .checkout-progress-label { font-size: 10px; }
+  .checkout-progress-marker { width: 22px; height: 22px; font-size: 11px; }
+}

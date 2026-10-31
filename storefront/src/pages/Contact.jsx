@@ -702,6 +702,25 @@ export default function Contact() {
         {!isCheckout && <p className="page-heading-sub">{CONTACT.subtitle}</p>}
       </div>
 
+      {isCheckout && (
+        <nav className="checkout-progress" aria-label="Checkout progress">
+          <ol className="checkout-progress-list">
+            <li className="checkout-progress-step is-complete">
+              <span className="checkout-progress-marker">1</span>
+              <span className="checkout-progress-label">Delivery Details</span>
+            </li>
+            <li className="checkout-progress-step is-active">
+              <span className="checkout-progress-marker">2</span>
+              <span className="checkout-progress-label">Payment</span>
+            </li>
+            <li className="checkout-progress-step">
+              <span className="checkout-progress-marker">3</span>
+              <span className="checkout-progress-label">Confirmation</span>
+            </li>
+          </ol>
+        </nav>
+      )}
+
       {isCheckout ? (
         <div className="container contact-layout contact-layout--checkout">
           {/* Two-column grid: Delivery Information (left) + Order Summary (right) */}
