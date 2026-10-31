@@ -30,6 +30,27 @@ export const BUSINESS = {
     'https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed',
   mapDirectionsUrl:
     'https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai',
+  // Google Business Profile (HIKMA Exports — same shop, 83 & 84 Moore St).
+  // Customers are invited to review this listing after ordering.
+  //
+  // NEVER copy review links out of a Google Search URL. The desktop/mobile
+  // "review links" Google surfaces (a search?q=… URL) carry per-session
+  // tokens (sxsrf, uds, si, ved) that expire within minutes and are bound to
+  // one browser — they break for every other visitor. The stable data is the
+  // feature ID in the desktop URL's #lrd fragment:
+  //   0x3a526fc7ad47986b:0xfbae17b6ece34874
+  // From this pair (cell + CID hex) the official Place ID is derived with
+  // Google's fixed encoding (base64 of 0A 12 09 <cell LE> 11 <cid LE>);
+  // the encoder was validated against Google's canonical Sydney pair
+  // (0x6b12ae37b47f5b37:0x8eaddfcd1b32ca52 → ChIJN1t_tDeuEmsRUsoyG83frY4).
+  googlePlaceId: 'ChIJa5hHrcdvUjoRdEjj7LYXrvs',
+  // One tap straight to Google's "write a review" form (desktop + mobile).
+  googleReviewUrl:
+    'https://search.google.com/local/writereview?placeid=ChIJa5hHrcdvUjoRdEjj7LYXrvs',
+  // Stable fallback opening the listing (2 extra taps to the review form).
+  googleMapsCid: 18135458823893370996,
+  googleReviewFallbackUrl:
+    'https://www.google.com/maps?cid=18135458823893370996',
   social: [
     { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
     { key: 'facebook', label: 'Facebook', href: '#' },

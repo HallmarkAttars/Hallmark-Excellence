@@ -22,6 +22,7 @@ import {
 } from '../components/icons'
 import { BUSINESS, CONTACT } from '../data/content'
 import SEO from '../components/seo/SEO'
+import ReviewPrompt from '../components/review/ReviewPrompt'
 import { buildBreadcrumbsSchema } from '../utils/seo'
 import './Contact.css'
 
@@ -644,6 +645,10 @@ export default function Contact() {
               Continue Shopping
             </Link>
           </div>
+
+          {/* Invite the customer to review us on Google — inline, dismissible,
+              shown at most once per order, never a modal. */}
+          <ReviewPrompt placement="order-success" orderId={orderNumber} />
         </div>
       </div>
     )

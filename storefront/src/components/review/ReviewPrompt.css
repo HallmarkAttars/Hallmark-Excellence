@@ -1,0 +1,76 @@
+/* ReviewPrompt — inline "review us on Google" card on the order-success
+   screen and the Delivered tracking view. Self-contained: it never edits
+   Contact.css / TrackOrder.css. Same visual language as the other info
+   sections (cream fill, thin gold border, soft radius). */
+.review-prompt {
+  margin-top: 24px;
+  padding: 24px 20px;
+  background: var(--cream-soft, #fbf8f1);
+  border: 1px solid #d8cbb8;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.review-prompt-stars {
+  display: inline-flex;
+  gap: 4px;
+  color: var(--gold, #b88938);
+  margin-bottom: 10px;
+}
+
+.review-prompt-heading {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--charcoal, #1d1914);
+}
+
+.review-prompt-copy {
+  margin: 0 auto 16px;
+  max-width: 42ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--charcoal-soft, #5f584e);
+}
+
+.review-prompt-cta {
+  display: inline-flex;
+  min-height: 44px;
+}
+
+.review-prompt-dismiss {
+  display: inline-block;
+  margin: 10px auto 0;
+  padding: 10px 12px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: var(--charcoal-soft, #5f584e);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.review-prompt-dismiss:focus-visible,
+.review-prompt-cta:focus-visible {
+  outline: 2px solid var(--gold, #b88938);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .review-prompt {
+    padding: 28px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-prompt,
+  .review-prompt-cta,
+  .review-prompt-dismiss {
+    transition: none;
+    animation: none;
+  }
+}

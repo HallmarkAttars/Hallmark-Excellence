@@ -10,6 +10,7 @@ import AnimatedCheck from '../components/ui/AnimatedCheck'
 import { TRACK_ORDER_PAGE } from '../data/content'
 import { paymentMethodLabel, itemSizeLabel } from '../utils/invoice'
 import SEO from '../components/seo/SEO'
+import ReviewPrompt from '../components/review/ReviewPrompt'
 import './TrackOrder.css'
 
 // Canonical admin workflow — the tracker only ever reflects the EXISTING
@@ -353,6 +354,14 @@ function OrderResultCard({ order }) {
             <p className="track-note">We will keep you updated on this order.</p>
           )}
         </section>
+      )}
+
+      {/* ---------- Google review prompt ----------
+          THE real post-experience moment: only once the order shows
+          Delivered (never cancelled, never unmapped statuses). Inline and
+          dismissible — at most once per order. */}
+      {!isCancelled && stepIndex === 3 && (
+        <ReviewPrompt placement="delivered" orderId={order.orderId} />
       )}
 
       {/* ---------- Order summary card ---------- */}
