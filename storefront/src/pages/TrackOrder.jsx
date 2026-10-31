@@ -11,6 +11,7 @@ import { TRACK_ORDER_PAGE } from '../data/content'
 import { paymentMethodLabel, itemSizeLabel } from '../utils/invoice'
 import SEO from '../components/seo/SEO'
 import ReviewPrompt from '../components/review/ReviewPrompt'
+import OrderReviewForm from '../components/review/OrderReviewForm'
 import './TrackOrder.css'
 
 // Canonical admin workflow — the tracker only ever reflects the EXISTING
@@ -356,10 +357,14 @@ function OrderResultCard({ order }) {
         </section>
       )}
 
-      {/* ---------- Google review prompt ----------
+      {/* ---------- On-site order review (Phase B) + Google review prompt --
           THE real post-experience moment: only once the order shows
-          Delivered (never cancelled, never unmapped statuses). Inline and
-          dismissible — at most once per order. */}
+          Delivered (never cancelled, never unmapped statuses). Both are
+          inline and never nag twice. The on-site form runs first; the
+          Google CTA below it stays available for copy-paste. */}
+      {!isCancelled && stepIndex === 3 && (
+        <OrderReviewForm order={order} />
+      )}
       {!isCancelled && stepIndex === 3 && (
         <ReviewPrompt placement="delivered" orderId={order.orderId} />
       )}

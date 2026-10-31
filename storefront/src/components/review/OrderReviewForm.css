@@ -1,0 +1,155 @@
+/* OrderReviewForm — on-site "rate your experience" card on the Delivered
+   tracking view. Same cream/gold language as ReviewPrompt and the other
+   track-card surfaces. Self-contained: never edits TrackOrder.css. */
+.order-review-card {
+  margin-top: 24px;
+  padding: 24px 20px;
+  background: var(--cream-soft, #fbf8f1);
+  border: 1px solid #d8cbb8;
+  border-radius: 14px;
+}
+
+.order-review-heading {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--charcoal, #1d1914);
+}
+
+/* ---------- Star radiogroup ---------- */
+.order-review-stars {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.order-review-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; /* 44px min tap target */
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #d8cbb8;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.order-review-star.is-on {
+  color: var(--gold, #b88938);
+}
+
+.order-review-star:hover {
+  transform: scale(1.08);
+}
+
+.order-review-star:focus-visible {
+  outline: 2px solid var(--gold, #b88938);
+  outline-offset: 2px;
+}
+
+.order-review-star-label {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--gold-deep, #8a6626);
+}
+
+/* ---------- Fields ---------- */
+.order-review-label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--charcoal-soft, #5f584e);
+}
+
+.order-review-textarea,
+.order-review-phone {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--charcoal, #1d1914);
+  background: #fff;
+  border: 1px solid #d8cbb8;
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.order-review-textarea:focus-visible,
+.order-review-phone:focus-visible {
+  outline: 2px solid var(--gold, #b88938);
+  outline-offset: 1px;
+}
+
+/* ---------- Consent ---------- */
+.order-review-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 0;
+  cursor: pointer;
+}
+
+.order-review-consent input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--gold, #b88938);
+  flex-shrink: 0;
+}
+
+.order-review-consent span {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--charcoal-soft, #5f584e);
+}
+
+/* ---------- Error + submit ---------- */
+.order-review-error {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: #b3261e;
+}
+
+.order-review-submit {
+  width: 100%;
+  margin-top: 16px;
+  min-height: 44px;
+}
+
+/* ---------- Thank-you state ---------- */
+.order-review-card.is-thanks {
+  text-align: center;
+}
+
+.order-review-thanks-heading {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--charcoal, #1d1914);
+}
+
+.order-review-thanks-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--charcoal-soft, #5f584e);
+}
+
+@media (min-width: 768px) {
+  .order-review-card {
+    padding: 26px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-review-star,
+  .order-review-submit {
+    transition: none;
+  }
+}

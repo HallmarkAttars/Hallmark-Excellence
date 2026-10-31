@@ -37,6 +37,11 @@ const PERMISSION_MATRIX = {
   // Brands
   'brands.view': ['admin', 'manager', 'staff'],
   'brands.edit': ['admin', 'manager'],
+
+  // Customer reviews (order_reviews) — moderation queue
+  'reviews.view': ['admin', 'manager', 'staff'],
+  'reviews.moderate': ['admin', 'manager'],
+  'reviews.delete': ['admin'],
 }
 
 // True when `role` is allowed to perform `permission` (e.g. 'products.create').

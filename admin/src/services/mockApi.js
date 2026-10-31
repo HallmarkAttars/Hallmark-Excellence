@@ -182,6 +182,22 @@ export async function deleteOrder(id) {
   return { success: true }
 }
 
+// --- Customer reviews (order_reviews moderation) -----------------------------
+export async function getReviews(status = 'pending') {
+  const data = await adminApi.get(`/api/admin/reviews?status=${encodeURIComponent(status)}`, readToken())
+  return { reviews: data?.reviews ?? [], counts: data?.counts ?? {} }
+}
+
+export async function moderateReview(id, status, adminNote) {
+  const res = await adminApi.patch(`/api/admin/reviews/${id}`, { status, ...(adminNote ? { adminNote } : {}) }, readToken())
+  return res ?? null
+}
+
+export async function deleteReview(id) {
+  await adminApi.del(`/api/admin/reviews/${id}`, readToken())
+  return { success: true }
+}
+
 // --- Dashboard stats ---------------------------------------------------------
 export async function getDashboardStats() {
   const data = await adminApi.get('/api/admin/stats', readToken())

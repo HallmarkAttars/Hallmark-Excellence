@@ -1,0 +1,191 @@
+/* Reviews — customer review moderation queue page. */
+.reviews-page {
+  padding: 24px 28px 48px;
+  max-width: 860px;
+}
+
+.reviews-page .page-heading h1 {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+}
+
+.reviews-page .page-heading p {
+  margin: 0;
+  color: #5f584e;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 70ch;
+}
+
+/* ---------- Status tabs ---------- */
+.reviews-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0 16px;
+  flex-wrap: wrap;
+}
+
+.reviews-tab {
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #5f584e;
+  background: #f4efe4;
+  border: 1px solid #ded2be;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.reviews-tab:hover {
+  background: #eae2cf;
+}
+
+.reviews-tab.is-active {
+  background: #b88938;
+  border-color: #b88938;
+  color: #fff;
+}
+
+.reviews-tab:focus-visible {
+  outline: 2px solid #b88938;
+  outline-offset: 2px;
+}
+
+/* ---------- Feedback states ---------- */
+.reviews-loading,
+.reviews-empty {
+  color: #5f584e;
+  font-size: 0.88rem;
+  padding: 24px 0;
+}
+
+.reviews-error {
+  margin: 0 0 12px;
+  color: #b3261e;
+  font-size: 0.84rem;
+}
+
+/* ---------- Review cards ---------- */
+.reviews-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.reviews-item {
+  padding: 16px 18px;
+  background: #fffdf7;
+  border: 1px solid #e3d9c4;
+  border-radius: 10px;
+}
+
+.reviews-item.is-approved { border-left: 4px solid #2e7d32; }
+.reviews-item.is-rejected { border-left: 4px solid #b3261e; }
+.reviews-item.is-pending  { border-left: 4px solid #d9b23e; }
+
+.reviews-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reviews-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.reviews-stars .is-on  { color: #b88938; }
+.reviews-stars .is-off { color: #dcd3bf; }
+
+.reviews-order {
+  font-weight: 700;
+  color: #1d1914;
+  font-size: 0.9rem;
+}
+
+.reviews-status {
+  padding: 3px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+}
+
+.reviews-status-pending  { background: #f7ecc4; color: #7a651c; }
+.reviews-status-approved { background: #dcefdc; color: #235c28; }
+.reviews-status-rejected { background: #f6d9d6; color: #8c2620; }
+
+.reviews-text {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #33302a;
+}
+
+.reviews-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: #5f584e;
+}
+
+.reviews-meta em { color: #8a5023; }
+
+/* ---------- Actions ---------- */
+.reviews-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.reviews-actions button {
+  padding: 9px 16px;
+  min-height: 40px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.reviews-actions button:hover:not(:disabled) { filter: brightness(0.94); }
+.reviews-actions button:focus-visible {
+  outline: 2px solid #b88938;
+  outline-offset: 2px;
+}
+.reviews-actions button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.reviews-approve {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+}
+
+.reviews-reject {
+  background: none;
+  border-color: #b3261e;
+  color: #b3261e;
+}
+
+.reviews-delete {
+  background: none;
+  border-color: #ded2be;
+  color: #5f584e;
+}
+
+.reviews-delete-confirm {
+  background: #b3261e;
+  border-color: #b3261e;
+  color: #fff;
+}

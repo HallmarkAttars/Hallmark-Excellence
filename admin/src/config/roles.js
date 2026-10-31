@@ -34,6 +34,11 @@ const PERMISSION_MATRIX = {
 
   'brands.view': ['admin', 'manager', 'staff'],
   'brands.edit': ['admin', 'manager'],
+
+  // Customer reviews (order_reviews) — moderation queue
+  'reviews.view': ['admin', 'manager', 'staff'],
+  'reviews.moderate': ['admin', 'manager'],
+  'reviews.delete': ['admin'],
 }
 
 export function can(role, permission) {

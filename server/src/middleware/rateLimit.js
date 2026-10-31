@@ -72,4 +72,14 @@ const trackingLimiter = makeLimiter({
   keyGenerator: async (req) => clientKey(req),
 })
 
-module.exports = { loginIpLimiter, loginEmailLimiter, orderLimiter, trackingLimiter }
+// --- POST /api/reviews ------------------------------------------------------
+// On-site order review submission. Verified per order server-side (one row
+// per order via a unique index), so the per-IP cap exists purely to stop
+// scripted guessing of valid (order, phone) pairs.
+const reviewLimiter = makeLimiter({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  keyGenerator: async (req) => clientKey(req),
+})
+
+module.exports = { loginIpLimiter, loginEmailLimiter, orderLimiter, trackingLimiter, reviewLimiter }

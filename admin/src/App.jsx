@@ -12,6 +12,7 @@ import ProductForm from './pages/ProductForm'
 import Orders from './pages/Orders'
 import Categories from './pages/Categories'
 import Brands from './pages/Brands'
+import Reviews from './pages/Reviews'
 import BrandProductsPage from './pages/BrandProductsPage'
 import BrandForm from './pages/BrandForm'
 import BulkPricing from './pages/BulkPricing'
@@ -40,6 +41,14 @@ function AdminRoot() {
               <Route path="/admin/products/:id/edit" element={<ProductForm />} />
               <Route path="/admin/orders" element={<Orders />} />
               <Route path="/admin/categories" element={<Categories />} />
+              <Route
+                path="/admin/reviews"
+                element={
+                  <RequirePermission permission="reviews.view">
+                    <Reviews />
+                  </RequirePermission>
+                }
+              />
               <Route
                 path="/admin/brands"
                 element={

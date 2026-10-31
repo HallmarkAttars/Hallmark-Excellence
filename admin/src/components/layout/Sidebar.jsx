@@ -36,6 +36,11 @@ const ICONS = {
       <path d="M12 2v20M17 6H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H6" />
     </svg>
   ),
+  reviews: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="m12 3 2.7 5.27L20 9.07l-3.65 3.56.86 5.02L12 15.13l-5.21 2.52.86-5.02L4 9.07l5.3-.8L12 3z" />
+    </svg>
+  ),
   logout: (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -51,7 +56,8 @@ const NAV_ITEMS = [
   { to: '/admin/orders', label: 'Orders', permission: 'orders.view', icon: ICONS.orders },
   { to: '/admin/categories', label: 'Categories', permission: 'categories.view', icon: ICONS.categories },
   { to: '/admin/brands', label: 'Brands', permission: 'brands.view', icon: ICONS.brands },
-  { to: '/admin/brands/bulk-pricing', label: 'Bulk Pricing', permission: 'brands.view', icon: ICONS.bulkPricing },
+    { to: '/admin/brands/bulk-pricing', label: 'Bulk Pricing', permission: 'brands.view', icon: ICONS.bulkPricing },
+    { to: '/admin/reviews', label: 'Reviews', permission: 'reviews.view', icon: ICONS.reviews },
 ]
 
 export default function Sidebar({ open, onClose }) {
