@@ -34,3 +34,7 @@ Thumbs.db
 .agents/
 skills-lock.json
 
+# --- GSC automation: service-account key + generated reports ---
+tools/gsc/key.json
+tools/gsc/reports/
+

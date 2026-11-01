@@ -1,0 +1,13 @@
+{
+  "name": "arees-gsc-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Google Search Console automation for www.areesperfumes.in — status, sitemap submission, 28-day reports, URL inspection. Zero npm dependencies (Node 18+).",
+  "scripts": {
+    "status": "node status.js",
+    "sitemap": "node submit-sitemap.js",
+    "report": "node report.js",
+    "report:pages": "node report.js --dimension page",
+    "inspect": "node inspect.js"
+  }
+}
