@@ -156,8 +156,10 @@ async function listPublicReviews(req, res) {
       })),
     })
   } catch (err) {
-    console.error('[reviews] public list fatal:', err)
-    return res.status(500).json({ error: 'Could not load reviews right now.' })
+    // Same graceful degradation as the Postgrest error path above: at most a
+    // console log, never a 500 that would break the home page data layer.
+    console.error('[reviews] public list fatal:', err?.message || err)
+    return res.json({ reviews: [] })
   }
 }
 
