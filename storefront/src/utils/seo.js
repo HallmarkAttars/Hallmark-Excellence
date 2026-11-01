@@ -51,6 +51,30 @@ export function productPath(product) {
   return `/product/${encodeURIComponent(key)}`
 }
 
+// Lowest honest retail starting price across a product list (variant-aware
+// when variant pricing is embedded, else the product price). Returns a
+// positive integer or null — never invents a number the data does not show.
+export function priceFromProducts(products) {
+  const list = Array.isArray(products) ? products : []
+  const prices = []
+  for (const product of list) {
+    if (!product) continue
+    if (product.is_active === false) continue
+    const variants = Array.isArray(product.variants) ? product.variants : []
+    if (variants.length > 0) {
+      for (const variant of variants) {
+        const raw = Number(variant?.total_price ?? variant?.price ?? 0)
+        if (Number.isFinite(raw) && raw > 0) prices.push(Math.round(raw))
+      }
+    } else {
+      const raw = Number(product.price ?? 0)
+      if (Number.isFinite(raw) && raw > 0) prices.push(Math.round(raw))
+    }
+  }
+  if (prices.length === 0) return null
+  return Math.min(...prices)
+}
+
 export function cleanProductName(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim()
 }
@@ -570,11 +594,15 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   const brandTitle = cleanProductName(product.brand_name) || 'Arees Perfumes'
   const catTitle = cleanProductName(product.category_name)
   const productName = cleanProductName(product.name) || 'Product'
+  // Only add the brand segment when it is a real distinct brand; otherwise the
+  // suffix would read "| Arees Perfumes | Arees Perfumes".
+  const brandSuffix =
+    brandTitle && brandTitle.trim().toLowerCase() !== 'arees perfumes' ? ` | ${brandTitle}` : ''
   const title = catTitle
     ? (productName.toLowerCase().includes(catTitle.toLowerCase())
-        ? `${productName} | ${brandTitle} | Arees Perfumes`
-        : `${productName} - ${catTitle} | ${brandTitle} | Arees Perfumes`)
-    : `${productName} | ${brandTitle} | Arees Perfumes`
+        ? `${productName}${brandSuffix} | Arees Perfumes`
+        : `${productName} - ${catTitle}${brandSuffix} | Arees Perfumes`)
+    : `${productName}${brandSuffix} | Arees Perfumes`
 
   const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
   const lowerCat = catTitle.toLowerCase()
@@ -692,6 +720,15 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN, pr
     title = 'Attar Display Bottles & Crystal Vials | Arees Perfumes'
     description = 'Elegant attar display bottles, crystal perfume flacons, and traditional applicators. Perfect for vanity displays, gifts, and bespoke fragrance oils.'
     introDesc = introDesc || 'Finely crafted glass and crystal display bottles for attars and concentrated oils. Featuring glass wand applicators and airtight caps.'
+  }
+
+  // Retail-only categories advertise an honest "from ₹" price (approved
+  // decision: publish price ranges to lift SERP CTR). The two wholesale
+  // category pages (ids 1 and 10) quote on request instead.
+  const isWholesaleCategory = canonicalSlug === '1' || canonicalSlug === '10'
+  const priceFrom = priceFromProducts(products)
+  if (!isWholesaleCategory && priceFrom && !description.includes('₹')) {
+    description = `${description} Prices from ₹${priceFrom}.`
   }
 
   const breadcrumbs = [
@@ -820,9 +857,9 @@ export function buildHikmaExportsSeo({ origin = CANONICAL_ORIGIN, sameAs = HIKMA
 // 4e-2. Chennai / South India local landing page SEO descriptor.
 export function buildSouthIndiaSeo({ origin = CANONICAL_ORIGIN } = {}) {
   return {
-    title: 'Attar Shop in Chennai | Arees Perfumes, Mannadi',
+    title: 'Attar Shop in Chennai, Mannadi | Arees Perfumes',
     description:
-      'Visit Arees Perfumes in Mannadi, George Town, Chennai for alcohol-free attars, oud, fragrance oils and wholesale supply. Serving retail and trade buyers across South India, with export enquiries handled by Hikma Exports.',
+      'Visit Arees Perfumes in Mannadi, George Town, Chennai — alcohol-free attars, oud and roll-on perfume oils for retail and wholesale under one roof. Delivery across South India; export handled by Hikma Exports.',
     canonical: '/attar-perfume-shop-south-india',
     image: DEFAULT_OG_IMAGE,
     type: 'website',

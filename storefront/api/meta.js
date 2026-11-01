@@ -24,6 +24,7 @@ import {
   normalizeCategorySlug,
   cleanProductName,
   productPath,
+  priceFromProducts,
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
 import { ABOUT, BUSINESS, CONTACT, HERO, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
@@ -359,9 +360,14 @@ ${renderContact('Visit or Reach Us')}
     ? `<section><h2>Shop by brand</h2><ul class="seo-brand-links">${brandLinks}</ul></section>`
     : ''
 
+  const priceFrom = priceFromProducts(products)
+  const priceLine = priceFrom
+    ? `<p>Attars, oud and concentrated fragrance oils from ₹${priceFrom}, delivered across India, with wholesale and export supply via Hikma Exports (Singapore, Malaysia, UAE, Sri Lanka, Maldives).</p>`
+    : ''
+
   return `<main data-prerender="true">
 <header><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.intro)}</p></header>
-${[productSection, categorySection, brandSection].filter(Boolean).join('\n')}
+${[priceLine, productSection, categorySection, brandSection].filter(Boolean).join('\n')}
 <p>${renderLinks(page.links)}</p>
 </main>`
 }
@@ -420,10 +426,18 @@ export function buildCategoryBodyHtml(category, slug, products = []) {
     .slice(0, 24)
     .map((product) => `<li><a href="${escapeHtml(productHref(product))}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
+  // Wholesale categories (ids 1 and 10) quote on request; retail categories
+  // show the honest "from ₹" floor computed from live prices.
+  const isWholesaleCategory = normalizeCategorySlug(slug) === '1' || normalizeCategorySlug(slug) === '10'
+  const priceFrom = isWholesaleCategory ? null : priceFromProducts(products)
+  const priceLine = priceFrom
+    ? `<p>Prices from ₹${priceFrom} for retail — wholesale rates on request from our Chennai desk.</p>`
+    : '<p>Wholesale rates on request from our Chennai desk.</p>'
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/categories">Categories</a></nav>
 <h1>${escapeHtml(categoryName)}</h1>
 <p>${escapeHtml(intro)}</p>
+${priceLine}
 ${links ? `<h2>Products in this category</h2><ul>${links}</ul>` : ''}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p>
 </main>`
