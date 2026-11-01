@@ -312,11 +312,22 @@ describe('buildSeoForRoute', () => {
     await expect(buildSeoForRoute({ type: 'page', slug: 'not-a-page' })).rejects.toMatchObject({ status: 404 })
   })
 
-  it('rejects non-UUID product ids without calling the API', async () => {
-    const fetchMock = vi.fn()
+  it('rejects malformed product keys without calling the API, but resolves slug keys', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).includes('/products/mysore-rose')) {
+        return jsonResponse({ product: { id: 'p-1', name: 'Mysore Rose', slug: 'mysore-rose', price: 450 } })
+      }
+      throw new Error(`Unexpected URL ${url}`)
+    })
     vi.stubGlobal('fetch', fetchMock)
-    await expect(buildSeoForRoute({ type: 'product', id: 'not-a-uuid' })).rejects.toMatchObject({ status: 404 })
-    expect(fetchMock).not.toHaveBeenCalled()
+
+    await expect(buildSeoForRoute({ type: 'product', id: 'not a uuid!' })).rejects.toMatchObject({ status: 404 })
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('not%20a%20uuid'))
+
+    const result = await buildSeoForRoute({ type: 'product', id: 'mysore-rose' })
+    expect(result.status).toBe(200)
+    expect(result.seo.canonical).toBe('/product/mysore-rose')
+    expect(result.bodyHtml).toContain('Price from ₹450')
   })
 })
 

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
 import { getStockStatus, isProductInStock } from '../../utils/stock'
+import { productPath } from '../../utils/seo'
 import { getDefaultVariant, getDisplayPrice } from '../../utils/productPricing'
 import './QuickView.css'
 
@@ -87,7 +88,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
   const handleAdd = () => {
     onClose()
     if (onNavigate) onNavigate()
-    const target = activeVariant?.id ? `/product/${product.id}?variant=${activeVariant.id}` : `/product/${product.id}`
+    const target = productPath(product) + (activeVariant?.id ? `?variant=${activeVariant.id}` : '')
     navigate(target)
   }
 
@@ -193,7 +194,7 @@ export default function QuickView({ product, onClose, onNavigate }) {
           </div>
 
           <Link
-            to={activeVariant?.id ? `/product/${product.id}?variant=${activeVariant.id}` : `/product/${product.id}`}
+            to={productPath(product) + (activeVariant?.id ? `?variant=${activeVariant.id}` : '')}
             className="quickview-details-link"
             onClick={handleViewDetails}
           >

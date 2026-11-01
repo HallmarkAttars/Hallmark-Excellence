@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
+import { productPath } from '../../utils/seo'
 import './FeaturedProductsCarousel.css'
 
 const PLACEHOLDER_IMG =
@@ -330,7 +331,7 @@ export default function FeaturedProductsCarousel({
       if (onProductClick) {
         onProductClick(product)
       } else {
-        navigate(`/product/${product.id}`)
+        navigate(productPath(product))
       }
     } else {
       rotateToProductIndex(index)

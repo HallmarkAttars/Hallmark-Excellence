@@ -41,6 +41,16 @@ export function normalizeGuideSlug(slug) {
   return String(slug ?? '').trim().toLowerCase()
 }
 
+// Product URL builder — prefers the SEO slug (keyword-rich URLs) and falls
+// back to the raw product id, which STAYS VALID even after slugs ship
+// (per the rollout decision: UUID URLs remain valid; canonicals consolidate
+// onto the slug form when one exists).
+export function productPath(product) {
+  if (!product) return '/product/'
+  const key = product.slug || product.id || ''
+  return `/product/${encodeURIComponent(key)}`
+}
+
 export function cleanProductName(value) {
   return String(value ?? '').replace(/\s+/g, ' ').trim()
 }
@@ -173,7 +183,7 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
   for (const product of products) {
     if (!product?.id) continue
     if (product.is_active === false) continue
-    addEntry(`${base}/product/${product.id}`, product.updated_at || product.created_at)
+    addEntry(`${base}${productPath(product)}`, product.updated_at || product.created_at)
   }
 
   const body = entries
@@ -466,7 +476,7 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
   const productName = cleanProductName(product.name) || 'Product'
   const categoryName = cleanProductName(product.category_name)
   const cleanDescription = String(product.description || '').replace(/\s+/g, ' ').trim()
-  const productUrl = `${origin}/product/${product.id}`
+  const productUrl = `${origin}${productPath(product)}`
   const image = cloudinarySrc(product.image, { width: 1200 }) || product.image
 
   const variantPrice = (item) => {
@@ -596,12 +606,12 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
       path: `/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`,
     })
   }
-  breadcrumbs.push({ name: productName, path: `/product/${product.id}` })
+  breadcrumbs.push({ name: productName, path: productPath(product) })
 
   return {
     title,
     description,
-    canonical: `/product/${product.id}`,
+    canonical: productPath(product),
     image: cloudinarySrc(product.image, { width: 1200 }) || product.image || DEFAULT_OG_IMAGE,
     type: 'product',
     schema: [
@@ -641,7 +651,7 @@ export function buildCollectionPageSchema({
       itemListElement: items.map((product, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `${origin}/product/${product.id}`,
+        url: `${origin}${productPath(product)}`,
         name: cleanProductName(product.name) || undefined,
       })),
     },

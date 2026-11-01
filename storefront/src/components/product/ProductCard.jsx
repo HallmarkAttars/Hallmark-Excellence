@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
 import { isProductInStock, getStockStatus } from '../../utils/stock'
+import { productPath } from '../../utils/seo'
 import { getDefaultVariant } from '../../utils/productPricing'
 import QuickView from './QuickView'
 import './ProductCard.css'
@@ -104,7 +105,7 @@ export default function ProductCard({
   // directly from a product card.
   const handleAdd = () => {
     handleNavigate()
-    navigate(`/product/${product.id}`)
+    navigate(productPath(product))
   }
 
   // Optional callback fired before the card navigates to the product page.
@@ -124,7 +125,7 @@ export default function ProductCard({
       {!hideImage && (
         <div className="product-card-media">
           <Link
-            to={`/product/${product.id}`}
+            to={productPath(product)}
             className="product-card-image-link"
             onClick={handleNavigate}
             aria-label={`View ${product.name}`}
@@ -190,7 +191,7 @@ export default function ProductCard({
         )}
 
         <Link
-          to={`/product/${product.id}`}
+          to={productPath(product)}
           className="product-card-name-link"
           onClick={handleNavigate}
         >
@@ -232,7 +233,7 @@ export default function ProductCard({
               <span>Quick View</span>
             </button>
             <Link
-              to={`/product/${product.id}`}
+            to={productPath(product)}
               className="product-card-details-link"
               onClick={handleNavigate}
               aria-label={`View full details for ${product.name}`}

@@ -16,7 +16,7 @@ const {
 // even if PostgREST cannot infer the relationship between products and
 // product_variants.
 const PRODUCT_SELECT = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
+  id, name, slug, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
   sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -28,7 +28,7 @@ const PRODUCT_SELECT = `
 // yet. is_featured is kept because the column already exists in the
 // production schema.
 const PRODUCT_SELECT_BASE = `
-  id, name, description, price, is_featured, stock, is_in_stock,
+  id, name, slug, description, price, is_featured, stock, is_in_stock,
   category_id, brand_id, image, is_active, created_at, updated_at,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -38,7 +38,7 @@ const PRODUCT_SELECT_BASE = `
 // the heavy description text and sell_exact_pieces so cards/hero orbits fetch
 // only what they render.
 const PRODUCT_SUMMARY_SELECT = `
-  id, name, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
+  id, name, slug, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
   category_id, brand_id, image,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -47,7 +47,7 @@ const PRODUCT_SUMMARY_SELECT = `
 // Fallback for the summary select on pre-migration databases (pricing /
 // rating / is_in_stock columns missing).
 const PRODUCT_SUMMARY_SELECT_BASE = `
-  id, name, price, is_featured, stock,
+  id, name, slug, price, is_featured, stock,
   category_id, brand_id, image,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -57,7 +57,7 @@ const PRODUCT_SUMMARY_SELECT_BASE = `
 // by migration_add_display_order.sql) so the admin list can show a position
 // column and the edit form can display/set the current position.
 const PRODUCT_SELECT_ADMIN = `
-  id, name, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
+  id, name, slug, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
   sell_exact_pieces, category_id, brand_id, image, is_active, created_at, updated_at, display_order,
   categories ( id, name, slug ),
   brands ( id, name, slug )
@@ -403,19 +403,24 @@ async function getProducts(req, res) {
 }
 
 // GET /api/products/:id
-// Public. 404 if not found or not active.
+// Public. 404 if not found or not active. Accepts BOTH the raw product id
+// (legacy/UUID URLs stay valid) and the SEO slug (keyword-rich URLs):
+// UUID-shaped keys match products.id, anything else matches products.slug.
+const PRODUCT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 async function getProductById(req, res) {
   try {
-    const { id } = req.params
+    const key = String(req.params.id || '').trim()
+    const isUuidKey = PRODUCT_ID_RE.test(key)
 
-    const { data, error } = await selectProducts((select) =>
-      supabase
+    const { data, error } = await selectProducts((select) => {
+      let query = supabase
         .from('products')
         .select(select)
-        .eq('id', id)
         .eq('is_active', true)
-        .maybeSingle()
-    )
+      query = isUuidKey ? query.eq('id', key) : query.eq('slug', key)
+      return query.maybeSingle()
+    })
 
     if (error) {
       console.error('getProductById error:', error)
@@ -428,14 +433,15 @@ async function getProductById(req, res) {
 
     const product = flattenProduct(data)
 
-    // Fetch variants separately, sorted by quantity_value ASC.
+    // Fetch variants separately, sorted by quantity_value ASC. The product's
+    // own id is authoritative (slug-keyed lookups arrive without a UUID).
     let variants = []
     try {
       const { data: vs, error: vErr } = await selectVariants((select) =>
         supabase
           .from('product_variants')
           .select(select)
-          .eq('product_id', id)
+          .eq('product_id', product.id || key)
       )
       if (!vErr) {
         variants = sortVariants((vs || []).map(toVariant))
@@ -457,16 +463,18 @@ async function getProductById(req, res) {
 // GET /api/products/:id/related
 // Public. Other active products in the same category, excluding itself.
 // Falls back to same-brand products if the item has no category, then to
-// newest active products in general if still empty.
+// newest active products in general if still empty. Accepts a product id
+// (UUID) or a slug key, matching GET /api/products/:id.
 async function getRelatedProducts(req, res) {
   try {
-    const { id } = req.params
+    const key = String(req.params.id || '').trim()
+    const isUuidKey = PRODUCT_ID_RE.test(key)
     const limit = Math.min(parseInt(req.query.limit, 10) || 4, 20)
 
     const { data: source, error: findError } = await supabase
       .from('products')
       .select('id, category_id, brand_id')
-      .eq('id', id)
+      .eq(isUuidKey ? 'id' : 'slug', key)
       .maybeSingle()
 
     if (findError) {
@@ -486,7 +494,7 @@ async function getRelatedProducts(req, res) {
             .select(select)
             .eq(column, value)
             .eq('is_active', true)
-            .neq('id', id)
+            .neq('id', source?.id || key)
             .limit(limit),
           useDisplayOrder
         )
@@ -508,7 +516,7 @@ async function getRelatedProducts(req, res) {
             .from('products')
             .select(select)
             .eq('is_active', true)
-            .neq('id', id)
+            .neq('id', source?.id || key)
             .limit(limit),
           useDisplayOrder
         )

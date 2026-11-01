@@ -23,6 +23,7 @@ import {
   buildGuideSeo,
   normalizeCategorySlug,
   cleanProductName,
+  productPath,
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
 import { ABOUT, BUSINESS, CONTACT, HERO, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
@@ -31,7 +32,6 @@ import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 const FETCH_TIMEOUT_MS = 8000
 const SHELL_TIMEOUT_MS = 5000
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function httpError(status, message) {
   const error = new Error(message)
@@ -51,6 +51,16 @@ async function fetchJson(path) {
     return await res.json()
   } finally {
     clearTimeout(timer)
+  }
+}
+
+// fetchJson that degrades to null instead of throwing — used for enrichment
+// data (hub-page links) where a failure must not fail the whole page.
+async function safeFetchJson(path) {
+  try {
+    return await fetchJson(path)
+  } catch {
+    return null
   }
 }
 
@@ -247,7 +257,7 @@ export function buildSouthIndiaBodyHtml() {
 </main>`
 }
 
-export function buildStaticBodyHtml(slug) {
+export function buildStaticBodyHtml(slug, data = {}) {
   if (slug === 'home') return buildHomeBodyHtml()
   if (slug === 'wholesale' || slug === 'hikma-exports') return buildB2bBodyHtml(slug)
   if (slug === 'guides') return buildGuideIndexBodyHtml()
@@ -314,13 +324,55 @@ ${renderContact('Visit or Reach Us')}
 
   const page = simplePages[slug]
   if (!page) return ''
+
+  // Crawlable internal links so hub pages (shop / categories / brands) stop
+  // being "thin, never crawled" in GSC. Data is fetched live in
+  // buildSeoForRoute with graceful fallback to the static links below —
+  // the page must never 500 because of a botched fetch.
+  const products = Array.isArray(data.products) ? data.products : []
+  const categories = Array.isArray(data.categories) ? data.categories : []
+  const brands = Array.isArray(data.brands) ? data.brands : []
+
+  const productLinks = products
+    .filter((p) => p?.id)
+    .slice(0, 24)
+    .map((p) => `<li><a href="${escapeHtml(productHref(p))}">${escapeHtml(cleanProductName(p.name) || 'Product')}</a></li>`)
+    .join('')
+  const categoryLinks = categories
+    .filter((c) => c?.slug || c?.id)
+    .slice(0, 20)
+    .map((c) => `<li><a href="/categories/${escapeHtml(c.slug || c.id)}">${escapeHtml(cleanProductName(c.name) || c.name)}</a></li>`)
+    .join('')
+  const brandLinks = brands
+    .filter((b) => b?.slug || b?.id)
+    .slice(0, 20)
+    .map((b) => `<li><a href="/brand/${escapeHtml(b.slug || b.id)}">${escapeHtml(cleanProductName(b.name) || b.name)}</a></li>`)
+    .join('')
+
+  const productSection = productLinks
+    ? `<section><h2>Popular attars &amp; fragrance oils</h2><ul class="seo-product-links">${productLinks}</ul></section>`
+    : ''
+  const categorySection = categoryLinks
+    ? `<section><h2>Shop by category</h2><ul class="seo-category-links">${categoryLinks}</ul></section>`
+    : ''
+  const brandSection = brandLinks
+    ? `<section><h2>Shop by brand</h2><ul class="seo-brand-links">${brandLinks}</ul></section>`
+    : ''
+
   return `<main data-prerender="true">
 <header><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.intro)}</p></header>
+${[productSection, categorySection, brandSection].filter(Boolean).join('\n')}
 <p>${renderLinks(page.links)}</p>
 </main>`
 }
 
-export function buildProductBodyHtml(product) {
+// Product-link helper for server-rendered body HTML. Prefers the SEO slug;
+// falls back to the raw id (which the API and routes still accept).
+function productHref(product) {
+  return productPath(product)
+}
+
+export function buildProductBodyHtml(product, related = []) {
   if (!product?.name) return ''
   const productName = cleanProductName(product.name)
   const brandName = cleanProductName(product.brand_name) || 'Arees Perfumes'
@@ -328,12 +380,31 @@ export function buildProductBodyHtml(product) {
   const categorySlug = categoryName ? normalizeCategorySlug(product.category_slug || 'attars') : ''
   const description = cleanProductName(product.description)
     || `${productName} is an alcohol-free fragrance from Arees Perfumes, available for retail and wholesale from Chennai.`
+
+  // Crawlable price + availability from the same data the page renders.
+  const variants = Array.isArray(product.variants) ? product.variants : []
+  const variantPrices = variants
+    .map((v) => Number(v?.total_price ?? v?.price ?? 0))
+    .filter((n) => Number.isFinite(n) && n > 0)
+  const displayPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : Number(product.price || 0)
+  const inStock = product.is_in_stock !== false
+  const priceLine = displayPrice > 0 ? `Price from ₹${Math.round(displayPrice)}` : ''
+  const stockLine = inStock ? 'In stock' : 'Currently out of stock'
+
+  const relatedLinks = (Array.isArray(related) ? related : [])
+    .filter((p) => p?.id)
+    .slice(0, 6)
+    .map((p) => `<li><a href="${escapeHtml(productHref(p))}">${escapeHtml(cleanProductName(p.name) || 'Product')}</a></li>`)
+    .join('')
+
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/shop">Shop</a>${categoryName ? ` / <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a>` : ''}</nav>
 <h1>${escapeHtml(productName)}</h1>
 <p>${escapeHtml(description)}</p>
+<p>${[priceLine, stockLine].filter(Boolean).join(' — ') || 'Available at Arees Perfumes, Mannadi, Chennai'}</p>
 <p>Brand: ${escapeHtml(brandName)}${categoryName ? ` | Category: ${escapeHtml(categoryName)}` : ''}</p>
 <p>Available for retail and wholesale from Arees Perfumes in Mannadi, Chennai.</p>
+${relatedLinks ? `<section><h2>You may also like</h2><ul>${relatedLinks}</ul></section>` : ''}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
 </main>`
 }
@@ -347,7 +418,7 @@ export function buildCategoryBodyHtml(category, slug, products = []) {
     `Explore authentic ${categoryName} from Arees Perfumes, with alcohol-free attars and fragrance oils supplied from Chennai.`
   const links = (Array.isArray(products) ? products : [])
     .slice(0, 24)
-    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
+    .map((product) => `<li><a href="${escapeHtml(productHref(product))}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/categories">Categories</a></nav>
@@ -363,7 +434,7 @@ export function buildBrandBodyHtml(brand, slug, products = []) {
   const brandName = cleanProductName(brand.name)
   const links = (Array.isArray(products) ? products : [])
     .slice(0, 24)
-    .map((product) => `<li><a href="/product/${escapeHtml(product.id)}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
+    .map((product) => `<li><a href="${escapeHtml(productHref(product))}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/brands">Brands</a></nav>
@@ -396,14 +467,30 @@ ${guide.related?.length ? `<section><h2>Related Reading</h2><ul>${guide.related.
 
 export async function buildSeoForRoute({ type, id, slug } = {}) {
   if (type === 'product') {
-    if (!id || !UUID_RE.test(id)) throw httpError(404, 'Invalid product id')
-    const data = await fetchJson(`/products/${encodeURIComponent(id)}`)
+    // Product keys accept BOTH the raw UUID and the SEO slug — the server
+    // resolves either (/products/:idOrSlug), so old UUID URLs stay valid
+    // while canonicals consolidate onto the slug form.
+    const productKey = String(id || '').trim()
+    if (!productKey || productKey.length > 100 || /[^0-9a-zA-Z-]/.test(productKey)) {
+      throw httpError(404, 'Invalid product id')
+    }
+    const data = await fetchJson(`/products/${encodeURIComponent(productKey)}`)
     const product = data?.product ?? data
     if (!product || !product.id) throw httpError(404, 'Product not found')
+
+    // Related products for crawlable internal links. Best-effort: the page
+    // must never 500 because this secondary fetch failed.
+    let related = []
+    try {
+      const rel = await fetchJson(`/products/${encodeURIComponent(product.id)}/related?limit=6`)
+      related = Array.isArray(rel?.products) ? rel.products : []
+    } catch {
+      related = []
+    }
     return {
       status: 200,
       seo: buildProductSeo(product),
-      bodyHtml: buildProductBodyHtml(product),
+      bodyHtml: buildProductBodyHtml(product, related),
     }
   }
 
@@ -478,10 +565,29 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     if (!slug) throw httpError(404, 'Missing page slug')
     const seo = slug === 'home' ? buildHomeSeo() : buildStaticPageSeo(slug)
     if (!seo) throw httpError(404, 'Page not found')
+
+    // Hub pages get real product/category/brand links in the server-rendered
+    // body. Best-effort fetches: on failure the builder falls back to its
+    // static links, so the page never 500s.
+    let pageData = {}
+    if (slug === 'shop' || slug === 'retail') {
+      const res = await safeFetchJson('/products')
+      pageData.products = Array.isArray(res?.products) ? res.products : []
+    }
+    if (slug === 'categories') {
+      const [catRes, brandRes] = await Promise.all([safeFetchJson('/categories'), safeFetchJson('/brands')])
+      pageData.categories = Array.isArray(catRes?.categories) ? catRes.categories : []
+      pageData.brands = Array.isArray(brandRes?.brands) ? brandRes.brands : []
+    }
+    if (slug === 'brands') {
+      const res = await safeFetchJson('/brands')
+      pageData.brands = Array.isArray(res?.brands) ? res.brands : []
+    }
+
     return {
       status: 200,
       seo,
-      bodyHtml: buildStaticBodyHtml(slug),
+      bodyHtml: buildStaticBodyHtml(slug, pageData),
     }
   }
 

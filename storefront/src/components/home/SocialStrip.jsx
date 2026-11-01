@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
+import { productPath } from '../../utils/seo'
 import Reveal from '../../animations/Reveal'
 import { SOCIAL_STRIP } from '../../data/content'
 import './SocialStrip.css'
@@ -80,7 +81,7 @@ export default function SocialStrip({ products }) {
           {items.map((product, idx) => (
             <Link
               key={product.id}
-              to={`/product/${product.id}`}
+              to={productPath(product)}
               className={`social-tile ${idx === activeIndex ? 'is-active' : ''}`}
               aria-label={`View ${product.name} from our atelier`}
             >
