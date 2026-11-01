@@ -20,19 +20,25 @@ const {
 
 // Minimal customer-safe projection of the order's notes JSONB — mirrors
 // tracking.controller (notes can hold the phone under `phone` or legacy `0`).
-function extractStoredPhone(order) {
+// IMPORTANT: customer_name is NOT a column on the live orders table — it
+// lives inside notes (checkout writes name/phone/address there). Selecting
+// it as a column makes PostgREST reject the whole query.
+function extractOrderInfo(order) {
   const notes = order?.notes
-  if (!notes) return ''
+  if (!notes) return { phone: '', customer_name: '' }
   let info = notes
   if (typeof notes === 'string') {
     try {
       info = JSON.parse(notes)
     } catch {
-      return ''
+      return { phone: '', customer_name: '' }
     }
   }
-  if (!info || typeof info !== 'object') return ''
-  return info.phone || info[0]?.phone || ''
+  if (!info || typeof info !== 'object') return { phone: '', customer_name: '' }
+  return {
+    phone: info.phone || info[0]?.phone || '',
+    customer_name: info.customer_name || '',
+  }
 }
 
 function clientIpHash(req) {
@@ -57,7 +63,7 @@ async function createReview(req, res) {
     // --- Verify the order exists AND is delivered AND owned by this phone ---
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('order_number, customer_name, notes, order_status')
+      .select('order_number, notes, order_status')
       .eq('order_number', input.orderNumber)
       .maybeSingle()
 
@@ -68,7 +74,8 @@ async function createReview(req, res) {
 
     // Same generic message for "no such order" and "wrong phone" so nothing
     // about other customers' orders can ever be probed.
-    const storedDigits = normalizeStoredPhone(extractStoredPhone(order))
+    const orderInfo = extractOrderInfo(order)
+    const storedDigits = normalizeStoredPhone(orderInfo.phone)
     if (!order || storedDigits !== input.phone) {
       return res.status(403).json({
         error: 'We could not verify this order with the details provided.',
@@ -85,7 +92,7 @@ async function createReview(req, res) {
       order_number: order.order_number,
       rating: input.rating,
       review_text: input.reviewText,
-      customer_name: order.customer_name || null,
+      customer_name: orderInfo.customer_name || null,
       consent_show: input.consentShow,
       ip_hash: clientIpHash(req),
       user_agent: String(req.headers['user-agent'] || '').slice(0, 300),
@@ -133,11 +140,11 @@ async function listPublicReviews(req, res) {
       .limit(limit)
 
     if (error) {
-      if (/does not exist|could not find/i.test(error.message)) {
-        return res.json({ reviews: [] })
-      }
-      console.error('[reviews] public list error:', error.message)
-      return res.status(500).json({ error: 'Could not load reviews right now.' })
+      // The strip is decorative: ANY backend problem (missing table before
+      // the migration runs, permissions, transient failures) hides the
+      // section instead of erroring the home page data layer.
+      console.error('[reviews] public list unavailable:', error.message)
+      return res.json({ reviews: [] })
     }
 
     return res.json({
