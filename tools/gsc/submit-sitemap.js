@@ -13,10 +13,11 @@ async function main() {
   const api = authedFetch(accessToken)
 
   const res = await api(ENDPOINTS.sitemap(SITE, feedpath), { method: 'PUT' })
-  if (res.status !== 200) {
+  // Google returns 204 No Content on success for PUT sitemap submissions.
+  if (res.status !== 200 && res.status !== 204) {
     throw new Error(`sitemap submit failed (${res.status}): ${await res.text()}`)
   }
-  console.log(`[ok] submitted ${feedpath} for ${SITE}`)
+  console.log(`[ok] submitted ${feedpath} for ${SITE} (HTTP ${res.status})`)
 
   const check = await (await api(ENDPOINTS.sitemap(SITE, feedpath))).json()
   console.log(`     lastSubmitted: ${check.lastSubmitted || '-'} | pending: ${check.isPending} | errors: ${check.errors || 0} | warnings: ${check.warnings || 0}`)
