@@ -3,7 +3,7 @@
 // HomeFaqs (Batch 1 SEO): FAQ + wholesale CTA + honest price anchor on the
 // homepage. Mirrors the facts rendered server-side by meta.js.
 import { describe, expect, it, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import HomeFaqs from './HomeFaqs'
 import { HOME_FAQS } from '../../data/content'
@@ -20,6 +20,9 @@ describe('HomeFaqs', () => {
     expect(screen.getByText('Frequently Asked Questions')).toBeTruthy()
     for (const faq of HOME_FAQS) {
       expect(screen.getByText(faq.question)).toBeTruthy()
+      // Answers are accordion-hidden by default; open each to verify content
+      const question = screen.getByText(faq.question)
+      fireEvent.click(question.closest('.home-faq-q'))
       expect(screen.getByText(faq.answer)).toBeTruthy()
     }
   })

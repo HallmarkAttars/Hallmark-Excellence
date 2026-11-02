@@ -139,26 +139,31 @@ export const HOME_BRANDS = {
 // --------------------------------------------------------------------------
 export const HOME_FAQS = [
   {
+    group: 'store-orders',
     question: 'Where is Arees Perfumes located?',
     answer:
       'Our shop is at 83 & 84, Moore St, Mannadi, George Town, Chennai 600001. Walk in any day from 9:00 AM to 9:30 PM, or call/WhatsApp +91 98407 50467 for directions.',
   },
   {
+    group: 'store-orders',
     question: 'Do you deliver across India?',
     answer:
       'Yes. Online orders are packed in Chennai and dispatched through our courier and transport partners, with delivery across India.',
   },
   {
+    group: 'store-orders',
     question: 'Are your attars alcohol-free?',
     answer:
       'Every attar, oud and fragrance oil we sell is 100% alcohol-free concentrate — exactly what bulk buyers and perfumers source from our wholesale desk.',
   },
   {
+    group: 'wholesale-export',
     question: 'Can I order wholesale or in bulk?',
     answer:
       'Yes. Loose attar and fragrance oil orders start at 100 g and branded Arees/Dahab packs from 60 pieces, supplied by Hikma Exports in Chennai. Share your scents, sizes and quantities for a formal quotation.',
   },
   {
+    group: 'wholesale-export',
     question: 'Do you export internationally?',
     answer:
       'Export orders (Singapore, Malaysia, UAE, Sri Lanka, Maldives and other confirmed destinations) are quotation-based through Hikma Exports, a GST-registered exporter with IEC. Share your requirement on WhatsApp or email for pricing, lead time and documents.',
