@@ -81,6 +81,7 @@
   opacity: 0;
   animation: hero-fade-up 0.6s ease-out forwards;
 }
+.js .hero-reveal-0 { animation-delay: 0ms; }
 .js .hero-reveal-1 { animation-delay: 80ms; }
 .js .hero-reveal-2 { animation-delay: 180ms; }
 .js .hero-reveal-3 { animation-delay: 280ms; }

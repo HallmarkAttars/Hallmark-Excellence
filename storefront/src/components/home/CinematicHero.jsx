@@ -335,6 +335,11 @@ export default function CinematicHero({
 
       {/* Fixed hero content */}
       <div className="hero-content">
+        {HERO.eyebrow && (
+          <p className="hero-eyebrow hero-reveal hero-reveal-0" aria-hidden="true">
+            {HERO.eyebrow}
+          </p>
+        )}
         <h1 className="hero-title hero-reveal hero-reveal-1">
           {HERO.title.map((line, i) => (
             <span key={`${line}-${i}`}>

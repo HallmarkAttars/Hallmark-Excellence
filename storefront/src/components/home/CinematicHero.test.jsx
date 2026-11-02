@@ -30,6 +30,10 @@ describe('CinematicHero Component', () => {
     expect(heading.textContent).toContain('Non-Alcoholic Attars')
     expect(heading.textContent).toContain('Fragrance Oils Online')
 
+    // Luxury eyebrow sits above the H1 (decorative, aria-hidden)
+    expect(screen.getByText(HERO.eyebrow)).toBeTruthy()
+    expect(container.querySelector('.hero-eyebrow')).toBeTruthy()
+
     // Tagline
     expect(screen.getByText(HERO.subtitle)).toBeTruthy()
 

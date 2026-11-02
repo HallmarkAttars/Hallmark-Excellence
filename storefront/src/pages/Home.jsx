@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CinematicHero from '../components/home/CinematicHero'
+import TrustRibbon from '../components/home/TrustRibbon'
 import { buildHomeHeroImages } from '../utils/homeHeroImages'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
@@ -135,6 +136,9 @@ export default function Home() {
       />
       {/* Hero renders immediately from the curated product photography set. */}
       <CinematicHero images={heroImages} />
+
+      {/* Static trust strip — factual assurances, paints with the hero */}
+      <TrustRibbon />
 
       {/* "Shop by Category" heading paints immediately — it is the mobile LCP
           element, so it must never wait on the categories API response or the

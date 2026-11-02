@@ -364,4 +364,26 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
     expect(screen.queryByText(/Something went wrong/i)).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
   })
+
+  it('shows factual dispatch, delivery and payment info with the policy link', async () => {
+    const { container } = renderProductDetail()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Royal Musk' })).toBeTruthy()
+    })
+
+    const block = container.querySelector('.pd-fulfilment')
+    expect(block).toBeTruthy()
+    const text = block.textContent || ''
+
+    // Wording stays consistent with /shipping-returns and checkout payment
+    expect(/dispatch/i.test(text)).toBe(true)
+    expect(/across india/i.test(text)).toBe(true)
+    expect(/advance payment via upi/i.test(text)).toBe(true)
+    expect(/cash on delivery|\bcod\b/i.test(text)).toBe(false)
+    expect(/working day/i.test(text)).toBe(false)
+
+    const policy = container.querySelector('a[href="/shipping-returns"]')
+    expect(policy).toBeTruthy()
+  })
 })

@@ -1,0 +1,60 @@
+.trust-ribbon {
+  background: var(--cream-deep, #f0e7d8);
+  border-bottom: 1px solid var(--line-soft, rgba(184, 137, 56, 0.1));
+  padding: 12px 16px;
+}
+
+.trust-ribbon-list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: var(--container, 1280px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+}
+
+.trust-ribbon-item {
+  display: flex;
+  align-items: center;
+}
+
+.trust-ribbon-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--charcoal-soft, #5f584e);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.trust-ribbon-link:hover {
+  color: var(--gold-deep, #8a6626);
+}
+
+.trust-ribbon-icon {
+  display: inline-flex;
+  color: var(--gold, #b88938);
+  flex-shrink: 0;
+}
+
+.trust-ribbon-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .trust-ribbon {
+    padding: 10px 12px;
+  }
+  .trust-ribbon-list {
+    gap: 6px 16px;
+  }
+  .trust-ribbon-label {
+    font-size: 0.72rem;
+  }
+}

@@ -99,6 +99,7 @@ export const NAV_LINKS = [
 // HERO — homepage hero section
 // --------------------------------------------------------------------------
 export const HERO = {
+  eyebrow: 'THE ART OF FINE FRAGRANCE',
   title: ['Buy Authentic', 'Non-Alcoholic Attars', '& Fragrance Oils Online'],
   subtitle:
     'Arees Perfumes offers alcohol-free attars, oud and fragrance oils for retail and wholesale, with delivery across India.',

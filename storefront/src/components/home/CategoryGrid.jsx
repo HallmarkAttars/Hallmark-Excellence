@@ -12,11 +12,37 @@ export default function CategoryGrid({ categories }) {
 
   // Homepage displays EXACTLY 6 categories in a 3-column × 2-row grid on desktop
   // and a 2-column × 3-row grid on mobile. The full list is accessible via VIEW ALL.
-  const visibleCategories = all.slice(0, 6)
+
+  // Fragrance-first ordering for the homepage grid: the retail scent shoppers
+  // (bakhoor, roll-on attars, fragrance oils) lead the row of six, while the
+  // remaining wholesale packaging categories follow in API order. Names are
+  // matched on the trimmed lowercase form — the DB carries padding spaces.
+  const HOMEPAGE_CATEGORY_ORDER = [
+    'bakhoor',
+    'roll on attars',
+    'fragrance oil',
+    'roll on bottles',
+    'spray bottles',
+    'canter bottle',
+  ]
+
+  // Homepage priority index — categories outside the fragrance-first list
+  // sort last, never before the prioritised ones (indexOf's −1 must become
+  // the last position or unmatched wholesale categories would lead the grid).
+  const priorityIndex = (category) => {
+    const idx = HOMEPAGE_CATEGORY_ORDER.indexOf(
+      String(category?.name || '').trim().toLowerCase()
+    )
+    return idx === -1 ? HOMEPAGE_CATEGORY_ORDER.length : idx
+  }
+
+  // Array.prototype.sort is stable in modern JS engines, so categories placed
+  // after the six prioritised ones keep their original API order.
+  const orderedCategories = [...all].sort((a, b) => priorityIndex(a) - priorityIndex(b))
 
   return (
     <Reveal className="category-grid stagger-fade">
-      {visibleCategories.map((cat) => {
+      {orderedCategories.slice(0, 6).map((cat) => {
         const imgSrc = cat.image ? cloudinarySrc(cat.image, { width: 500 }) : null
         const imgSrcSet = cat.image ? cloudinarySrcSet(cat.image, [300, 400, 500]) : undefined
         return (

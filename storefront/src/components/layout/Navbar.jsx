@@ -6,6 +6,7 @@ import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import { brandPublicSlug } from '../../utils/brandSlug'
 import SearchOverlay from './SearchOverlay'
+import { WHATSAPP_URL, trackWhatsAppLead } from '../../utils/whatsapp'
 import './Navbar.css'
 
 function SearchIcon() {
@@ -22,6 +23,15 @@ function CartIcon() {
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M5 8h14l-1.2 11a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8L5 8Z" />
       <path d="M8.5 10V6.5a3.5 3.5 0 0 1 7 0V10" />
+    </svg>
+  )
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.6L3 20l1-5.3A8.5 8.5 0 1 1 21 11.5Z" />
+      <path d="M8.8 7.6c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.5s.7 1.7.7 1.8c0 .1 0 .2-.1.4l-.3.5c-.1.2-.3.3-.1.6.4.7 1 1.4 1.8 1.9.5.3.7.3 1-.1l.4-.5c.2-.2.4-.1.6 0l1.5.8c.2.1.4.2.4.3 0 .8-.4 1.5-1.1 1.9-1.7.9-4-.5-5.6-2-1.2-1.2-2.2-2.9-2-4.4 0-.4.1-.8.3-1.2Z" />
     </svg>
   )
 }
@@ -190,6 +200,17 @@ export default function Navbar() {
             >
               <SearchIcon />
             </button>
+
+            <a
+              href={WHATSAPP_URL}
+              className="navbar-icon-btn navbar-whatsapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chat with us on WhatsApp"
+              onClick={() => trackWhatsAppLead('navbar')}
+            >
+              <WhatsAppIcon />
+            </a>
 
             <Link to="/cart" className="navbar-icon-btn navbar-cart" aria-label={`Cart, ${itemCount} items`}>
               <CartIcon />

@@ -80,6 +80,16 @@
   box-sizing: border-box;
 }
 
+/* Luxury kicker above the SEO H1 — decorative, gold over the dark overlay */
+.hero-eyebrow {
+  color: var(--gold-light);
+  font-size: clamp(0.7rem, 1.1vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+
 .hero-title {
   color: var(--cream);
   font-size: clamp(3rem, 4.5vw, 4rem); /* desktop 48–64px */

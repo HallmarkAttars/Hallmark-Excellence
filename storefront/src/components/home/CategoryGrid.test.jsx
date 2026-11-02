@@ -93,4 +93,39 @@ describe('CategoryGrid Component', () => {
     expect(img.getAttribute('sizes')).toBe('(max-width: 767px) 45vw, 300px')
     expect(img.getAttribute('fetchpriority')).toBe('low')
   })
+
+  // Homepage order must lead with retail fragrance categories — this mirrors
+  // the live DB (which carries padding spaces in category names).
+  it('orders fragrance categories first regardless of API order', () => {
+    const liveLikeCategories = [
+      { id: '1', name: 'Roll on Attars', slug: '1' },
+      { id: '2', name: 'Fragrance Oil', slug: '10' },
+      { id: '3', name: 'Roll on Bottles', slug: 'roll-on-bottles' },
+      { id: '4', name: 'Fancy Bottle', slug: 'roll on' },
+      { id: '5', name: 'Caps for Roll on bottles', slug: 'Caps' },
+      { id: '6', name: 'Spray Bottles', slug: '3' },
+      { id: '7', name: 'Canter Bottle', slug: 'Display bottles ' },
+      { id: '8', name: 'Arees Face Wash', slug: 'Face wash' },
+      { id: '9', name: 'Bakhoor ', slug: 'Bakhoor ' },
+    ]
+
+    const { container } = render(
+      <MemoryRouter>
+        <CategoryGrid categories={liveLikeCategories} />
+      </MemoryRouter>
+    )
+
+    // Read the rendered card order from the DOM
+    const names = [...container.querySelectorAll('.category-name')].map((n) =>
+      n.textContent.trim()
+    )
+    expect(names).toEqual([
+      'Bakhoor',
+      'Roll on Attars',
+      'Fragrance Oil',
+      'Roll on Bottles',
+      'Spray Bottles',
+      'Canter Bottle',
+    ])
+  })
 })

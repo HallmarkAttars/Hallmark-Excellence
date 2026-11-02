@@ -950,6 +950,28 @@ export default function ProductDetail({ onAddToCart }) {
             <span className="pd-spec-value">Mannadi, George Town, Chennai - 600001, Tamil Nadu</span>
           </div>
         </div>
+
+        {/* Dispatch & payment facts — wording mirrors /shipping-returns and the
+            checkout payment step (advance payment via UPI; no COD claim). */}
+        <div className="pd-fulfilment">
+          <div className="pd-fulfilment-item">
+            <span className="pd-fulfilment-label">Dispatch</span>
+            <span>From our Mannadi, Chennai store — timing depends on stock and packing, and we contact you if there is an expected delay.</span>
+          </div>
+          <div className="pd-fulfilment-item">
+            <span className="pd-fulfilment-label">Delivery</span>
+            <span>Across India. Shipping charges are shown at checkout or communicated before dispatch.</span>
+          </div>
+          <div className="pd-fulfilment-item">
+            <span className="pd-fulfilment-label">Payment</span>
+            <span>
+              Advance payment via UPI — payment instructions are shared after you place the order.
+            </span>
+          </div>
+          <Link to="/shipping-returns" className="pd-fulfilment-link">
+            Shipping &amp; Returns →
+          </Link>
+        </div>
       </section>
 
       {related === null && (

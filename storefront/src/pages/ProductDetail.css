@@ -722,6 +722,56 @@
   }
 }
 
+/* ---------- Dispatch, delivery & payment facts ---------- */
+.pd-fulfilment {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line, rgba(184, 137, 56, 0.18));
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px 24px;
+  align-items: start;
+}
+
+.pd-fulfilment-item {
+  display: grid;
+  gap: 3px;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #555);
+}
+
+.pd-fulfilment-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pd-fulfilment-link {
+  grid-column: 1 / -1;
+  justify-self: start;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold-deep);
+  text-decoration: none;
+}
+
+.pd-fulfilment-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+  .pd-fulfilment {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 /* ---------- Related products ---------- */
 .product-detail-related {
   grid-column: 1 / -1;

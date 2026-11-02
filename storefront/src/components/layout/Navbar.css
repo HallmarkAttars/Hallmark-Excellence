@@ -155,6 +155,13 @@
   .navbar-inner { height: 68px; }
 }
 
+/* All 8 links + the Brands dropdown need tighter spacing between 1200–1319px
+   so the row never wraps or pushes the actions off the container edge. */
+@media (min-width: 1200px) and (max-width: 1319px) {
+  .navbar-nav { gap: 20px; }
+  .navbar-link { font-size: 0.78rem; letter-spacing: 0.06em; }
+}
+
 /* ---------- Actions ---------- */
 .navbar-actions {
   display: flex;
