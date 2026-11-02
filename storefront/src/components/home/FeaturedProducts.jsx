@@ -46,7 +46,7 @@ export default function FeaturedProducts({ products, allProducts }) {
             <span className="flank-line" aria-hidden="true" />
           </div>
           <p className="featured-subtitle-text">
-            Scents, made by hand — oud, rose and amber from our atelier.
+            {HOME_FEATURED.subtitle || 'Scents, made by hand — oud, rose and amber from our atelier.'}
           </p>
           {HOME_FEATURED.viewAll && (
             <Link to={HOME_FEATURED.viewAll.to} className="featured-view-all-link">

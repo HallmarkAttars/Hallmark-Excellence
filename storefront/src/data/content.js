@@ -117,8 +117,9 @@ export const HOME_CATEGORIES = {
 }
 
 export const HOME_FEATURED = {
-  title: 'Featured Products',
-  viewAll: { label: 'View All', to: '/shop' },
+  title: 'Featured Fragrances',
+  subtitle: 'Scents, made by hand — oud, rose and amber from our atelier in Chennai.',
+  viewAll: { label: 'Browse All Featured', to: '/shop' },
 }
 
 // --------------------------------------------------------------------------

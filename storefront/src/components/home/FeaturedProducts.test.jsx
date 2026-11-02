@@ -35,9 +35,9 @@ describe('FeaturedProducts Component — Continuous Circular Orbit', () => {
       </CartProvider>
     )
 
-    expect(screen.getByText(/FEATURED PRODUCTS/i)).toBeTruthy()
+    expect(screen.getByText(/FEATURED FRAGRANCES/i)).toBeTruthy()
     expect(screen.getByText(/Scents, made by hand/i)).toBeTruthy()
-    expect(screen.getByRole('link', { name: /view all/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /browse all featured/i })).toBeTruthy()
   })
 
   it('renders the illuminated pedestal platform and circular orbit stage with navigation arrows', () => {

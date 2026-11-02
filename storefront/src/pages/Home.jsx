@@ -81,7 +81,7 @@ export default function Home() {
     let cancelled = false
     const load = () => {
       if (cancelled) return
-      getFeaturedProducts({ limit: 18 })
+      getFeaturedProducts({ limit: 10 })
         .then((list) => { if (!cancelled) setFeatured(list) })
         .catch(() => { if (!cancelled) setFeatured([]) })
     }

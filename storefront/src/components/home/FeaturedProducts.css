@@ -7,20 +7,20 @@
   position: relative;
   z-index: 10;
   background: var(--cream, #fbf9f5);
-  padding: 48px 0 56px;
+  padding: 56px 0 64px;
   overflow: hidden; /* Ensures no horizontal scrollbars on any viewport */
   width: 100%;
 }
 
 @media (min-width: 768px) {
   .featured-orbit-section {
-    padding: 60px 0 68px;
+    padding: 68px 0 76px;
   }
 }
 
 @media (min-width: 1024px) {
   .featured-orbit-section {
-    padding: 72px 0 80px;
+    padding: 80px 0 88px;
   }
 }
 
@@ -28,7 +28,7 @@
 .featured-palatial-head {
   text-align: center;
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 26px;
   max-width: 860px;
   margin-left: auto;
   margin-right: auto;
@@ -89,11 +89,11 @@
 }
 
 .featured-view-all-link {
-  display: none;
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px auto 0;
+  padding: 10px 24px;
   font-family: var(--font-primary);
   font-size: 0.78rem;
   font-weight: 700;
@@ -101,19 +101,26 @@
   text-transform: uppercase;
   color: #85591a;
   text-decoration: none;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid rgba(184, 137, 56, 0.55);
+  border-radius: 999px;
+  transition: all 0.22s ease;
 }
 
-@media (min-width: 1024px) {
-  .featured-view-all-link {
-    display: inline-flex;
-  }
-  .featured-view-all-link:hover {
-    color: #b88938;
-    transform: translateY(-50%) translateX(2px);
-  }
+.featured-view-all-link:hover {
+  color: #ffffff;
+  background: #85591a;
+  border-color: #85591a;
+  box-shadow: 0 6px 16px rgba(133, 89, 26, 0.28);
+  transform: translateY(-1px);
+}
+
+.featured-view-all-link .view-all-arrow {
+  transition: transform 0.22s ease;
+}
+
+.featured-view-all-link:hover .view-all-arrow {
+  transform: translateX(3px);
 }
 
 /* ---------- Subtle Section Divider ---------- */

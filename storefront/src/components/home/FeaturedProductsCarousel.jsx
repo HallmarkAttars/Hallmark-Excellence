@@ -61,7 +61,7 @@ export default function FeaturedProductsCarousel({
 
   // Active product index (which product is currently closest to front-center)
   const [activeProductIndex, setActiveProductIndex] = useState(0)
-  const [radii, setRadii] = useState({ rx: 420, ry: 85, minScale: 0.60, maxScale: 1.20 })
+  const [radii, setRadii] = useState({ rx: 420, ry: 85, minScale: 0.60, maxScale: 1.26 })
 
   // Refs for 60/120fps continuous animation without triggering React re-renders on every frame
   const stageRef = useRef(null)
@@ -88,11 +88,11 @@ export default function FeaturedProductsCarousel({
     if (!stageRef.current) return
     const width = stageRef.current.clientWidth
     if (width >= 1200) {
-      setRadii({ rx: 430, ry: 88, minScale: 0.62, maxScale: 1.22 })
+      setRadii({ rx: 430, ry: 88, minScale: 0.62, maxScale: 1.28 })
     } else if (width >= 992) {
-      setRadii({ rx: 360, ry: 74, minScale: 0.60, maxScale: 1.18 })
+      setRadii({ rx: 360, ry: 74, minScale: 0.60, maxScale: 1.24 })
     } else if (width >= 768) {
-      setRadii({ rx: 280, ry: 58, minScale: 0.58, maxScale: 1.15 })
+      setRadii({ rx: 280, ry: 58, minScale: 0.58, maxScale: 1.20 })
     } else if (width >= 480) {
       const rx = Math.min(185, (width - 70) / 2)
       setRadii({ rx, ry: 40, minScale: 0.54, maxScale: 1.12 })
