@@ -760,9 +760,7 @@ async function createOrder(req, res) {
       console.error('[createOrder] Supabase error details:', error.details)
       console.error('[createOrder] Supabase error hint:', error.hint)
       return res.status(500).json({
-        error: 'Failed to place order.',
-        detail: error.message,
-        code: error.code
+        error: 'Failed to place order.'
       })
     }
 

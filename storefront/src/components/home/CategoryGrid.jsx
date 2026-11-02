@@ -12,33 +12,11 @@ export default function CategoryGrid({ categories }) {
 
   // Homepage displays EXACTLY 6 categories in a 3-column × 2-row grid on desktop
   // and a 2-column × 3-row grid on mobile. The full list is accessible via VIEW ALL.
-
-  // Fragrance-first ordering for the homepage grid: the retail scent shoppers
-  // (bakhoor, roll-on attars, fragrance oils) lead the row of six, while the
-  // remaining wholesale packaging categories follow in API order. Names are
-  // matched on the trimmed lowercase form — the DB carries padding spaces.
-  const HOMEPAGE_CATEGORY_ORDER = [
-    'bakhoor',
-    'roll on attars',
-    'fragrance oil',
-    'roll on bottles',
-    'spray bottles',
-    'canter bottle',
-  ]
-
-  // Homepage priority index — categories outside the fragrance-first list
-  // sort last, never before the prioritised ones (indexOf's −1 must become
-  // the last position or unmatched wholesale categories would lead the grid).
-  const priorityIndex = (category) => {
-    const idx = HOMEPAGE_CATEGORY_ORDER.indexOf(
-      String(category?.name || '').trim().toLowerCase()
-    )
-    return idx === -1 ? HOMEPAGE_CATEGORY_ORDER.length : idx
-  }
-
-  // Array.prototype.sort is stable in modern JS engines, so categories placed
-  // after the six prioritised ones keep their original API order.
-  const orderedCategories = [...all].sort((a, b) => priorityIndex(a) - priorityIndex(b))
+  //
+  // Categories come from the API already in admin display_order (server applies
+  // display_order asc, then created_at asc). We preserve that order exactly — no
+  // client-side re-sort — so the admin's chosen Display Order is what shoppers see.
+  const orderedCategories = all.slice(0, 6)
 
   return (
     <Reveal className="category-grid stagger-fade">

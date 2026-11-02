@@ -5,10 +5,19 @@
   padding-bottom: var(--section-space, 56px);
 }
 
+.home-faqs-section .section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
 .home-faqs-price-anchor {
-  margin-top: 10px;
-  font-size: 1rem;
-  line-height: 1.6;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
   color: var(--text-secondary, #555);
 }
 

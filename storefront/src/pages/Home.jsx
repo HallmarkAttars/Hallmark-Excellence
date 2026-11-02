@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CinematicHero from '../components/home/CinematicHero'
 import TrustRibbon from '../components/home/TrustRibbon'
+import ScentStrip from '../components/home/ScentStrip'
 import { buildHomeHeroImages } from '../utils/homeHeroImages'
 import Reveal from '../animations/Reveal'
 import CategoryGrid from '../components/home/CategoryGrid'
@@ -217,6 +218,9 @@ export default function Home() {
           )}
         </Suspense>
       </DeferredSection>
+
+      {/* Scent-family discovery chips (static links — no data, no LCP cost) */}
+      <ScentStrip />
 
       <DeferredSection placeholder={<SkeletonSocialStrip />}>
         <Suspense fallback={<SkeletonSocialStrip />}>

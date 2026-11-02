@@ -94,9 +94,10 @@ describe('CategoryGrid Component', () => {
     expect(img.getAttribute('fetchpriority')).toBe('low')
   })
 
-  // Homepage order must lead with retail fragrance categories — this mirrors
-  // the live DB (which carries padding spaces in category names).
-  it('orders fragrance categories first regardless of API order', () => {
+  // Homepage order preserves the API (admin display_order) exactly — no
+  // client-side re-sort — so the admin's chosen Display Order is what
+  // shoppers see on the homepage grid.
+  it('preserves API display order on the homepage grid', () => {
     const liveLikeCategories = [
       { id: '1', name: 'Roll on Attars', slug: '1' },
       { id: '2', name: 'Fragrance Oil', slug: '10' },
@@ -115,17 +116,17 @@ describe('CategoryGrid Component', () => {
       </MemoryRouter>
     )
 
-    // Read the rendered card order from the DOM
+    // Read the rendered card order from the DOM — matches API order exactly
     const names = [...container.querySelectorAll('.category-name')].map((n) =>
       n.textContent.trim()
     )
     expect(names).toEqual([
-      'Bakhoor',
       'Roll on Attars',
       'Fragrance Oil',
       'Roll on Bottles',
+      'Fancy Bottle',
+      'Caps for Roll on bottles',
       'Spray Bottles',
-      'Canter Bottle',
     ])
   })
 })

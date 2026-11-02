@@ -1,0 +1,59 @@
+/* Scent-family discovery strip — gold outline chips on cream, same token
+   palette as the rest of the home editorial (TrustRibbon / Featured). */
+
+.scent-strip {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.scent-strip-eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold, #b88938);
+}
+
+.scent-strip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.scent-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  border: 1px solid rgba(184, 137, 56, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--charcoal, #1d1914);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.scent-chip:hover,
+.scent-chip:focus-visible {
+  background: var(--charcoal, #1d1914);
+  border-color: var(--charcoal, #1d1914);
+  color: var(--cream, #f8f3e8);
+}
+
+@media (max-width: 767px) {
+  .scent-strip-chips {
+    gap: 8px;
+  }
+
+  .scent-chip {
+    padding: 8px 16px;
+    font-size: 0.78rem;
+  }
+}

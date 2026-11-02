@@ -7,6 +7,7 @@ import FilterSortControl from '../components/filter/FilterSortControl'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
 import { SHOP_PAGE } from '../data/content'
+import { FAMILY_FILTERS, getProductFamilies, isValidFamilyParam } from '../data/fragranceFamilies'
 import SEO from '../components/seo/SEO'
 import { buildBreadcrumbsSchema } from '../utils/seo'
 import './Shop.css'
@@ -46,17 +47,36 @@ export default function Shop() {
       })
   }, [reloadKey])
 
+  // Fragrance-family deep link lives in the URL (?family=musk) so homepage
+  // scent-strip chips and shared links work. Derived (not state) so the URL
+  // is the single source of truth; unknown values fall back to 'all'.
+  const familyParam = searchParams.get('family')
+  const familyFilter = isValidFamilyParam(familyParam) ? familyParam : 'all'
+
   const visibleProducts = useMemo(() => {
     let list = [...products]
     if (categoryFilter !== 'all') list = list.filter((p) => p.category_id === categoryFilter)
     if (brandFilter !== 'all') list = list.filter((p) => p.brand_id === brandFilter)
+    if (familyFilter !== 'all') {
+      list = list.filter((p) => getProductFamilies(p).includes(familyFilter))
+    }
     if (sort === 'newest') list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
     if (sort === 'price-asc') list.sort((a, b) => a.price - b.price)
     if (sort === 'price-desc') list.sort((a, b) => b.price - a.price)
     if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name))
     if (sort === 'name-desc') list.sort((a, b) => b.name.localeCompare(a.name))
     return list
-  }, [products, categoryFilter, brandFilter, sort])
+  }, [products, categoryFilter, brandFilter, familyFilter, sort])
+
+  // Changing the family only rewrites its own param and drops the page
+  // number (new result set → start at page 1); all other params persist.
+  const toggleFamily = (value) => {
+    const next = new URLSearchParams(searchParams)
+    if (value === 'all') next.delete('family')
+    else next.set('family', value)
+    next.delete('page')
+    setSearchParams(next)
+  }
 
   // Client-side pagination over the filtered results: FILTER → PAGINATE →
   // render (only the current page's ≤50 products are ever rendered). The
@@ -102,6 +122,7 @@ export default function Shop() {
   const activeCount =
     (categoryFilter !== 'all' ? 1 : 0) +
     (brandFilter !== 'all' ? 1 : 0) +
+    (familyFilter !== 'all' ? 1 : 0) +
     (sort !== 'default' ? 1 : 0)
 
   return (
@@ -134,6 +155,13 @@ export default function Shop() {
                 allLabel: 'All Categories',
                 value: categoryFilter,
                 onChange: toggleCategory,
+              },
+              {
+                label: 'Fragrance Family',
+                options: FAMILY_FILTERS,
+                allLabel: 'All Families',
+                value: familyFilter,
+                onChange: toggleFamily,
               },
               ...(brands && brands.length > 0
                 ? [

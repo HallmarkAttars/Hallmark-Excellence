@@ -23,6 +23,7 @@ import SEO from '../components/seo/SEO'
 import { buildProductSeo, cleanProductName } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
 import { brandPublicSlug } from '../utils/brandSlug'
+import { getFamilyLabel, getProductFamilies } from '../data/fragranceFamilies'
 import { isFragranceOilProduct } from '../utils/exactPieces'
 import './ProductDetail.css'
 
@@ -613,6 +614,9 @@ export default function ProductDetail({ onAddToCart }) {
   const catTitle = cleanProductName(product.category_name)
   const brandPath = `/brand/${brandPublicSlug(product.brand_slug || 'arees')}`
   const imageAlt = [displayName, brandTitle, catTitle, 'Arees Perfumes'].filter(Boolean).join(' - ')
+  // Fragrance family from the product's own copy (data/fragranceFamilies.js).
+  const productFamilies = getProductFamilies(product)
+  const productFamilyLabels = productFamilies.map(getFamilyLabel)
   const seo = buildProductSeo(product, { variant: activeVariant })
 
   return (
@@ -939,6 +943,12 @@ export default function ProductDetail({ onAddToCart }) {
               <span className="pd-spec-value">
                 <Link to={`/categories/${normalizeCategorySlug(product.category_slug || 'attars')}`}>{catTitle}</Link>
               </span>
+            </div>
+          )}
+          {productFamilies.length > 0 && (
+            <div className="pd-spec-item">
+              <span className="pd-spec-label">Fragrance Family</span>
+              <span className="pd-spec-value">{productFamilyLabels.join(', ')}</span>
             </div>
           )}
           <div className="pd-spec-item">
