@@ -42,12 +42,10 @@ export default function HomeFaqs({ products }) {
   return (
     <section className="section home-faqs-section" aria-labelledby="home-faqs-title">
       <div className="section-head">
-        <p className="section-eyebrow">GOOD TO KNOW</p>
         <h2 id="home-faqs-title" className="section-title">Frequently Asked Questions</h2>
         {priceFrom ? (
           <p className="home-faqs-price-anchor">
-            Attars, bakhoor, oud and fragrance oils <strong>from ₹{priceFrom}</strong> — delivered
-            across India, wholesale and quotation-based export supply handled by Hikma Exports.
+            Authentic attars, oud and fragrance oils <strong>from ₹{priceFrom}</strong> — delivered across India.
           </p>
         ) : null}
       </div>
