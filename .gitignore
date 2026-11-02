@@ -38,3 +38,6 @@ skills-lock.json
 tools/gsc/key.json
 tools/gsc/reports/
 
+
+# --- GA4 automation: service-account key ---
+tools/ga4/key.json

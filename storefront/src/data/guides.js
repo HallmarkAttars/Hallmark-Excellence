@@ -515,6 +515,279 @@ export const GUIDES = [
       { label: 'Wholesale attars', to: '/wholesale' },
     ],
   },
+  {
+    slug: 'bakhoor-guide',
+    title: 'Bakhoor: What It Is and How to Use It',
+    seoTitle: 'Bakhoor: What It Is & How to Use It at Home | Arees Perfumes',
+    description:
+      'Learn what bakhoor is, how to burn and store it, and how to buy quality bakhoor - scented wood chips and oriental incense explained simply.',
+    excerpt:
+      'Bakhoor turns an ordinary room into a fragrant space. Here is what bakhoor actually is, how homes in India and the Gulf use it, and how to burn and buy it well.',
+    category: 'Fragrance Basics',
+    readTime: '6 min read',
+    published: '2026-11-02',
+    updated: '2026-11-02',
+    sections: [
+      {
+        heading: 'What Is Bakhoor?',
+        paragraphs: [
+          'Bakhoor (also spelled bukhoor) is fragrant wood chips, or a dense blended brick, soaked in scented oils and resins. A small piece is heated on a burner, and the smoke - not the wood itself - carries the fragrance. Within minutes, the scent settles into curtains, upholstery, clothing and even walls, which is why bakhoor is the room fragrance of choice for weddings and guests across India and the Gulf.',
+          'Bakhoor sits in the same family as oud, amber and musk. It is not usually worn on skin; its job is to scent spaces and fabric, and to add ceremony and welcome to an occasion.',
+        ],
+      },
+      {
+        heading: 'Bakhoor, Oud and Incense: Same Family, Different Jobs',
+        paragraphs: [
+          'Incense sticks and cones burn continuously and release fragrance for a fixed time. Bakhoor smokes in sessions: you heat chips for a few minutes, let the smoke drift, and the scent lingers for hours afterwards. Oud is a raw material - resin from agarwood - that appears in bakhoor blends and in oud perfumes alike.',
+          'A simple way to remember it: incense scents the air while it burns, bakhoor scents the room and everything in it, and oud perfume scents the person. Many homes use all three for different moments.',
+        ],
+      },
+      {
+        heading: 'How to Burn Bakhoor Safely',
+        paragraphs: [
+          'Use an electric bakhoor burner, or a traditional mabkhara with charcoal. Electric burners are the easiest: set the plate on, place a few chips on top, and let them smoke gently. With charcoal, light a disc fully, place it on a heat-safe surface, then add chips only once the charcoal is ashed over.',
+          'Let the smoke drift through the space rather than holding the room sealed - gentle ventilation keeps the scent pleasant instead of heavy. Keep burners away from curtains and out of reach of children, and never leave charcoal unattended.',
+        ],
+      },
+      {
+        heading: 'Ways People Use Bakhoor',
+        paragraphs: [
+          'Whole-room fragrance: run one short burner session in the central space before guests arrive. Wardrobe scenting: place smoked chips or the cooled burner plate inside a cupboard for a few minutes so clothes absorb the aroma. Personal touch: waft the smoke gently over garments before an occasion - a common Gulf custom for special wear.',
+          'A little goes further than most buyers expect, which is why bakhoor is economical even for frequent use.',
+        ],
+      },
+      {
+        heading: 'How to Choose and Store Bakhoor',
+        paragraphs: [
+          'Good bakhoor should smell layered even before heating - wood, resin and oil in balance, with no harsh alcohol sharpness. Look for even oiling (no soggy pools or bone-dry edges) and a seller who can tell you the fragrance direction: sweet ambery, woody and smoky, or floral-musk. Quality guide for attars applies here too: judge on scent, not on looks.',
+          'Store bakhoor in an airtight container away from sunlight and heat, the same way you would an attar. Well-stored bakhoor keeps its character for a long time; strong-smelling cupboards near spices or detergents are the biggest enemy.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is bakhoor the same as incense sticks?',
+        answer:
+          'No. Incense sticks burn continuously with a fixed release of scent, while bakhoor is heated in sessions and the smoke settle into fabrics for hours afterwards. Bakhoor is heavier and room-filling; incense sticks are lighter and continuous.',
+      },
+      {
+        question: 'Can I use bakhoor in a small apartment?',
+        answer:
+          'Yes. Use fewer chips than you think you need, run the burner for only a few minutes, and keep a window partly open so the smoke drifts rather than pools. One short session normally scents a flat for the evening.',
+      },
+      {
+        question: 'Is bakhoor safe around children and pets?',
+        answer:
+          'Keep heated charcoal and lit burners completely out of reach, as with any flame, and ventilate the room. People with asthma or sensitive pets should use fewer chips and shorter sessions, or prefer electric burners that cannot tip like charcoal can.',
+      },
+    ],
+    related: [
+      { label: 'Browse bakhoor and incense fragrances', to: '/categories/Bakhoor' },
+      { label: 'Oud, amber and musk families explained', to: '/guides/oud-perfume-guide' },
+    ],
+  },
+  {
+    slug: 'how-to-spot-quality-attar',
+    title: 'How to Tell a Quality Attar: 7 Practical Checks',
+    seoTitle: 'How to Identify Quality Attar: 7 Practical Checks | Arees Perfumes',
+    description:
+      'Seven practical checks to judge attar quality: scent opening, dry-down, skin test, staining, price realism and seller transparency, explained simply.',
+    excerpt:
+      'Price alone does not tell you if an attar is good. Use these seven hands-on checks - from dry-down to staining - before committing to a full bottle.',
+    category: 'Buying Guides',
+    readTime: '6 min read',
+    published: '2026-11-02',
+    updated: '2026-11-02',
+    sections: [
+      {
+        heading: 'Judge the Dry-Down, Not the Bottle',
+        paragraphs: [
+          'The opening of an attar is the least reliable information you get: the top notes are engineered to be loud, and every oil smells exciting for the first five minutes. Quality shows up at thirty minutes to one hour, when the heart and base settle. Apply, wait, then judge.',
+          'A good attar glides smoothly into its base without turning sharp, sour or plasticky. A poor one is loud early and thin or unpleasant later.',
+        ],
+      },
+      {
+        heading: 'The Seven Practical Checks',
+        paragraphs: [
+          'One - the skin test: the same attar on your own skin, judged after an hour, is the only outcome that matters. Two - staining: a quality attar dries clear on a tissue after a moment; persistent dark oil marks usually mean heavy synthetic colouring rather than quality. Three - longevity without irritation: the scent should last comfortably on skin without making the spot itch or warm.',
+          'Four - balance: nothing should dominate abruptly; even a bold oud should settle into a rounded profile. Five - honesty of description: the seller should be able to name the character (floral, woody, amber, musk) and be comfortable with a small-quantity trial. Six - price realism: see the price section below. Seven - storage: the shop keeps bottles away from direct sunlight and heat, and offers your quantity in a clean, sealed vial.',
+        ],
+      },
+      {
+        heading: 'What Price Should Signal',
+        paragraphs: [
+          'Ingredients drive attar price more than any label: a genuine oud-led oil will always cost more per tola than a musk or floral line, and impossibly low prices for "pure oud" are a warning, not a bargain. That said, high price does not guarantee quality either - many excellent everyday attars are modestly priced, which is exactly why the seven checks matter more than the number.',
+          'At Arees Perfumes our range spans from affordable daily wear to premium ouds, and the honest price floor for retail oils is published openly so you can place any scent in context.',
+        ],
+      },
+      {
+        heading: 'Red Flags When Buying Attar',
+        paragraphs: [
+          'Be careful when a seller cannot tell you the scent family or insists a price that is too good for an exotic material; when an oil is aggressively dark or stains immediately; and when attar smells identical to a famous branded perfume at a tenth of the price - labelled sparingly, that is usually a copy profile, not the same quality.',
+          'None of these mean the oil will be bad - original blends regularly use smell-alike profiles - but if you expect the real material, ask directly, and judge on the dry-down rather than claims.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does dark colour mean better attar?',
+        answer:
+          'No. Colour comes from the raw materials and can be deepened with dyes. Some fine attars are nearly colourless. Judge on scent and dry-down, never on colour.',
+      },
+      {
+        question: 'How long should a good attar last on skin?',
+        answer:
+          'It varies enormously by family: musk and floral oils may sit close for hours, while dense oud and amber oils can last into the next day. Lasting power alone is not a quality sign - a skilful lighter blend beats a heavy crude one.',
+      },
+      {
+        question: 'Is a higher price always better quality?',
+        answer:
+          'No. Price follows ingredient cost and pack size. Use the seven checks first, then let price tell you whether the material matches the asking amount.',
+      },
+    ],
+    related: [
+      { label: 'Shop attars and fragrance oils', to: '/shop' },
+      { label: 'Wholesale attar buying guide', to: '/guides/wholesale-attar-buying-guide' },
+      { label: 'How to choose an attar', to: '/guides/how-to-choose-attar' },
+    ],
+  },
+  {
+    slug: 'oud-perfume-guide',
+    title: 'Oud Perfume Guide: Oud, Amber and Musk Families Explained',
+    seoTitle: 'Oud Perfume Guide: Oud, Amber & Musk Families | Arees Perfumes',
+    description:
+      'Understand oud, amber and musk perfume families, how Arabic oud fragrances are worn, and how to choose an oud attar that suits your taste.',
+    excerpt:
+      'Oud is the most storied material in perfumery. Learn where it comes from, how it behaves on skin, and how to pick your first oud attar without regret.',
+    category: 'Fragrance Basics',
+    readTime: '7 min read',
+    published: '2026-11-02',
+    updated: '2026-11-02',
+    sections: [
+      {
+        heading: 'What Exactly Is Oud?',
+        paragraphs: [
+          'Oud (oudh, agarwood) is the resinous heartwood of the Aquilaria tree. When the tree reacts to infection, it produces a dark, aromatic resin over years - that resin-soaked wood, distilled or blended, is oud. Because good agarwood takes so long to form, genuine oud is costly, and the market therefore spans every grade from affordable blended profiles to rare-aged oils.',
+          'The scent is hard to describe to someone who has never smelled it: deep, woody, slightly sweet, faintly animalic, with a smoky, almost leathery edge. People usually respond strongly in one direction or the other - which is why sampling matters.',
+        ],
+      },
+      {
+        heading: 'Oud, Amber and Musk: The Great Oriental Families',
+        paragraphs: [
+          'Oud is the wood. Amber is the warm blend of labdanum, benzoin, vanilla and resins that glows underneath so many Middle-Eastern compositions. Musk is the soft, skin-like accord that rounds an oil and helps it project. Together they form the backbone of Arabic perfumery, usually layered rather than used alone.',
+          'In practice, most "oud perfumes" are compositions where oud plays with amber, rose, saffron or musk. Pure single-material oils exist and are treasured, but the mainstream market is built on these blends.',
+        ],
+      },
+      {
+        heading: 'How Arabic-Style Perfumes Are Actually Worn',
+        paragraphs: [
+          'Concentrated oil perfumes are usually applied small and close: a dab on each wrist, behind the ears, and often a light touch on clothing fibres, where oils bloom over hours. Unlike alcohol sprays, attars sit close to the skin and unfold slowly, so a single application can carry through the day.',
+          'Layering is traditional: bakhoor to scent the room and clothes, then an oud or amber attar on skin. The two do not clash when the families are adjacent (woody with amber, musk with floral).',
+        ],
+      },
+      {
+        heading: 'Choosing Your First Oud',
+        paragraphs: [
+          'Start with a blended profile rather than pure oud: an oud-floral or oud-musk line teaches you the wood in approachable surroundings. If you enjoy it, move toward drier, more prominent oud profiles. Warm-weather wearers often prefer lighter musk-oud lines; evening and cool weather carry dense amber-oud beautifully.',
+          'Test on your own skin for a full day before committing. Our counters in Mannadi encourage exactly this, and small retail sizes make trying two or three families affordable.',
+        ],
+      },
+      {
+        heading: 'Buying Smart: Grades, Prices and Honesty',
+        paragraphs: [
+          'Because genuine agarwood is expensive, the market is full of interpretation: smell-alike profiles, partial-oud blends and synthetics all have a place at the right price. The rule from our quality guide applies decisively to oud: judge the oil on scent and skin, ask the seller what you are actually getting, and be suspicious of both floor prices and inflated mystique.',
+          'Authenticity lives at both ends of the price scale: a plain, moderately priced oud-musk blend that is honestly described beats a "rare" oil sold on story alone.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Why does oud smell different to different people?',
+        answer:
+          'Oud is a complex, resinous material, and skin chemistry changes how its animalic and sweet facets read. The same oil can smell woody and dry on one person and softer and sweeter on another - always test on your own skin.',
+      },
+      {
+        question: 'Is oud perfume long-lasting?',
+        answer:
+          'Generally yes. Oud resins and the amber-musk accords built around them are tenacious, and oil formats unfold slowly on skin. Longevity still depends on the specific blend and the amount applied.',
+      },
+      {
+        question: 'Are all oud perfumes expensive?',
+        answer:
+          'No. Genuine aged oud oil is costly, but most commercial oud perfumes use oud in a blend with other materials or use a well-made smell-alike profile, which keeps prices in reach of everyday buyers.',
+      },
+    ],
+    related: [
+      { label: 'Shop oud, amber and musk oils', to: '/shop' },
+      { label: 'Attar vs perfume oil: the difference', to: '/guides/attar-vs-perfume-oil' },
+      { label: 'How to tell a quality attar', to: '/guides/how-to-spot-quality-attar' },
+    ],
+  },
+  {
+    slug: 'roll-on-attar-guide',
+    title: 'Roll-On Attars: Sizes, Longevity and How to Buy',
+    seoTitle: 'Roll-On Attars: Sizes, Longevity & Buying Tips | Arees Perfumes',
+    description:
+      'A practical guide to roll-on attars: common 6ml and 8ml sizes, how long they last, how to apply roll-on perfume oil, and what to check before buying.',
+    excerpt:
+      'The roll-on is how most people first meet an attar. Here is what those little vials offer, how long they actually last, and how to buy them well.',
+    category: 'Buying Guides',
+    readTime: '5 min read',
+    published: '2026-11-02',
+    updated: '2026-11-02',
+    sections: [
+      {
+        heading: 'What a Roll-On Attar Is',
+        paragraphs: [
+          'A roll-on attar is a slim glass vial with a steel or glass ball applicator, filled with concentrated alcohol-free perfume oil. You roll a thin line of oil onto pulse points and section it by touch, not spray. It is the most approachable attar format: small, tidy, affordable and perfect for first trials.',
+          'Roll-ons also suit people who find alcohol sprays drying or too loud - the oil sits close to the skin and unfolds gradually through the day.',
+        ],
+      },
+      {
+        heading: 'Sizes and How Long They Actually Last',
+        paragraphs: [
+          'The common sizes are 6ml and 8ml with a few 12ml gift formats. Because attar oils are concentrated, usage is a few drops at a time: a 6ml vial of a typical daily-wear attar can keep a regular user going for weeks, while an 8ml of a favourite scent is a whole season for many people.',
+          'On skin, expect a few hours for light florals and musks and far longer for dense amber and oud blends - the family matters more than the format. Roll-on format has no effect on longevity: the oil does.',
+        ],
+      },
+      {
+        heading: 'How to Apply a Roll-On Perfume Oil',
+        paragraphs: [
+          'Apply to clean, slightly moisturised skin: the wrists, behind the ears, the base of the neck. One thin roll per point is enough - the oil spreads as your skin warms. Resist rubbing your wrists together; friction crushes the top notes. For a lighter lift, a small touch on clothing hem or scarf carries without staining (test a hidden spot first).',
+          'Refilling your own style of vial is common in attar culture - decant from a canter bottle, or top up branded roll-ons from loose oil where the shop offers it.',
+        ],
+      },
+      {
+        heading: 'What to Check Before Buying',
+        paragraphs: [
+          'Check the cap seals firmly (pocket carry lives and dies by the cap), that the ball rolls smoothly without flooding, and that the vial is filled evenly. Ask which family the scent belongs to and try it for a day. Price should match the material: everyday florals and musks cost less, oud-led blends more.',
+          'For shops: branded roll-on packs are supplied wholesale from 60 pieces via Hikma Exports, with mixed-scent packs available so a counter can offer variety without overstocking a single scent.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Are roll-on attars alcohol-free?',
+        answer:
+          'At Arees Perfumes and Dahab, yes - roll-on attars are filled with concentrated alcohol-free oil. The term roll-on describes the format, so from any seller, confirm the fill is an alcohol-free attar and not a diluted commercial perfume.',
+      },
+      {
+      question: 'Can I refill a roll-on attar?',
+      answer:
+        'Yes. The ball applicator and vial are reusable: decant attar oil from a larger container through a small funnel or pipette, cap, and roll to distribute. Keep the vial clean and dry between scents, or dedicate one vial per scent.',
+      },
+      {
+        question: 'How many weeks does a 6ml roll-on last?',
+        answer:
+          'With daily pulse-point use of a concentrated attar, a few weeks to a couple of months depending on the oil density and how generously you apply. Rich ouds, applied sparingly, stretch furthest.',
+      },
+    ],
+    related: [
+      { label: 'Browse roll-on attars', to: '/categories/1' },
+      { label: 'Roll-on bottles and caps', to: '/categories/roll-on-bottles' },
+      { label: 'How to choose an attar', to: '/guides/how-to-choose-attar' },
+    ],
+  },
 ]
 
 export function getGuideBySlug(slug) {

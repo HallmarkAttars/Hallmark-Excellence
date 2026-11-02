@@ -29,6 +29,7 @@ import {
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
 import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
+import { getCategoryContent } from '../src/data/categoryContent.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
@@ -430,7 +431,10 @@ export function buildCategoryBodyHtml(category, slug, products = []) {
   if (!category?.name) return ''
   const categoryName = cleanProductName(category.name)
   const canonicalSlug = normalizeCategorySlug(slug)
-  const intro =
+  // Editorial copy wins over the (scrambled or empty) DB description, both
+  // for the intro paragraph and for the extra crawlable content sections.
+  const editorial = getCategoryContent(category)
+  const intro = editorial?.intro ||
     category.description ||
     `Explore authentic ${categoryName} from Arees Perfumes, with alcohol-free attars and fragrance oils supplied from Chennai.`
   const links = (Array.isArray(products) ? products : [])
@@ -444,12 +448,32 @@ export function buildCategoryBodyHtml(category, slug, products = []) {
   const priceLine = priceFrom
     ? `<p>Prices from ₹${priceFrom} for retail — wholesale rates on request from our Chennai desk.</p>`
     : '<p>Wholesale rates on request from our Chennai desk.</p>'
+  // Editorial deep-dive sections + related-guide links (renderFaqs-style
+  // additive block; empty when the category has no editorial entry).
+  const editorialHtml = editorial
+    ? [
+        (editorial.sections || [])
+          .map(
+            (section) =>
+              `<section><h2>${escapeHtml(section.heading)}</h2>` +
+              (section.paragraphs || []).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('') +
+              '</section>',
+          )
+          .join(''),
+        (editorial.relatedGuides || []).length
+          ? `<p>${editorial.relatedGuides.map((link) => `<a href="${escapeHtml(link.to)}">${escapeHtml(link.label)}</a>`).join(' ')}</p>`
+          : '',
+      ]
+        .filter(Boolean)
+        .join('')
+    : ''
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/categories">Categories</a></nav>
 <h1>${escapeHtml(categoryName)}</h1>
 <p>${escapeHtml(intro)}</p>
 ${priceLine}
 ${links ? `<h2>Products in this category</h2><ul>${links}</ul>` : ''}
+${editorialHtml}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p>
 </main>`
 }

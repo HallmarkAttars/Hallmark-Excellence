@@ -509,6 +509,38 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(collection.mainEntity.itemListElement[0].name).toBe('Royal Oud')
     })
 
+    it('uses editorial copy for live catalogue categories even with scrambled DB descriptions', () => {
+      // Live records have scrambled/empty DB descriptions (e.g. Bakhoor is
+      // empty; packaging categories describe other goods). The name-keyed
+      // editorial map must win over the DB copy.
+      const seo = buildCategorySeo({ name: 'Bakhoor ', description: '' }, 'Bakhoor ')
+      expect(seo.title).toBe('Bakhoor & Traditional Incense Fragrances | Arees Perfumes')
+      expect(seo.description).toContain('scented wood chips')
+      expect(seo.introDesc).toContain('Bakhoor is the traditional fragrance')
+    })
+
+    it('falls back to existing behaviour for unknown categories', () => {
+      const seo = buildCategorySeo(
+        { name: 'Attar Test', description: 'Concentrated alcohol-free oils.' },
+        'attar-test'
+      )
+      expect(seo.introDesc).toBe('Concentrated alcohol-free oils.')
+    })
+
+    it('gives every live category a distinct SEO title', () => {
+      const names = [
+        'Bakhoor ',
+        'Roll on Attars',
+        'Fragrance Oil',
+        'Roll on Bottles',
+        'Fancy Bottle',
+        'Spray Bottles',
+        'Canter Bottle',
+      ]
+      const titles = names.map((name) => buildCategorySeo({ name }, normalizeCategorySlug(name)).title)
+      expect(new Set(titles).size).toBe(titles.length)
+    })
+
     it('keeps the Arees Luxury brand URL self-canonical', () => {
       const seo = buildBrandSeo({ name: 'Arees Luxury', slug: 'oud-al-haramain' }, 'arees-luxury')
       expect(seo.brandName).toBe('Arees Luxury')

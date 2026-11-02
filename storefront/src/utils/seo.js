@@ -11,6 +11,7 @@
 
 import { ABOUT, BUSINESS, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../data/content.js'
 import { GUIDES } from '../data/guides.js'
+import { getCategoryContent } from '../data/categoryContent.js'
 import { normalizeCategorySlug } from './categorySlug.js'
 import { isProductInStock } from './stock.js'
 import { cloudinarySrc } from './productImage.js'
@@ -722,6 +723,16 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN, pr
     title = 'Attar Display Bottles & Crystal Vials | Arees Perfumes'
     description = 'Elegant attar display bottles, crystal perfume flacons, and traditional applicators. Perfect for vanity displays, gifts, and bespoke fragrance oils.'
     introDesc = introDesc || 'Finely crafted glass and crystal display bottles for attars and concentrated oils. Featuring glass wand applicators and airtight caps.'
+  }
+
+  // Editorial category copy (all 10 live categories) keyed by category NAME,
+  // overriding scrambled/empty DB descriptions. Looked up defensively: no
+  // editorial match means the slug-branch values above stand unchanged.
+  const editorial = getCategoryContent(category)
+  if (editorial) {
+    if (editorial.title) title = editorial.title
+    if (editorial.metaDescription) description = editorial.metaDescription
+    if (editorial.intro) introDesc = editorial.intro
   }
 
   // Retail-only categories advertise an honest "from ₹" price (approved

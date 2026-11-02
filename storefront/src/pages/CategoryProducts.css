@@ -113,3 +113,42 @@
 
 /* Scroll target when pagination changes page — below the sticky header */
 .category-grid-anchor { scroll-margin-top: calc(var(--header-h) + 16px); }
+
+/* ---------- Editorial deep-dive (Batch 2) ----------
+   Mirrors the crawlable block from api/meta.js buildCategoryBodyHtml.
+   Scope: new .category-editorial* classes only, no existing rules touched. */
+.category-editorial {
+  margin: 10px auto 0;
+  max-width: 860px;
+  display: grid;
+  gap: 20px;
+}
+
+.category-editorial-block h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary, #1c1c1c);
+  margin: 0 0 8px;
+}
+
+.category-editorial-block p {
+  font-size: 0.94rem;
+  line-height: 1.7;
+  color: var(--text-secondary, #555);
+  margin: 0 0 10px;
+}
+
+.category-editorial-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 0.92rem;
+}
+
+.category-editorial-links a {
+  color: var(--brand-accent, #9a6f24);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}

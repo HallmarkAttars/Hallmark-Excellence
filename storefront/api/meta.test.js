@@ -277,6 +277,29 @@ describe('buildSeoForRoute', () => {
     expect(result.seo.name).toBe('Canter Bottle')
   })
 
+  it('renders editorial sections and guide links in the crawlable category body', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({
+          categories: [{ id: 'c-bak', name: 'Bakhoor ', slug: 'Bakhoor ', description: '' }],
+        })
+      }
+      if (value.includes('/categories/Bakhoor')) {
+        return jsonResponse({ products: [{ id: 'p-1', name: 'Bakhoor Mix' }] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await buildSeoForRoute({ type: 'category', slug: 'Bakhoor ' })
+    expect(result.bodyHtml).toContain('What Bakhoor Is')
+    expect(result.bodyHtml).toContain('/product/p-1')
+    // Editorial wins over the empty DB description
+      expect(result.seo.description).toContain('scented wood chips')
+      expect(result.bodyHtml).toContain('/guides/bakhoor-guide')
+  })
+
   it('builds guide SEO without calling the API', async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)

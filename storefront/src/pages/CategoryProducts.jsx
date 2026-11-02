@@ -8,6 +8,7 @@ import { getCategoryBySlug, getProductsByCategory } from '../services/mockApi'
 import SEO from '../components/seo/SEO'
 import { buildCategorySeo } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
+import { getCategoryContent } from '../data/categoryContent'
 import './CategoryProducts.css'
 
 export default function CategoryProducts() {
@@ -86,6 +87,7 @@ export default function CategoryProducts() {
   const activeCount = (brandFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)
 
   const { title: seoTitle, description: seoDesc, introDesc, schema } = buildCategorySeo(category, slug, { products })
+  const editorial = category ? getCategoryContent(category) : null
 
   return (
     <div className="category-page">
@@ -155,6 +157,32 @@ export default function CategoryProducts() {
             onPageChange={goToPage}
           />
         </div>
+
+        {/* Editorial deep-dive below the grid. Mirrors the crawlable block
+            rendered by api/meta.js buildCategoryBodyHtml so crawlers and
+            users read the same copy. Additive: unknown categories render
+            nothing. */}
+        {editorial && (
+          <section className="category-editorial" aria-label={`More about ${category.name}`}>
+            {(editorial.sections || []).map((section) => (
+              <article key={section.heading} className="category-editorial-block">
+                <h2>{section.heading}</h2>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </article>
+            ))}
+            {(editorial.relatedGuides || []).length > 0 && (
+              <p className="category-editorial-links">
+                {editorial.relatedGuides.map((link) => (
+                  <Link key={link.to} to={link.to}>
+                    {link.label}
+                  </Link>
+                ))}
+              </p>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )
