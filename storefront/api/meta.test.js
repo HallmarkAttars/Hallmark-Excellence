@@ -77,6 +77,22 @@ describe('injectSeoHtml', () => {
     )
     expect(html).toContain('<div id="root"><main data-prerender="true"><h1>Wholesale Attars</h1></main></div>')
   })
+
+  it('replaces pre-baked root content with the route body (index.html ships a baked homepage body)', () => {
+    const bakedShell = shell.replace(
+      /<div id=["']root["'][^>]*>\s*<\/div>/,
+      '<div id="root">\n      <main data-prerender="true"><header><h1>Buy Authentic Non-Alcoholic Attars</h1></header></main>\n    </div>'
+    )
+    const html = injectSeoHtml(
+      bakedShell,
+      { title: 'Canter Bottles', description: 'Category.', canonical: '/categories/display-bottles' },
+      '<main data-prerender="true"><h1>Canter Bottles</h1></main>'
+    )
+    expect(html).toContain('<h1>Canter Bottles</h1>')
+    // the baked homepage body must NOT survive next to the injected body
+    expect(html).not.toContain('Buy Authentic Non-Alcoholic Attars</h1></header></main>')
+    expect((html.match(/<main data-prerender/g) || []).length).toBe(1)
+  })
 })
 
 describe('buildB2bBodyHtml', () => {

@@ -757,10 +757,18 @@ ${jsonLd}`
   html = html.replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
 
   if (bodyHtml) {
-    html = html.replace(
-      /<div id=["']root["'][^>]*>\s*<\/div>/i,
-      () => `<div id="root">${bodyHtml}</div>`
-    )
+    const emptyRootRe = /(<div id=["']root["'][^>]*>)\s*(<\/div>)/i
+    const rootMatch = /<div id=["']root["'][^>]*>/i.exec(html)
+    const bodyMatch = /<\/body>/i.exec(html)
+    if (emptyRootRe.test(html)) {
+      html = html.replace(emptyRootRe, () => `<div id="root">${bodyHtml}</div>`)
+    } else if (rootMatch && bodyMatch && rootMatch.index < bodyMatch.index) {
+      const rootEnd = rootMatch.index + rootMatch[0].length
+      const lastClose = html.lastIndexOf('</div>', bodyMatch.index)
+      if (lastClose !== -1 && lastClose >= rootEnd) {
+        html = html.slice(0, rootEnd) + bodyHtml + html.slice(lastClose)
+      }
+    }
   }
 
   if (/<\/head>/i.test(html)) {
