@@ -56,7 +56,7 @@ describe('canonical domain & brand identity', () => {
 
   it('provides a strong default homepage title containing Arees Perfumes and Chennai', () => {
     expect(DEFAULT_TITLE).toContain('Arees Perfumes')
-    expect(DEFAULT_TITLE).toContain('Hikma Perfumes')
+    expect(DEFAULT_TITLE).toContain('Bakhoor')
     expect(DEFAULT_TITLE).toContain('Chennai')
   })
 
@@ -287,7 +287,11 @@ describe('Schema.org JSON-LD Builders', () => {
     it('generates accurate Chennai LocalBusiness schema from verified data', () => {
       const schema = buildLocalBusinessSchema()
       expect(schema['@type']).toBe('LocalBusiness')
-      expect(schema.name).toBe('Arees Perfumes')
+      // The GBP trading name is the primary local entity name; the website
+      // brand stays in alternateName so both entity names stay consistent
+      // across GBP, the storefront and structured data.
+      expect(schema.name).toBe('Arees Attars & Perfumes')
+      expect(schema.alternateName).toContain('Arees Perfumes')
       expect(schema.alternateName).toContain('Hikma Perfumes')
       expect(schema.parentOrganization.name).toBe('Hikma Exports')
       expect(schema.address.addressLocality).toBe('Chennai')

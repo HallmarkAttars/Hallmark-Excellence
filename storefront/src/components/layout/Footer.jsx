@@ -5,11 +5,18 @@ import { FOOTER, BUSINESS } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import { brandPublicSlug } from '../../utils/brandSlug'
+import { trackEvent } from '../../utils/analytics'
 import Reveal from '../../animations/Reveal'
 import './Footer.css'
 
 const WHATSAPP_URL =
   'https://wa.me/919840750467?text=Can%20I%20get%20more%20info%20about%20your%20products%3F'
+
+// GA4 generate_lead — opening a WhatsApp chat is the storefront's primary
+// wholesale/enquiry CTA (footer renders on every page).
+function trackWhatsAppLead(source) {
+  trackEvent('generate_lead', { channel: 'whatsapp', source })
+}
 
 function ChevronDownIcon() {
   return (
@@ -134,7 +141,9 @@ export default function Footer() {
                     key={social.key}
                     href={href}
                     aria-label={social.label}
-                    {...(social.key === 'whatsapp' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    {...(social.key === 'whatsapp'
+                      ? { target: '_blank', rel: 'noopener noreferrer', onClick: () => trackWhatsAppLead('footer_social') }
+                      : {})}
                   >
                     {SOCIAL_ICONS[social.key]}
                   </a>
@@ -243,6 +252,7 @@ export default function Footer() {
                     href={WHATSAPP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackWhatsAppLead('footer_cta')}
                   >
                     <span>Chat with us on WhatsApp</span>
                     <span className="footer-whatsapp-arrow" aria-hidden="true">→</span>

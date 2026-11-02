@@ -9,6 +9,7 @@ import { lineUnitPrice, round2 } from '../utils/variantPricing'
 import { submitContactForm } from '../utils/contactForm'
 import { paymentMethodLabel } from '../utils/invoice'
 import { getEmailError } from '../utils/email'
+import { trackEvent, CURRENCY } from '../utils/analytics'
 import {
   UserIcon,
   HomeIcon,
@@ -234,6 +235,19 @@ export default function Contact() {
       window.scrollTo(0, 0)
     }
   }, [orderPlaced])
+
+  // GA4 begin_checkout — fires ONCE when the checkout page has the cart
+  // snapshot with items (not on re-renders or validation re-submits).
+  const beginCheckoutTrackedRef = useRef(false)
+  useEffect(() => {
+    if (!isCheckout || !checkout || beginCheckoutTrackedRef.current) return
+    beginCheckoutTrackedRef.current = true
+    trackEvent('begin_checkout', {
+      currency: CURRENCY,
+      value: Number(checkout.total) || 0,
+      items: Array.isArray(checkout.checkoutItems) ? checkout.checkoutItems.length : 0,
+    })
+  }, [isCheckout, checkout])
 
   const clearFieldError = (name) => setFieldErrors((fe) => ({ ...fe, [name]: '' }))
 
@@ -501,6 +515,15 @@ export default function Contact() {
         clearCart()
         const successResult = { orderNumber: res.orderNumber, order: res.order }
         setResult(successResult)
+        // GA4 purchase — transaction_id = order number so revenue de-dupes
+        // correctly in GA4's reports.
+        trackEvent('purchase', {
+          transaction_id: String(res.orderNumber || ''),
+          currency: CURRENCY,
+          value: Number(payload.total) || 0,
+          items: Array.isArray(payload.items) ? payload.items.length : 0,
+          payment_method: payload.paymentMethod || null,
+        })
         try {
           sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(successResult))
         } catch {}
@@ -511,6 +534,9 @@ export default function Contact() {
         // the customer's input intact so they can retry.
         await submitContactForm(form)
         setResult({ sent: true })
+        // GA4 generate_lead — the contact form is an enquiry the team
+        // chases offline, so it is tracked as a lead, not a conversion.
+        trackEvent('generate_lead', { channel: 'contact_form' })
         setForm({ name: '', email: '', phone: '', house: '', building: '', landmark: '', pincode: '', city: '', addressLabel: 'Home', message: '' })
       }
     } catch (err) {

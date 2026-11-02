@@ -25,9 +25,10 @@ import {
   cleanProductName,
   productPath,
   priceFromProducts,
+  buildFAQSchema,
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
-import { ABOUT, BUSINESS, CONTACT, HERO, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
+import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
@@ -158,6 +159,7 @@ export function buildHomeSeo() {
       buildOrganizationSchema(),
       buildWebSiteSchema(),
       buildLocalBusinessSchema(),
+      buildFAQSchema(HOME_FAQS),
     ],
   }
 }
@@ -237,12 +239,21 @@ ${contact}
   return ''
 }
 
-export function buildHomeBodyHtml() {
+export function buildHomeBodyHtml(data = {}) {
+  // Honest "from ₹" anchor from the live catalogue (graceful when products
+  // fail to fetch — the section simply drops out).
+  const priceFrom = priceFromProducts(data.products)
+  const priceLine = priceFrom
+    ? `<p>Attars, bakhoor, oud and concentrated fragrance oils from ₹${priceFrom} — delivered across India, with wholesale and quotation-based export supply via Hikma Exports.</p>`
+    : ''
   return `<main data-prerender="true">
 <header><h1>${escapeHtml(HERO.title.join(' '))}</h1><p>${escapeHtml(HERO.subtitle)}</p></header>
+${priceLine}
 <section><h2>Shop Attars, Oud &amp; Fragrance Oils</h2><p>Browse alcohol-free attars and concentrated perfume oils from Arees Perfumes and Dahab.</p><p><a href="/shop">Shop all attars</a> <a href="/categories">Explore categories</a> <a href="/brands">Our brands</a></p></section>
-<section><h2>Wholesale &amp; Export</h2><p>Hikma Exports supplies loose attar and fragrance oils from 100 g, branded Arees and Dahab packs from 60 pieces, private-label orders and export support.</p><p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p></section>
+<section><h2>Wholesale &amp; Export</h2><p>Hikma Exports supplies loose attar and fragrance oils from 100 g, branded Arees and Dahab packs from 60 pieces, private-label orders and quotation-based export support.</p><p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p></section>
 <section><h2>Fragrance Guides</h2><p>Practical guides to choosing, storing and sourcing attars and perfume oils.</p><p><a href="/guides">Read the guides</a></p></section>
+<section><h2>Frequently Asked Questions</h2>${renderFaqs(HOME_FAQS)}</section>
+<p><a href="/contact">Contact Arees Perfumes</a></p>
 </main>`
 }
 
@@ -259,7 +270,7 @@ export function buildSouthIndiaBodyHtml() {
 }
 
 export function buildStaticBodyHtml(slug, data = {}) {
-  if (slug === 'home') return buildHomeBodyHtml()
+  if (slug === 'home') return buildHomeBodyHtml(data)
   if (slug === 'wholesale' || slug === 'hikma-exports') return buildB2bBodyHtml(slug)
   if (slug === 'guides') return buildGuideIndexBodyHtml()
   if (slug === 'attar-perfume-shop-south-india' || slug === 'south-india') {
@@ -584,7 +595,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     // body. Best-effort fetches: on failure the builder falls back to its
     // static links, so the page never 500s.
     let pageData = {}
-    if (slug === 'shop' || slug === 'retail') {
+    if (slug === 'home' || slug === 'shop' || slug === 'retail') {
       const res = await safeFetchJson('/products')
       pageData.products = Array.isArray(res?.products) ? res.products : []
     }

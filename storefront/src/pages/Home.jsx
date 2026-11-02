@@ -27,6 +27,7 @@ import {
 const LazyFeaturedProducts = lazy(() => import('../components/home/FeaturedProducts'))
 const LazySocialStrip = lazy(() => import('../components/home/SocialStrip'))
 const LazyCustomerLove = lazy(() => import('../components/home/CustomerLove'))
+const LazyHomeFaqs = lazy(() => import('../components/home/HomeFaqs'))
 
 // Defers rendering (and mounting) of below-the-fold sections until the
 // browser is close to them. No IntersectionObserver → renders immediately,
@@ -222,6 +223,15 @@ export default function Home() {
       <DeferredSection placeholder={null}>
         <Suspense fallback={null}>
           <LazyCustomerLove />
+        </Suspense>
+      </DeferredSection>
+
+      {/* FAQ + wholesale block: same defer/suspense pattern as the strips.
+          The price anchor reuses the products already fetched for the grid —
+          no extra API call. */}
+      <DeferredSection placeholder={null}>
+        <Suspense fallback={null}>
+          <LazyHomeFaqs products={featuredProducts} />
         </Suspense>
       </DeferredSection>
 

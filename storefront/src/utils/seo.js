@@ -24,9 +24,9 @@ export { normalizeCategorySlug } from './categorySlug.js'
 // ONE canonical storefront domain: the live host (https://www.areesperfumes.in).
 export const CANONICAL_ORIGIN = 'https://www.areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
-export const DEFAULT_TITLE = 'Arees Perfumes (Hikma Perfumes) | Attars in Chennai'
+export const DEFAULT_TITLE = 'Arees Perfumes | Attars, Bakhoor & Arabic Perfumes in Chennai'
 export const DEFAULT_DESCRIPTION =
-  'Shop authentic attars, oud and fragrance oils from Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, Chennai.'
+  'Premium attars, bakhoor, oud and Arabic perfumes from Arees Perfumes — alcohol-free, delivered across India, with retail and wholesale supply via Hikma Exports.'
 export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
 
 const WWW_HOST = 'www.areesperfumes.in'
@@ -253,7 +253,9 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     '@type': 'Organization',
     name: 'Arees Perfumes',
     legalName: 'Hikma Exports',
-    alternateName: ['Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
+    // Google Business Profile name is the ground truth for local entity
+    // matching, so the GBP trading name is listed with the brand names.
+    alternateName: ['Arees Attars & Perfumes', 'Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
     description:
       'Arees Perfumes is a Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
     parentOrganization: {
@@ -311,8 +313,8 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     '@id': `${origin}/#localbusiness`,
-    name: 'Arees Perfumes',
-    alternateName: ['Arees Attars & Perfumes', 'Hikma Perfumes'],
+    name: 'Arees Attars & Perfumes',
+    alternateName: ['Arees Perfumes', 'Hikma Perfumes'],
     description:
       'Arees Perfumes is the Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
     parentOrganization: {

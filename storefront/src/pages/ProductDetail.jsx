@@ -15,6 +15,7 @@ import {
 } from '../utils/brandBulk'
 import { getStockStatus, isProductInStock } from '../utils/stock'
 import { getDefaultVariant } from '../utils/productPricing'
+import { trackEvent, CURRENCY } from '../utils/analytics'
 import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
@@ -147,6 +148,15 @@ export default function ProductDetail({ onAddToCart }) {
         setProduct(p)
         setLoading(false)
         if (p) {
+          // GA4 shopping funnel start — fires once per product page load.
+          trackEvent('view_item', {
+            currency: CURRENCY,
+            value: Number(p.price) || 0,
+            item_id: p.id,
+            item_name: p.name,
+            category: p.category_name || undefined,
+            brand: p.brand_name || 'Arees Perfumes',
+          })
           const variants = Array.isArray(p.variants) ? p.variants : []
           let activeVar = null
           if (variantParam && variants.length > 0) {
@@ -515,6 +525,15 @@ export default function ProductDetail({ onAddToCart }) {
       totalPrice: lineTotal,
       sell_exact_pieces: exactPiecesMode,
     }
+
+    // GA4 add_to_cart — fires once per accepted Add to Cart action.
+    trackEvent('add_to_cart', {
+      currency: CURRENCY,
+      value: Number(lineTotal) || 0,
+      item_id: product.id,
+      item_name: cleanProductName(product.name),
+      ...(activeVariant?.id ? { variant: String(variantLabel(activeVariant) ?? activeVariant.id) } : {}),
+    })
 
     if (typeof onAddToCart === 'function') {
       onAddToCart(cartPayload)
