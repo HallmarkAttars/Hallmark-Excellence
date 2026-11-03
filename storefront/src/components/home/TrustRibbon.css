@@ -1,8 +1,9 @@
 /* Trust ribbon — five factual assurances under the hero.
-   Desktop (>= 768px): one centered row that wraps item-level if the viewport
-   is narrow (labels never split); links get a gold hover affordance.
-   Mobile (< 768px): full-width tappable rows (min-height 48px), icon left,
-   labels may wrap to two lines, links show a trailing chevron. */
+   Desktop (>= 768px): centered row, wraps item-level if the viewport is
+   narrow (labels never split); links get a gold hover affordance.
+   Mobile (< 767px): one horizontal scrollable pill row — all five chips sit
+   side by side on a single line, partial last chip is the scroll hint.
+   Nothing is truncated and the band stays short on tall-stack phones. */
 
 .trust-ribbon {
   background: var(--cream-deep, #f0e7d8);
@@ -69,7 +70,7 @@
 /* Chevron affordance for the two linked items — mobile-only (see media). */
 .trust-ribbon-arrow {
   display: none;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   line-height: 1;
   color: var(--gold, #b88938);
 }
@@ -79,29 +80,41 @@
     padding: 12px 16px;
   }
 
-  /* One assurance per full-width row — no ragged wrapping on narrow phones,
-     every row is a comfortable tap target. */
+  /* Single scrollable line of pills — no ragged rows, no orphans, every
+     label fully visible at a glance. Scrollbar stays hidden; the partial
+     last chip is the scroll hint. */
   .trust-ribbon-list {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: nowrap;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 12px;
+    padding-bottom: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .trust-ribbon-list::-webkit-scrollbar {
+    display: none;
   }
 
   .trust-ribbon-item {
-    width: 100%;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
   }
 
+  /* Pill chips: 48px min touch height, hairline border on the band's cream. */
   .trust-ribbon-link,
   .trust-ribbon-static {
-    width: 100%;
     min-height: 48px;
-    gap: 10px;
-    padding: 4px 2px;
+    gap: 8px;
+    padding: 0 16px;
+    background: var(--cream-soft, #fbf8f1);
+    border: 1px solid var(--line-soft, rgba(184, 137, 56, 0.1));
+    border-radius: 999px;
   }
 
   .trust-ribbon-link:focus-visible {
-    outline-offset: -2px;
+    outline-offset: 2px;
   }
 
   .trust-ribbon-icon svg {
@@ -110,12 +123,10 @@
   }
 
   .trust-ribbon-label {
-    font-size: 0.85rem;
-    white-space: normal;
+    font-size: 0.8rem;
   }
 
   .trust-ribbon-arrow {
     display: inline-block;
-    margin-left: auto;
   }
 }
