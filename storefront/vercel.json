@@ -40,7 +40,14 @@
     { "source": "/categories/Display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },
     { "source": "/categories/Display%20bottles", "destination": "/categories/display-bottles", "permanent": true },
     { "source": "/categories/display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },
-    { "source": "/categories/display%20bottles", "destination": "/categories/display-bottles", "permanent": true }
+    { "source": "/categories/display%20bottles", "destination": "/categories/display-bottles", "permanent": true },
+    { "source": "/categories/1", "destination": "/categories/roll-on-attars", "permanent": true },
+    { "source": "/categories/3", "destination": "/categories/spray-bottles", "permanent": true },
+    { "source": "/categories/10", "destination": "/categories/fragrance-oils", "permanent": true },
+    { "source": "/categories/Face%20wash", "destination": "/categories/face-wash", "permanent": true },
+    { "source": "/categories/face%20wash", "destination": "/categories/face-wash", "permanent": true },
+    { "source": "/categories/Bakhoor%20", "destination": "/categories/bakhoor", "permanent": true },
+    { "source": "/categories/Bakhoor", "destination": "/categories/bakhoor", "permanent": true }
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },

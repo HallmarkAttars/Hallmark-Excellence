@@ -582,7 +582,7 @@ export const GUIDES = [
       },
     ],
     related: [
-      { label: 'Browse bakhoor and incense fragrances', to: '/categories/Bakhoor' },
+      { label: 'Browse bakhoor and incense fragrances', to: '/categories/bakhoor' },
       { label: 'Oud, amber and musk families explained', to: '/guides/oud-perfume-guide' },
     ],
   },
@@ -783,7 +783,7 @@ export const GUIDES = [
       },
     ],
     related: [
-      { label: 'Browse roll-on attars', to: '/categories/1' },
+      { label: 'Browse roll-on attars', to: '/categories/roll-on-attars' },
       { label: 'Roll-on bottles and caps', to: '/categories/roll-on-bottles' },
       { label: 'How to choose an attar', to: '/guides/how-to-choose-attar' },
     ],

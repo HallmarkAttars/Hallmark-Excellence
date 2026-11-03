@@ -271,6 +271,8 @@ describe('buildSeoForRoute', () => {
     const populated = await buildSeoForRoute({ type: 'category', slug: '1' })
     expect(populated.seo.robots).toBeUndefined()
     expect(populated.seo.schema[1]['@type']).toBe('CollectionPage')
+    // Raw DB slug "1" resolves — and canonicalizes — to the keyword slug.
+    expect(populated.seo.canonical).toBe('/categories/roll-on-attars')
   })
 
   it('resolves the legacy display-bottles slug to the live category record', async () => {
@@ -460,6 +462,40 @@ describe('meta handler', () => {
     )
     expect(res.statusCode).toBe(301)
     expect(res.headers.location).toBe('https://www.areesperfumes.in/categories/display-bottles')
+  })
+
+  it('redirects every legacy raw category slug to its canonical keyword URL', async () => {
+    const legacyCases = [
+      { slug: '1', canonical: 'roll-on-attars', apiSlug: '1' },
+      { slug: '3', canonical: 'spray-bottles', apiSlug: '3' },
+      { slug: '10', canonical: 'fragrance-oils', apiSlug: '10' },
+      { slug: 'Face wash', canonical: 'face-wash', apiSlug: 'Face wash' },
+      { slug: 'Bakhoor', canonical: 'bakhoor', apiSlug: 'Bakhoor ' },
+    ]
+
+    for (const legacy of legacyCases) {
+      const encodedApiSlug = encodeURIComponent(legacy.apiSlug)
+      vi.stubGlobal('fetch', vi.fn(async (url) => {
+        const value = String(url)
+        if (value.endsWith('/categories')) {
+          return jsonResponse({
+            categories: [{ id: 'c-x', name: legacy.canonical, slug: legacy.apiSlug }],
+          })
+        }
+        if (value.includes(`/categories/${encodedApiSlug}/products`)) {
+          return jsonResponse({ products: [{ id: 'p-1' }] })
+        }
+        throw new Error(`Unexpected URL ${value}`)
+      }))
+
+      const res = createRes()
+      await handler(
+        { query: { type: 'category', slug: legacy.slug }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+        res
+      )
+      expect(res.statusCode).toBe(301)
+      expect(res.headers.location).toBe(`https://www.areesperfumes.in/categories/${legacy.canonical}`)
+    }
   })
 
   it('redirects the legacy Oud Al Haramain brand slug to Arees Luxury', async () => {

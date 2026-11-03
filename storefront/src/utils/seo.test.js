@@ -74,10 +74,22 @@ describe('category slug normalization', () => {
     expect(normalizeCategorySlug('display-bottles')).toBe('display-bottles')
   })
 
-  it('keeps existing numeric and simple slugs unchanged', () => {
-    expect(normalizeCategorySlug('1')).toBe('1')
-    expect(normalizeCategorySlug('10')).toBe('10')
+  it('maps every legacy raw DB slug to its canonical public slug', () => {
+    expect(normalizeCategorySlug('1')).toBe('roll-on-attars')
+    expect(normalizeCategorySlug('3')).toBe('spray-bottles')
+    expect(normalizeCategorySlug('10')).toBe('fragrance-oils')
+    expect(normalizeCategorySlug('Face wash')).toBe('face-wash')
+    expect(normalizeCategorySlug('Face%20wash')).toBe('face-wash')
+    expect(normalizeCategorySlug('Bakhoor ')).toBe('bakhoor')
+    expect(normalizeCategorySlug('Bakhoor')).toBe('bakhoor')
+  })
+
+  it('keeps already-clean and empty/unknown slugs unchanged', () => {
+    expect(normalizeCategorySlug('roll-on-bottles')).toBe('roll-on-bottles')
     expect(normalizeCategorySlug('Roll on')).toBe('Roll on')
+    expect(normalizeCategorySlug('')).toBe('')
+    expect(normalizeCategorySlug('nonsense')).toBe('nonsense')
+    expect(normalizeCategorySlug(null)).toBe('')
   })
 })
 

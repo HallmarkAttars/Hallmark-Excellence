@@ -52,7 +52,7 @@ export default function Retail() {
                 Convenient pocket-sized roll-ons featuring our signature <strong>Arees 8ml</strong> and <strong>Dahab 6ml</strong> blends.
                 Leak-proof, spill-resistant, and perfect for personal fragrance touch-ups.
               </p>
-              <Link to="/categories/1" className="retail-link">Browse Roll-on Attars →</Link>
+              <Link to="/categories/roll-on-attars" className="retail-link">Browse Roll-on Attars →</Link>
             </div>
 
             <div className="retail-card">
@@ -61,7 +61,7 @@ export default function Retail() {
                 Over 290 authentic scents including White Oudh, Black Musk, Sandaliya, Rose, and Kuwaiti blends
                 offered in precise individual bottle quantities.
               </p>
-              <Link to="/categories/10" className="retail-link">Explore Fragrance Oils →</Link>
+              <Link to="/categories/fragrance-oils" className="retail-link">Explore Fragrance Oils →</Link>
             </div>
 
             <div className="retail-card">

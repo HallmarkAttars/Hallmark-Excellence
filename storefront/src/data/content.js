@@ -496,7 +496,7 @@ export const WHOLESALE = {
       description:
         'Ready-to-retail 6ml and 8ml roll-on attar bottles under the Arees and Dahab collections. Branded packs start at 60 pieces across a combined order.',
       links: [
-        { label: 'View Roll-On Attars', to: '/categories/1' },
+        { label: 'View Roll-On Attars', to: '/categories/roll-on-attars' },
         { label: 'Explore Arees Wholesale', to: '/brand/arees' },
       ],
     },
@@ -504,7 +504,7 @@ export const WHOLESALE = {
       title: 'Bulk Concentrated Fragrance Oils',
       description:
         'Pure attar bases and undiluted perfume oils in commercial quantities for blending, decanting and custom perfume creation. Loose oils start at 100 g.',
-      links: [{ label: 'View Fragrance Oils', to: '/categories/10' }],
+      links: [{ label: 'View Fragrance Oils', to: '/categories/fragrance-oils' }],
     },
     {
       title: 'Bottles, Caps & Packaging Solutions',

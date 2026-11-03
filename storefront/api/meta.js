@@ -354,7 +354,7 @@ ${renderContact('Visit or Reach Us')}
   const categoryLinks = categories
     .filter((c) => c?.slug || c?.id)
     .slice(0, 20)
-    .map((c) => `<li><a href="/categories/${escapeHtml(c.slug || c.id)}">${escapeHtml(cleanProductName(c.name) || c.name)}</a></li>`)
+    .map((c) => `<li><a href="/categories/${escapeHtml(normalizeCategorySlug(c.slug || c.id) || (c.slug || c.id))}">${escapeHtml(cleanProductName(c.name) || c.name)}</a></li>`)
     .join('')
   const brandLinks = brands
     .filter((b) => b?.slug || b?.id)
@@ -441,9 +441,11 @@ export function buildCategoryBodyHtml(category, slug, products = []) {
     .slice(0, 24)
     .map((product) => `<li><a href="${escapeHtml(productHref(product))}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
-  // Wholesale categories (ids 1 and 10) quote on request; retail categories
-  // show the honest "from ₹" floor computed from live prices.
-  const isWholesaleCategory = normalizeCategorySlug(slug) === '1' || normalizeCategorySlug(slug) === '10'
+  // Wholesale categories (roll-on attars and fragrance oils — raw DB slugs
+  // "1" and "10") quote on request; retail categories show the honest
+  // "from ₹" floor computed from live prices.
+  const isWholesaleCategory =
+    ['roll-on-attars', 'fragrance-oils'].includes(normalizeCategorySlug(slug))
   const priceFrom = isWholesaleCategory ? null : priceFromProducts(products)
   const priceLine = priceFrom
     ? `<p>Prices from ₹${priceFrom} for retail — wholesale rates on request from our Chennai desk.</p>`
