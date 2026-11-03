@@ -41,3 +41,7 @@ tools/gsc/reports/
 
 # --- GA4 automation: service-account key ---
 tools/ga4/key.json
+
+# Service-account credentials (never commit)
+.secrets/
+tools/seo/reports/
