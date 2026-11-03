@@ -71,28 +71,35 @@ const TRUST_ITEMS = [
   },
 ]
 
+// Renders icon + label; links additionally get a trailing chevron that CSS
+// shows on mobile only (tap-intent affordance) and hides on desktop.
 export default function TrustRibbon() {
   return (
     <section className="trust-ribbon" aria-label="Why customers trust Arees Perfumes">
       <ul className="trust-ribbon-list">
         {TRUST_ITEMS.map((item) => {
           const Icon = item.icon
-          const content = (
+          const body = (
             <>
               <span className="trust-ribbon-icon" aria-hidden="true">
                 <Icon />
               </span>
               <span className="trust-ribbon-label">{item.label}</span>
+              {item.to ? (
+                <span className="trust-ribbon-arrow" aria-hidden="true">
+                  →
+                </span>
+              ) : null}
             </>
           )
           return (
             <li key={item.label} className="trust-ribbon-item">
               {item.to ? (
                 <Link to={item.to} className="trust-ribbon-link">
-                  {content}
+                  {body}
                 </Link>
               ) : (
-                content
+                <span className="trust-ribbon-static">{body}</span>
               )}
             </li>
           )

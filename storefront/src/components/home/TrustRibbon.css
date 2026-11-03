@@ -1,7 +1,13 @@
+/* Trust ribbon — five factual assurances under the hero.
+   Desktop (>= 768px): one centered row that wraps item-level if the viewport
+   is narrow (labels never split); links get a gold hover affordance.
+   Mobile (< 768px): full-width tappable rows (min-height 48px), icon left,
+   labels may wrap to two lines, links show a trailing chevron. */
+
 .trust-ribbon {
   background: var(--cream-deep, #f0e7d8);
-  border-bottom: 1px solid var(--line-soft, rgba(184, 137, 56, 0.1));
-  padding: 12px 16px;
+  border-top: 1px solid var(--line-soft, rgba(184, 137, 56, 0.1));
+  padding: 14px 20px;
 }
 
 .trust-ribbon-list {
@@ -13,7 +19,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px 28px;
+  gap: 8px 24px;
 }
 
 .trust-ribbon-item {
@@ -21,10 +27,14 @@
   align-items: center;
 }
 
-.trust-ribbon-link {
+.trust-ribbon-link,
+.trust-ribbon-static {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.trust-ribbon-link {
   color: var(--charcoal-soft, #5f584e);
   text-decoration: none;
   transition: color 0.2s ease;
@@ -32,6 +42,15 @@
 
 .trust-ribbon-link:hover {
   color: var(--gold-deep, #8a6626);
+}
+
+.trust-ribbon-link:focus-visible {
+  outline: 2px solid var(--gold-deep, #8a6626);
+  outline-offset: 2px;
+}
+
+.trust-ribbon-static {
+  color: var(--charcoal-soft, #5f584e);
 }
 
 .trust-ribbon-icon {
@@ -47,14 +66,56 @@
   white-space: nowrap;
 }
 
+/* Chevron affordance for the two linked items — mobile-only (see media). */
+.trust-ribbon-arrow {
+  display: none;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--gold, #b88938);
+}
+
 @media (max-width: 767px) {
   .trust-ribbon {
-    padding: 10px 12px;
+    padding: 12px 16px;
   }
+
+  /* One assurance per full-width row — no ragged wrapping on narrow phones,
+     every row is a comfortable tap target. */
   .trust-ribbon-list {
-    gap: 6px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
   }
+
+  .trust-ribbon-item {
+    width: 100%;
+  }
+
+  .trust-ribbon-link,
+  .trust-ribbon-static {
+    width: 100%;
+    min-height: 48px;
+    gap: 10px;
+    padding: 4px 2px;
+  }
+
+  .trust-ribbon-link:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .trust-ribbon-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .trust-ribbon-label {
-    font-size: 0.72rem;
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+
+  .trust-ribbon-arrow {
+    display: inline-block;
+    margin-left: auto;
   }
 }

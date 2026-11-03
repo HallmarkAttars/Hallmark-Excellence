@@ -1,31 +1,48 @@
-/* Scent-family discovery strip — gold outline chips on cream, same token
-   palette as the rest of the home editorial (TrustRibbon / Featured). */
+/* Scent-family discovery strip — centered eyebrow/title/chips on one axis,
+   gold outline chips on cream, token palette matches the home editorial
+   (TrustRibbon / Featured). Minimal: no background chrome, no copy beyond
+   eyebrow + title. */
 
 .scent-strip {
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* One consistent centered axis on every breakpoint — overrides the shared
+   .section-head row layout (baseline + space-between). Later in the bundle,
+   equal specificity → this wins. */
+.scent-strip-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
 .scent-strip-eyebrow {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--gold, #b88938);
+  text-align: center;
 }
 
 .scent-strip-chips {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 
 .scent-chip {
   display: inline-flex;
   align-items: center;
-  padding: 10px 22px;
+  min-height: 44px;
+  padding: 10px 20px;
   border: 1px solid rgba(184, 137, 56, 0.45);
   border-radius: 999px;
   background: transparent;
@@ -34,6 +51,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-decoration: none;
+  white-space: nowrap;
   transition:
     background 0.2s ease,
     border-color 0.2s ease,
@@ -47,7 +65,34 @@
   color: var(--cream, #f8f3e8);
 }
 
+.scent-chip:focus-visible {
+  outline: 2px solid var(--gold-deep, #8a6626);
+  outline-offset: 2px;
+}
+
+/* Selected family — filled at rest so the choice stays obvious. */
+.scent-chip--active {
+  background: var(--charcoal, #1d1914);
+  border-color: var(--charcoal, #1d1914);
+  color: var(--cream, #f8f3e8);
+}
+
+/* "All Fragrances" reads as the reset/default — slightly stronger outline
+   while inactive, filled charcoal once it is the active selection. */
+.scent-chip--all:not(.scent-chip--active) {
+  border-color: rgba(184, 137, 56, 0.7);
+}
+
 @media (max-width: 767px) {
+  .scent-strip {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .scent-strip-head {
+    margin-bottom: 20px;
+  }
+
   .scent-strip-chips {
     gap: 8px;
   }
@@ -55,5 +100,21 @@
   .scent-chip {
     padding: 8px 16px;
     font-size: 0.78rem;
+  }
+}
+
+/* Narrow phones: 9 chips never wrap into orphan rows — one scrollable row
+   with a partial last chip as the scroll hint. Scrollbar stays hidden. */
+@media (max-width: 479px) {
+  .scent-strip-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .scent-strip-chips::-webkit-scrollbar {
+    display: none;
   }
 }
