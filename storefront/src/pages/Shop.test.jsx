@@ -191,7 +191,12 @@ describe('Shop page — URL-driven pagination (integration)', () => {
     // Filter to Oud only → 20 products → single page → must land on page 1.
     fireEvent.click(screen.getByRole('button', { name: 'Filters' }))
     const dialog = screen.getByRole('dialog', { name: 'Product filters' })
-    fireEvent.click(within(dialog).getByText('Oud'))
+    // "Oud" also exists under the Fragrance Family group, so scope the click
+    // to the Category group.
+    const categoryGroup = [...dialog.querySelectorAll('.filter-sort-panel-group')].find((group) =>
+      within(group).queryByText('Category')
+    )
+    fireEvent.click(within(categoryGroup).getByRole('button', { name: 'Oud' }))
 
     // Back on page 1 of a 1-page result set: pagination disappears entirely,
     // and only Oud products remain — no count text anywhere.

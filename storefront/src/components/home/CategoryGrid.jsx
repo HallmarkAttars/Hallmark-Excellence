@@ -13,10 +13,23 @@ export default function CategoryGrid({ categories }) {
   // Homepage displays EXACTLY 6 categories in a 3-column × 2-row grid on desktop
   // and a 2-column × 3-row grid on mobile. The full list is accessible via VIEW ALL.
   //
-  // Categories come from the API already in admin display_order (server applies
-  // display_order asc, then created_at asc). We preserve that order exactly — no
-  // client-side re-sort — so the admin's chosen Display Order is what shoppers see.
-  const orderedCategories = all.slice(0, 6)
+  // Enforce the admin's position here as well as in the API so the storefront
+  // remains correct if an API response arrives in a different order. Stable
+  // sorting keeps the server's created_at ordering for equal or missing values.
+  const getDisplayOrder = (category) => {
+    const value = category.display_order
+    if (value === null || value === undefined || value === '') return Number.MAX_SAFE_INTEGER
+    const order = Number(value)
+    return Number.isFinite(order) ? order : Number.MAX_SAFE_INTEGER
+  }
+
+  const orderedCategories = all
+    .map((category, index) => ({ category, index }))
+    .sort((a, b) => {
+      return getDisplayOrder(a.category) - getDisplayOrder(b.category) || a.index - b.index
+    })
+    .slice(0, 6)
+    .map(({ category }) => category)
 
   return (
     <Reveal className="category-grid stagger-fade">

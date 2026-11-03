@@ -3,6 +3,13 @@
   background: var(--bg-cream, #f7f3ea);
   padding-top: var(--section-space, 56px);
   padding-bottom: var(--section-space, 56px);
+  padding-inline: 16px;
+}
+
+.home-faqs-content {
+  width: 100%;
+  max-width: 860px;
+  margin-inline: auto;
 }
 
 .home-faqs-section .section-head {
@@ -27,8 +34,7 @@
 }
 
 .home-faq-group {
-  max-width: 860px;
-  margin: 0 auto 24px;
+  margin: 0 0 24px;
 }
 
 .home-faq-group-title {
@@ -43,8 +49,6 @@
 
 .home-faqs-list {
   margin: 0;
-  max-width: 860px;
-  margin-inline: auto;
   display: grid;
   gap: 12px;
 }
@@ -105,8 +109,7 @@
 }
 
 .home-faqs-wholesale {
-  max-width: 860px;
-  margin: 26px auto 0;
+  margin: 26px 0 0;
   border-radius: 16px;
   padding: 22px 20px;
   background: var(--gold-gradient, linear-gradient(135deg, #b88938, #9a6f24));

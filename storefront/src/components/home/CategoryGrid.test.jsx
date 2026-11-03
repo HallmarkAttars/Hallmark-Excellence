@@ -94,19 +94,18 @@ describe('CategoryGrid Component', () => {
     expect(img.getAttribute('fetchpriority')).toBe('low')
   })
 
-  // Homepage order preserves the API (admin display_order) exactly — no
-  // client-side re-sort — so the admin's chosen Display Order is what
-  // shoppers see on the homepage grid.
-  it('preserves API display order on the homepage grid', () => {
+  // Admin display_order is authoritative even if an API response arrives
+  // out of order; ties retain the stable order supplied by the API.
+  it('sorts the homepage grid by admin display order', () => {
     const liveLikeCategories = [
-      { id: '1', name: 'Roll on Attars', slug: '1' },
-      { id: '2', name: 'Fragrance Oil', slug: '10' },
-      { id: '3', name: 'Roll on Bottles', slug: 'roll-on-bottles' },
-      { id: '4', name: 'Fancy Bottle', slug: 'roll on' },
-      { id: '5', name: 'Caps for Roll on bottles', slug: 'Caps' },
-      { id: '6', name: 'Spray Bottles', slug: '3' },
-      { id: '7', name: 'Canter Bottle', slug: 'Display bottles ' },
-      { id: '8', name: 'Arees Face Wash', slug: 'Face wash' },
+      { id: '1', name: 'Roll on Attars', slug: '1', display_order: 6 },
+      { id: '2', name: 'Fragrance Oil', slug: '10', display_order: 2 },
+      { id: '3', name: 'Roll on Bottles', slug: 'roll-on-bottles', display_order: 1 },
+      { id: '4', name: 'Fancy Bottle', slug: 'roll on', display_order: 4 },
+      { id: '5', name: 'Caps for Roll on bottles', slug: 'Caps', display_order: 3 },
+      { id: '6', name: 'Spray Bottles', slug: '3', display_order: 4 },
+      { id: '7', name: 'Canter Bottle', slug: 'Display bottles ', display_order: 7 },
+      { id: '8', name: 'Arees Face Wash', slug: 'Face wash', display_order: 8 },
       { id: '9', name: 'Bakhoor ', slug: 'Bakhoor ' },
     ]
 
@@ -116,17 +115,17 @@ describe('CategoryGrid Component', () => {
       </MemoryRouter>
     )
 
-    // Read the rendered card order from the DOM — matches API order exactly
+    // Read the rendered card order from the DOM.
     const names = [...container.querySelectorAll('.category-name')].map((n) =>
       n.textContent.trim()
     )
     expect(names).toEqual([
-      'Roll on Attars',
-      'Fragrance Oil',
       'Roll on Bottles',
-      'Fancy Bottle',
+      'Fragrance Oil',
       'Caps for Roll on bottles',
+      'Fancy Bottle',
       'Spray Bottles',
+      'Roll on Attars',
     ])
   })
 })
