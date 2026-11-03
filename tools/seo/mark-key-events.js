@@ -27,28 +27,31 @@ const KEY_CANDIDATES = [
 ].filter(Boolean)
 
 const EDIT_SCOPE = 'https://www.googleapis.com/auth/analytics.edit'
+const READ_SCOPE = 'https://www.googleapis.com/auth/analytics.readonly'
 
-function loadKey() {
+function loadKeys() {
+  const keys = []
   for (const candidate of KEY_CANDIDATES) {
     try {
       if (!fs.existsSync(candidate)) continue
       const key = JSON.parse(fs.readFileSync(candidate, 'utf8'))
-      if (key.client_email && key.private_key) return { key, path: candidate }
+      if (key.client_email && key.private_key) keys.push({ key, path: candidate })
     } catch {
       // next candidate
     }
   }
-  throw new Error('No service-account key found: ' + KEY_CANDIDATES.join(', '))
+  if (keys.length === 0) throw new Error('No service-account key found: ' + KEY_CANDIDATES.join(', '))
+  return keys
 }
 
-async function tokenFor(key) {
+async function tokenFor(key, scope) {
   const base64url = (v) => Buffer.from(v).toString('base64url')
   const now = Math.floor(Date.now() / 1000)
   const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: key.private_key_id }))
   const claims = base64url(JSON.stringify({
     iss: key.client_email,
     aud: 'https://oauth2.googleapis.com/token',
-    scope: EDIT_SCOPE,
+    scope,
     iat: now,
     exp: now + 3600,
   }))
@@ -67,16 +70,33 @@ async function tokenFor(key) {
   return body.access_token
 }
 
+// Try every key until one has permission for the call; report who succeeded.
+async function firstAuthorized(keys, scope, attempt) {
+  const errors = []
+  for (const { key, path } of keys) {
+    try {
+      const token = await tokenFor(key, scope)
+      const result = await attempt(token, key)
+      console.log(`[auth] key: ${path} (${key.client_email})`)
+      return result
+    } catch (err) {
+      errors.push(`${key.client_email}: ${err.message}`)
+    }
+  }
+  throw new Error(errors.join('\n'))
+}
+
 async function main() {
-  const { key, path: keyPath } = loadKey()
-  console.log(`[auth] key: ${keyPath} (${key.client_email})`)
-  const token = await tokenFor(key)
+  const keys = loadKeys()
   const base = `https://analyticsadmin.googleapis.com/v1beta/properties/${PROPERTY_ID}`
 
-  // 1. Current state
-  const listRes = await fetch(`${base}/keyEvents`, { headers: { Authorization: `Bearer ${token}` } })
-  const listJson = await listRes.json()
-  if (!listRes.ok) throw new Error(`keyEvents list ${listRes.status}: ${(listJson.error && listJson.error.message) || ''}`)
+  // 1. Current state — any account that can read the property list works.
+  const listJson = await firstAuthorized(keys, READ_SCOPE, async (token) => {
+    const res = await fetch(`${base}/keyEvents`, { headers: { Authorization: `Bearer ${token}` } })
+    const json = await res.json()
+    if (!res.ok) throw new Error(`keyEvents list ${res.status}: ${(json.error && json.error.message) || ''}`)
+    return json
+  })
   const marked = listJson.keyEvents || []
   console.log('[state] currently marked:', marked.map((e) => e.eventName).join(', ') || '(none)')
 
@@ -88,28 +108,30 @@ async function main() {
     return
   }
 
-  // 2. Create missing events
+  // 2. Create missing events with the first account that can edit.
   for (const eventName of missing) {
-    const res = await fetch(`${base}/keyEvents`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ eventName, countingMethod: 'THRESHOLD_COUNTING' }),
+    await firstAuthorized(keys, EDIT_SCOPE, async (token, key) => {
+      const res = await fetch(`${base}/keyEvents`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventName, countingMethod: 'THRESHOLD_COUNTING' }),
+      })
+      if (res.ok) {
+        console.log(`[ok] created key event: ${eventName}`)
+        return true
+      }
+      const body = await res.json().catch(() => ({}))
+      if (res.status === 403) {
+        console.error(
+          `[block] 403 marking "${eventName}" — none of the keys can write.\n` +
+          `Fix A: GA4 Admin > Property access management > add the service account as Editor, then re-run.\n` +
+          `Fix B (UI, 2 minutes): GA4 Admin > Events > ${eventName} > menu > "Mark as key event".`
+        )
+        process.exitCode = 2
+        throw new Error('blocked') // stops the candidate loop; state preserved
+      }
+      throw new Error(`keyEvents create ${res.status}: ${(body.error && body.error.message) || ''}`)
     })
-    if (res.ok) {
-      console.log(`[ok] created key event: ${eventName}`)
-      continue
-    }
-    const body = await res.json().catch(() => ({}))
-    if (res.status === 403) {
-      console.error(
-        `[block] 403 marking "${eventName}" — the account behind this key lacks write access.\n` +
-        `Fix A: GA4 Admin > Property access management > add ${key.client_email} with Editor access, then re-run.\n` +
-        `Fix B (UI, 2 minutes): GA4 Admin > Events > ${eventName} > menu > "Mark as key event".`
-      )
-      process.exitCode = 2
-      return
-    }
-    throw new Error(`keyEvents create ${res.status}: ${(body.error && body.error.message) || ''}`)
   }
   console.log('[done] re-run this script to confirm idempotency (should print "nothing to do")')
 }
