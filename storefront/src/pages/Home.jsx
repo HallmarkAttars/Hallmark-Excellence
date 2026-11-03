@@ -10,7 +10,6 @@ import BrandShowcaseCard from '../components/home/BrandShowcaseCard'
 import SkeletonCategoryGrid from '../components/skeleton/SkeletonCategoryGrid'
 import SkeletonCollectionBanner from '../components/skeleton/SkeletonCollectionBanner'
 import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
-import SkeletonSocialStrip from '../components/skeleton/SkeletonSocialStrip'
 import { getCategories, getBrands, getFeaturedProducts } from '../services/mockApi'
 import { HOME_CATEGORIES, HOME_BRANDS } from '../data/content'
 import { sortBrandsByDisplayOrder } from '../utils/brandOrder'
@@ -27,7 +26,6 @@ import {
 // Below-the-fold, JS-heavy sections are lazy-loaded so their code stays out
 // of the initial Home bundle and only mounts when the visitor scrolls close.
 const LazyFeaturedProducts = lazy(() => import('../components/home/FeaturedProducts'))
-const LazySocialStrip = lazy(() => import('../components/home/SocialStrip'))
 const LazyCustomerLove = lazy(() => import('../components/home/CustomerLove'))
 const LazyHomeFaqs = lazy(() => import('../components/home/HomeFaqs'))
 
@@ -221,12 +219,6 @@ export default function Home() {
 
       {/* Scent-family discovery chips (static links — no data, no LCP cost) */}
       <ScentStrip />
-
-      <DeferredSection placeholder={<SkeletonSocialStrip />}>
-        <Suspense fallback={<SkeletonSocialStrip />}>
-          {featured && featured.length > 0 && <LazySocialStrip products={featuredProducts} />}
-        </Suspense>
-      </DeferredSection>
 
       <DeferredSection placeholder={null}>
         <Suspense fallback={null}>
