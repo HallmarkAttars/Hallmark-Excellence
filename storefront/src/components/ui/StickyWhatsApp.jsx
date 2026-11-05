@@ -1,3 +1,4 @@
+import { WHATSAPP_URL } from '../../utils/whatsapp'
 import './StickyWhatsApp.css'
 
 // Floating WhatsApp click-to-chat button — rendered ONCE in the storefront
@@ -6,10 +7,8 @@ import './StickyWhatsApp.css'
 // Contact, Track Order, View Order). Pure frontend: a single wa.me link —
 // no backend, no API, no database, no WhatsApp Business integration.
 //
-// Number: +91 98407 50467  →  https://wa.me/919840750467
-// Pre-filled message (URL-encoded): "Can I get more info about your products?"
-const WHATSAPP_URL =
-  'https://wa.me/919840750467?text=Can%20I%20get%20more%20info%20about%20your%20products%3F'
+// Number and pre-filled message live in utils/whatsapp.js (WHATSAPP_URL) so
+// the contact pre-text is edited in one place for every placement.
 
 export default function StickyWhatsApp() {
   return (

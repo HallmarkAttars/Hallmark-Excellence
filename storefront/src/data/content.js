@@ -54,7 +54,9 @@ export const BUSINESS = {
   social: [
     { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
     { key: 'facebook', label: 'Facebook', href: '#' },
-    { key: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/919840750467?text=Can%20I%20get%20more%20info%20about%20wholesale%20and%20private%20label%3F' },
+    // href '#' → Footer resolves the WhatsApp icon to the shared WHATSAPP_URL
+  // (utils/whatsapp.js) so one constant carries number + pre-filled text.
+  { key: 'whatsapp', label: 'WhatsApp', href: '#' },
   ],
   // Lookup helpers — components should resolve by key, never by array index.
   socialByKey: (key) => BUSINESS.social.find((s) => s.key === key),
