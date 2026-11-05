@@ -827,6 +827,19 @@ export const FOOTER = {
       ],
     },
     {
+      // Deep-link support for the pages ranking at position 5-13 on their
+      // target queries (GSC 90d data): guides and the two newest canonical
+      // category URLs get no other sitewide entry points.
+      heading: 'Guides & Buying Help',
+      links: [
+        { label: 'Roll-On Attars Guide', to: '/guides/roll-on-attar-guide' },
+        { label: 'Bakhoor Guide', to: '/guides/bakhoor-guide' },
+        { label: 'Where to Buy Attar in Chennai', to: '/guides/buy-attar-chennai' },
+        { label: 'Roll-On Attars', to: '/categories/roll-on-attars' },
+        { label: 'Fragrance Oils', to: '/categories/fragrance-oils' },
+      ],
+    },
+    {
       heading: 'Legal',
       links: [
         { label: 'Privacy & Cookies', to: '/privacy-policy' },

@@ -518,7 +518,7 @@ export const GUIDES = [
   {
     slug: 'bakhoor-guide',
     title: 'Bakhoor: What It Is and How to Use It',
-    seoTitle: 'Bakhoor: What It Is & How to Use It at Home | Arees Perfumes',
+    seoTitle: 'Bakhoor Attar: What It Is & How to Use It at Home | Arees Perfumes',
     description:
       'Learn what bakhoor is, how to burn and store it, and how to buy quality bakhoor - scented wood chips and oriental incense explained simply.',
     excerpt:
@@ -726,7 +726,7 @@ export const GUIDES = [
   {
     slug: 'roll-on-attar-guide',
     title: 'Roll-On Attars: Sizes, Longevity and How to Buy',
-    seoTitle: 'Roll-On Attars: Sizes, Longevity & Buying Tips | Arees Perfumes',
+    seoTitle: 'Roll-On Attars: Sizes, How Long They Last & Buying Tips | Arees Perfumes',
     description:
       'A practical guide to roll-on attars: common 6ml and 8ml sizes, how long they last, how to apply roll-on perfume oil, and what to check before buying.',
     excerpt:
