@@ -118,3 +118,59 @@ export async function checkAndRememberValue(payloadId) {
 export function resetMemoryForTests() {
   mem.clear()
 }
+
+// ---------------------------------------------------------------------------
+// cron registry — session ids that ever placed an order. The daily cron
+// endpoint walks this list and sweeps each conversation for status changes
+// (silent threads whose customer never messaged again). One JSON array under
+// `wa:registry`; the webhook appends on order placement, the cron prunes.
+// ---------------------------------------------------------------------------
+
+const REGISTRY_KEY = 'wa:registry'
+
+export async function registryAdd(sessionId) {
+  if (!sessionId) return
+  try {
+    const list = await registryList()
+    if (!list.includes(sessionId)) list.push(sessionId)
+    if (list.length > 4000) list.splice(0, list.length - 4000)
+    await registrySave(list)
+  } catch (err) {
+    console.error('[wa:store] registryAdd failed:', err?.message)
+  }
+}
+
+export async function registryList() {
+  if (kvConfigured()) {
+    try {
+      const raw = await kvRequest(`/get/${encodeURIComponent(REGISTRY_KEY)}`)
+      if (Array.isArray(raw)) return raw
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw)
+        } catch {}
+      }
+      return []
+    } catch (err) {
+      console.error('[wa:store] registryList (KV) failed:', err?.message)
+      // fall through to memory for reads
+    }
+  }
+  return [...(mem.get(REGISTRY_KEY)?.value || [])]
+}
+
+export async function registrySave(list) {
+  if (!Array.isArray(list)) list = []
+  if (kvConfigured()) {
+    try {
+      await kvRequest(`/set/${encodeURIComponent(REGISTRY_KEY)}`, {
+        verb: 'POST',
+        body: { value: list },
+      })
+      return
+    } catch (err) {
+      console.error('[wa:store] registrySave (KV) failed:', err?.message)
+    }
+  }
+  memSet(REGISTRY_KEY, list, 7 * 24 * 60 * 60 * 1000)
+}

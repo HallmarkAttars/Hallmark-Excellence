@@ -7,6 +7,12 @@
       "maxDuration": 15
     }
   },
+  "crons": [
+    {
+      "path": "/api/wa-cron",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/fonts/(.*)",

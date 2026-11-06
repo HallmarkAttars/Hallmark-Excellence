@@ -3,7 +3,7 @@
 // contract the owner signed off (UPI payment details + confirm-the-order ask).
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { handleInput, payTextMessage, UPI_ID } from './_bot.js'
+import { handleInput, handleWithStatusSweep, statusSweep, payTextMessage, UPI_ID } from './_bot.js'
 
 const CATS = [
   { id: 'cat-1', name: 'Roll on Attars', count: 3 },
@@ -55,7 +55,8 @@ function stubIo(overrides = {}) {
     },
     trackOrder: async (q) => {
       calls.trackOrder.push(q)
-      return [
+      // Status-sweep tests override the ledger via catalog.track.
+      return catalog.track || [
         { order_number: '0123', order_status: 'Processing', total: 150, payment_status: 'Unpaid' },
         { order_number: '0118', order_status: 'Shipped', total: 900, payment_status: 'Paid' },
       ]
@@ -332,3 +333,68 @@ async function runCheckout(startSession) {
   s = (await handleInput({ kind: 'text', text: 'skip', from: '919840750467' }, s, { io })).session
   return { session: s, state: s.state }
 }
+
+describe('status sweep � payment/order update notifications', () => {
+  beforeEach(() => {
+    catalog = { categories: CATS, products: {}, qrImage: null }
+    for (const c of CATS) catalog.products[c.id] = PRODUCTS(c.id)
+    io = stubIo()
+    catalog.track = [
+      { order_number: '0123', order_status: 'Processing', total: 150, payment_status: 'Unpaid' },
+      { order_number: '0118', order_status: 'Shipped', total: 900, payment_status: 'Paid' },
+    ]
+  })
+
+  it('no phone → silent noop', async () => {
+    const r = await statusSweep({ v: 1, cart: [] }, io)
+    expect(r.actions).toHaveLength(0)
+  })
+
+  it('first contact builds the baseline silently (no notification)', async () => {
+    const r = await statusSweep({ v: 1, phone: '+919840750467' }, io)
+    expect(r.actions).toHaveLength(0)
+    expect(r.session.statusSnap['0123']).toMatchObject({ order_status: 'Processing', payment_status: 'Unpaid' })
+    expect(r.session.statusSnap['0118']).toMatchObject({ order_status: 'Shipped', payment_status: 'Paid' })
+  })
+
+  it('payment status change is announced with friendly labels', async () => {
+    catalog.track[0].payment_status = 'Paid'
+    const r = await statusSweep(
+      { v: 1, phone: '+919840750467', statusSnap: { '0123': { order_status: 'Processing', payment_status: 'Unpaid', total: 150 } } },
+      io,
+    )
+    const text = r.actions[0]
+    expect(text.type).toBe('text')
+    expect(text.text).toContain('*Order update for you*')
+    expect(text.text).toMatch(/0123/)
+    expect(text.text).toContain('Payment: Not paid yet → *Paid*')
+    expect(text.text).not.toContain('Status:')
+  })
+
+  it('order status change is announced alongside payment', async () => {
+    catalog.track = [{ order_number: '0123', order_status: 'Shipped', total: 150, payment_status: 'Paid' }]
+    const r = await statusSweep(
+      { v: 1, phone: '+919840750467', statusSnap: { '0123': { order_status: 'Processing', payment_status: 'Unpaid', total: 150 } } },
+      io,
+    )
+    expect(r.actions[0].text).toContain('Status: Processing → *Shipped*')
+    expect(r.actions[0].text).toContain('Payment: Not paid yet → *Paid*')
+  })
+
+  it('no change → nothing is sent and the snapshot is refreshed', async () => {
+    const start = { v: 1, phone: '+919840750467', statusSnap: { '0123': { order_status: 'Processing', payment_status: 'Unpaid', total: 150 }, '0118': { order_status: 'Shipped', payment_status: 'Paid', total: 900 } } }
+    const r = await statusSweep(start, io)
+    expect(r.actions).toHaveLength(0)
+    expect(r.session.statusSnap['0123']).toMatchObject({ order_status: 'Processing' })
+  })
+
+  it('webhook entry (handleWithStatusSweep) prepends updates above the reply', async () => {
+    const seeded = { v: 1, state: 'menu', phone: '+919840750467', statusSnap: { '0123': { order_status: 'Processing', payment_status: 'Unpaid', total: 150 } }, cart: [] }
+    catalog.track = [{ order_number: '0123', order_status: 'Shipped', total: 150, payment_status: 'Paid' }]
+    const r = await handleWithStatusSweep({ kind: 'text', text: 'hello', from: '919840750467' }, seeded, { io })
+    expect(r.actions[0].text).toContain('*Order update for you*')
+    const menu = r.actions.at(-1)
+    expect(menu.type).toBe('list')
+    expect(r.session.state).toBe('menu')
+  })
+})

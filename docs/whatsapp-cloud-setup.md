@@ -106,6 +106,35 @@ human replies (menu option 4 hands off to your staff chat window).
 4. Send one test message from your phone; from then onwards customers can
    just message the business line.
 
+## 9. Automatic order-status WhatsApps (lazy + daily cron)
+
+Already deployed — nothing to configure in Meta. Two parts:
+
+- **Lazy sweep (instant):** every time a customer messages the bot, before
+  answering, the bot quietly re-checks `/track-order` for that phone. If a
+  Payment/Status line moved since the last check, it sends a short
+  "*Order update for you*" message above the normal reply.
+- **Daily cron:** every day at 9:30 AM IST (04:00 UTC) Vercel calls
+  `/api/wa-cron` automatically (vercel.json `crons`). It walks the registry
+  of sessions that ever placed a WhatsApp order and notifies any phone with
+  a change — even if the customer hasn't messaged in days.
+
+Requirements:
+
+1. **Vercel KV is required for the daily cron part** (registry + sessions
+   must survive across serverless invocations). Vercel dashboard → your
+   project → Storage → Create Database → **KV** (Free/ Hobby plan works),
+   then "Connect to project" → it adds `KV_REST_API_URL` +
+   `KV_REST_API_TOKEN` env vars → redeploy once.
+   Without KV the lazy sweep still works (it uses the live server-side
+   session), but the daily push is disabled.
+2. Optional lock: set `WA_CRON_SECRET` in Vercel to block manual calls to
+   `/api/wa-cron?auth=…`. The Vercel Cron trigger itself is already trusted.
+3. Test manually after deploy: open
+   `https://www.areesperfumes.in/api/wa-cron` — should answer
+   `{"enabled":true,"swept":N,…}` once KV is connected
+   (`{"enabled":false,"reason":"KV not configured…"}` before).
+
 ## Notes & limits (free tier)
 
 - 1000 service conversations/month free; within a 24-hour conversation, all

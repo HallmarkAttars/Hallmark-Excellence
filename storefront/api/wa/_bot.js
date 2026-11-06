@@ -382,7 +382,16 @@ async function placeOrder(session, io, input) {
     }
     const res = await io.postOrder(payload)
     const orderNumber = res?.order?.order_number ?? res?.order_number ?? res?.order?.orderNumber ?? ''
+    const placed = res?.order ?? null
+    // Baseline for the status sweep: this order is already known at its
+    // current status, so the customer is notified only on later CHANGES
+    // (payment verified, shipped, delivered …) — never re-announced.
+    const statusSnap = orderNumber
+      ? { ...(session.statusSnap || {}), [String(orderNumber)]: snapOf(placed, total) }
+      : session.statusSnap
+    capSnap(statusSnap)
     return {
+      note: 'order-placed',
       actions: [
         {
           type: 'text',
@@ -394,7 +403,14 @@ async function placeOrder(session, io, input) {
         },
         ...menuActions(),
       ],
-      session: { ...session, state: 'done', cart: [], checkout: null, lastOrder: orderNumber },
+      session: {
+        ...session,
+        state: 'done',
+        cart: [],
+        checkout: null,
+        lastOrder: orderNumber,
+        ...(statusSnap ? { statusSnap } : {}),
+      },
     }
   } catch (err) {
     const detail = err && err.message ? ` — ${err.message}` : ''
@@ -776,4 +792,123 @@ async function confirmPayState(customId, text, session, io) {
 
 export function sessionIdFrom(from) {
   return sessionIdFromPhone(from)
+}
+
+// ---------------------------------------------------------------------------
+// status sweep — proactive "payment received / shipped / delivered" updates
+// ---------------------------------------------------------------------------
+
+// Snapshot of one order as seen from POST /api/track-order — the webhook/POS
+// staff flip payment_status / order_status in the shop admin; the sweep's
+// diff against this snapshot produces the customer notification.
+function snapOf(order, fallbackTotal = 0) {
+  const o = order || {}
+  return {
+    order_status: String(o.order_status ?? o.status ?? ''),
+    payment_status: String(o.payment_status ?? ''),
+    total: Number(o.total ?? o.total_amount ?? fallbackTotal) || 0,
+  }
+}
+
+// Keep the session snapshot bounded — the 8 most recent orders matter.
+function capSnap(snap) {
+  if (!snap || typeof snap !== 'object') return
+  const keys = Object.keys(snap)
+  if (keys.length <= 8) return
+  for (const k of keys.slice(0, keys.length - 8)) delete snap[k]
+}
+
+function titleCase(s) {
+  const cleaned = String(s || '').replace(/[_-]+/g, ' ').trim()
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : ''
+}
+
+function payLabel(v) {
+  const t = String(v || '').toLowerCase()
+  if (/unpaid|pending|await/.test(t)) return 'Not paid yet'
+  if (/paid|received/.test(t)) return 'Paid'
+  if (/refund/.test(t)) return 'Refunded'
+  return titleCase(v)
+}
+
+function statusLabel(v) {
+  const t = String(v || '').toLowerCase()
+  if (/shipped|dispatch/.test(t)) return 'Shipped'
+  if (/deliver/.test(t)) return 'Delivered'
+  if (/cancell/.test(t)) return 'Cancelled'
+  if (/refus|reject/.test(t)) return 'Cancelled'
+  if (/pack/.test(t)) return 'Packed'
+  if (/process/.test(t)) return 'Processing'
+  if (/pend|new/.test(t)) return 'Processing'
+  return titleCase(v)
+}
+
+// One sweep = fetch the sender's recent orders + diff vs the snapshot.
+// Returns { actions, session } — actions are notification texts (possibly
+// empty). Silent on: no phone, network error, empty history, first-ever look
+// (baseline), and no changes.
+export async function statusSweep(session, io, { notify = true } = {}) {
+  const digits = String(session?.phone || '').replace(/\D/g, '')
+  const last10 = digits.slice(-10)
+  if (!/^[0-9]{10}$/.test(last10)) return { actions: [], session: session || defaultSession() }
+
+  let orders
+  try {
+    orders = await io.trackOrder({ type: 'phone', value: last10 })
+  } catch {
+    return { actions: [], session }
+  }
+  if (!Array.isArray(orders) || !orders.length) {
+    return { actions: [], session }
+  }
+
+  const prev = session.statusSnap && typeof session.statusSnap === 'object' ? session.statusSnap : {}
+  const baseline = Object.keys(prev).length === 0
+  const lines = []
+  const next = {}
+  for (const o of orders.slice(0, 8)) {
+    const num = String(o.order_number ?? o.orderNumber ?? '')
+    if (!num) continue
+    const cur = snapOf(o)
+    next[num] = cur
+    const old = prev[num]
+    if (baseline || !old) continue
+    const changes = []
+    if (cur.payment_status && old.payment_status !== cur.payment_status) {
+      changes.push(`Payment: ${payLabel(old.payment_status)} → *${payLabel(cur.payment_status)}*`)
+    }
+    if (cur.order_status && old.order_status !== cur.order_status) {
+      changes.push(`Status: ${statusLabel(old.order_status)} → *${statusLabel(cur.order_status)}*`)
+    }
+    if (changes.length) {
+      lines.push(`Order *${num}*${cur.total ? ` (${rupee(cur.total)})` : ''}\n${changes.join('\n')}`)
+    }
+  }
+  const updated = { ...session, statusSnap: next }
+  if (!notify || !lines.length) return { actions: [], session: updated }
+  return {
+    actions: [
+      {
+        type: 'text',
+        text: `*Order update for you*\n\n${lines.join('\n\n')}\n\nFull timeline: ${SHOPIFY_URL}/track-order`,
+      },
+    ],
+    session: updated,
+  }
+}
+
+// Webhook-level entry: sweep first (silent baseline/diff), then the normal
+// conversation branch. Sweep notifications are PREPENDED so the customer
+// sees status updates above the bot's reply to whatever they sent.
+export async function handleWithStatusSweep(input, sessionIn, { io }) {
+  const seed = sessionIn && sessionIn.v ? sessionIn : defaultSession()
+  let sweep = { actions: [], session: seed }
+  try {
+    sweep = await statusSweep(seed, io, { notify: true })
+  } catch {
+    sweep = { actions: [], session: seed }
+  }
+  const branch = await handleInput(input, sweep.session, { io })
+  const note = branch.note || (sweep.actions.length ? 'status-notified' : undefined)
+  return { ...branch, actions: [...sweep.actions, ...(branch.actions || [])], note }
 }

@@ -15,12 +15,10 @@
 // Always answers Meta 200 quickly — failing/dangling webhooks get disabled.
 
 import { createHmac } from 'node:crypto'
-import { handleInput, sessionIdFrom, payTextMessage, defaultSession } from './wa/_bot.js'
+import { handleWithStatusSweep, sessionIdFrom, defaultSession } from './wa/_bot.js'
 import * as store from './wa/_store.js'
 import { makeSender, textMessage, listMessage, buttonsMessage, imageMessage } from './wa/_graph.js'
-import { getShopCategories, getCategoryProducts } from './wa/_catalog.js'
-
-const QR_URL = process.env.WHATSAPP_QR_URL || ''
+import { productionIo, qrImageUrl } from './wa/_io.js'
 
 const send = makeSender()
 
@@ -63,40 +61,6 @@ export async function renderActions(to, actions, sendFn = send) {
   }
 }
 
-// Production I/O — same endpoints the storefront uses (services/api.js).
-function productionIo() {
-  const base = (process.env.SHOP_API_BASE || 'https://api.areesperfumes.in/api').replace(/\/$/, '')
-  return {
-    getShopCategories: () => getShopCategories(),
-    categoryProducts: (cat) => getCategoryProducts(cat),
-    postOrder: async (payload) => {
-      const res = await fetch(`${base}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) {
-        const err = new Error(data?.error || data?.message || `Order failed (${res.status})`)
-        err.status = res.status
-        throw err
-      }
-      return data
-    },
-    trackOrder: async ({ type, value }) => {
-      const res = await fetch(`${base}/track-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, value }),
-      })
-      const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || `Tracking failed (${res.status})`)
-      return Array.isArray(data.orders) ? data.orders : []
-    },
-    getQrImage: async () => qrImageUrl(),
-  }
-}
-
 // Processes one parsed webhook body (exported for the offline test suite).
 export async function processPayload(body, { io = productionIo(), sendFn = send } = {}) {
   for (const e of body?.entry || []) {
@@ -111,9 +75,11 @@ export async function processPayload(body, { io = productionIo(), sendFn = send 
         const session = (await store.getSession(sessionIdOf(from))) || defaultSession()
 
         try {
-          const { actions, session: nextSession } = await handleInput(input, session, { io })
+          const { actions, session: nextSession, note } = await handleWithStatusSweep(input, session, { io })
           await renderActions(from, actions, sendFn)
           if (nextSession) await store.saveSession(sessionIdOf(from), nextSession)
+          // A session that ever placed an order joins the daily cron registry.
+          if (nextSession && note === 'order-placed') await store.registryAdd(sessionIdOf(from))
         } catch (err) {
           console.error('[wa:webhook] conversation error:', err && err.message)
           try {
@@ -123,19 +89,6 @@ export async function processPayload(body, { io = productionIo(), sendFn = send 
       }
     }
   }
-}
-
-let qrProbe = null
-async function qrImageUrl() {
-  if (!QR_URL) return null
-  if (qrProbe !== null) return qrProbe
-  try {
-    const res = await fetch(QR_URL, { method: 'HEAD' })
-    qrProbe = res.ok ? QR_URL : null
-  } catch {
-    qrProbe = null
-  }
-  return qrProbe
 }
 
 function verifySignature(raw, header) {
