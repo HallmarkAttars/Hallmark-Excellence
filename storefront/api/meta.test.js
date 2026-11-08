@@ -177,6 +177,10 @@ describe('guide body fallbacks', () => {
     expect(article).toContain('<h1>Attar vs Perfume Oil: What Is the Difference?</h1>')
     expect(article).toContain('The Short Answer')
     expect(article).toContain('Frequently Asked Questions')
+
+    const bakhoor = buildGuideBodyHtml('bakhoor-guide')
+    expect(bakhoor).toContain('href="/categories/bakhoor"')
+    expect(bakhoor).toContain('Shop bakhoor perfume, chips &amp; incense')
   })
 
   it('returns nothing for an unknown guide', () => {

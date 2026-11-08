@@ -566,6 +566,7 @@ export function buildGuideBodyHtml(slug) {
   if (!guide) return ''
   return `<main data-prerender="true">
 <header><p>${escapeHtml(guide.category)}</p><h1>${escapeHtml(guide.title)}</h1><p>${escapeHtml(guide.excerpt)}</p></header>
+${guide.shopCta ? `<p><a href="${escapeHtml(guide.shopCta.to)}">${escapeHtml(guide.shopCta.label)}</a></p>` : ''}
 ${renderSections(guide.sections)}
 <section><h2>Frequently Asked Questions</h2>${renderFaqs(guide.faqs)}</section>
 ${guide.related?.length ? `<section><h2>Related Reading</h2><ul>${guide.related.map((item) => `<li><a href="${escapeHtml(item.to)}">${escapeHtml(item.label)}</a></li>`).join('')}</ul></section>` : ''}

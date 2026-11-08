@@ -24,10 +24,11 @@ const CTA_LINE =
 
 export const CATEGORY_CONTENT = {
   bakhoor: {
+    title: 'Bakhoor Perfume, Attar & Fragrance Online | Arees Perfumes',
     metaDescription:
-      'Artisan bakhoor, scented wood chips and oriental incense from Arees Perfumes. Buy alcohol-free bakhoor online, delivered across India.',
+      'Shop bakhoor perfume, bakhoor attar and scented wood chips from Arees Perfumes. Alcohol-free, delivered across India.',
     intro:
-      'Bakhoor is the traditional fragrance of smoked incense and scented wood chips, used across Indian and Gulf homes to scent a room, a wardrobe or a gathering in minutes. Arees Perfumes keeps a small, fragrance-led range of bakhoor crafted with the same alcohol-free oils as our attars.',
+      'Shop bakhoor perfume, bakhoor attar, scented wood chips and oriental incense from Arees Perfumes, Chennai. Each bakhoor blend uses the same alcohol-free oils as our attars and scents a room, wardrobe or gathering in minutes.',
     sections: [
       {
         heading: 'What Bakhoor Is',

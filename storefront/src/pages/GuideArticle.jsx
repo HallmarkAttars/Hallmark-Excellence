@@ -54,6 +54,14 @@ export default function GuideArticle() {
 
       <div className="container guide-article-container">
         <div className="guide-article-body">
+          {guide.shopCta && (
+            <div className="guide-shop-callout">
+              <Link className="btn btn-primary" to={guide.shopCta.to}>
+                {guide.shopCta.label}
+              </Link>
+            </div>
+          )}
+
           {guide.sections.map((section) => (
             <section key={section.heading}>
               <h2>{section.heading}</h2>

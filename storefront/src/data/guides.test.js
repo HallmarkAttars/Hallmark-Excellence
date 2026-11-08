@@ -38,6 +38,10 @@ describe('guides dataset', () => {
       for (const link of guide.related || []) {
         expect(link.to.startsWith('/'), `${guide.slug}: ${link.to}`).toBe(true)
       }
+      if (guide.shopCta) {
+        expect(guide.shopCta.to.startsWith('/'), `${guide.slug}: shopCta`).toBe(true)
+        expect(guide.shopCta.label.length).toBeGreaterThan(3)
+      }
     }
   })
 
@@ -51,6 +55,12 @@ describe('guides dataset', () => {
     const guide = getGuideBySlug('bakhoor-guide')
     expect(guide.seoTitle).toContain('Bakhoor Perfume')
     expect(guide.description).toContain('benefits')
+    expect(guide.shopCta).toEqual({
+      label: 'Shop bakhoor perfume, chips & incense',
+      to: '/categories/bakhoor',
+    })
+    expect(guide.description.length).toBeLessThanOrEqual(155)
+    expect(guide.seoTitle.length).toBeLessThanOrEqual(60)
     expect(guide.sections.map((section) => section.heading)).toEqual(
       expect.arrayContaining(['Bakhoor Meaning and Common Spellings', 'Bakhoor Benefits: Why Homes Use It'])
     )

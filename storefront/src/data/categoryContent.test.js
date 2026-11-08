@@ -78,6 +78,16 @@ describe('categoryContent', () => {
     }
   })
 
+  it('targets the bakhoor commercial queries on the category page', () => {
+    const entry = getCategoryContent({ name: 'Bakhoor ' })
+    expect(entry.title).toContain('Bakhoor Perfume')
+    expect(entry.title).toContain('Attar')
+    expect(entry.metaDescription.toLowerCase()).toContain('bakhoor perfume')
+    expect(entry.metaDescription.toLowerCase()).toContain('bakhoor attar')
+    expect(entry.intro.toLowerCase()).toContain('bakhoor perfume')
+    expect(entry.intro.toLowerCase()).toContain('bakhoor attar')
+  })
+
   it('canonical category names map consistently between slug and key', () => {
     // Every canonical name must be derivable from the live name by just
     // trim + lowercase (this is what getCategoryContent does).

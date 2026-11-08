@@ -520,6 +520,20 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.schema[1]['@type']).toBe('BreadcrumbList')
     })
 
+    it('adds price, stock and delivery cues to the product SERP snippet', () => {
+      const seo = buildProductSeo(product, { variant: product.variants[0] })
+      expect(seo.description).toContain('From ₹450')
+      expect(seo.description).toContain('in stock')
+      expect(seo.description).toContain('alcohol-free')
+      expect(seo.description).toContain('delivery across India')
+      expect(seo.description.length).toBeLessThanOrEqual(160)
+    })
+
+    it('adds the canonical product URL to Product schema', () => {
+      const seo = buildProductSeo(product)
+      expect(seo.schema[0].url).toBe('https://www.areesperfumes.in/product/p-201')
+    })
+
     it('normalizes product whitespace and omits an invented category', () => {
       const seo = buildProductSeo({
         id: 'p-clean',
@@ -545,6 +559,15 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.canonical).toBe('/categories/fragrance-oils')
       expect(seo.schema[0]['@type']).toBe('BreadcrumbList')
       expect(seo.schema).toHaveLength(1)
+    })
+
+    it('targets bakhoor perfume and attar queries on the bakhoor category page', () => {
+      const seo = buildCategorySeo({ name: 'Bakhoor ', description: '' }, 'bakhoor')
+      expect(seo.title).toContain('Bakhoor Perfume')
+      expect(seo.title).toContain('Attar')
+      expect(seo.description.toLowerCase()).toContain('bakhoor perfume')
+      expect(seo.description.toLowerCase()).toContain('bakhoor attar')
+      expect(seo.canonical).toBe('/categories/bakhoor')
     })
 
     it('adds a collection ItemList for category products', () => {
@@ -573,9 +596,9 @@ describe('Schema.org JSON-LD Builders', () => {
       // empty; packaging categories describe other goods). The name-keyed
       // editorial map must win over the DB copy.
       const seo = buildCategorySeo({ name: 'Bakhoor ', description: '' }, 'Bakhoor ')
-      expect(seo.title).toBe('Bakhoor & Traditional Incense Fragrances | Arees Perfumes')
+      expect(seo.title).toBe('Bakhoor Perfume, Attar & Fragrance Online | Arees Perfumes')
       expect(seo.description).toContain('scented wood chips')
-      expect(seo.introDesc).toContain('Bakhoor is the traditional fragrance')
+      expect(seo.introDesc).toContain('Shop bakhoor perfume')
     })
 
     it('falls back to existing behaviour for unknown categories', () => {

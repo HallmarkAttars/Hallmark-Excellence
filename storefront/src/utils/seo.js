@@ -574,6 +574,7 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: productName,
+    url: productUrl,
     image: image ? [image] : [`${origin}/Hero.webp`],
     description:
       cleanDescription ||
@@ -612,13 +613,47 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   const productType = lowerCat
     ? (lowerCat.includes('oil') ? lowerCat : `${lowerCat} oil`)
     : 'fragrance'
+
+  // SERP snippet upgrade: append honest price/availability/delivery cues so
+  // product results carry a reason to click. Never invent a price — the floor
+  // comes from the same variant data the page renders.
+  const variantPrices = (Array.isArray(product.variants) ? product.variants : [])
+    .map((item) => Number(item?.total_price ?? item?.price ?? 0))
+    .filter((value) => Number.isFinite(value) && value > 0)
+  const lowestPrice = variantPrices.length > 0
+    ? Math.min(...variantPrices)
+    : Number(product.price || 0)
+  const inStock = isProductInStock(product)
+  const suffixBits = []
+  if (!cleanDbDesc.includes('₹') && Number.isFinite(lowestPrice) && lowestPrice > 0) {
+    suffixBits.push(`From ₹${Math.round(lowestPrice)}`)
+  }
+  suffixBits.push(inStock ? 'in stock' : 'check availability')
+  suffixBits.push('alcohol-free')
+  suffixBits.push('delivery across India')
+  const snippetSuffix = suffixBits.join(' · ')
+
+  const withSnippetSuffix = (base) => {
+    const separator = ' — '
+    const room = 160 - separator.length - snippetSuffix.length
+    if (room >= 40) {
+      const trimmed = base.length > room ? `${base.slice(0, room - 3).trim()}...` : base
+      return `${trimmed}${separator}${snippetSuffix}`
+    }
+    return base.length > 160 ? `${base.slice(0, 157).trim()}...` : base
+  }
+
   let description
   if (cleanDbDesc && cleanDbDesc.length >= 60) {
-    description = cleanDbDesc.length > 155 ? `${cleanDbDesc.slice(0, 152).trim()}...` : cleanDbDesc
+    description = withSnippetSuffix(cleanDbDesc)
   } else if (cleanDbDesc) {
-    description = `${cleanDbDesc}. 100% alcohol-free concentrated ${productType} by ${brandTitle}. Order online with delivery across India.`
+    description = withSnippetSuffix(
+      `${cleanDbDesc}. 100% alcohol-free concentrated ${productType} by ${brandTitle}.`
+    )
   } else {
-    description = `Discover ${productName} by ${brandTitle}. Authentic alcohol-free concentrated ${productType} formulated for rich, long-lasting scent. Available retail & wholesale.`
+    description = withSnippetSuffix(
+      `Discover ${productName} by ${brandTitle}. Authentic alcohol-free concentrated ${productType} for retail and wholesale.`
+    )
   }
 
   const breadcrumbs = [

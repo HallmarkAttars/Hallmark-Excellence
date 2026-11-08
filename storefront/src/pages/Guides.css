@@ -170,6 +170,18 @@
   max-width: 760px;
 }
 
+.guide-shop-callout {
+  margin-bottom: 30px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--cream, #faf7f2);
+}
+
+.guide-shop-callout .btn {
+  display: inline-block;
+}
+
 .guide-article-body section {
   margin-bottom: 34px;
 }

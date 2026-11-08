@@ -518,11 +518,15 @@ export const GUIDES = [
   {
     slug: 'bakhoor-guide',
     title: 'Bakhoor: What It Is and How to Use It',
-    seoTitle: 'Bakhoor Perfume: What It Is, Benefits & How to Use It | Arees Perfumes',
+    seoTitle: 'Bakhoor Perfume: Benefits, Meaning & How to Use | Arees',
     description:
-      'Bakhoor perfume explained: what bakhoor is, its benefits, the meaning and spellings, and how to use chips, powder, spray and room fresheners safely at home.',
+      'What bakhoor perfume is, its benefits and meaning, plus how to burn chips, powder and spray safely at home. Buy bakhoor online from Chennai.',
     excerpt:
       'Bakhoor turns an ordinary room into a fragrant space. Here is what bakhoor actually is, how homes in India and the Gulf use it, and how to burn and buy it well.',
+    shopCta: {
+      label: 'Shop bakhoor perfume, chips & incense',
+      to: '/categories/bakhoor',
+    },
     category: 'Fragrance Basics',
     readTime: '6 min read',
     published: '2026-11-02',
