@@ -17,6 +17,19 @@ const CATEGORY_SLUG_ALIASES = new Map([
   // Space/mixed-case DB names.
   ['face wash', 'face-wash'],
   ['bakhoor', 'bakhoor'],
+  // Remaining raw DB slugs that would otherwise publish as mixed-case or
+  // ambiguous URLs. Each maps to the keyword phrase its category name and
+  // editorial title already use, so the sitemap never emits /categories/Roll%20on,
+  // /categories/Caps or /categories/Pump and old URLs 301 to the clean form.
+  //   'Roll on'  -> 'Fancy Bottle' category (NOT Roll on Attars, which is '1')
+  //   'Caps'     -> 'Caps for Roll on bottles'
+  //   'Pump'     -> 'Pump & Cap for spray bottles'
+  ['roll on', 'fancy-attar-bottles'],
+  ['caps', 'roll-on-bottle-caps'],
+  ['pump', 'spray-bottle-pumps'],
+  ['fancy-attar-bottles', 'fancy-attar-bottles'],
+  ['roll-on-bottle-caps', 'roll-on-bottle-caps'],
+  ['spray-bottle-pumps', 'spray-bottle-pumps'],
 ])
 
 export function normalizeCategorySlug(slug) {

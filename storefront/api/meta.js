@@ -36,6 +36,39 @@ const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes
 const FETCH_TIMEOUT_MS = 8000
 const SHELL_TIMEOUT_MS = 5000
 
+// Last-good rendered metadata per route. Vercel keeps a warm function instance
+// for a while, so when the upstream API is briefly unreachable we can still
+// serve the page a crawler or customer saw minutes ago instead of a 503.
+// Entries are also covered by the CDN's stale-while-revalidate window.
+const SEO_CACHE = globalThis.__AREES_SEO_CACHE__ || new Map()
+globalThis.__AREES_SEO_CACHE__ = SEO_CACHE
+const SEO_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+const SEO_CACHE_MAX_ENTRIES = 300
+
+function seoCacheKey({ type, id, slug }) {
+  const key = type === 'product' ? id : slug || id
+  return `${type}:${String(key || '').trim().toLowerCase()}`
+}
+
+function readSeoCached(key) {
+  const entry = SEO_CACHE.get(key)
+  if (!entry) return null
+  if (Date.now() - entry.cachedAt > SEO_CACHE_TTL_MS) {
+    SEO_CACHE.delete(key)
+    return null
+  }
+  return entry
+}
+
+function writeSeoCached(key, value) {
+  if (value?.status !== 200) return
+  if (SEO_CACHE.size >= SEO_CACHE_MAX_ENTRIES) {
+    const oldest = SEO_CACHE.keys().next().value
+    if (oldest !== undefined) SEO_CACHE.delete(oldest)
+  }
+  SEO_CACHE.set(key, { ...value, cachedAt: Date.now() })
+}
+
 function httpError(status, message) {
   const error = new Error(message)
   error.status = status
@@ -811,35 +844,70 @@ async function fetchShell(req) {
   throw lastError || new Error('Unable to load the HTML shell')
 }
 
+function redirectLocation(canonical, query) {
+  const params = new URLSearchParams()
+  if (query?.variant) params.set('variant', String(query.variant))
+  const suffix = params.toString()
+  return `${CANONICAL_ORIGIN}${canonical}${suffix ? `?${suffix}` : ''}`
+}
+
 export default async function handler(req, res) {
   const query = readQuery(req)
   const type = String(query.type || '')
   const id = String(query.id || '')
   const slug = String(query.slug || '')
+  const cacheKey = seoCacheKey({ type, id, slug })
 
   let status = 200
   let seo
   let bodyHtml = ''
+  let degraded = false
 
   try {
     const result = await buildSeoForRoute({ type, id, slug })
     status = result.status
     seo = result.seo
     bodyHtml = result.bodyHtml || ''
+    writeSeoCached(cacheKey, result)
   } catch (error) {
     if (error?.status === 404) {
       status = 404
       seo = buildNotFoundSeo()
     } else {
-      console.error('[meta] failed to build SEO:', error)
-      status = 503
-      seo = {
-        ...buildNotFoundSeo(),
-        title: 'Temporarily Unavailable | Arees Perfumes',
-        description: 'We could not load this page right now. Please try again shortly.',
-        robots: 'noindex,nofollow',
+      // Upstream unavailable: serve the last good render for this exact route
+      // when we have one, so crawlers and customers do not see a 503 while the
+      // API is restarting or sleeping.
+      const cached = readSeoCached(cacheKey)
+      if (cached) {
+        status = cached.status
+        seo = cached.seo
+        bodyHtml = cached.bodyHtml || ''
+        degraded = true
+        console.warn('[meta] serving cached SEO (upstream unavailable):', cacheKey)
+      } else {
+        console.error('[meta] failed to build SEO:', error)
+        status = 503
+        seo = {
+          ...buildNotFoundSeo(),
+          title: 'Temporarily Unavailable | Arees Perfumes',
+          description: 'We could not load this page right now. Please try again shortly.',
+          robots: 'noindex,nofollow',
+        }
       }
     }
+  }
+
+  if (
+    status === 200 &&
+    type === 'product' &&
+    seo?.canonical &&
+    seo.canonical !== `/product/${id}`
+  ) {
+    res.statusCode = 301
+    res.setHeader('Location', redirectLocation(seo.canonical, query))
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
+    res.end()
+    return
   }
 
   if (
@@ -849,7 +917,7 @@ export default async function handler(req, res) {
     seo.canonical !== `/categories/${slug}`
   ) {
     res.statusCode = 301
-    res.setHeader('Location', `${CANONICAL_ORIGIN}${seo.canonical}`)
+    res.setHeader('Location', redirectLocation(seo.canonical, query))
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
     res.end()
     return
@@ -862,7 +930,7 @@ export default async function handler(req, res) {
     seo.canonical !== `/brand/${slug}`
   ) {
     res.statusCode = 301
-    res.setHeader('Location', `${CANONICAL_ORIGIN}${seo.canonical}`)
+    res.setHeader('Location', redirectLocation(seo.canonical, query))
     res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=3600')
     res.end()
     return
@@ -886,8 +954,11 @@ export default async function handler(req, res) {
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader(
     'Cache-Control',
-    status === 200 ? 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400' : 'no-store'
+    status === 200
+      ? `public, max-age=0, s-maxage=${degraded ? 30 : 600}, stale-while-revalidate=604800`
+      : 'no-store'
   )
+  if (degraded) res.setHeader('X-Arees-Degraded', '1')
   if (status !== 200) res.setHeader('X-Robots-Tag', 'noindex, follow')
   if (status === 503) res.setHeader('Retry-After', '300')
   if (req?.method === 'HEAD') {

@@ -98,6 +98,7 @@ function normalizeItem(raw) {
   return {
     productId: raw.productId ?? raw.product_id ?? raw.id,
     product_id: raw.product_id ?? raw.productId ?? raw.id,
+    slug: raw.slug ?? raw.product_slug ?? null,
     variantId: hasVariant ? variantId : null,
     variant_id: hasVariant ? variantId : null,
     variantPieces: isPiece ? variantPieces : 1,
@@ -274,6 +275,7 @@ export function CartProvider({ children }) {
       const newItem = {
         productId: product.productId ?? product.id,
         product_id: product.id,
+        slug: product.slug ?? product.product_slug ?? null,
         variantId,
         variant_id: variantId,
         variantPieces: isPiece ? variantPieces : 1,

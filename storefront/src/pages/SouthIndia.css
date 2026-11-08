@@ -30,6 +30,7 @@
 }
 
 .si-reasons h2,
+.si-faqs h2,
 .si-store-details h2,
 .si-coverage h2,
 .si-cta h2 {
@@ -170,4 +171,19 @@
   gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+.si-cta .si-cta-links {
+  margin: 24px 0 0;
+  font-size: 0.9rem;
+}
+
+.si-cta-links a {
+  color: var(--gold-deep);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.si-cta-links a:hover {
+  text-decoration: underline;
 }

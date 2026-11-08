@@ -335,4 +335,55 @@ describe('Cart Page & Price Priority Integration', () => {
     // Subtotal: 1920 + 500 = 2420
     expect(getAllByText('₹2,420').length).toBeGreaterThan(0)
   })
+
+  // TEST 11: Product links prefer the SEO slug over the raw id
+  it('TEST 11: links a cart line to /product/<slug> when the product has a slug', () => {
+    const product = {
+      id: 'p-slug',
+      slug: 'mysore-rose-attar',
+      name: 'Mysore Rose Attar',
+      price: 450,
+    }
+
+    const { getByRole, getAllByRole } = render(
+      <CartTestWrapper
+        initialActions={(addItem) => {
+          addItem(product, 1)
+        }}
+      />
+    )
+
+    fireEvent.click(getByRole('button', { name: /setup cart/i }))
+
+    const links = getAllByRole('link', { name: /view mysore rose attar product details/i })
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('/product/mysore-rose-attar')
+    }
+  })
+
+  // TEST 12: Legacy lines without a slug fall back to the product id
+  it('TEST 12: falls back to /product/<id> for saved cart lines without a slug', () => {
+    const legacyItem = {
+      product_id: 'legacy-id-1',
+      name: 'Legacy Oud',
+      price: 500,
+      quantity: 1,
+    }
+    localStorage.setItem('ad_cart_v1', JSON.stringify([legacyItem]))
+
+    const { getAllByRole } = render(
+      <MemoryRouter>
+        <CartProvider>
+          <Cart />
+        </CartProvider>
+      </MemoryRouter>
+    )
+
+    const links = getAllByRole('link', { name: /view legacy oud product details/i })
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('/product/legacy-id-1')
+    }
+  })
 })

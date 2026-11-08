@@ -88,6 +88,18 @@ export default function SouthIndia() {
           </div>
         </section>
 
+        <section className="si-faqs">
+          <h2>Chennai Attar Shop: Common Questions</h2>
+          <div className="si-reasons-grid">
+            {SOUTH_INDIA.faqs.map((faq) => (
+              <div key={faq.question} className="si-card">
+                <h3>{faq.question}</h3>
+                <p>{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="si-cta">
           <h2>{SOUTH_INDIA.cta.heading}</h2>
           <p>{SOUTH_INDIA.cta.intro}</p>
@@ -96,6 +108,12 @@ export default function SouthIndia() {
             <Link to="/wholesale" className="btn btn-secondary">Wholesale Attars Supply</Link>
             <Link to="/contact" className="btn btn-secondary">Contact Us</Link>
           </div>
+          <p className="si-cta-links">
+            Popular collections: <Link to="/categories/attars">attars</Link>,{' '}
+            <Link to="/categories/bakhoor">bakhoor</Link>,{' '}
+            <Link to="/categories/roll-on-attars">roll-on attars</Link>. New to attar? Read{' '}
+            <Link to="/guides/buy-attar-chennai">where to buy attar in Chennai</Link>.
+          </p>
         </section>
       </div>
     </div>

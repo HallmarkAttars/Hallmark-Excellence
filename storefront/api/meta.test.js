@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildB2bBodyHtml,
   buildGuideBodyHtml,
@@ -195,6 +195,13 @@ function createRes() {
     },
   }
 }
+
+beforeEach(() => {
+  // The last-good SEO cache lives on globalThis so it survives warm Vercel
+  // invocations. Clear it between tests so one test's cached render cannot
+  // mask another test's upstream failure.
+  globalThis.__AREES_SEO_CACHE__?.clear()
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -471,6 +478,9 @@ describe('meta handler', () => {
       { slug: '10', canonical: 'fragrance-oils', apiSlug: '10' },
       { slug: 'Face wash', canonical: 'face-wash', apiSlug: 'Face wash' },
       { slug: 'Bakhoor', canonical: 'bakhoor', apiSlug: 'Bakhoor ' },
+      { slug: 'Roll on', canonical: 'fancy-attar-bottles', apiSlug: 'Roll on' },
+      { slug: 'Caps', canonical: 'roll-on-bottle-caps', apiSlug: 'Caps' },
+      { slug: 'Pump', canonical: 'spray-bottle-pumps', apiSlug: 'Pump' },
     ]
 
     for (const legacy of legacyCases) {
@@ -496,6 +506,37 @@ describe('meta handler', () => {
       expect(res.statusCode).toBe(301)
       expect(res.headers.location).toBe(`https://www.areesperfumes.in/categories/${legacy.canonical}`)
     }
+  })
+
+  it('keeps a canonical category URL self-canonical when the API slug is raw', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      if (value.endsWith('/categories')) {
+        return jsonResponse({
+          categories: [{ id: 'c-fancy', name: 'Fancy Bottle', slug: 'Roll on' }],
+        })
+      }
+      if (value.includes('/categories/Roll%20on/products')) {
+        return jsonResponse({ products: [{ id: 'p-1' }] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      {
+        query: { type: 'category', slug: 'fancy-attar-bottles' },
+        headers: { host: 'areesperfumes.in' },
+        method: 'GET',
+      },
+      res
+    )
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toContain(
+      'rel="canonical" href="https://www.areesperfumes.in/categories/fancy-attar-bottles"'
+    )
+    expect(res.body).toContain('data-prerender="true"')
   })
 
   it('redirects the legacy Oud Al Haramain brand slug to Arees Luxury', async () => {
@@ -539,5 +580,123 @@ describe('meta handler', () => {
     expect(res.body).toContain('<meta name="robots" content="noindex,follow" />')
     expect(res.body).not.toContain('rel="canonical"')
     expect(res.body).not.toContain('property="og:url"')
+  })
+
+  it('301-redirects a UUID product URL to the SEO slug and keeps the variant query', async () => {
+    const fetchMock = vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      if (value.includes('/products/11111111-1111-4111-8111-111111111111')) {
+        return jsonResponse({ product: { ...product, slug: 'arees-black-musk' } })
+      }
+      if (value.includes('/products/11111111-1111-4111-8111-111111111111/related')) {
+        return jsonResponse({ products: [] })
+      }
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = createRes()
+    await handler(
+      {
+        query: { type: 'product', id: '11111111-1111-4111-8111-111111111111', variant: 'v-1' },
+        headers: { host: 'areesperfumes.in' },
+        method: 'GET',
+      },
+      res
+    )
+
+    expect(res.statusCode).toBe(301)
+    expect(res.headers.location).toBe(
+      'https://www.areesperfumes.in/product/arees-black-musk?variant=v-1'
+    )
+    expect(res.headers['cache-control']).toBe('public, max-age=0, s-maxage=3600')
+    expect(res.body).toBe('')
+  })
+
+  it('keeps a slug product URL self-canonical (no redirect)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      if (value.includes('/products/arees-black-musk')) {
+        return jsonResponse({ product: { ...product, slug: 'arees-black-musk' } })
+      }
+      if (value.includes('/related')) return jsonResponse({ products: [] })
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      { query: { type: 'product', id: 'arees-black-musk' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toContain(
+      'rel="canonical" href="https://www.areesperfumes.in/product/arees-black-musk"'
+    )
+  })
+
+  it('serves the last good render when the upstream API fails after a success', async () => {
+    const upstreamOk = vi.fn(async (url) => {
+      const value = String(url)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      if (value.includes('/products/11111111-1111-4111-8111-111111111111')) {
+        return jsonResponse({ product })
+      }
+      if (value.includes('/related')) return jsonResponse({ products: [] })
+      throw new Error(`Unexpected URL ${value}`)
+    })
+    vi.stubGlobal('fetch', upstreamOk)
+
+    const first = createRes()
+    await handler(
+      { query: { type: 'product', id: '11111111-1111-4111-8111-111111111111' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      first
+    )
+    expect(first.statusCode).toBe(200)
+    expect(first.headers['x-arees-degraded']).toBeUndefined()
+
+    // Same route, upstream now unreachable (network error, not a 404).
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      if (String(url).endsWith('/index.html')) return htmlResponse(shell)
+      throw new Error('fetch failed')
+    }))
+
+    const second = createRes()
+    await handler(
+      { query: { type: 'product', id: '11111111-1111-4111-8111-111111111111' }, headers: { host: 'areesperfumes.in' }, method: 'GET' },
+      second
+    )
+
+    expect(second.statusCode).toBe(200)
+    expect(second.headers['x-arees-degraded']).toBe('1')
+    expect(second.headers['cache-control']).toBe('public, max-age=0, s-maxage=30, stale-while-revalidate=604800')
+    expect(second.body).toContain('<title>Arees Black Musk')
+    expect(second.body).toContain('rel="canonical"')
+  })
+
+  it('returns 503 with Retry-After when the upstream fails and there is no cached render', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      if (String(url).endsWith('/index.html')) return htmlResponse(shell)
+      throw new Error('fetch failed')
+    }))
+
+    const res = createRes()
+    await handler(
+      {
+        query: { type: 'product', id: '33333333-3333-4333-8333-333333333333' },
+        headers: { host: 'areesperfumes.in' },
+        method: 'GET',
+      },
+      res
+    )
+
+    expect(res.statusCode).toBe(503)
+    expect(res.headers['cache-control']).toBe('no-store')
+    expect(res.headers['retry-after']).toBe('300')
+    expect(res.headers['x-arees-degraded']).toBeUndefined()
+    expect(res.body).toContain('Temporarily Unavailable')
+    expect(res.body).toContain('<meta name="robots" content="noindex,nofollow" />')
   })
 })

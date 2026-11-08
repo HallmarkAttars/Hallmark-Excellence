@@ -82,11 +82,18 @@ describe('category slug normalization', () => {
     expect(normalizeCategorySlug('Face%20wash')).toBe('face-wash')
     expect(normalizeCategorySlug('Bakhoor ')).toBe('bakhoor')
     expect(normalizeCategorySlug('Bakhoor')).toBe('bakhoor')
+    expect(normalizeCategorySlug('Roll on')).toBe('fancy-attar-bottles')
+    expect(normalizeCategorySlug('Caps')).toBe('roll-on-bottle-caps')
+    expect(normalizeCategorySlug('Caps ')).toBe('roll-on-bottle-caps')
+    expect(normalizeCategorySlug('Pump')).toBe('spray-bottle-pumps')
+    expect(normalizeCategorySlug('Pump ')).toBe('spray-bottle-pumps')
   })
 
   it('keeps already-clean and empty/unknown slugs unchanged', () => {
     expect(normalizeCategorySlug('roll-on-bottles')).toBe('roll-on-bottles')
-    expect(normalizeCategorySlug('Roll on')).toBe('Roll on')
+    expect(normalizeCategorySlug('fancy-attar-bottles')).toBe('fancy-attar-bottles')
+    expect(normalizeCategorySlug('roll-on-bottle-caps')).toBe('roll-on-bottle-caps')
+    expect(normalizeCategorySlug('spray-bottle-pumps')).toBe('spray-bottle-pumps')
     expect(normalizeCategorySlug('')).toBe('')
     expect(normalizeCategorySlug('nonsense')).toBe('nonsense')
     expect(normalizeCategorySlug(null)).toBe('')
@@ -165,14 +172,36 @@ describe('buildSitemapXml', () => {
     const xml = buildSitemapXml({
       baseUrl: 'https://www.areesperfumes.in',
       pages: ['/shop', '/shop'],
-      categories: [{ slug: 'Roll on' }, { slug: 'Roll on' }],
+      categories: [{ slug: 'Test Category' }, { slug: 'Test Category' }],
       brands: [],
       products: [],
     })
-    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/Roll%20on</loc>')
-    expect(xml).not.toContain('/categories/Roll on<')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/Test%20Category</loc>')
+    expect(xml).not.toContain('/categories/Test Category<')
     const count = (xml.match(/<loc>https:\/\/www\.areesperfumes\.in\/shop<\/loc>/g) || []).length
     expect(count).toBe(1)
+  })
+
+  it('emits clean canonical URLs for the remaining raw packaging-category slugs', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://www.areesperfumes.in',
+      pages: [],
+      categories: [
+        { slug: 'Roll on' },
+        { slug: 'Caps' },
+        { slug: 'Pump' },
+        { slug: 'roll-on-bottles' },
+      ],
+      brands: [],
+      products: [],
+    })
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/fancy-attar-bottles</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/roll-on-bottle-caps</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/spray-bottle-pumps</loc>')
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/categories/roll-on-bottles</loc>')
+    expect(xml).not.toContain('/categories/Roll%20on')
+    expect(xml).not.toContain('/categories/Caps')
+    expect(xml).not.toContain('/categories/Pump')
   })
 
   it('emits the canonical display-bottles category URL without a trailing space', () => {
@@ -641,12 +670,16 @@ describe('Schema.org JSON-LD Builders', () => {
   })
 
   describe('South India landing page SEO', () => {
-    it('builds a local Chennai descriptor with LocalBusiness and breadcrumb schema', () => {
+    it('builds a local Chennai descriptor with LocalBusiness and FAQ schema', () => {
       const seo = buildSouthIndiaSeo()
       expect(seo.title).toContain('Chennai')
       expect(seo.canonical).toBe('/attar-perfume-shop-south-india')
       expect(seo.schema.map((item) => item['@type'])).toEqual(
-        expect.arrayContaining(['LocalBusiness', 'BreadcrumbList'])
+        expect.arrayContaining(['LocalBusiness', 'FAQPage', 'BreadcrumbList'])
+      )
+      const faq = seo.schema.find((item) => item['@type'] === 'FAQPage')
+      expect(faq.mainEntity.map((item) => item.name)).toEqual(
+        expect.arrayContaining(['Where can I buy attar in Chennai?'])
       )
       expect(buildStaticPageSeo('attar-perfume-shop-south-india').canonical).toBe(
         '/attar-perfume-shop-south-india'

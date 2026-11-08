@@ -771,6 +771,33 @@ export const SOUTH_INDIA = {
     heading: 'Explore Our South India Collections Online',
     intro: 'Order directly for home delivery or coordinate bulk supply with our Chennai desk.',
   },
+  faqs: [
+    {
+      question: 'Where can I buy attar in Chennai?',
+      answer:
+        'Visit the Arees Perfumes boutique at 83 & 84, Moore Street, Mannadi, George Town, Chennai 600001. You can also order online for delivery across India. The shop is open Monday to Saturday, 10:00 AM to 9:00 PM, with a wholesale desk until 9:30 PM.',
+    },
+    {
+      question: 'Do you sell attar wholesale in Chennai?',
+      answer:
+        'Yes. Loose attar and fragrance oil orders start at 100 g, and branded Arees and Dahab packs start at 60 pieces across a combined order. Wholesale and export enquiries are handled by Hikma Exports from the same Chennai address.',
+    },
+    {
+      question: 'Do you deliver attars across South India?',
+      answer:
+        'Yes. Retail orders and bulk consignments are dispatched from Chennai to Tamil Nadu, Kerala, Karnataka, Andhra Pradesh and Telangana. Share your pin code and quantity for delivery timelines.',
+    },
+    {
+      question: 'Are the attars alcohol-free?',
+      answer:
+        'Yes. The attars, oud oils and roll-on perfume oils sold at Arees Perfumes are concentrated alcohol-free fragrance oils. Ask the team if you need help choosing a scent family for daily wear, gifting or religious occasions.',
+    },
+    {
+      question: 'Do you export perfume from Chennai?',
+      answer:
+        'Export orders are quotation-based through Hikma Exports, a GST-registered exporter with IEC. Buyers in Singapore, Malaysia, the UAE, Sri Lanka and the Maldives can share their requirement for pricing, lead time and documents.',
+    },
+  ],
 }
 
 // --------------------------------------------------------------------------

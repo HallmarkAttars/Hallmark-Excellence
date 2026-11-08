@@ -46,4 +46,17 @@ describe('guides dataset', () => {
     expect(getGuideBySlug('nope')).toBeNull()
     expect(getGuideBySlug(null)).toBeNull()
   })
+
+  it('targets bakhoor-perfume search intent on the bakhoor guide', () => {
+    const guide = getGuideBySlug('bakhoor-guide')
+    expect(guide.seoTitle).toContain('Bakhoor Perfume')
+    expect(guide.description).toContain('benefits')
+    expect(guide.sections.map((section) => section.heading)).toEqual(
+      expect.arrayContaining(['Bakhoor Meaning and Common Spellings', 'Bakhoor Benefits: Why Homes Use It'])
+    )
+    const questions = guide.faqs.map((faq) => faq.question)
+    expect(questions).toEqual(
+      expect.arrayContaining(['What are the benefits of bakhoor?', 'What does bakhoor mean?'])
+    )
+  })
 })

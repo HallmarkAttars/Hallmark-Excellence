@@ -1,0 +1,33 @@
+name: Keep Render API awake
+
+# The storefront API runs on a Render instance that sleeps after inactivity.
+# When it sleeps, /api/meta cannot fetch product/category/brand data and the
+# dynamic pages return 503 until Render wakes. Pinging the cheap health route
+# every 10 minutes keeps the instance warm for crawlers and customers.
+#
+# Note: GitHub scheduled workflows can be delayed at busy times. For a strict
+# guarantee also point an uptime monitor (UptimeRobot, cron-job.org) at the
+# same URL, or move the API to an always-on plan.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping Render health endpoint
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 https://api.areesperfumes.in/api/health || true)
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Render API did not return 200 after 3 attempts"
+          exit 1

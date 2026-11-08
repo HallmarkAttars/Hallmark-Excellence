@@ -54,10 +54,14 @@ function CartLine({ item, inGroup }) {
   const showStruck =
     struckPerPiece != null && Math.abs(Number(perUnit || 0) - struckPerPiece) > 0.005
   // Every cart line carries its product id — the exact product this line was
-  // added from. The image + name link to that product's details page (never
-  // the shop/brand page); the rest of the card stays non-navigating.
-  const productHref = item.product_id != null
-    ? `/product/${item.product_id}`
+  // added from. Prefer the SEO slug so internal navigation lands on the
+  // canonical /product/<slug> URL; older saved carts fall back to the id,
+  // which /api/meta 301-redirects to the slug form. The image + name link to
+  // that product's details page (never the shop/brand page); the rest of the
+  // card stays non-navigating.
+  const productKey = item.slug || item.product_id
+  const productHref = productKey != null
+    ? `/product/${encodeURIComponent(productKey)}`
     : null
   const productImage = (
     <div className="cart-item-image-wrap">

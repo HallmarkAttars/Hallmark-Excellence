@@ -884,6 +884,7 @@ export function buildSouthIndiaSeo({ origin = CANONICAL_ORIGIN } = {}) {
         ],
         origin
       ),
+      buildFAQSchema(SOUTH_INDIA.faqs),
       buildLocalBusinessSchema(origin),
     ].filter(Boolean),
   }

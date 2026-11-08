@@ -518,9 +518,9 @@ export const GUIDES = [
   {
     slug: 'bakhoor-guide',
     title: 'Bakhoor: What It Is and How to Use It',
-    seoTitle: 'Bakhoor Attar: What It Is & How to Use It at Home | Arees Perfumes',
+    seoTitle: 'Bakhoor Perfume: What It Is, Benefits & How to Use It | Arees Perfumes',
     description:
-      'Learn what bakhoor is, how to burn and store it, and how to buy quality bakhoor - scented wood chips and oriental incense explained simply.',
+      'Bakhoor perfume explained: what bakhoor is, its benefits, the meaning and spellings, and how to use chips, powder, spray and room fresheners safely at home.',
     excerpt:
       'Bakhoor turns an ordinary room into a fragrant space. Here is what bakhoor actually is, how homes in India and the Gulf use it, and how to burn and buy it well.',
     category: 'Fragrance Basics',
@@ -533,6 +533,27 @@ export const GUIDES = [
         paragraphs: [
           'Bakhoor (also spelled bukhoor) is fragrant wood chips, or a dense blended brick, soaked in scented oils and resins. A small piece is heated on a burner, and the smoke - not the wood itself - carries the fragrance. Within minutes, the scent settles into curtains, upholstery, clothing and even walls, which is why bakhoor is the room fragrance of choice for weddings and guests across India and the Gulf.',
           'Bakhoor sits in the same family as oud, amber and musk. It is not usually worn on skin; its job is to scent spaces and fabric, and to add ceremony and welcome to an occasion.',
+        ],
+      },
+      {
+        heading: 'Bakhoor Meaning and Common Spellings',
+        paragraphs: [
+          'Bakhoor is an Arabic word for incense or fragrance. English pages spell it several ways - bakhoor, bukhoor, bakhour, bakur and bukhur - and all of them refer to the same thing: scented wood chips or a blended brick that is heated to release fragrance. Searches for the bakhoor meaning, or for bakhoor in Telugu, Portuguese or other languages, are usually asking this same question.',
+          'In India and the Gulf, bakhoor specifically means the material you burn for a room, not a perfume you wear. It belongs to the same fragrance family as oud, amber and musk, but its job is to scent a space and the fabrics in it.',
+        ],
+      },
+      {
+        heading: 'Bakhoor Benefits: Why Homes Use It',
+        paragraphs: [
+          'Bakhoor is used to welcome guests, refresh a home before a gathering, and add ceremony to weddings, festivals and religious occasions. Unlike a quick spray, the smoke settles into curtains, upholstery and clothing, so the fragrance lingers for hours after the burner is switched off.',
+          'It is also economical. A small chip or piece goes much further than most first-time buyers expect, which makes bakhoor practical for daily use, retail spaces and event halls. Treat bakhoor as a fragrance, not a health treatment or air purifier.',
+        ],
+      },
+      {
+        heading: 'Chips, Powder, Spray and Room Fresheners',
+        paragraphs: [
+          'Bakhoor comes as wood chips, dense blended bricks, powder-style blends, and convenience formats such as perfume sprays and electric room fresheners. Chips and bricks are heated on a burner; powder is heaped or pressed on the plate; sprays and plug-in fresheners give a fast, smoke-free lift.',
+          'Choose chips or bricks for the traditional session and the longest-lasting room scent. Choose a bakhoor perfume spray or room freshener when you want a quick refresh without smoke. The scent families are the same across formats: sweet amber, woody oud, and floral musk.',
         ],
       },
       {
@@ -579,6 +600,26 @@ export const GUIDES = [
         question: 'Is bakhoor safe around children and pets?',
         answer:
           'Keep heated charcoal and lit burners completely out of reach, as with any flame, and ventilate the room. People with asthma or sensitive pets should use fewer chips and shorter sessions, or prefer electric burners that cannot tip like charcoal can.',
+      },
+      {
+        question: 'What are the benefits of bakhoor?',
+        answer:
+          'Bakhoor scents a room and the fabrics in it for hours, welcomes guests, refreshes a home before gatherings, and adds ceremony to weddings and festivals. It is also economical because a small piece goes a long way. It is a fragrance, not an air purifier or health treatment.',
+      },
+      {
+        question: 'What does bakhoor mean?',
+        answer:
+          'Bakhoor is an Arabic word for incense or fragrance. In Indian and Gulf homes it means scented wood chips or a blended brick that is heated on a burner to release smoke and scent. Common spellings include bukhoor, bakhour and bukhur.',
+      },
+      {
+        question: 'What is the difference between bakhoor powder and bakhoor chips?',
+        answer:
+          'Chips are pieces of scented wood heated on a burner; powder is a finer blend that is heaped or pressed on the burner plate. Both release fragrance through heat. Chips usually give a slower, longer session, while powder can release scent faster.',
+      },
+      {
+        question: 'Can bakhoor be used as a room freshener?',
+        answer:
+          'Yes. A short burner session is the traditional way to freshen a room. If you want a smoke-free option, use a bakhoor perfume spray or an electric room freshener instead, and ventilate the space either way.',
       },
     ],
     related: [
