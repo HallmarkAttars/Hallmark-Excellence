@@ -135,6 +135,36 @@ describe('static body fallbacks', () => {
     expect(southIndia).toContain('Wholesale desk: 9:00 AM - 9:30 PM')
     expect(southIndia).toContain('Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, and Telangana')
   })
+
+  it('links the home and South India bodies to canonical category URLs', () => {
+    const home = buildStaticBodyHtml('home')
+    expect(home).toContain('<h2>Shop by Category</h2>')
+    expect((home.match(/<li><a href="\/categories\//g) || []).length).toBe(10)
+    for (const slug of [
+      'roll-on-attars',
+      'bakhoor',
+      'fragrance-oils',
+      'spray-bottles',
+      'roll-on-bottles',
+      'fancy-attar-bottles',
+      'roll-on-bottle-caps',
+      'spray-bottle-pumps',
+      'display-bottles',
+      'face-wash',
+    ]) {
+      expect(home).toContain(`href="/categories/${slug}"`)
+    }
+    // The old non-existent category must never be linked.
+    expect(home).not.toContain('href="/categories/attars"')
+    expect(home).not.toContain('href="/categories/attar"')
+
+    const southIndia = buildStaticBodyHtml('attar-perfume-shop-south-india')
+    expect(southIndia).toContain('Popular collections:')
+    expect(southIndia).toContain('href="/categories/roll-on-attars"')
+    expect(southIndia).toContain('href="/categories/bakhoor"')
+    expect(southIndia).toContain('href="/categories/fragrance-oils"')
+    expect(southIndia).not.toContain('/categories/attars"')
+  })
 })
 
 describe('guide body fallbacks', () => {

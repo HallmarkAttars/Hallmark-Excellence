@@ -109,9 +109,9 @@ export default function SouthIndia() {
             <Link to="/contact" className="btn btn-secondary">Contact Us</Link>
           </div>
           <p className="si-cta-links">
-            Popular collections: <Link to="/categories/attars">attars</Link>,{' '}
+            Popular collections: <Link to="/categories/roll-on-attars">roll-on attars</Link>,{' '}
             <Link to="/categories/bakhoor">bakhoor</Link>,{' '}
-            <Link to="/categories/roll-on-attars">roll-on attars</Link>. New to attar? Read{' '}
+            <Link to="/categories/fragrance-oils">fragrance oils</Link>. New to attar? Read{' '}
             <Link to="/guides/buy-attar-chennai">where to buy attar in Chennai</Link>.
           </p>
         </section>

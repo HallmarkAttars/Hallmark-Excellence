@@ -870,9 +870,9 @@ export function buildHikmaExportsSeo({ origin = CANONICAL_ORIGIN, sameAs = HIKMA
 // 4e-2. Chennai / South India local landing page SEO descriptor.
 export function buildSouthIndiaSeo({ origin = CANONICAL_ORIGIN } = {}) {
   return {
-    title: 'Attar Shop in Chennai, Mannadi | Arees Perfumes',
+    title: 'Attar Shop in Chennai | Mannadi, George Town | Arees Perfumes',
     description:
-      'Visit Arees Perfumes in Mannadi, George Town, Chennai — alcohol-free attars, oud and roll-on perfume oils for retail and wholesale under one roof. Delivery across South India; export handled by Hikma Exports.',
+      'Attar shop in Mannadi, George Town, Chennai for alcohol-free attars, oud, bakhoor and roll-on perfume oils. Retail and wholesale, delivered across South India.',
     canonical: '/attar-perfume-shop-south-india',
     image: DEFAULT_OG_IMAGE,
     type: 'website',

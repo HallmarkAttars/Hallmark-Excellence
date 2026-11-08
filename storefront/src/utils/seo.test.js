@@ -155,6 +155,24 @@ describe('buildSitemapXml', () => {
     expect(xml.endsWith('</urlset>')).toBe(true)
   })
 
+  it('prefers the product slug over the raw id in sitemap URLs', () => {
+    const xml = buildSitemapXml({
+      baseUrl: 'https://www.areesperfumes.in',
+      pages: [],
+      categories: [],
+      brands: [],
+      products: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          slug: 'arees-black-musk-attar',
+          created_at: '2026-08-13T09:00:00Z',
+        },
+      ],
+    })
+    expect(xml).toContain('<loc>https://www.areesperfumes.in/product/arees-black-musk-attar</loc>')
+    expect(xml).not.toContain('/product/11111111-1111-4111-8111-111111111111')
+  })
+
   it('skips rows without a usable slug/id or where is_active is false', () => {
     const xml = buildSitemapXml({
       baseUrl: 'https://www.areesperfumes.in',

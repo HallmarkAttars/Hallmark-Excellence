@@ -273,6 +273,28 @@ ${contact}
   return ''
 }
 
+// Canonical storefront categories (must match storefront/src/utils/categorySlug.js
+// aliases). Rendered as crawlable links into the server/no-JS home body so the
+// indexed homepage passes internal link equity into category URLs.
+const HOME_CATEGORY_LINKS = [
+  { to: '/categories/roll-on-attars', label: 'Roll-On Attars' },
+  { to: '/categories/bakhoor', label: 'Bakhoor' },
+  { to: '/categories/fragrance-oils', label: 'Fragrance Oils' },
+  { to: '/categories/spray-bottles', label: 'Spray Bottles' },
+  { to: '/categories/roll-on-bottles', label: 'Roll-On Bottles' },
+  { to: '/categories/fancy-attar-bottles', label: 'Fancy Attar Bottles' },
+  { to: '/categories/roll-on-bottle-caps', label: 'Roll-On Bottle Caps' },
+  { to: '/categories/spray-bottle-pumps', label: 'Spray Bottle Pumps' },
+  { to: '/categories/display-bottles', label: 'Display Bottles' },
+  { to: '/categories/face-wash', label: 'Arees Face Wash' },
+]
+
+function renderCategoryLinks() {
+  return `<ul>${HOME_CATEGORY_LINKS.map(
+    ({ to, label }) => `<li><a href="${to}">${escapeHtml(label)}</a></li>`
+  ).join('')}</ul>`
+}
+
 export function buildHomeBodyHtml(data = {}) {
   // Honest "from ₹" anchor from the live catalogue (graceful when products
   // fail to fetch — the section simply drops out).
@@ -284,6 +306,7 @@ export function buildHomeBodyHtml(data = {}) {
 <header><h1>${escapeHtml(HERO.title.join(' '))}</h1><p>${escapeHtml(HERO.subtitle)}</p></header>
 ${priceLine}
 <section><h2>Shop Attars, Oud &amp; Fragrance Oils</h2><p>Browse alcohol-free attars and concentrated perfume oils from Arees Perfumes and Dahab.</p><p><a href="/shop">Shop all attars</a> <a href="/categories">Explore categories</a> <a href="/brands">Our brands</a></p></section>
+<section><h2>Shop by Category</h2>${renderCategoryLinks()}</section>
 <section><h2>Wholesale &amp; Export</h2><p>Hikma Exports supplies loose attar and fragrance oils from 100 g, branded Arees and Dahab packs from 60 pieces, private-label orders and quotation-based export support.</p><p><a href="/wholesale">Wholesale enquiry</a> <a href="/hikma-exports">Hikma Exports</a></p></section>
 <section><h2>Fragrance Guides</h2><p>Practical guides to choosing, storing and sourcing attars and perfume oils.</p><p><a href="/guides">Read the guides</a></p></section>
 <section><h2>Frequently Asked Questions</h2>${renderFaqs(HOME_FAQS)}</section>
@@ -299,7 +322,7 @@ export function buildSouthIndiaBodyHtml() {
 <section><h2>Why Fragrance Buyers in South India Choose Arees</h2>${SOUTH_INDIA.reasons.map((reason) => `<article><h3>${escapeHtml(reason.title)}</h3><p>${escapeHtml(reason.description)}</p></article>`).join('')}</section>
 <section><h2>${escapeHtml(store.heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>${escapeHtml(store.landmark)}</p><p>${store.hours.map((line) => escapeHtml(line)).join(' ')}</p><p>${escapeHtml(store.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">${escapeHtml(store.directionsLabel)}</a></p></section>
 <section><h2>${escapeHtml(SOUTH_INDIA.coverage.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.coverage.intro)}</p>${SOUTH_INDIA.coverage.regions.map((region) => `<article><h3>${escapeHtml(region.title)}</h3><p>${escapeHtml(region.description)}</p></article>`).join('')}</section>
-<section><h2>${escapeHtml(SOUTH_INDIA.cta.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.cta.intro)}</p><p><a href="/shop">Shop attars</a> <a href="/wholesale">Wholesale supply</a> <a href="/contact">Contact us</a></p></section>
+<section><h2>${escapeHtml(SOUTH_INDIA.cta.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.cta.intro)}</p><p><a href="/shop">Shop attars</a> <a href="/wholesale">Wholesale supply</a> <a href="/contact">Contact us</a></p><p>Popular collections: <a href="/categories/roll-on-attars">roll-on attars</a> <a href="/categories/bakhoor">bakhoor</a> <a href="/categories/fragrance-oils">fragrance oils</a>.</p></section>
 </main>`
 }
 

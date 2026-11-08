@@ -46,3 +46,30 @@ describe('index.html third-party script hygiene', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('index.html home prerender internal links', () => {
+  const categoryLinks = html.match(/<li><a href="\/categories\/[^"]+"/g) || []
+
+  it('mirrors the server home body category list', () => {
+    expect(categoryLinks).toHaveLength(10)
+  })
+
+  it('links only canonical category slugs (never the old /categories/attars)', () => {
+    for (const slug of [
+      'roll-on-attars',
+      'bakhoor',
+      'fragrance-oils',
+      'spray-bottles',
+      'roll-on-bottles',
+      'fancy-attar-bottles',
+      'roll-on-bottle-caps',
+      'spray-bottle-pumps',
+      'display-bottles',
+      'face-wash',
+    ]) {
+      expect(html).toContain(`href="/categories/${slug}"`)
+    }
+    expect(html).not.toContain('href="/categories/attars"')
+    expect(html).not.toContain('href="/categories/attar"')
+  })
+})
