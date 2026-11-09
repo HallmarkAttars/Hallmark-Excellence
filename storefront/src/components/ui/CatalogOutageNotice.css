@@ -1,0 +1,100 @@
+.catalog-outage {
+  background: #2a1f14;
+  color: var(--cream-soft, #fbf8f1);
+  border-bottom: 1px solid var(--gold, #b88938);
+}
+
+.catalog-outage-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+}
+
+.catalog-outage-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.catalog-outage-text strong {
+  color: var(--gold-light, #c69a4b);
+  font-weight: 600;
+}
+
+.catalog-outage-text a {
+  color: var(--cream-soft, #fbf8f1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.catalog-outage-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.catalog-outage-whatsapp,
+.catalog-outage-retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.catalog-outage-whatsapp {
+  background: var(--gold, #b88938);
+  border: 1px solid var(--gold, #b88938);
+  color: #1d1914;
+}
+
+.catalog-outage-whatsapp:hover {
+  background: var(--gold-light, #c69a4b);
+  border-color: var(--gold-light, #c69a4b);
+}
+
+.catalog-outage-retry {
+  background: transparent;
+  border: 1px solid rgba(248, 243, 232, 0.45);
+  color: var(--cream-soft, #fbf8f1);
+  cursor: pointer;
+}
+
+.catalog-outage-retry:hover {
+  border-color: var(--cream-soft, #fbf8f1);
+  background: rgba(248, 243, 232, 0.08);
+}
+
+@media (max-width: 640px) {
+  .catalog-outage-inner {
+    padding: 10px 14px;
+    align-items: flex-start;
+  }
+
+  .catalog-outage-text {
+    font-size: 0.78rem;
+  }
+
+  .catalog-outage-actions {
+    width: 100%;
+  }
+
+  .catalog-outage-whatsapp,
+  .catalog-outage-retry {
+    flex: 1;
+  }
+}

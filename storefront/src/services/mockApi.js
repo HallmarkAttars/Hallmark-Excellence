@@ -5,6 +5,7 @@
 import { api } from './api'
 import { normalizeCategorySlug } from '../utils/categorySlug'
 import { brandApiSlug, brandPublicSlug } from '../utils/brandSlug'
+import { reportCatalogOffline, reportCatalogOnline } from '../utils/catalogStatus'
 
 // ----------------------------------------------------------------------------
 // Client-side response cache for catalog reads
@@ -20,9 +21,54 @@ import { brandApiSlug, brandPublicSlug } from '../utils/brandSlug'
 // that need a guaranteed fresh read (e.g. the Shop "Try Again" retry) can pass
 // { refresh: true } to bypass the cache entirely. Failed requests are never
 // cached — the next call retries the network.
+//
+// Every successful read is also written to localStorage as a last-good
+// snapshot. When the API is completely unreachable (an outage, not a 404), the
+// snapshot is served so returning visitors still see the catalogue instead of
+// an empty shop, and the app shell shows an outage notice telling them to
+// confirm stock/price on WhatsApp.
 
 const CATALOG_TTL_MS = 60_000
+const STORAGE_PREFIX = 'arees:catalog:'
+const STORAGE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 const catalogCache = new Map() // key → { promise, expiresAt }
+
+// A plain Error (no HTTP status) is a network/CORS/abort failure; 429/5xx mean
+// the API is reachable but unhealthy. 4xx is a real answer (e.g. a deleted
+// product) and must never be replaced with stale catalogue data.
+function isUpstreamOutage(err) {
+  if (!err || err.status === undefined) return true
+  return err.status >= 500 || err.status === 429
+}
+
+function readStoredCatalog(key) {
+  if (typeof window === 'undefined' || !window.localStorage) return null
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed.savedAt !== 'number' || !('data' in parsed)) return null
+    if (Date.now() - parsed.savedAt > STORAGE_MAX_AGE_MS) {
+      window.localStorage.removeItem(STORAGE_PREFIX + key)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeStoredCatalog(key, data) {
+  if (typeof window === 'undefined' || !window.localStorage) return
+  try {
+    window.localStorage.setItem(
+      STORAGE_PREFIX + key,
+      JSON.stringify({ savedAt: Date.now(), data })
+    )
+  } catch {
+    // Private mode / storage quota — the in-memory cache still works.
+  }
+}
 
 function cachedCatalogRead(key, loader, { refresh = false } = {}) {
   const now = Date.now()
@@ -34,11 +80,20 @@ function cachedCatalogRead(key, loader, { refresh = false } = {}) {
   // removed so the next call retries.
   const promise = loader()
     .then((data) => {
+      writeStoredCatalog(key, data)
+      reportCatalogOnline()
       catalogCache.set(key, { promise, expiresAt: Date.now() + CATALOG_TTL_MS })
       return data
     })
     .catch((err) => {
       catalogCache.delete(key)
+      if (isUpstreamOutage(err)) {
+        const stored = readStoredCatalog(key)
+        reportCatalogOffline(stored?.savedAt)
+        // NOT cached in memory: the next read should retry the network so the
+        // catalogue recovers as soon as the API does.
+        if (stored) return stored.data
+      }
       throw err
     })
   catalogCache.set(key, { promise, expiresAt: now + CATALOG_TTL_MS })
@@ -64,13 +119,23 @@ export async function getFeaturedProducts({ limit = 18, refresh = false } = {}) 
           `/products?summary=true&featured=true&limit=${limit}`
         )
         list = data.products ?? []
-        if (!Array.isArray(list) || list.length === 0) throw new Error('EMPTY')
+        if (!Array.isArray(list) || list.length === 0) {
+          // status 0 marks an empty (not failed) response so the catch below
+          // still tries the old full-catalogue path without treating the API
+          // as down.
+          const empty = new Error('EMPTY')
+          empty.status = 0
+          throw empty
+        }
         // Older server deployments ignore the query params and return the
         // whole catalog — normalize by filtering + slicing client-side too.
         const featuredOnly = list.filter((p) => p.is_featured)
         return (featuredOnly.length > 0 ? featuredOnly : list).slice(0, limit)
-      } catch {
-        // Old deployments/network errors: fall back to the full catalog read.
+      } catch (err) {
+        // A real outage: let cachedCatalogRead serve its last-good snapshot
+        // instead of spending a second timeout on the legacy full read.
+        if (isUpstreamOutage(err)) throw err
+        // Old deployments: fall back to the full catalog read.
         const all = (await api.get('/products')).products ?? []
         const featuredOnly = all.filter((p) => p.is_featured)
         return (featuredOnly.length > 0 ? featuredOnly : all).slice(0, limit)

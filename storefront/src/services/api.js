@@ -1,9 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 
-// Abort requests that take longer than this (e.g. a Render free-tier cold
-// start spinning the server back up) so pages surface a friendly error +
-// retry instead of hanging on "Loading products…" forever.
-const REQUEST_TIMEOUT_MS = 30000
+// Abort requests that take longer than this so pages surface a friendly error +
+// retry instead of hanging on "Loading products…" forever. Kept short because
+// the catalogue layer falls back to its persisted last-good snapshot on
+// failure — waiting 30s only delays a catalogue that is already unreachable.
+const REQUEST_TIMEOUT_MS = 10000
 
 async function apiFetch(path, { method = 'GET', headers = {}, body } = {}) {
   const url = `${API_BASE_URL}${path}`

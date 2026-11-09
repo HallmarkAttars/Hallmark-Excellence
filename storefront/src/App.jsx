@@ -8,6 +8,7 @@ import StickyWhatsApp from './components/ui/StickyWhatsApp'
 import BackToTop from './components/ui/BackToTop'
 import MobileBottomNav from './components/layout/MobileBottomNav'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+import CatalogOutageNotice from './components/ui/CatalogOutageNotice'
 
 // Route-level code splitting: each page ships as its own chunk and is only
 // downloaded when its route is visited. The first visit to a route shows the
@@ -119,6 +120,7 @@ export default function App() {
             <ScrollToTop />
             <a href="#main-content" className="skip-link">Skip to main content</a>
             <Navbar />
+            <CatalogOutageNotice />
             <PageContent />
             <Footer />
             {/* Floating WhatsApp contact — rendered once at the storefront
