@@ -13,6 +13,7 @@ const ordersRoutes = require('./routes/orders.routes')
 const authRoutes = require('./routes/auth.routes')
 const uploadRoutes = require('./routes/upload.routes')
 const reviewsRoutes = require('./routes/reviews.routes')
+const webhookRoutes = require('./routes/webhook.routes')
 const { getAutoMigrationStatus } = require('./utils/autoMigrations')
 
 const app = express()
@@ -68,7 +69,9 @@ app.use(
 )
 
 
-app.use(express.json())
+// Capture the raw JSON bytes so the Meta webhook can be forwarded with its
+// original X-Hub-Signature-256 intact (the signature covers the exact bytes).
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf } }))
 
 // --- Health check -------------------------------------------------------
 app.get('/api/health', (req, res) => {
@@ -87,6 +90,8 @@ app.use('/api', ordersRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api', uploadRoutes)
 app.use('/api', reviewsRoutes)
+app.use('/webhook', webhookRoutes)
+app.use('/api/webhook', webhookRoutes)
 
 // --- 404 fallback ---------------------------------------------------------
 app.use((req, res) => {

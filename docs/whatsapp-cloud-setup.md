@@ -46,6 +46,12 @@ Copy and store privately (never commit these):
    - Click **Verify and save** (Meta calls our GET and expects the challenge back — done).
 4. In the **Webhook fields** section, subscribe to: **messages**.
 
+> **Alternative endpoint (Express API).** The backend also exposes `GET /webhook`
+> (same verify token) and `POST /webhook`, which forwards the raw payload to
+> `/api/wa-webhook` so the bot keeps working. If you point Meta at
+> `https://<express-host>/webhook`, set `WHATSAPP_VERIFY_TOKEN` on the Render
+> service too (see `server/.env.example`).
+
 ## 4. Send the token to the site (2 min)
 
 In Vercel → Settings → Environment Variables, add (then redeploy):
