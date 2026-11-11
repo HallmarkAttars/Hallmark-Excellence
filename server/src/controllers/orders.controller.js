@@ -1,5 +1,6 @@
 const supabase = require('../config/supabase')
 const { sendOrderEmails, sendOrderStatusEmail } = require('../services/orderEmailService')
+const { sendOrderStatusWhatsApp } = require('../services/whatsappStatusService')
 const {
   normalizeEmail,
   validateEmailWithHost,
@@ -1027,6 +1028,20 @@ async function updateOrderStatus(req, res) {
       })
     } catch (emailErr) {
       console.error('[ORDER EMAIL ERROR] Unexpected error sending status email:', emailErr.message || emailErr)
+    }
+
+    // --- STATUS WHATSAPP AUTOMATION ---
+    // Immediate customer update on the admin action. Free-form text needs an
+    // open 24-hour window; set WHATSAPP_STATUS_TEMPLATE_NAME to use an
+    // approved template for silent threads. Failures never fail the update.
+    try {
+      await sendOrderStatusWhatsApp({
+        order: data,
+        oldStatus,
+        newStatus: matched,
+      })
+    } catch (waErr) {
+      console.error('[WHATSAPP STATUS ERROR] Unexpected error sending status WhatsApp:', waErr.message || waErr)
     }
 
     // Use direct column values with fallback to notes parsing

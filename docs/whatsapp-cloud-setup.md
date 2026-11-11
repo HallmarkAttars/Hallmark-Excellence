@@ -124,6 +124,17 @@ Already deployed — nothing to configure in Meta. Two parts:
   `/api/wa-cron` automatically (vercel.json `crons`). It walks the registry
   of sessions that ever placed a WhatsApp order and notifies any phone with
   a change — even if the customer hasn't messaged in days.
+- **Instant on admin status change:** `PATCH /api/admin/orders/:id/status`
+  on the Express API also sends the customer a WhatsApp update (order number,
+  new status, tracking link). This is free-form text, so it needs an open
+  24-hour window; set `WHATSAPP_STATUS_TEMPLATE_NAME` to an approved template
+  to deliver after the window closes. WhatsApp failures never fail the admin
+  action.
+
+Required on the **Express/Render** service for the instant update:
+`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and optionally
+`WHATSAPP_STATUS_TEMPLATE_NAME` / `WHATSAPP_STATUS_TEMPLATE_LANG` and
+`STOREFRONT_URL`.
 
 Requirements:
 
