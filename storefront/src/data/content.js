@@ -53,6 +53,7 @@ export const BUSINESS = {
     'https://www.google.com/maps?cid=18135458823893370996',
   social: [
     { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
+    { key: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/hallmark-undefined-73471044a/' },
     { key: 'facebook', label: 'Facebook', href: '#' },
     // href '#' → Footer resolves the WhatsApp icon to the shared WHATSAPP_URL
   // (utils/whatsapp.js) so one constant carries number + pre-filled text.
@@ -468,7 +469,10 @@ export const HIKMA_EXPORTS = {
         'Yes. Hikma Exports is a GST-registered business with an Import Export Code (IEC). Registration numbers and destination-specific documents are shared with buyers as part of the quotation.',
     },
   ],
-  sameAs: [BUSINESS.socialByKey('instagram').href],
+  sameAs: [
+    BUSINESS.socialByKey('instagram').href,
+    BUSINESS.socialByKey('linkedin').href,
+  ],
 }
 
 // --------------------------------------------------------------------------
@@ -484,6 +488,10 @@ export const WHOLESALE = {
     'Arees Perfumes supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, event buyers and boutique fragrance brands. Based in Mannadi, George Town, Chennai, and operating under Hallmark of Excellence and Hikma Exports, we combine traditional Arabian perfumery with commercial order support.',
     'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement. Export orders are handled for buyers in India and international markets.',
   ],
+  guideCta: {
+    label: 'Read the 2027 wholesale attar sourcing guide',
+    to: '/guides/wholesale-attar-sourcing-guide-2027',
+  },
   quickFacts: [
     { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
     { label: 'Arees & Dahab branded packs', value: 'Minimum 60 pieces' },

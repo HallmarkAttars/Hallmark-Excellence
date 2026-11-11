@@ -69,4 +69,22 @@ describe('guides dataset', () => {
       expect.arrayContaining(['What are the benefits of bakhoor?', 'What does bakhoor mean?'])
     )
   })
+
+  it('publishes a 2027 wholesale sourcing guide for MOQ and export intent', () => {
+    const guide = getGuideBySlug('wholesale-attar-sourcing-guide-2027')
+    expect(guide).toBeTruthy()
+    expect(guide.seoTitle).toContain('2027')
+    expect(guide.description.toLowerCase()).toContain('moq')
+    expect(guide.description.toLowerCase()).toContain('export')
+    expect(guide.shopCta).toEqual({
+      label: 'Request 2027 wholesale pricing',
+      to: '/contact',
+    })
+    expect(guide.sections.map((section) => section.heading)).toEqual(
+      expect.arrayContaining([
+        'MOQs and Pack Sizes: 100g and 60 Pieces',
+        'Export Documents and Chennai Logistics',
+      ])
+    )
+  })
 })

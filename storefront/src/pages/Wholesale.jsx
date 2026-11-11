@@ -29,6 +29,13 @@ export default function Wholesale() {
             {WHOLESALE.overviewParagraphs.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
             ))}
+            {WHOLESALE.guideCta && (
+              <p className="wholesale-guide-link">
+                <Link to={WHOLESALE.guideCta.to}>
+                  {WHOLESALE.guideCta.label} -&gt;
+                </Link>
+              </p>
+            )}
           </div>
         </section>
 

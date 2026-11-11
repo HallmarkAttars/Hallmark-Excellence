@@ -284,7 +284,10 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
       postalCode: '600001',
       addressCountry: 'IN',
     },
-    sameAs: ['https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'],
+    sameAs: [
+      BUSINESS.socialByKey('instagram').href,
+      BUSINESS.socialByKey('linkedin').href,
+    ],
   }
 }
 
@@ -342,7 +345,10 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
       longitude: 80.2872,
     },
     hasMap: BUSINESS.mapDirectionsUrl,
-    sameAs: [BUSINESS.socialByKey('instagram').href],
+    sameAs: [
+      BUSINESS.socialByKey('instagram').href,
+      BUSINESS.socialByKey('linkedin').href,
+    ],
     areaServed: ['Chennai', 'Tamil Nadu', 'South India', 'India'],
   }
 }

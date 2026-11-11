@@ -329,6 +329,9 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.url).toBe('https://www.areesperfumes.in')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.email).toBe('hikmaexports@gmail.com')
+      expect(schema.sameAs).toContain(
+        'https://www.linkedin.com/in/hallmark-undefined-73471044a/'
+      )
     })
   })
 
@@ -357,6 +360,9 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.address.postalCode).toBe('600001')
       expect(schema.address.streetAddress).toContain('Moore St')
       expect(schema.telephone).toBe('+919840750467')
+      expect(schema.sameAs).toContain(
+        'https://www.linkedin.com/in/hallmark-undefined-73471044a/'
+      )
     })
   })
 

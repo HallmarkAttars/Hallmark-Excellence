@@ -833,6 +833,114 @@ export const GUIDES = [
       { label: 'How to choose an attar', to: '/guides/how-to-choose-attar' },
     ],
   },
+  {
+    slug: 'wholesale-attar-sourcing-guide-2027',
+    title: 'Wholesale Attar Sourcing Guide 2027: MOQs, Packaging and Export Checks',
+    seoTitle: 'Wholesale Attar Sourcing Guide 2027 | Arees Perfumes',
+    description:
+      'A 2027 checklist for retailers sourcing wholesale attars, bakhoor and perfume oils from Chennai: MOQs, packaging, quality and export documents.',
+    excerpt:
+      'A practical 2027 sourcing plan for retailers and brands: what to ask, what to check and how to compare wholesale quotes before you commit.',
+    category: 'Wholesale',
+    readTime: '11 min read',
+    published: '2026-11-10',
+    updated: '2026-11-10',
+    sections: [
+      {
+        heading: 'Start with a 2027 Wholesale Brief',
+        paragraphs: [
+          'A wholesale order is easier to quote when the buyer starts with a short brief instead of a single price question. Write down the sales channel, the customers you serve, the price band you want to hit, the scent families you need and the date the stock must be on the shelf.',
+          'Include the pack format as well. A 6ml roll-on for a gift shop, a 12ml oil for a perfume counter and a 100g loose oil for a blender are different products with different costs. When the brief is clear, the supplier can recommend a range, flag gaps and quote the right pack sizes.',
+          'If bakhoor is part of the range, add the pack weight, wrapping and storage requirement to the brief. Bakhoor is often packed and shipped in cartons, so the packaging test matters as much as the scent test.',
+          'For 2027 planning, keep the first order narrow. A focused pilot range is easier to test, reorder and correct than a large assortment chosen from a catalogue alone.',
+        ],
+      },
+      {
+        heading: 'MOQs and Pack Sizes: 100g and 60 Pieces',
+        paragraphs: [
+          'At Hallmark of Excellence, loose attar and fragrance oil orders start at 100g and can move up in weight. Branded Arees Perfumes packs start at 60 pieces across a combined branded order, which lets a retailer test several scents without committing to 60 pieces of one fragrance.',
+          'Ask how mixed orders are priced. A combined order can lower the risk of dead stock, but the quotation should still show the quantity and unit price for each scent or pack. For private label, the minimum depends on the bottle, cap, label and artwork, so confirm those details before comparing quotes.',
+          'Do not compare a 100g loose oil price with a 6ml retail pack price. Calculate the cost per finished unit, including the bottle, cap, label, packing and freight. That is the number that decides your margin.',
+        ],
+      },
+      {
+        heading: 'Packaging Checks That Protect Margin',
+        paragraphs: [
+          'Ask for photographs or a short video of the actual packing, not only a studio image. Check that the cap seals firmly, the roll-on ball moves without flooding, the fill level is consistent and the label sits straight on the bottle.',
+          'For retail packs, confirm the bottle material, cap finish and label adhesive. For export cartons, ask about individual wrapping, dividers and carton strength. A low unit price is not useful if bottles leak or labels lift in transit.',
+          'If you plan to sell online, order a sample pack and ship it to yourself before the bulk order. The parcel is a practical test of the packaging, not just the fragrance.',
+        ],
+      },
+      {
+        heading: 'Quality and Batch Consistency',
+        paragraphs: [
+          'Smell each sample at the opening, the middle and the dry-down. Check colour and clarity in daylight, and compare the sample with the batch you will receive. Natural materials can vary, so ask how the supplier manages batch differences and what a retained sample is kept for.',
+          'Ask for a batch code on the invoice or packing list. If a customer complaint comes months later, the code lets both sides trace the exact batch. For private label, agree in writing who approves the first production sample and what happens if the batch does not match.',
+          'Avoid any supplier who cannot explain the difference between a natural oil, a reconstituted accord and a fragrance compound. The label should describe what is in the bottle honestly.',
+        ],
+      },
+      {
+        heading: 'Export Documents and Chennai Logistics',
+        paragraphs: [
+          'Export buyers should confirm the commercial terms before the order is packed. The quotation should state the product list, quantities, unit prices, packing, lead time, payment terms and the agreed Incoterms. For India, the supplier should be able to provide a GST invoice and an Import Export Code where applicable.',
+          'Ask which documents are included: packing list, invoice, HS code, certificate of origin where required, and any destination-specific declaration. The buyer remains responsible for import rules, labelling rules and duties in the destination country, so check those early.',
+          'Chennai has air and sea freight options. Ask the supplier to confirm the dispatch point, the packing deadline and the documents handover date. Build a buffer into the launch date instead of assuming the freight forwarder can fix a late production run.',
+        ],
+      },
+      {
+        heading: 'A Supplier Scorecard and Quotation Checklist',
+        paragraphs: [
+          'Compare suppliers on seven points: product consistency, MOQ fit, packaging quality, lead time, export documentation, communication and the policy for short shipments or damaged units. Score each point out of five and keep the notes with the quote.',
+          'Every quotation should list the SKU or scent name, pack size, quantity, unit price, MOQ, lead time, packing details, payment terms, dispatch arrangement and quote validity. Ask for the sample policy and the reorder process in writing.',
+          'A supplier who answers slowly before the order will usually answer slowly after it. Test communication during the sample stage, when the order is still small.',
+        ],
+      },
+      {
+        heading: 'A 30-Day Sourcing Plan for 2027',
+        paragraphs: [
+          'Week one: shortlist three suppliers and send the same brief to each. Week two: request samples and written quotes, then compare the landed cost per unit. Week three: test the packaging, check the documents and ask follow-up questions. Week four: place a small pilot order and set a review date.',
+          'The pilot order is not a formality. It tests the fragrance, the packing, the invoice and the delivery promise. If the pilot works, reorder the proven scents and add one or two new ones. If it does not, you have lost a small amount instead of a season of stock.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'What is the minimum order for wholesale attar?',
+        answer:
+          'Loose attar and fragrance oil orders start at 100g. Branded Arees Perfumes packs start at 60 pieces across a combined branded order. Private label minimums depend on the bottle, cap, label and artwork.',
+      },
+      {
+        question: 'Can I mix scents in a 60-piece wholesale order?',
+        answer:
+          'Yes, the minimum applies across a combined branded order, so you can test several scents instead of committing to one. Confirm the exact mix and unit prices in the quotation.',
+      },
+      {
+        question: 'Do you supply private label attar and perfume oil?',
+        answer:
+          'Yes. Share your artwork, bottle and cap preference, target quantity and launch date. The team will confirm feasibility, minimum quantity and lead time for the specific pack.',
+      },
+      {
+        question: 'Which documents should an export buyer request?',
+        answer:
+          'Ask for the GST invoice, packing list, HS code and certificate of origin where applicable. Destination-specific labelling and import requirements remain the buyer responsibility, so confirm them before dispatch.',
+      },
+      {
+        question: 'Can I order samples before a bulk order?',
+        answer:
+          'Yes. Ask for samples of the scents and pack formats you are considering. Test the fragrance on skin and ship a sample pack to yourself to check the packaging before you commit to bulk.',
+      },
+    ],
+    related: [
+      { label: 'Wholesale attar buying guide', to: '/guides/wholesale-attar-buying-guide' },
+      { label: 'Private label perfume oil guide', to: '/guides/private-label-perfume-guide' },
+      { label: 'Perfume export documentation', to: '/guides/perfume-export-documentation' },
+      { label: 'Wholesale desk and MOQs', to: '/wholesale' },
+    ],
+    shopCta: {
+      label: 'Request 2027 wholesale pricing',
+      to: '/contact',
+    },
+  },
 ]
 
 export function getGuideBySlug(slug) {
