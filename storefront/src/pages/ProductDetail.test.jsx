@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import ProductDetail from './ProductDetail'
 import { CartProvider } from '../context/CartContext'
 import { ToastProvider } from '../context/ToastContext'
-import { getProductById } from '../services/mockApi'
+import { getProductById, getBrands } from '../services/mockApi'
 
 const mockSampleProduct = {
   id: 10,
@@ -385,5 +385,110 @@ describe('ProductDetail Component Pricing & Variant Logic', () => {
 
     const policy = container.querySelector('a[href="/shipping-returns"]')
     expect(policy).toBeTruthy()
+  })
+
+  it('shows the selected quantity against its bulk milestone (24 → 120 → 36 → 180 → 60 → 72 → 216 → 96)', async () => {
+    const areesBrand = {
+      id: 'brand-arees',
+      name: 'Arees 8ml',
+      slug: 'arees',
+      bulk_enabled: true,
+      standard_price: 60,
+      bulk_tiers: [
+        { minQuantity: 12, price: 50 },
+        { minQuantity: 120, price: 46 },
+        { minQuantity: 180, price: 45 },
+        { minQuantity: 216, price: 43 },
+      ],
+    }
+    const brandedProduct = {
+      ...mockSampleProduct,
+      id: 11,
+      name: 'Sports Polo',
+      brand_id: 'brand-arees',
+      brand_name: 'Arees 8ml',
+      sell_exact_pieces: true,
+      variants: [6, 12, 24, 36, 60, 72, 96, 120, 180, 216].map((n, i) => ({
+        id: 201 + i,
+        display_label: `${n} Pieces`,
+        quantity_value: n,
+        quantity_unit: 'Pieces',
+        price: n * 50,
+        total_price: n * 50,
+        price_per_unit: 50,
+        is_default: n === 6,
+        active: true,
+      })),
+    }
+
+    getProductById.mockResolvedValueOnce(brandedProduct)
+    getBrands.mockResolvedValueOnce([areesBrand])
+
+    const { container } = renderProductDetail()
+
+    await waitFor(() => {
+      expect(container.querySelector('.pd-bulk-card')).toBeTruthy()
+    })
+
+    const countText = () => container.querySelector('.pd-bulk-count')?.textContent || ''
+    const targetText = () => container.querySelector('.pd-bulk-min')?.textContent || ''
+    const progressWidth = () => container.querySelector('.pd-bulk-fill')?.style.width || ''
+    const perPieceText = () => container.querySelector('.pd-price-per-piece')?.textContent || ''
+
+    const choose = async (qty) => {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${qty} Pieces`) }))
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: new RegExp(`^${qty} Pieces`) }).classList.contains('is-active')).toBe(true)
+      })
+    }
+
+    await choose(24)
+    expect(countText()).toMatch(/24\s*\/\s*120\s*pieces/)
+    expect(targetText()).toMatch(/Next:\s*120\s*pieces/)
+    expect(progressWidth()).toBe('20%')
+    expect(perPieceText()).toMatch(/50/)
+
+    await choose(120)
+    expect(countText()).toMatch(/120\s*\/\s*120\s*pieces/)
+    expect(targetText()).toMatch(/Next:\s*180\s*pieces/)
+    expect(progressWidth()).toBe('100%')
+    expect(perPieceText()).toMatch(/46/)
+
+    await choose(36)
+    expect(countText()).toMatch(/36\s*\/\s*120\s*pieces/)
+    expect(progressWidth()).toBe('30%')
+
+    await choose(180)
+    expect(countText()).toMatch(/180\s*\/\s*180\s*pieces/)
+    expect(targetText()).toMatch(/Next:\s*216\s*pieces/)
+    expect(progressWidth()).toBe('100%')
+
+    await choose(60)
+    expect(countText()).toMatch(/60\s*\/\s*120\s*pieces/)
+    expect(progressWidth()).toBe('50%')
+
+    await choose(72)
+    expect(countText()).toMatch(/72\s*\/\s*120\s*pieces/)
+    expect(progressWidth()).toBe('60%')
+
+    await choose(216)
+    expect(countText()).toMatch(/216\s*\/\s*216\s*pieces/)
+    expect(targetText()).toMatch(/Best bulk rate unlocked/)
+    expect(progressWidth()).toBe('100%')
+
+    await choose(96)
+    expect(countText()).toMatch(/96\s*\/\s*120\s*pieces/)
+    expect(targetText()).toMatch(/Next:\s*120\s*pieces/)
+    expect(progressWidth()).toBe('80%')
+
+    await choose(12)
+    expect(countText()).toMatch(/12\s*\/\s*12\s*pieces/)
+    expect(targetText()).toMatch(/Next:\s*120\s*pieces/)
+    expect(progressWidth()).toBe('100%')
+
+    await choose(6)
+    expect(countText()).toMatch(/6\s*\/\s*12\s*pieces/)
+    expect(targetText()).toMatch(/From\s*12\s*pieces/)
+    expect(progressWidth()).toBe('50%')
   })
 })

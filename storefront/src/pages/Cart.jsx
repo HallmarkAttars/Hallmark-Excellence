@@ -312,9 +312,13 @@ export default function Cart() {
                           <span className="cart-brand-count">
                             {Number(g.bulk.totalPieces).toLocaleString('en-IN')} /{' '}
                             {Number(
-                              g.bulk.unlocked && g.bulk.tier
-                                ? g.bulk.tier.minQuantity
-                                : g.bulk.bulkMinQty
+                              g.bulk.milestone
+                                ? g.bulk.milestone.minQuantity
+                                : g.bulk.nextTier
+                                  ? g.bulk.nextTier.minQuantity
+                                  : g.bulk.unlocked && g.bulk.tier
+                                    ? g.bulk.tier.minQuantity
+                                    : g.bulk.bulkMinQty
                             ).toLocaleString('en-IN')}{' '}
                             pieces
                           </span>

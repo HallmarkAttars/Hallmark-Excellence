@@ -90,6 +90,35 @@ export function getApplicableBulkTier(brand, totalBrandQuantity) {
   return applicable
 }
 
+// The smallest tier the total has NOT reached yet — the next rate to chase.
+// Below tier 1 → tier 1 (the unlock goal); at 12 → 120; at 120 → 180; once the
+// highest tier is met → null (best rate unlocked).
+export function getNextBulkTier(brand, totalBrandQuantity) {
+  const tiers = getBulkTiers(brand)
+  if (!tiers) return null
+  const pieces = Math.max(0, Math.floor(Number(totalBrandQuantity) || 0))
+  for (const t of tiers) {
+    if (pieces < t.minQuantity) return t
+  }
+  return null
+}
+
+// The milestone the total currently belongs to: the smallest tier whose
+// minQuantity is at or above the total. Exact thresholds return that same tier
+// (12 → 12, 120 → 120, 216 → 216), quantities between thresholds return the
+// next one (24/36/60/72/96 → 120), and quantities above the top tier stay on
+// the top tier. Used for the selected/milestone progress display — never for
+// pricing (getApplicableBulkTier remains the price floor).
+export function getBulkMilestone(brand, totalBrandQuantity) {
+  const tiers = getBulkTiers(brand)
+  if (!tiers) return null
+  const pieces = Math.max(0, Math.floor(Number(totalBrandQuantity) || 0))
+  for (const t of tiers) {
+    if (pieces <= t.minQuantity) return t
+  }
+  return tiers[tiers.length - 1]
+}
+
 // True when a brand row carries a complete, usable bulk-pricing rule.
 export function isValidBulkRule(brand) {
   if (!brand) return false
@@ -238,14 +267,19 @@ export function lineBulkPricing(item, bulkState) {
 
 // Build the per-brand bulk state for a cart: brand_id → {
 //   brandId, brand, name, totalPieces, tiers, bulkMinQty, unlocked,
-//   remaining, standardPrice, bulkUnitPrice, tier
+//   remaining, standardPrice, bulkUnitPrice, tier, nextTier, milestone
 // }. Only brands that (a) have a valid rule AND (b) have at least one line
 // in the cart appear — brands are never combined with each other.
 //
 //   tiers         — the brand's normalized tiers (sorted ascending)
-//   bulkMinQty    — the FIRST tier's minQuantity (progress target)
+//   bulkMinQty    — the FIRST tier's minQuantity (the unlock goal)
 //   tier          — the HIGHEST APPLICABLE tier { minQuantity, price } or
 //                   null while locked
+//   nextTier      — the next UNREACHED tier { minQuantity, price } (the next
+//                   rate to chase), or null once the top tier is met
+//   milestone     — the smallest tier { minQuantity, price } the total has
+//                   reached or is working toward (the count/progress target)
+//   remaining     — pieces needed to reach nextTier (0 at the top tier)
 //   bulkUnitPrice — the applicable tier's price once unlocked; otherwise the
 //                   first tier's price (the advertised rate)
 export function buildBrandBulk(items, brands) {
@@ -269,6 +303,8 @@ export function buildBrandBulk(items, brands) {
     const tiers = getBulkTiers(brand)
     const firstTier = tiers ? tiers[0] : null
     const applicable = getApplicableBulkTier(brand, totalPieces)
+    const nextTier = getNextBulkTier(brand, totalPieces)
+    const milestone = getBulkMilestone(brand, totalPieces)
     const bulkMinQty = firstTier ? firstTier.minQuantity : 0
     map[id] = {
       brandId: id,
@@ -278,10 +314,14 @@ export function buildBrandBulk(items, brands) {
       tiers,
       bulkMinQty,
       unlocked: Boolean(applicable),
-      remaining: Math.max(0, bulkMinQty - totalPieces),
+      remaining: nextTier
+        ? Math.max(0, nextTier.minQuantity - totalPieces)
+        : 0,
       standardPrice: Number(brand.standard_price),
       bulkUnitPrice: applicable ? applicable.price : (firstTier ? firstTier.price : 0),
       tier: applicable,
+      nextTier,
+      milestone,
     }
   }
   return map

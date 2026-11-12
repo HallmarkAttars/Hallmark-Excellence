@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Cart from './Cart'
 import { CartProvider, useCart } from '../context/CartContext'
+import { getBrands } from '../services/mockApi'
 
 // Mock getBrands
 vi.mock('../services/mockApi', () => ({
@@ -360,6 +361,61 @@ describe('Cart Page & Price Priority Integration', () => {
     for (const link of links) {
       expect(link.getAttribute('href')).toBe('/product/mysore-rose-attar')
     }
+  })
+
+  // Brand bulk count uses the selected quantity against its milestone
+  // (24/120 and 120/120 — never 24/12 or 120/180).
+  it.each([
+    [24, /24\s*\/\s*120\s*pieces/],
+    [120, /120\s*\/\s*120\s*pieces/],
+  ])('TEST 13: shows a %i-piece brand line against its bulk milestone', async (pieces, expected) => {
+    getBrands.mockResolvedValueOnce([
+      {
+        id: 'brand-arees',
+        name: 'Arees 8ml',
+        bulk_enabled: true,
+        standard_price: 60,
+        bulk_tiers: [
+          { minQuantity: 12, price: 50 },
+          { minQuantity: 120, price: 46 },
+          { minQuantity: 180, price: 45 },
+          { minQuantity: 216, price: 43 },
+        ],
+      },
+    ])
+    const product = {
+      id: `p-bulk-${pieces}`,
+      name: 'Arees 8ml',
+      price: 0,
+      brand_id: 'brand-arees',
+      brand_name: 'Arees 8ml',
+      variants: [
+        {
+          id: `v-${pieces}`,
+          display_label: `${pieces} Pieces`,
+          quantity_value: pieces,
+          quantity_unit: 'Pieces',
+          price: pieces * 50,
+          price_per_unit: 50,
+          is_default: true,
+          active: true,
+        },
+      ],
+    }
+
+    const { getByRole, container } = render(
+      <CartTestWrapper
+        initialActions={(addItem) => {
+          addItem(product, 1, product.variants[0])
+        }}
+      />
+    )
+
+    fireEvent.click(getByRole('button', { name: /setup cart/i }))
+
+    await waitFor(() => {
+      expect(container.querySelector('.cart-brand-count')?.textContent || '').toMatch(expected)
+    })
   })
 
   // TEST 12: Legacy lines without a slug fall back to the product id

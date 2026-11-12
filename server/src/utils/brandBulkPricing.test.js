@@ -10,6 +10,7 @@ import {
   isValidBulkRule,
   getBulkTiers,
   getApplicableBulkTier,
+  getBulkMilestone,
   linePieces,
   lineUnitPieces,
   lineNormalPerPiece,
@@ -172,6 +173,56 @@ describe('getApplicableBulkTier (the spec tier matrix)', () => {
   it('legacy single-tier brands resolve their one tier', () => {
     expect(getApplicableBulkTier(AREES, 70)).toEqual({ minQuantity: 70, price: 42 })
     expect(getApplicableBulkTier(AREES, 69)).toBe(null)
+  })
+})
+
+describe('getBulkMilestone (the selected/milestone display)', () => {
+  const AREES_8ML = {
+    id: 'brand-arees-8ml',
+    name: 'Arees 8ml',
+    bulk_enabled: true,
+    standard_price: 60,
+    bulk_tiers: [
+      { minQuantity: 12, price: 50 },
+      { minQuantity: 120, price: 46 },
+      { minQuantity: 180, price: 45 },
+      { minQuantity: 216, price: 43 },
+    ],
+  }
+
+  it('maps every product quantity to its required milestone', () => {
+    const expected = [
+      [6, 12],
+      [12, 12],
+      [24, 120],
+      [36, 120],
+      [60, 120],
+      [72, 120],
+      [96, 120],
+      [120, 120],
+      [180, 180],
+      [216, 216],
+    ]
+    for (const [pieces, milestone] of expected) {
+      expect(getBulkMilestone(AREES_8ML, pieces)?.minQuantity).toBe(milestone)
+    }
+  })
+
+  it('keeps quantities between thresholds on the next milestone', () => {
+    expect(getBulkMilestone(AREES_8ML, 119)?.minQuantity).toBe(120)
+    expect(getBulkMilestone(AREES_8ML, 121)?.minQuantity).toBe(180)
+    expect(getBulkMilestone(AREES_8ML, 181)?.minQuantity).toBe(216)
+  })
+
+  it('stays on the top tier above the highest threshold', () => {
+    expect(getBulkMilestone(AREES_8ML, 217)?.minQuantity).toBe(216)
+    expect(getBulkMilestone(AREES_8ML, 500)?.minQuantity).toBe(216)
+  })
+
+  it('handles legacy single-tier brands and missing input', () => {
+    expect(getBulkMilestone(AREES, 6)?.minQuantity).toBe(70)
+    expect(getBulkMilestone(AREES, 90)?.minQuantity).toBe(70)
+    expect(getBulkMilestone(null, 150)).toBe(null)
   })
 })
 
@@ -382,6 +433,8 @@ describe('applyBrandBulk', () => {
         bulk_min_qty: 70,
         bulk_unit_price: 42,
         unlocked: true,
+        next_tier: null,
+        milestone: { minQuantity: 70, price: 42 },
       },
     ])
     expect(out[0].brand_total_pieces).toBe(70)

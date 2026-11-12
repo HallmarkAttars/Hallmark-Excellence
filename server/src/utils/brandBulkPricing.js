@@ -88,6 +88,35 @@ function getApplicableBulkTier(brand, totalBrandQuantity) {
   return applicable
 }
 
+// The smallest tier the total has NOT reached yet — the next rate to chase.
+// Below tier 1 → tier 1 (the unlock goal); at 12 → 120; at 120 → 180; once the
+// highest tier is met → null (best rate unlocked).
+function getNextBulkTier(brand, totalBrandQuantity) {
+  const tiers = getBulkTiers(brand)
+  if (!tiers) return null
+  const pieces = Math.max(0, Math.floor(Number(totalBrandQuantity) || 0))
+  for (const t of tiers) {
+    if (pieces < t.minQuantity) return t
+  }
+  return null
+}
+
+// The milestone the total currently belongs to: the smallest tier whose
+// minQuantity is at or above the total. Exact thresholds return that same tier
+// (12 → 12, 120 → 120, 216 → 216), quantities between thresholds return the
+// next one (24/36/60/72/96 → 120), and quantities above the top tier stay on
+// the top tier. Used for display/order summaries — never for pricing
+// (getApplicableBulkTier remains the price floor).
+function getBulkMilestone(brand, totalBrandQuantity) {
+  const tiers = getBulkTiers(brand)
+  if (!tiers) return null
+  const pieces = Math.max(0, Math.floor(Number(totalBrandQuantity) || 0))
+  for (const t of tiers) {
+    if (pieces <= t.minQuantity) return t
+  }
+  return tiers[tiers.length - 1]
+}
+
 // True when a brand row carries a complete, usable bulk-pricing rule.
 function isValidBulkRule(brand) {
   if (!brand) return false
@@ -273,6 +302,8 @@ function applyBrandBulk(normalizedItems, brandRules) {
     const tiers = getBulkTiers(brand)
     const totalPieces = totals[id]
     const tier = getApplicableBulkTier(brand, totalPieces)
+    const nextTier = getNextBulkTier(brand, totalPieces)
+    const milestone = getBulkMilestone(brand, totalPieces)
     brands.push({
       brand_id: id,
       brand_name: brand.name || null,
@@ -280,6 +311,8 @@ function applyBrandBulk(normalizedItems, brandRules) {
       bulk_min_qty: tiers ? tiers[0].minQuantity : 0,
       bulk_unit_price: tier ? tier.price : (tiers ? tiers[0].price : 0),
       unlocked: tier != null,
+      next_tier: nextTier,
+      milestone,
     })
   }
 
@@ -290,6 +323,8 @@ module.exports = {
   round2,
   getBulkTiers,
   getApplicableBulkTier,
+  getNextBulkTier,
+  getBulkMilestone,
   isValidBulkRule,
   linePieces,
   lineUnitPieces,

@@ -9,6 +9,8 @@ import {
   isValidBulkRule,
   getBulkTiers,
   getApplicableBulkTier,
+  getNextBulkTier,
+  getBulkMilestone,
   linePieces,
   lineUnitPieces,
   lineNormalPerPiece,
@@ -176,6 +178,128 @@ describe('getApplicableBulkTier (the spec tier matrix)', () => {
     expect(getApplicableBulkTier(null, 150)).toBe(null)
     expect(getApplicableBulkTier(MULTI, undefined)).toBe(null)
     expect(getApplicableBulkTier(MULTI, 'abc')).toBe(null)
+  })
+})
+
+describe('getNextBulkTier (the progress bar chase)', () => {
+  // The requirement's tier ladder: 12 → 120 → 180 → 216.
+  const LADDER = {
+    id: 'brand-ladder',
+    name: 'Ladder',
+    bulk_enabled: true,
+    standard_price: 50,
+    bulk_tiers: [
+      { minQuantity: 12, price: 45 },
+      { minQuantity: 120, price: 43 },
+      { minQuantity: 180, price: 41 },
+      { minQuantity: 216, price: 40 },
+    ],
+  }
+
+  it('targets the first tier while locked', () => {
+    expect(getNextBulkTier(LADDER, 0)).toEqual({ minQuantity: 12, price: 45 })
+    expect(getNextBulkTier(LADDER, 11)).toEqual({ minQuantity: 12, price: 45 })
+  })
+
+  it('after 12 pieces targets 120', () => {
+    expect(getNextBulkTier(LADDER, 12)).toEqual({ minQuantity: 120, price: 43 })
+    expect(getNextBulkTier(LADDER, 119)).toEqual({ minQuantity: 120, price: 43 })
+  })
+
+  it('after 120 pieces targets 180', () => {
+    expect(getNextBulkTier(LADDER, 120)).toEqual({ minQuantity: 180, price: 41 })
+    expect(getNextBulkTier(LADDER, 179)).toEqual({ minQuantity: 180, price: 41 })
+  })
+
+  it('after 180 pieces targets 216', () => {
+    expect(getNextBulkTier(LADDER, 180)).toEqual({ minQuantity: 216, price: 40 })
+    expect(getNextBulkTier(LADDER, 215)).toEqual({ minQuantity: 216, price: 40 })
+  })
+
+  it('at or above the top tier returns null (best rate unlocked)', () => {
+    expect(getNextBulkTier(LADDER, 216)).toBe(null)
+    expect(getNextBulkTier(LADDER, 500)).toBe(null)
+  })
+
+  it('legacy single-tier brands have no next tier once reached', () => {
+    expect(getNextBulkTier(AREES, 69)).toEqual({ minQuantity: 70, price: 42 })
+    expect(getNextBulkTier(AREES, 70)).toBe(null)
+  })
+
+  it('is defensive with missing/garbage input', () => {
+    expect(getNextBulkTier(null, 150)).toBe(null)
+    expect(getNextBulkTier(LADDER, undefined)).toEqual({ minQuantity: 12, price: 45 })
+    expect(getNextBulkTier(LADDER, 'abc')).toEqual({ minQuantity: 12, price: 45 })
+  })
+})
+
+describe('getBulkMilestone (the selected/milestone display)', () => {
+  const AREES_8ML = {
+    id: 'brand-arees-8ml',
+    name: 'Arees 8ml',
+    bulk_enabled: true,
+    standard_price: 60,
+    bulk_tiers: [
+      { minQuantity: 12, price: 50 },
+      { minQuantity: 120, price: 46 },
+      { minQuantity: 180, price: 45 },
+      { minQuantity: 216, price: 43 },
+    ],
+  }
+
+  it('maps every product quantity to its required milestone', () => {
+    const expected = [
+      [6, 12],
+      [12, 12],
+      [24, 120],
+      [36, 120],
+      [60, 120],
+      [72, 120],
+      [96, 120],
+      [120, 120],
+      [180, 180],
+      [216, 216],
+    ]
+    for (const [pieces, milestone] of expected) {
+      expect(getBulkMilestone(AREES_8ML, pieces)?.minQuantity).toBe(milestone)
+    }
+  })
+
+  it('keeps quantities between thresholds on the next milestone', () => {
+    expect(getBulkMilestone(AREES_8ML, 13)?.minQuantity).toBe(120)
+    expect(getBulkMilestone(AREES_8ML, 119)?.minQuantity).toBe(120)
+    expect(getBulkMilestone(AREES_8ML, 121)?.minQuantity).toBe(180)
+    expect(getBulkMilestone(AREES_8ML, 181)?.minQuantity).toBe(216)
+  })
+
+  it('stays on the top tier above the highest threshold', () => {
+    expect(getBulkMilestone(AREES_8ML, 217)?.minQuantity).toBe(216)
+    expect(getBulkMilestone(AREES_8ML, 500)?.minQuantity).toBe(216)
+  })
+
+  it('uses the brand own tiers instead of a hardcoded ladder', () => {
+    const bakhoor = {
+      ...AREES_8ML,
+      bulk_tiers: [
+        { minQuantity: 12, price: 200 },
+        { minQuantity: 24, price: 195 },
+        { minQuantity: 36, price: 180 },
+      ],
+    }
+    expect(getBulkMilestone(bakhoor, 24)?.minQuantity).toBe(24)
+    expect(getBulkMilestone(bakhoor, 30)?.minQuantity).toBe(36)
+  })
+
+  it('handles legacy single-tier brands', () => {
+    expect(getBulkMilestone(AREES, 6)?.minQuantity).toBe(70)
+    expect(getBulkMilestone(AREES, 70)?.minQuantity).toBe(70)
+    expect(getBulkMilestone(AREES, 90)?.minQuantity).toBe(70)
+  })
+
+  it('is defensive with missing/garbage input', () => {
+    expect(getBulkMilestone(null, 150)).toBe(null)
+    expect(getBulkMilestone(AREES_8ML, undefined)?.minQuantity).toBe(12)
+    expect(getBulkMilestone(AREES_8ML, 'abc')?.minQuantity).toBe(12)
   })
 })
 
@@ -416,6 +540,25 @@ describe('buildBrandBulk', () => {
       remaining: 20,
       bulkUnitPrice: 43,
       tier: null,
+    })
+  })
+
+  it('exposes the next unreached tier and the remaining pieces toward it', () => {
+    const at120 = buildBrandBulk([line('p1', 'brand-multi', 120, 50)], [MULTI])
+    expect(at120['brand-multi']).toMatchObject({
+      unlocked: true,
+      tier: { minQuantity: 100, price: 43 },
+      nextTier: { minQuantity: 150, price: 42 },
+      milestone: { minQuantity: 150, price: 42 },
+      remaining: 30,
+    })
+    const atMax = buildBrandBulk([line('p1', 'brand-multi', 200, 50)], [MULTI])
+    expect(atMax['brand-multi']).toMatchObject({
+      unlocked: true,
+      tier: { minQuantity: 200, price: 40 },
+      nextTier: null,
+      milestone: { minQuantity: 200, price: 40 },
+      remaining: 0,
     })
   })
 })

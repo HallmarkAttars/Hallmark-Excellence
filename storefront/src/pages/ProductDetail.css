@@ -580,6 +580,11 @@
   font-weight: 700;
   color: #1E7A34;
 }
+.pd-bulk-next {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--charcoal-soft);
+}
 .pd-bulk-locked {
   margin: 10px 0 0;
   font-size: 0.8rem;

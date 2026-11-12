@@ -6,7 +6,9 @@ import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import {
   getApplicableBulkTier,
+  getBulkMilestone,
   getBulkTiers,
+  getNextBulkTier,
   lineNormalPerPiece,
   pieceBandForQuantity,
   pieceWord,
@@ -374,13 +376,26 @@ export default function ProductDetail({ onAddToCart }) {
     ? getApplicableBulkTier(brandRule, totalBrandPieces)
     : null
   const brandUnlocked = isBrandBulkProduct && Boolean(applicableTier)
-  const brandRemaining = isBrandBulkProduct ? Math.max(0, bulkMinQty - totalBrandPieces) : 0
+  // The next tier the customer has not reached yet — the next rate to chase.
+  // Below the first tier it is the unlock goal; after 12 it is 120, then 180,
+  // then 216; once the top tier is reached it is null (best rate unlocked).
+  const nextTier = isBrandBulkProduct
+    ? getNextBulkTier(brandRule, totalBrandPieces)
+    : null
+  // The milestone the current total belongs to (exact thresholds stay on that
+  // tier, quantities between thresholds round up). Drives the count/progress.
+  const bulkMilestone = isBrandBulkProduct
+    ? getBulkMilestone(brandRule, totalBrandPieces)
+    : null
+  const brandRemaining = nextTier
+    ? Math.max(0, nextTier.minQuantity - totalBrandPieces)
+    : 0
   const bulkPerPiece = applicableTier
     ? applicableTier.price
     : firstBulkTier
       ? firstBulkTier.price
       : 0
-  const bulkThresholdShown = brandUnlocked && applicableTier ? applicableTier.minQuantity : bulkMinQty
+  const bulkThresholdShown = bulkMilestone ? bulkMilestone.minQuantity : bulkMinQty
 
   const pieceStylePrice = isBrandBulkProduct || isPiecesUnit
 
@@ -451,7 +466,11 @@ export default function ProductDetail({ onAddToCart }) {
   )
   const canIncrease = !isOutOfStock
 
-  const bulkPct = bulkMinQty > 0 ? Math.min(100, (totalBrandPieces / bulkMinQty) * 100) : 0
+  // Progress is the selected/brand total against its milestone: 24/120 = 20%,
+  // 120/120 = 100%, 36/120 = 30%, 96/120 = 80%.
+  const bulkPct = bulkMilestone && bulkMilestone.minQuantity > 0
+    ? Math.min(100, Math.max(0, (totalBrandPieces / bulkMilestone.minQuantity) * 100))
+    : 0
   const bulkSavingsPerPiece = bulkApplied
     ? Math.max(0, Number(normalPerPiece) - bulkPerPiece)
     : 0
@@ -744,16 +763,20 @@ export default function ProductDetail({ onAddToCart }) {
                 </span>
                 <span className="pd-bulk-rate">
                   ₹{Number(bulkPerPiece).toLocaleString('en-IN')} / piece
+                  {brandUnlocked && nextTier ? ' now' : ''}
                 </span>
               </div>
               {!brandUnlocked ? (
                 <p className="pd-bulk-min">
                   From {Number(bulkMinQty).toLocaleString('en-IN')} pieces
                 </p>
-              ) : (
+              ) : nextTier ? (
                 <p className="pd-bulk-min">
-                  Bulk rate from {Number(applicableTier.minQuantity).toLocaleString('en-IN')} pieces
+                  Next: {Number(nextTier.minQuantity).toLocaleString('en-IN')} pieces · ₹
+                  {Number(nextTier.price).toLocaleString('en-IN')} / piece
                 </p>
+              ) : (
+                <p className="pd-bulk-min">Best bulk rate unlocked</p>
               )}
               <div className="pd-bulk-progress">
                 <div className="pd-bulk-track">
@@ -769,11 +792,19 @@ export default function ProductDetail({ onAddToCart }) {
                 </span>
               </div>
               {brandUnlocked ? (
-                bulkSavingsPerPiece > 0 && (
-                  <p className="pd-bulk-save">
-                    You save ₹{Number(bulkSavingsPerPiece).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece
-                  </p>
-                )
+                <>
+                  {bulkSavingsPerPiece > 0 && (
+                    <p className="pd-bulk-save">
+                      You save ₹{Number(bulkSavingsPerPiece).toLocaleString('en-IN', { maximumFractionDigits: 2 })} / piece
+                    </p>
+                  )}
+                  {nextTier && (
+                    <p className="pd-bulk-next">
+                      Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
+                      {pieceWord(brandRemaining)} to unlock the next rate
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="pd-bulk-locked">
                   Add {Number(brandRemaining).toLocaleString('en-IN')} more{' '}
