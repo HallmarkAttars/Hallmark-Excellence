@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildB2bBodyHtml,
+  buildBrandBodyHtml,
   buildGuideBodyHtml,
   buildGuideIndexBodyHtml,
   buildSeoForRoute,
@@ -140,21 +141,22 @@ describe('static body fallbacks', () => {
   it('links the home and South India bodies to canonical category URLs', () => {
     const home = buildStaticBodyHtml('home')
     expect(home).toContain('<h2>Shop by Category</h2>')
-    expect((home.match(/<li><a href="\/categories\//g) || []).length).toBe(10)
+    expect((home.match(/<li><a href="\/categories\//g) || []).length).toBe(7)
     for (const slug of [
       'roll-on-attars',
       'bakhoor',
       'fragrance-oils',
       'spray-bottles',
       'roll-on-bottles',
-      'fancy-attar-bottles',
-      'roll-on-bottle-caps',
-      'spray-bottle-pumps',
       'display-bottles',
       'face-wash',
     ]) {
       expect(home).toContain(`href="/categories/${slug}"`)
     }
+    // Empty noindex categories must not be advertised from the homepage.
+    expect(home).not.toContain('href="/categories/fancy-attar-bottles"')
+    expect(home).not.toContain('href="/categories/roll-on-bottle-caps"')
+    expect(home).not.toContain('href="/categories/spray-bottle-pumps"')
     // The old non-existent category must never be linked.
     expect(home).not.toContain('href="/categories/attars"')
     expect(home).not.toContain('href="/categories/attar"')
@@ -165,6 +167,44 @@ describe('static body fallbacks', () => {
     expect(southIndia).toContain('href="/categories/bakhoor"')
     expect(southIndia).toContain('href="/categories/fragrance-oils"')
     expect(southIndia).not.toContain('/categories/attars"')
+  })
+
+  it('links the homepage to the canonical brand URLs', () => {
+    const home = buildStaticBodyHtml('home')
+    expect(home).toContain('<h2>Shop by Brand</h2>')
+    expect((home.match(/<li><a href="\/brand\//g) || []).length).toBe(4)
+    for (const slug of ['arees', 'bakhoor', 'arees-luxury', 'dahab']) {
+      expect(home).toContain(`href="/brand/${slug}"`)
+    }
+  })
+
+  it('maps brand hub links to public slugs and hides brands with no products', () => {
+    const html = buildStaticBodyHtml('brands', {
+      brands: [
+        { id: 'b-1', name: 'Arees 8ml', slug: 'arees' },
+        { id: 'b-2', name: 'Arees Luxury', slug: 'oud-al-haramain' },
+        { id: 'b-3', name: 'Arees 12ml', slug: 'amber-oud' },
+      ],
+      products: [{ id: 'p-1', brand_id: 'b-1', brand_slug: 'arees' }],
+    })
+    expect(html).toContain('href="/brand/arees"')
+    expect(html).not.toContain('href="/brand/oud-al-haramain"')
+    expect(html).not.toContain('href="/brand/amber-oud"')
+  })
+
+  it('renders brand body copy from the brand record with crawlable category links', () => {
+    const html = buildBrandBodyHtml(
+      {
+        name: 'Dahab 6ml',
+        long_description: 'Dahab is a golden, floral attar collection from Arees Perfumes in Chennai.',
+        tagline: 'Rich heritage, lasting impressions',
+      },
+      'dahab',
+      [{ id: 'p-1', name: 'Dahab Rose', slug: 'dahab-rose' }]
+    )
+    expect(html).toContain('Dahab is a golden, floral attar collection')
+    expect(html).toContain('href="/product/dahab-rose"')
+    expect(html).toContain('href="/categories/roll-on-attars"')
   })
 })
 

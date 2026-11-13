@@ -282,15 +282,25 @@ const HOME_CATEGORY_LINKS = [
   { to: '/categories/fragrance-oils', label: 'Fragrance Oils' },
   { to: '/categories/spray-bottles', label: 'Spray Bottles' },
   { to: '/categories/roll-on-bottles', label: 'Roll-On Bottles' },
-  { to: '/categories/fancy-attar-bottles', label: 'Fancy Attar Bottles' },
-  { to: '/categories/roll-on-bottle-caps', label: 'Roll-On Bottle Caps' },
-  { to: '/categories/spray-bottle-pumps', label: 'Spray Bottle Pumps' },
   { to: '/categories/display-bottles', label: 'Display Bottles' },
   { to: '/categories/face-wash', label: 'Arees Face Wash' },
 ]
 
+const HOME_BRAND_LINKS = [
+  { to: '/brand/arees', label: 'Arees' },
+  { to: '/brand/bakhoor', label: 'Arees Bakhoor' },
+  { to: '/brand/arees-luxury', label: 'Arees Luxury' },
+  { to: '/brand/dahab', label: 'Dahab' },
+]
+
 function renderCategoryLinks() {
   return `<ul>${HOME_CATEGORY_LINKS.map(
+    ({ to, label }) => `<li><a href="${to}">${escapeHtml(label)}</a></li>`
+  ).join('')}</ul>`
+}
+
+function renderBrandLinks() {
+  return `<ul>${HOME_BRAND_LINKS.map(
     ({ to, label }) => `<li><a href="${to}">${escapeHtml(label)}</a></li>`
   ).join('')}</ul>`
 }
@@ -307,6 +317,7 @@ export function buildHomeBodyHtml(data = {}) {
 ${priceLine}
 <section><h2>Shop Attars, Oud &amp; Fragrance Oils</h2><p>Browse alcohol-free attars and concentrated perfume oils from Arees Perfumes.</p><p><a href="/shop">Shop all attars</a> <a href="/categories">Explore categories</a> <a href="/brands">Our brands</a></p></section>
 <section><h2>Shop by Category</h2>${renderCategoryLinks()}</section>
+<section><h2>Shop by Brand</h2>${renderBrandLinks()}</section>
 <section><h2>Wholesale &amp; Export</h2><p>Our Chennai wholesale desk supplies loose attar and fragrance oils from 100 g, branded Arees packs from 60 pieces, private-label orders and quotation-based export support.</p><p><a href="/wholesale">Wholesale enquiry</a></p></section>
 <section><h2>Fragrance Guides</h2><p>Practical guides to choosing, storing and sourcing attars and perfume oils.</p><p><a href="/guides">Read the guides</a></p></section>
 <section><h2>Frequently Asked Questions</h2>${renderFaqs(HOME_FAQS)}</section>
@@ -407,15 +418,25 @@ ${renderContact('Visit or Reach Us')}
     .slice(0, 24)
     .map((p) => `<li><a href="${escapeHtml(productHref(p))}">${escapeHtml(cleanProductName(p.name) || 'Product')}</a></li>`)
     .join('')
+  const productBrandSlugs = new Set(products.map((p) => p?.brand_slug).filter(Boolean))
+  const productBrandIds = new Set(products.map((p) => p?.brand_id).filter(Boolean))
+  const brandsHaveProductData = productBrandSlugs.size > 0 || productBrandIds.size > 0
+
   const categoryLinks = categories
-    .filter((c) => c?.slug || c?.id)
+    .filter((c) => (c?.slug || c?.id) && (c.product_count == null || Number(c.product_count) > 0))
     .slice(0, 20)
     .map((c) => `<li><a href="/categories/${escapeHtml(normalizeCategorySlug(c.slug || c.id) || (c.slug || c.id))}">${escapeHtml(cleanProductName(c.name) || c.name)}</a></li>`)
     .join('')
   const brandLinks = brands
     .filter((b) => b?.slug || b?.id)
+    .filter((b) => !brandsHaveProductData || productBrandSlugs.has(b.slug) || productBrandIds.has(b.id))
     .slice(0, 20)
-    .map((b) => `<li><a href="/brand/${escapeHtml(b.slug || b.id)}">${escapeHtml(cleanProductName(b.name) || b.name)}</a></li>`)
+    .map((b) => {
+      const publicSlug = brandPublicSlug(b.slug || b.id)
+      return publicSlug
+        ? `<li><a href="/brand/${escapeHtml(publicSlug)}">${escapeHtml(cleanProductName(b.name) || b.name)}</a></li>`
+        : ''
+    })
     .join('')
 
   const productSection = productLinks
@@ -539,16 +560,27 @@ ${editorialHtml}
 export function buildBrandBodyHtml(brand, slug, products = []) {
   if (!brand?.name) return ''
   const brandName = cleanProductName(brand.name)
+  const description = cleanProductName(brand.long_description) || cleanProductName(brand.description)
+  const tagline = cleanProductName(brand.tagline)
   const links = (Array.isArray(products) ? products : [])
     .slice(0, 24)
     .map((product) => `<li><a href="${escapeHtml(productHref(product))}">${escapeHtml(cleanProductName(product.name))}</a></li>`)
     .join('')
+  const categoryLinks = [
+    { to: '/categories/roll-on-attars', label: 'Roll-On Attars' },
+    { to: '/categories/fragrance-oils', label: 'Fragrance Oils' },
+    { to: '/categories/bakhoor', label: 'Bakhoor' },
+  ]
+    .map(({ to, label }) => `<li><a href="${to}">${label}</a></li>`)
+    .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/brands">Brands</a></nav>
 <h1>${escapeHtml(brandName)}</h1>
-<p>Explore ${escapeHtml(brand.name)} attars and fragrance oils from Arees Perfumes in Chennai.</p>
-${links ? `<h2>Products by ${escapeHtml(brand.name)}</h2><ul>${links}</ul>` : ''}
-<p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
+${description ? `<p>${escapeHtml(description)}</p>` : `<p>Explore ${escapeHtml(brandName)} attars and fragrance oils from Arees Perfumes in Chennai.</p>`}
+${tagline ? `<p>${escapeHtml(tagline)}.</p>` : ''}
+${links ? `<section><h2>Products by ${escapeHtml(brandName)}</h2><ul>${links}</ul></section>` : ''}
+<section><h2>Shop by Category</h2><ul>${categoryLinks}</ul></section>
+<section><h2>Buying from Arees Perfumes</h2><p>Shop ${escapeHtml(brandName)} online with delivery across India, or visit Arees Perfumes at ${escapeHtml(BUSINESS.address)}. Wholesale and export enquiries are handled by our Chennai desk.</p><p><a href="/guides/attar-vs-perfume-oil">Attar vs perfume oil guide</a> <a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p></section>
 </main>`
 }
 
@@ -683,13 +715,22 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
       pageData.products = Array.isArray(res?.products) ? res.products : []
     }
     if (slug === 'categories') {
-      const [catRes, brandRes] = await Promise.all([safeFetchJson('/categories'), safeFetchJson('/brands')])
+      const [catRes, brandRes, productRes] = await Promise.all([
+        safeFetchJson('/categories'),
+        safeFetchJson('/brands'),
+        safeFetchJson('/products'),
+      ])
       pageData.categories = Array.isArray(catRes?.categories) ? catRes.categories : []
       pageData.brands = Array.isArray(brandRes?.brands) ? brandRes.brands : []
+      pageData.products = Array.isArray(productRes?.products) ? productRes.products : []
     }
     if (slug === 'brands') {
-      const res = await safeFetchJson('/brands')
-      pageData.brands = Array.isArray(res?.brands) ? res.brands : []
+      const [brandRes, productRes] = await Promise.all([
+        safeFetchJson('/brands'),
+        safeFetchJson('/products'),
+      ])
+      pageData.brands = Array.isArray(brandRes?.brands) ? brandRes.brands : []
+      pageData.products = Array.isArray(productRes?.products) ? productRes.products : []
     }
 
     return {
