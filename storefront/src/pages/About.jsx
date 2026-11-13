@@ -17,8 +17,8 @@ export default function About() {
   return (
     <div>
       <SEO
-        title="About Arees Perfumes & Hikma Perfumes | Chennai"
-        description="Learn about Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, operating under Hallmark of Excellence in Chennai."
+        title="About Arees Perfumes | Chennai Fragrance House"
+        description="Learn about Arees Perfumes, a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale."
         canonical="/about"
         schema={aboutSchema}
       />
@@ -33,7 +33,7 @@ export default function About() {
             className="about-image"
             style={{ backgroundImage: `url(${IMAGES.aboutImage})` }}
             role="img"
-            aria-label="Arees and Dahab atelier"
+            aria-label="Arees Perfumes atelier"
           />
           <div className="about-text">
             <h2>{ABOUT.story.heading}</h2>
@@ -49,7 +49,7 @@ export default function About() {
             <p key={i}>{p}</p>
           ))}
           <p className="about-hikma-link">
-            <Link to="/hikma-exports">Learn more about Hikma Exports and Hikma Perfumes →</Link>
+            <Link to="/wholesale">Learn more about our wholesale and export supply →</Link>
           </p>
         </section>
 

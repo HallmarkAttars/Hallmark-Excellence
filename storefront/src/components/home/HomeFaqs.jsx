@@ -97,12 +97,12 @@ export default function HomeFaqs({ products }) {
           <h3>Wholesale &amp; Bulk Supply</h3>
           <p>
             Retailers, perfumers and gift shops: loose attar and fragrance oils from 100 g, branded
-            Arees and Dahab packs from 60 pieces — supplied by Hikma Exports, Chennai.
+            Arees packs from 60 pieces — supplied from our Chennai wholesale desk.
           </p>
           <div className="home-faqs-wholesale-links">
             <Link className="home-faqs-wholesale-btn" to="/wholesale">Wholesale enquiry</Link>
             <Link className="home-faqs-wholesale-btn home-faqs-wholesale-btn--ghost" to="/hikma-exports">
-              Hikma Exports
+              Export support
             </Link>
           </div>
         </div>

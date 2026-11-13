@@ -21,6 +21,7 @@ import {
   DEFAULT_TITLE,
   DEFAULT_DESCRIPTION,
   STATIC_PAGES,
+  productPath,
   buildOrganizationSchema,
   buildWebSiteSchema,
   buildLocalBusinessSchema,
@@ -48,6 +49,11 @@ import { GUIDES } from '../data/guides.js'
 describe('canonical domain & brand identity', () => {
   it('pins the live www host as the canonical origin', () => {
     expect(CANONICAL_ORIGIN).toBe('https://www.areesperfumes.in')
+  })
+
+  it('builds canonical product paths from slugs when available', () => {
+    expect(productPath({ id: 'uuid-1', slug: 'sumaiya' })).toBe('/product/sumaiya')
+    expect(productPath({ id: 'uuid-1' })).toBe('/product/uuid-1')
   })
 
   it('sets Arees Perfumes as the primary brand name', () => {
@@ -322,16 +328,17 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@context']).toBe('https://schema.org')
       expect(schema['@type']).toBe('Organization')
       expect(schema.name).toBe('Arees Perfumes')
-      expect(schema.alternateName).toContain('Hikma Perfumes')
-      expect(schema.parentOrganization.name).toBe('Hikma Exports')
-      expect(schema.description).toContain('parent company of Arees & Dahab')
+      expect(schema.alternateName).toContain('Hallmark of Excellence')
+      expect(schema.parentOrganization).toBeUndefined()
+      expect(schema.description).toContain('Hallmark of Excellence')
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.url).toBe('https://www.areesperfumes.in')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.email).toBe('hikmaexports@gmail.com')
       expect(schema.sameAs).toContain(
-        'https://www.linkedin.com/in/hallmark-undefined-73471044a/'
+        'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'
       )
+      expect(schema.sameAs.join(' ')).not.toContain('linkedin')
     })
   })
 
@@ -340,7 +347,7 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildWebSiteSchema()
       expect(schema['@type']).toBe('WebSite')
       expect(schema.name).toBe('Arees Perfumes')
-      expect(schema.alternateName).toBe('Hikma Perfumes')
+      expect(schema.alternateName).toBe('Hallmark of Excellence')
       expect(schema.url).toBe('https://www.areesperfumes.in')
     })
   })
@@ -354,26 +361,27 @@ describe('Schema.org JSON-LD Builders', () => {
       // across GBP, the storefront and structured data.
       expect(schema.name).toBe('Arees Attars & Perfumes')
       expect(schema.alternateName).toContain('Arees Perfumes')
-      expect(schema.alternateName).toContain('Hikma Perfumes')
-      expect(schema.parentOrganization.name).toBe('Hikma Exports')
+      expect(schema.alternateName).toContain('Hallmark of Excellence')
+      expect(schema.parentOrganization).toBeUndefined()
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.address.postalCode).toBe('600001')
       expect(schema.address.streetAddress).toContain('Moore St')
       expect(schema.telephone).toBe('+919840750467')
       expect(schema.sameAs).toContain(
-        'https://www.linkedin.com/in/hallmark-undefined-73471044a/'
+        'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'
       )
+      expect(schema.sameAs.join(' ')).not.toContain('linkedin')
     })
   })
 
   describe('buildFAQSchema', () => {
     it('builds a FAQPage from question/answer pairs', () => {
       const schema = buildFAQSchema([
-        { question: 'Where is Hikma Perfumes located?', answer: 'Chennai.' },
+        { question: 'Where is Arees Perfumes located?', answer: 'Chennai.' },
       ])
       expect(schema['@type']).toBe('FAQPage')
       expect(schema.mainEntity).toHaveLength(1)
-      expect(schema.mainEntity[0].name).toBe('Where is Hikma Perfumes located?')
+      expect(schema.mainEntity[0].name).toBe('Where is Arees Perfumes located?')
       expect(schema.mainEntity[0].acceptedAnswer.text).toBe('Chennai.')
     })
 
@@ -713,6 +721,16 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(buildStaticPageSeo('about').canonical).toBe('/about')
       expect(buildStaticPageSeo('/hikma-exports').canonical).toBe('/hikma-exports')
       expect(buildStaticPageSeo('missing-page')).toBeNull()
+    })
+
+    it('keeps retail static pages on Arees + Hallmark branding', () => {
+      const about = buildStaticPageSeo('about')
+      const contact = buildStaticPageSeo('contact')
+      expect(about.title).toContain('Arees Perfumes')
+      expect(about.title).not.toContain('Hikma')
+      expect(about.description).toContain('Hallmark of Excellence')
+      expect(contact.title).toContain('Arees Perfumes')
+      expect(contact.title).not.toContain('Hikma')
     })
   })
 

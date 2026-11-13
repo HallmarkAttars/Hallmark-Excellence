@@ -27,7 +27,7 @@ export const CANONICAL_ORIGIN = 'https://www.areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
 export const DEFAULT_TITLE = 'Arees Perfumes | Attars, Bakhoor & Arabic Perfumes in Chennai'
 export const DEFAULT_DESCRIPTION =
-  'Premium attars, bakhoor, oud and Arabic perfumes from Arees Perfumes — alcohol-free, delivered across India, with retail and wholesale supply via Hikma Exports.'
+  'Premium attars, bakhoor, oud and Arabic perfumes from Arees Perfumes — alcohol-free, delivered across India, with retail and wholesale supply from Chennai.'
 export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
 
 const WWW_HOST = 'www.areesperfumes.in'
@@ -253,17 +253,11 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Arees Perfumes',
-    legalName: 'Hikma Exports',
     // Google Business Profile name is the ground truth for local entity
     // matching, so the GBP trading name is listed with the brand names.
-    alternateName: ['Arees Attars & Perfumes', 'Arees & Dahab', 'Hikma Perfumes', 'Hallmark of Excellence'],
+    alternateName: ['Arees Attars & Perfumes', 'Hallmark of Excellence'],
     description:
-      'Arees Perfumes is a Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
-    parentOrganization: {
-      '@type': 'Organization',
-      name: 'Hikma Exports',
-      url: origin,
-    },
+      'Arees Perfumes is a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     url: origin,
     logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
     email: 'hikmaexports@gmail.com',
@@ -284,10 +278,7 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
       postalCode: '600001',
       addressCountry: 'IN',
     },
-    sameAs: [
-      BUSINESS.socialByKey('instagram').href,
-      BUSINESS.socialByKey('linkedin').href,
-    ],
+    sameAs: [BUSINESS.socialByKey('instagram')?.href].filter(Boolean),
   }
 }
 
@@ -297,7 +288,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Arees Perfumes',
-    alternateName: 'Hikma Perfumes',
+    alternateName: 'Hallmark of Excellence',
     url: origin,
     description: DEFAULT_DESCRIPTION,
     publisher: {
@@ -318,14 +309,9 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
     '@type': 'LocalBusiness',
     '@id': `${origin}/#localbusiness`,
     name: 'Arees Attars & Perfumes',
-    alternateName: ['Arees Perfumes', 'Hikma Perfumes'],
+    alternateName: ['Arees Perfumes', 'Hallmark of Excellence'],
     description:
-      'Arees Perfumes is the Chennai fragrance brand of Hikma Exports, the parent company of Arees & Dahab.',
-    parentOrganization: {
-      '@type': 'Organization',
-      name: 'Hikma Exports',
-      url: origin,
-    },
+      'Arees Perfumes is a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     image: `${origin}/Hero.webp`,
     url: origin,
     telephone: '+919840750467',
@@ -345,10 +331,7 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
       longitude: 80.2872,
     },
     hasMap: BUSINESS.mapDirectionsUrl,
-    sameAs: [
-      BUSINESS.socialByKey('instagram').href,
-      BUSINESS.socialByKey('linkedin').href,
-    ],
+    sameAs: [BUSINESS.socialByKey('instagram')?.href].filter(Boolean),
     areaServed: ['Chennai', 'Tamil Nadu', 'South India', 'India'],
   }
 }
@@ -1016,9 +999,9 @@ const STATIC_PAGE_SEO = {
   '/hikma-exports': buildHikmaExportsSeo(),
   '/guides': buildGuidesIndexSeo(),
   '/about': {
-    title: 'About Arees Perfumes & Hikma Perfumes | Chennai',
+    title: 'About Arees Perfumes | Chennai Fragrance House',
     description:
-      'Learn about Arees Perfumes, part of Hikma Exports (Hikma Perfumes), the parent company of Arees & Dahab, operating under Hallmark of Excellence in Chennai.',
+      'Learn about Arees Perfumes, a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     canonical: '/about',
     type: 'website',
     schema: [
@@ -1031,9 +1014,9 @@ const STATIC_PAGE_SEO = {
   },
   '/wholesale': buildWholesaleSeo(),
   '/contact': {
-    title: 'Contact Arees Perfumes & Hikma Perfumes | Chennai',
+    title: 'Contact Arees Perfumes | Chennai',
     description:
-      'Contact Arees Perfumes, part of Hikma Exports (Hikma Perfumes), in Mannadi, George Town, Chennai for retail orders, wholesale enquiries, and fragrance consultations.',
+      'Contact Arees Perfumes in Mannadi, George Town, Chennai for retail orders, wholesale enquiries and fragrance consultations.',
     canonical: '/contact',
     type: 'website',
     schema: buildBreadcrumbsSchema([

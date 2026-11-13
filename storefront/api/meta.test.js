@@ -128,7 +128,8 @@ describe('static body fallbacks', () => {
     const home = buildStaticBodyHtml('home')
     expect(home).toContain('<h2>Wholesale &amp; Export</h2>')
     expect(home).toContain('loose attar and fragrance oils from 100 g')
-    expect(home).toContain('branded Arees and Dahab packs from 60 pieces')
+    expect(home).toContain('branded Arees packs from 60 pieces')
+    expect(home).not.toContain('Arees Perfumes and Dahab')
 
     const southIndia = buildStaticBodyHtml('attar-perfume-shop-south-india')
     expect(southIndia).toContain('<h1>Attar Shop in Chennai &amp; South India</h1>')

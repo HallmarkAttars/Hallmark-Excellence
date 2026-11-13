@@ -108,7 +108,7 @@ export default function CategoryProducts() {
         {(slug === '1' || slug === '10') && (
           <p className="category-wholesale-link">
             Buying in bulk? <Link to="/wholesale">Request wholesale pricing</Link> or{' '}
-            <Link to="/hikma-exports">learn about Hikma Exports</Link>.
+            <Link to="/hikma-exports">explore export support</Link>.
           </p>
         )}
         <span className="category-hero-rule" aria-hidden="true" />

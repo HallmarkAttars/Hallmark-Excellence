@@ -53,7 +53,6 @@ export const BUSINESS = {
     'https://www.google.com/maps?cid=18135458823893370996',
   social: [
     { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo' },
-    { key: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/hallmark-undefined-73471044a/' },
     { key: 'facebook', label: 'Facebook', href: '#' },
     // href '#' → Footer resolves the WhatsApp icon to the shared WHATSAPP_URL
   // (utils/whatsapp.js) so one constant carries number + pre-filled text.
@@ -164,13 +163,13 @@ export const HOME_FAQS = [
     group: 'wholesale-export',
     question: 'Can I order wholesale or in bulk?',
     answer:
-      'Yes. Loose attar and fragrance oil orders start at 100 g and branded Arees/Dahab packs from 60 pieces, supplied by Hikma Exports in Chennai. Share your scents, sizes and quantities for a formal quotation.',
+      'Yes. Loose attar and fragrance oil orders start at 100 g and branded packs from 60 pieces, supplied from our Chennai wholesale desk. Share your scents, sizes and quantities for a formal quotation.',
   },
   {
     group: 'wholesale-export',
     question: 'Do you export internationally?',
     answer:
-      'Export orders (Singapore, Malaysia, UAE, Sri Lanka, Maldives and other confirmed destinations) are quotation-based through Hikma Exports, a GST-registered exporter with IEC. Share your requirement on WhatsApp or email for pricing, lead time and documents.',
+      'Export orders (Singapore, Malaysia, UAE, Sri Lanka, Maldives and other confirmed destinations) are quotation-based through our Chennai export desk, which holds GST and IEC registration. Share your requirement on WhatsApp or email for pricing, lead time and documents.',
   },
 ]
 
@@ -252,37 +251,37 @@ export const ABOUT = {
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees Perfumes is a Chennai fragrance brand under Hikma Exports, the parent company of Arees & Dahab, operating under Hallmark of Excellence. Hikma Exports also trades as Hikma Perfumes. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Arees Perfumes is a Chennai fragrance house operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for customers, perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },
   hikma: {
-    heading: 'Hikma Perfumes, Hikma Exports & Arees Perfumes',
+    heading: 'Our Fragrance House',
     paragraphs: [
-      'Hikma Exports is the parent company of Arees & Dahab. Its fragrance identity, Hikma Perfumes, is the name behind our wholesale perfume supply and the Arees Perfumes and Dahab retail collections.',
+      'Hallmark of Excellence brings together our retail fragrance house, wholesale supply and packaging expertise. Arees Perfumes is the customer-facing fragrance brand, focused on alcohol-free attars, oud oils, fragrance oils, bakhoor and roll-on perfumes.',
       'From 83 & 84, Moore Street, Mannadi, George Town, Chennai, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes, and perfume packaging to customers and trade partners across India.',
     ],
   },
   faqs: [
     {
-      question: 'Is Hikma Perfumes the same as Arees Perfumes?',
+      question: 'Is Arees Perfumes part of Hallmark of Excellence?',
       answer:
-        'Hikma Perfumes is the fragrance identity of Hikma Exports, the parent company of Arees & Dahab. Arees Perfumes is a retail brand within the group, alongside Dahab.',
+        'Yes. Arees Perfumes is the retail fragrance house of Hallmark of Excellence in Chennai.',
     },
     {
-      question: 'Where is Hikma Perfumes located?',
+      question: 'Where is Arees Perfumes located?',
       answer:
-        'Hikma Perfumes operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, the same location as Arees Perfumes and Hikma Exports.',
+        'Arees Perfumes operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001.',
     },
     {
-      question: 'What products does Hikma Exports supply?',
+      question: 'What products does Arees Perfumes offer?',
       answer:
-        'Hikma Exports supplies alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps, and pumps. Products are available for retail and wholesale.',
+        'Arees Perfumes offers alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor, and perfume packaging including bottles, caps, and pumps. Products are available for retail and wholesale.',
     },
     {
-      question: 'Does Hikma Perfumes offer wholesale supply?',
+      question: 'Does Arees Perfumes offer wholesale supply?',
       answer:
-        'Yes. Hikma Exports supplies retailers, perfumers, gift shops, and fragrance brands across India through its Chennai wholesale division, with bulk pricing and packaging support.',
+        'Yes. Wholesale enquiries are handled through our Chennai wholesale desk, with bulk pricing and packaging support for retailers, perfumers, gift shops, and fragrance brands.',
     },
   ],
   values: [
@@ -469,10 +468,7 @@ export const HIKMA_EXPORTS = {
         'Yes. Hikma Exports is a GST-registered business with an Import Export Code (IEC). Registration numbers and destination-specific documents are shared with buyers as part of the quotation.',
     },
   ],
-  sameAs: [
-    BUSINESS.socialByKey('instagram').href,
-    BUSINESS.socialByKey('linkedin').href,
-  ],
+  sameAs: [BUSINESS.socialByKey('instagram').href],
 }
 
 // --------------------------------------------------------------------------

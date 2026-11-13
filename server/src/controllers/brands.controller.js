@@ -93,7 +93,7 @@ async function getBrandProducts(req, res) {
       let q = supabase
         .from('products')
         .select(`
-          id, name, description, price, compare_at_price,
+          id, name, slug, description, price, compare_at_price,
           rating, review_count, is_featured, image, stock,
           category_id, brand_id, is_active, created_at,
           categories ( id, name, slug )
