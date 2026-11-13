@@ -4,6 +4,7 @@ import {
   buildBrandBodyHtml,
   buildGuideBodyHtml,
   buildGuideIndexBodyHtml,
+  buildProductBodyHtml,
   buildSeoForRoute,
   buildStaticBodyHtml,
   injectSeoHtml,
@@ -773,5 +774,37 @@ describe('meta handler', () => {
     expect(res.headers['x-arees-degraded']).toBeUndefined()
     expect(res.body).toContain('Temporarily Unavailable')
     expect(res.body).toContain('<meta name="robots" content="noindex,nofollow" />')
+  })
+})
+
+describe('buildProductBodyHtml internal links', () => {
+  const product = {
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Pink Musk',
+    slug: 'pink-musk',
+    brand_name: 'Arees 8ml',
+    brand_slug: 'arees',
+    category_name: 'Roll on Attars',
+    category_slug: '1',
+    description: 'A soft pink musk roll-on attar.',
+    price: 500,
+    is_in_stock: true,
+  }
+
+  it('links the product to its brand and category pages', () => {
+    const html = buildProductBodyHtml(product, [])
+    expect(html).toContain('<a href="/brand/arees">Arees 8ml</a>')
+    expect(html).toContain('<a href="/categories/roll-on-attars">Roll on Attars</a>')
+  })
+
+  it('maps API-only brand slugs to their public brand URL', () => {
+    const html = buildProductBodyHtml({ ...product, brand_slug: 'amber-oud', brand_name: 'Arees 12ml' }, [])
+    expect(html).toContain('<a href="/brand/arees-12ml">Arees 12ml</a>')
+    expect(html).not.toContain('/brand/amber-oud')
+  })
+
+  it('does not emit a brand link without a brand slug', () => {
+    const html = buildProductBodyHtml({ ...product, brand_slug: null, brand_name: 'Arees Perfumes' }, [])
+    expect(html).not.toContain('/brand/')
   })
 })

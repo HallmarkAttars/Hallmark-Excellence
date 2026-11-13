@@ -471,6 +471,7 @@ export function buildProductBodyHtml(product, related = []) {
   if (!product?.name) return ''
   const productName = cleanProductName(product.name)
   const brandName = cleanProductName(product.brand_name) || 'Arees Perfumes'
+  const brandSlug = product.brand_slug ? brandPublicSlug(product.brand_slug) : ''
   const categoryName = cleanProductName(product.category_name)
   const categorySlug = categoryName ? normalizeCategorySlug(product.category_slug || 'attars') : ''
   const description = cleanProductName(product.description)
@@ -497,7 +498,7 @@ export function buildProductBodyHtml(product, related = []) {
 <h1>${escapeHtml(productName)}</h1>
 <p>${escapeHtml(description)}</p>
 <p>${[priceLine, stockLine].filter(Boolean).join(' — ') || 'Available at Arees Perfumes, Mannadi, Chennai'}</p>
-<p>Brand: ${escapeHtml(brandName)}${categoryName ? ` | Category: ${escapeHtml(categoryName)}` : ''}</p>
+<p>Brand: ${brandSlug ? `<a href="/brand/${escapeHtml(brandSlug)}">${escapeHtml(brandName)}</a>` : escapeHtml(brandName)}${categorySlug ? ` | Category: <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a>` : ''}</p>
 <p>Available for retail and wholesale from Arees Perfumes in Mannadi, Chennai.</p>
 ${relatedLinks ? `<section><h2>You may also like</h2><ul>${relatedLinks}</ul></section>` : ''}
 <p><a href="/wholesale">Wholesale enquiry</a> <a href="/contact">Contact us</a></p>
