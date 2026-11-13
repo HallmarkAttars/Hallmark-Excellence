@@ -49,9 +49,10 @@ describe('index.html third-party script hygiene', () => {
 
 describe('index.html home prerender internal links', () => {
   const categoryLinks = html.match(/<li><a href="\/categories\/[^"]+"/g) || []
+  const brandLinks = html.match(/<li><a href="\/brand\/[^"]+"/g) || []
 
   it('mirrors the server home body category list', () => {
-    expect(categoryLinks).toHaveLength(10)
+    expect(categoryLinks).toHaveLength(7)
   })
 
   it('links only canonical category slugs (never the old /categories/attars)', () => {
@@ -61,9 +62,6 @@ describe('index.html home prerender internal links', () => {
       'fragrance-oils',
       'spray-bottles',
       'roll-on-bottles',
-      'fancy-attar-bottles',
-      'roll-on-bottle-caps',
-      'spray-bottle-pumps',
       'display-bottles',
       'face-wash',
     ]) {
@@ -71,5 +69,18 @@ describe('index.html home prerender internal links', () => {
     }
     expect(html).not.toContain('href="/categories/attars"')
     expect(html).not.toContain('href="/categories/attar"')
+  })
+
+  it('never links empty noindex categories from the homepage', () => {
+    expect(html).not.toContain('href="/categories/fancy-attar-bottles"')
+    expect(html).not.toContain('href="/categories/roll-on-bottle-caps"')
+    expect(html).not.toContain('href="/categories/spray-bottle-pumps"')
+  })
+
+  it('exposes the four canonical brand URLs', () => {
+    expect(brandLinks).toHaveLength(4)
+    for (const slug of ['arees', 'bakhoor', 'arees-luxury', 'dahab']) {
+      expect(html).toContain(`href="/brand/${slug}"`)
+    }
   })
 })
