@@ -14,7 +14,7 @@ import { GUIDES } from '../data/guides.js'
 import { getCategoryContent } from '../data/categoryContent.js'
 import { normalizeCategorySlug } from './categorySlug.js'
 import { isProductInStock } from './stock.js'
-import { cloudinarySrc } from './productImage.js'
+import { cloudinarySrc, cloudinarySrcSet } from './productImage.js'
 import { brandPublicSlug } from './brandSlug.js'
 
 export { normalizeCategorySlug } from './categorySlug.js'
@@ -692,6 +692,10 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
     description,
     canonical: productPath(product),
     image: cloudinarySrc(product.image, { width: 1200 }) || product.image || DEFAULT_OG_IMAGE,
+    // The exact image the PDP renders above the fold. api/meta.js preloads
+    // this URL so React does not discover the LCP image several seconds late.
+    lcpImage: cloudinarySrc(product.image, { width: 900 }) || product.image || DEFAULT_OG_IMAGE,
+    lcpImageSrcSet: cloudinarySrcSet(product.image, [450, 600, 900]),
     type: 'product',
     schema: [
       buildProductSchema(product, origin, variant),

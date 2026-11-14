@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import ProductGrid from '../components/product/ProductGrid'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
+import useResponsivePageSize from '../hooks/useResponsivePageSize'
 import FilterSortControl from '../components/filter/FilterSortControl'
 import { getProducts, getCategories, getBrands } from '../services/mockApi'
 import { useCart } from '../context/CartContext'
@@ -79,10 +80,12 @@ export default function Shop() {
   }
 
   // Client-side pagination over the filtered results: FILTER → PAGINATE →
-  // render (only the current page's ≤50 products are ever rendered). The
+  // render (only the current page's products are ever rendered). Phones use a
+  // smaller page size so they render fewer cards and load fewer images. The
   // page lives in the URL (?page=N); out-of-range pages clamp to the last
   // valid page and the URL is corrected; every other query parameter is
   // preserved. See hooks/usePagination.js.
+  const pageSize = useResponsivePageSize()
   const {
     items: pageProducts,
     totalPages,
@@ -93,6 +96,7 @@ export default function Shop() {
     scrollAnchorId: 'shop-product-grid',
     loading,
     error,
+    pageSize,
   })
 
   // Category and Brand are mutually exclusive.

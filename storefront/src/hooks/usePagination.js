@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { paginate, pageFromSearch, setPageParam } from '../utils/pagination'
+import { PRODUCTS_PER_PAGE, paginate, pageFromSearch, setPageParam } from '../utils/pagination'
 
 // ---------------------------------------------------------------------------
 // usePagination(searchParams, setSearchParams, totalItems, options)
@@ -31,13 +31,13 @@ export default function usePagination(
   searchParams,
   setSearchParams,
   totalItems,
-  { scrollAnchorId = null, loading = false, error = null } = {}
+  { scrollAnchorId = null, loading = false, error = null, pageSize = PRODUCTS_PER_PAGE } = {}
 ) {
   const requestedPage = pageFromSearch(searchParams.toString())
 
   const { items, total, totalPages, currentPage } = useMemo(
-    () => paginate(totalItems, requestedPage),
-    [totalItems, requestedPage]
+    () => paginate(totalItems, requestedPage, pageSize),
+    [totalItems, requestedPage, pageSize]
   )
 
   // Navigate to a specific page — push, so browser history works

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getProductById, getRelatedProducts } from '../services/mockApi'
-import { cloudinarySrc } from '../utils/productImage'
+import { cloudinarySrc, cloudinarySrcSet } from '../utils/productImage'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import {
@@ -674,6 +674,8 @@ export default function ProductDetail({ onAddToCart }) {
             {/* Main (LCP) product image — eager, optimized Cloudinary size */}
             <img
               src={cloudinarySrc(product.image, { width: 900 })}
+              srcSet={cloudinarySrcSet(product.image, [450, 600, 900])}
+              sizes="(max-width: 767px) 92vw, 50vw"
               alt={imageAlt}
               decoding="async"
               fetchpriority="high"

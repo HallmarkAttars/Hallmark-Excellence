@@ -1,5 +1,6 @@
 const express = require('express')
 const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
+const { cachePublic } = require('../middleware/publicCache.middleware')
 const {
   getBrands,
   getAdminBrands,
@@ -11,8 +12,8 @@ const {
 const router = express.Router()
 
 // --- Public ---
-router.get('/brands', getBrands)
-router.get('/brands/:slug/products', getBrandProducts)
+router.get('/brands', cachePublic(), getBrands)
+router.get('/brands/:slug/products', cachePublic(), getBrandProducts)
 
 // --- Admin (protected + permission-checked) ---
 // Full brand list (active + inactive) for the brand management screen.

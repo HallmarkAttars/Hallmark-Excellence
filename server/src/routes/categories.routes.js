@@ -1,5 +1,6 @@
 const express = require('express')
 const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
+const { cachePublic } = require('../middleware/publicCache.middleware')
 const {
   getCategories,
   getCategoryProducts,
@@ -12,8 +13,8 @@ const {
 const router = express.Router()
 
 // --- Public ---
-router.get('/categories', getCategories)
-router.get('/categories/:slug/products', getCategoryProducts)
+router.get('/categories', cachePublic(), getCategories)
+router.get('/categories/:slug/products', cachePublic(), getCategoryProducts)
 
 // --- Admin (protected) ---
 router.get('/admin/categories', requireAuth, requirePermission('categories.view'), getAdminCategories)

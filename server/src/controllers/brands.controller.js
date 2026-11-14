@@ -25,6 +25,7 @@ async function getBrands(req, res) {
       return res.status(500).json({ error: 'Failed to fetch brands.' })
     }
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ brands: data })
   } catch (err) {
     console.error('getBrands error:', err)

@@ -4,6 +4,7 @@ import ProductGrid from '../components/product/ProductGrid'
 import FilterSortControl from '../components/filter/FilterSortControl'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
+import useResponsivePageSize from '../hooks/useResponsivePageSize'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
 import { brandHeroImage, brandHeroMobileImage } from '../data/content'
 import SEO from '../components/seo/SEO'
@@ -69,10 +70,12 @@ export default function BrandProducts() {
   }, [products, categoryFilter, sort])
 
   // Client-side pagination over the filtered results: FILTER → SORT →
-  // PAGINATE → render (only the current page's ≤50 products are rendered).
-  // The page lives in the URL (?page=N) and the brand slug stays in the
+  // PAGINATE → render (only the current page's products are rendered).
+  // Phones use a smaller page size so they render fewer cards and load fewer
+  // images. The page lives in the URL (?page=N) and the brand slug stays in the
   // path, so /brand/example-brand?page=2 always shows that brand's page 2.
   // Changing the category filter or sort resets to page 1.
+  const pageSize = useResponsivePageSize()
   const {
     items: pageProducts,
     totalPages,
@@ -83,6 +86,7 @@ export default function BrandProducts() {
     scrollAnchorId: 'brand-product-grid',
     loading,
     error,
+    pageSize,
   })
 
   const publicSlug = brandPublicSlug(slug)

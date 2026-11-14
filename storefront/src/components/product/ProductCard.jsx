@@ -59,6 +59,7 @@ export default function ProductCard({
   bulkUnlocked = false,
   hideImage = false,
   showPrice = false,
+  priority = false,
 }) {
   const navigate = useNavigate()
   const [quickViewOpen, setQuickViewOpen] = useState(false)
@@ -143,11 +144,12 @@ export default function ProductCard({
             aria-label={`View ${product.name}`}
           >
             <img
-              src={cloudinarySrc(product.image, { width: 600 })}
-              srcSet={cloudinarySrcSet(product.image, [300, 450, 600, 900])}
+              src={cloudinarySrc(product.image, { width: 600, quality: 'eco' })}
+              srcSet={cloudinarySrcSet(product.image, [300, 450, 600, 900], { quality: 'eco' })}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchpriority={priority ? 'high' : undefined}
               decoding="async"
               onError={handleImgError}
             />

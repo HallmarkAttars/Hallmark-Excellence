@@ -10,7 +10,10 @@
 // ----------------------------------------------------------------------------
 
 // Maximum products rendered per page — the single source of truth for the
-// whole storefront. 50 per page: 69 products → 2 pages, 120 → 3 pages, etc.
+// whole storefront. 50 per page on desktop: 69 products → 2 pages, 120 → 3
+// pages, etc. Mobile listings use a smaller page size (see
+// hooks/useResponsivePageSize.js) so phones render fewer cards and load fewer
+// images above the fold.
 export const PRODUCTS_PER_PAGE = 50
 
 // Number of pages for a result count.
@@ -18,8 +21,9 @@ export const PRODUCTS_PER_PAGE = 50
 //   1–50       → 1
 //   51–100     → 2
 //   101–150    → 3 …
-export function totalPages(totalProducts) {
-  return Math.ceil(Math.max(0, totalProducts || 0) / PRODUCTS_PER_PAGE)
+export function totalPages(totalProducts, perPage = PRODUCTS_PER_PAGE) {
+  const size = Number(perPage) > 0 ? Math.floor(Number(perPage)) : PRODUCTS_PER_PAGE
+  return Math.ceil(Math.max(0, totalProducts || 0) / size)
 }
 
 // Clamp a requested page into [1, lastValidPage]. Never allows page 0 or
@@ -110,15 +114,16 @@ export function productCountLabel(totalProducts, pageCount, itemsOnPage) {
 // Returns the page's items plus the totals the UI needs. Never returns an
 // empty page for an out-of-range page number (clamped to the last valid
 // page). startIndex/endIndex follow the spec:
-//   startIndex = (page - 1) * PRODUCTS_PER_PAGE
-export function paginate(products, requestedPage) {
+//   startIndex = (page - 1) * perPage
+export function paginate(products, requestedPage, perPage = PRODUCTS_PER_PAGE) {
   const list = Array.isArray(products) ? products : []
+  const size = Number(perPage) > 0 ? Math.floor(Number(perPage)) : PRODUCTS_PER_PAGE
   const total = list.length
-  const pages = totalPages(total)
+  const pages = totalPages(total, size)
   const currentPage = clampPage(requestedPage, pages)
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE
+  const startIndex = (currentPage - 1) * size
   return {
-    items: list.slice(startIndex, startIndex + PRODUCTS_PER_PAGE),
+    items: list.slice(startIndex, startIndex + size),
     total,
     totalPages: pages,
     currentPage,

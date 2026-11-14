@@ -17,17 +17,19 @@ const CLOUDINARY_UPLOAD = '/image/upload/'
 /**
  * Return a resized/optimized Cloudinary URL for the given product image.
  * @param {string|null|undefined} url  original image URL
- * @param {{ width?: number }} [opts]  display width cap (2x the CSS size)
+ * @param {{ width?: number, quality?: 'eco'|'good'|'best' }} [opts]
+ *        display width cap (2x the CSS size) and optional quality tier
  * @returns {string|null|undefined}    transformed URL (or the original)
  */
-export function cloudinarySrc(url, { width = 600 } = {}) {
+export function cloudinarySrc(url, { width = 600, quality } = {}) {
   if (!url || typeof url !== 'string') return url
   const idx = url.indexOf(CLOUDINARY_UPLOAD)
   if (idx === -1) return url
   // Insert params right after /upload/ (before any version segment).
   const prefix = url.slice(0, idx + CLOUDINARY_UPLOAD.length)
   const rest = url.slice(idx + CLOUDINARY_UPLOAD.length)
-  return `${prefix}f_auto,q_auto,w_${width}/${rest}`
+  const qualityParam = quality ? `q_auto:${quality}` : 'q_auto'
+  return `${prefix}f_auto,${qualityParam},w_${width}/${rest}`
 }
 
 /**
@@ -36,12 +38,13 @@ export function cloudinarySrc(url, { width = 600 } = {}) {
  * Cloudinary URLs return undefined so the plain `src` stays the single source.
  * @param {string|null|undefined} url   original image URL
  * @param {number[]} [widths]           per-variant widths (small → large)
+ * @param {{ quality?: 'eco'|'good'|'best' }} [options]
  * @returns {string|undefined}
  */
-export function cloudinarySrcSet(url, widths = [400, 600, 900]) {
+export function cloudinarySrcSet(url, widths = [400, 600, 900], options = {}) {
   if (!url || typeof url !== 'string') return undefined
   if (url.indexOf(CLOUDINARY_UPLOAD) === -1) return undefined
   return widths
-    .map((width) => `${cloudinarySrc(url, { width })} ${width}w`)
+    .map((width) => `${cloudinarySrc(url, { width, ...options })} ${width}w`)
     .join(', ')
 }

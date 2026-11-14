@@ -71,6 +71,24 @@ describe('totalPages — page-count matrix', () => {
   })
 })
 
+describe('paginate — responsive page sizes', () => {
+  it('slices 16 cards per page when the mobile page size is supplied', () => {
+    const list = products(69)
+    const page1 = paginate(list, 1, 16)
+    const page5 = paginate(list, 5, 16)
+    expect(page1.items).toHaveLength(16)
+    expect(page1.totalPages).toBe(5)
+    expect(page5.items).toHaveLength(5)
+    expect(page5.items[0].id).toBe('p-65')
+  })
+
+  it('totalPages honors an explicit page size', () => {
+    expect(totalPages(69, 16)).toBe(5)
+    expect(totalPages(16, 16)).toBe(1)
+    expect(totalPages(17, 16)).toBe(2)
+  })
+})
+
 describe('paginate — slices the current page, max 50 items', () => {
   it('69 products: page 1 → 50 items, page 2 → 19 items, 2 pages', () => {
     const list = products(69)

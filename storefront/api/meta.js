@@ -783,8 +783,10 @@ const SEORCE_EXCLUDED_UTILITY_SLUGS = new Set([
 ])
 
 // Anchored on the src attribute so only the vendor tag (never other scripts)
-// is matched.
+// is matched. The loader variant is identified by its data-seorce-loader
+// marker because its vendor URL lives in a data attribute, not src.
 const SEORCE_TAG_RE = /<script[^>]*src=["'][^"']*scripts\.seorce\.com[^"']*["'][^>]*>\s*<\/script>/i
+const SEORCE_LOADER_RE = /<script[^>]*data-seorce-loader[^>]*>[\s\S]*?<\/script>/i
 const SEORCE_HINT_RE = /<link[^>]+scripts\.seorce\.com[^>]*>/gi
 
 function hostAllowsSeorce(req) {
@@ -811,6 +813,7 @@ function routeAllowsSeorce(status, type, slug) {
 function stripSeorceTags(shell) {
   return String(shell || '')
     .replace(SEORCE_TAG_RE, '')
+    .replace(SEORCE_LOADER_RE, '')
     .replace(SEORCE_HINT_RE, '')
 }
 
@@ -831,6 +834,19 @@ export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
     )
     .join('\n')
 
+  // Product pages render their main gallery image immediately above the fold.
+  // Discover it in the server-rendered head instead of waiting for the React
+  // bundle + catalog fetch to mount it. The srcset/sizes mirror
+  // ProductDetail.jsx so the preload and the <img> resolve to the same file.
+  const productImagePreload =
+    !isHome && type === 'product' && seo?.lcpImage
+      ? `<link rel="preload" as="image" href="${escapeHtml(absoluteUrl(seo.lcpImage))}"${
+          seo.lcpImageSrcSet
+            ? ` imagesrcset="${escapeHtml(seo.lcpImageSrcSet)}"`
+            : ''
+        } imagesizes="(max-width: 767px) 92vw, 50vw" fetchpriority="high" />`
+      : ''
+
   const canonicalTag = canonicalUrl
     ? `<link rel="canonical" href="${escapeHtml(canonicalUrl)}" />`
     : ''
@@ -841,6 +857,7 @@ export function injectSeoHtml(shellHtml, seo, bodyHtml = '') {
 <meta name="description" content="${description}" />
 <meta name="robots" content="${robots}" />
 ${canonicalTag}
+${productImagePreload}
 <meta property="og:site_name" content="Arees Perfumes" />
 <meta property="og:type" content="${type}" />
 <meta property="og:title" content="${title}" />
@@ -859,7 +876,14 @@ ${jsonLd}`
     .replace(/<meta[^>]+(?:name|property)=["'](?:description|robots|og:[^"']+|twitter:[^"']+)["'][^>]*>/gi, '')
     .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '')
   if (!isHome) {
-    html = html.replace(/<link[^>]+href=["']\/Hero(?:-mobile)?\.webp["'][^>]*>/gi, '')
+    // The shell preloads the homepage hero for the home page. Every other
+    // route was downloading it too (62 KB mobile / 181 KB desktop) while the
+    // actual route image competed for bandwidth. Strip only the hero preloads;
+    // the navbar logo stays preloaded because it renders on every route.
+    html = html.replace(
+      /<link[^>]+href=["'](?:\/Hero(?:-mobile)?\.webp|\/hero\/rollon-8ml(?:-mobile)?\.webp)["'][^>]*>/gi,
+      ''
+    )
   }
   html = html.replace(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, '')
 

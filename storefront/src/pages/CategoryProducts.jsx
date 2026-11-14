@@ -4,6 +4,7 @@ import ProductGrid from '../components/product/ProductGrid'
 import FilterSortControl from '../components/filter/FilterSortControl'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
+import useResponsivePageSize from '../hooks/useResponsivePageSize'
 import { getCategoryBySlug, getProductsByCategory } from '../services/mockApi'
 import SEO from '../components/seo/SEO'
 import { buildCategorySeo } from '../utils/seo'
@@ -67,10 +68,12 @@ export default function CategoryProducts() {
   }, [products, brandFilter, sort])
 
   // Client-side pagination over the filtered results: FILTER → SORT →
-  // PAGINATE → render (only the current page's ≤50 products are rendered).
-  // The page lives in the URL (?page=N) and the category slug stays in the
-  // path, so /categories/attar?page=2 always shows Attar page 2. Changing
+  // PAGINATE → render (only the current page's products are rendered).
+  // Phones use a smaller page size so they render fewer cards and load fewer
+  // images. The page lives in the URL (?page=N) and the category slug stays in
+  // the path, so /categories/attar?page=2 always shows Attar page 2. Changing
   // the brand filter or sort resets to page 1.
+  const pageSize = useResponsivePageSize()
   const {
     items: pageProducts,
     totalPages,
@@ -81,6 +84,7 @@ export default function CategoryProducts() {
     scrollAnchorId: 'category-product-grid',
     loading,
     error,
+    pageSize,
   })
 
   // Active-state badge on the combined control — purely presentational.

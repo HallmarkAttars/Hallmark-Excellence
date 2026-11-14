@@ -34,10 +34,11 @@ export default function ProductGrid({
   return (
     <Reveal className="product-grid-reveal">
       <div className="grid-products stagger-fade">
-        {products.map((p) => (
+        {products.map((p, index) => (
           <ProductCard
             key={p.id}
             product={p}
+            priority={index < 4}
             bulkUnlocked={bulkUnlockedByBrand[p.brand_id]?.unlocked === true}
           />
         ))}

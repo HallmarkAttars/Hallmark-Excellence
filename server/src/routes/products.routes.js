@@ -1,5 +1,6 @@
 const express = require('express')
 const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
+const { cachePublic } = require('../middleware/publicCache.middleware')
 const {
   getProducts,
   getProductLinks,
@@ -15,10 +16,10 @@ const {
 const router = express.Router()
 
 // --- Public ---
-router.get('/products', getProducts)
-router.get('/products/links', getProductLinks)
-router.get('/products/:id/related', getRelatedProducts)
-router.get('/products/:id', getProductById)
+router.get('/products', cachePublic(), getProducts)
+router.get('/products/links', cachePublic(), getProductLinks)
+router.get('/products/:id/related', cachePublic(), getRelatedProducts)
+router.get('/products/:id', cachePublic(), getProductById)
 
 // --- Admin (protected) ---
 router.get('/admin/products', requireAuth, requirePermission('products.view'), getAdminProducts)

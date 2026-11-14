@@ -73,6 +73,7 @@ async function getCategories(req, res) {
       .filter((c) => c.slug !== 'attar')
       .map((c) => ({ ...c, product_count: counts[c.id] || 0 }))
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ categories })
   } catch (err) {
     console.error('getCategories error:', err)

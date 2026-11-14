@@ -71,6 +71,47 @@ describe('injectSeoHtml', () => {
     expect(html).toContain('<meta name="robots" content="noindex,follow" />')
   })
 
+  it('strips the homepage hero preloads on non-home routes but keeps the navbar logo', () => {
+    const preloadShell = shell.replace(
+      '</head>',
+      `<link rel="preload" as="image" href="/hero/rollon-8ml-mobile.webp" media="(max-width: 767px)" />
+       <link rel="preload" as="image" href="/hero/rollon-8ml.webp" media="(min-width: 768px)" />
+       <link rel="preload" as="image" href="/HE color Logo.png" />
+       </head>`
+    )
+    const html = injectSeoHtml(preloadShell, {
+      title: 'Sumaiya',
+      description: 'Sumaiya attar.',
+      canonical: '/product/sumaiya',
+      type: 'product',
+      lcpImage: 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_900/v1/sumaiya.jpg',
+    })
+
+    expect(html).not.toContain('href="/hero/rollon-8ml.webp"')
+    expect(html).not.toContain('href="/hero/rollon-8ml-mobile.webp"')
+    expect(html).toContain('href="/HE color Logo.png"')
+    expect(html).toContain(
+      'rel="preload" as="image" href="https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_900/v1/sumaiya.jpg"'
+    )
+    expect(html).toContain('imagesizes="(max-width: 767px) 92vw, 50vw"')
+    expect(html).toContain('fetchpriority="high"')
+  })
+
+  it('keeps the homepage hero preloads on the home page', () => {
+    const preloadShell = shell.replace(
+      '</head>',
+      '<link rel="preload" as="image" href="/hero/rollon-8ml.webp" media="(min-width: 768px)" /></head>'
+    )
+    const html = injectSeoHtml(preloadShell, {
+      title: 'Home',
+      description: 'Home.',
+      canonical: '/',
+      type: 'website',
+    })
+
+    expect(html).toContain('href="/hero/rollon-8ml.webp"')
+  })
+
   it('injects the crawlable B2B fallback inside the app root', () => {
     const html = injectSeoHtml(
       shell,

@@ -61,6 +61,28 @@ describe('ProductCard Component', () => {
     expect(screen.queryByText(/₹/)).toBeNull()
   })
 
+  it('eager-loads priority card images and keeps the rest lazy', () => {
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <ProductCard product={sampleProduct} priority />
+      </MemoryRouter>
+    )
+    const priorityImg = screen.getByRole('img', { name: /sports polo/i })
+    expect(priorityImg.getAttribute('loading')).toBe('eager')
+    expect(priorityImg.getAttribute('fetchpriority')).toBe('high')
+    unmount()
+
+    const { container: lazyContainer } = render(
+      <MemoryRouter>
+        <ProductCard product={sampleProduct} />
+      </MemoryRouter>
+    )
+    const lazyImg = lazyContainer.querySelector('.product-card-media img')
+    expect(lazyImg.getAttribute('loading')).toBe('lazy')
+    expect(lazyImg.getAttribute('fetchpriority')).toBeNull()
+    expect(container).toBeTruthy()
+  })
+
   it('hides large product image and shows info-first presentation with NO price when hideImage={true}', () => {
     const { container } = render(
       <MemoryRouter>

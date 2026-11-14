@@ -538,6 +538,7 @@ async function getProductById(req, res) {
     const dv = defaultVariant(variants)
     const price = variants.length > 0 ? variantTotalPrice(dv) : product.price
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ product: { ...product, price, variants } })
   } catch (err) {
     console.error('getProductById error:', err)
@@ -619,6 +620,7 @@ async function getRelatedProducts(req, res) {
       console.error('getRelatedProducts fetchVariants error:', varErr)
     }
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getRelatedProducts error:', err)
