@@ -3,11 +3,29 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import QuickView from './QuickView'
+import { CartProvider } from '../../context/CartContext'
+import { ToastProvider } from '../../context/ToastContext'
+
+vi.mock('../../services/mockApi', () => ({
+  getBrands: vi.fn().mockResolvedValue([]),
+  getProductById: vi.fn().mockResolvedValue(null),
+}))
 
 describe('QuickView Component Pricing & Variant Logic', () => {
   afterEach(() => {
     cleanup()
   })
+
+  const renderQuickView = (product, props = {}) =>
+    render(
+      <MemoryRouter>
+        <CartProvider>
+          <ToastProvider>
+            <QuickView product={product} onClose={vi.fn()} {...props} />
+          </ToastProvider>
+        </CartProvider>
+      </MemoryRouter>
+    )
 
   const productWithVariants = {
     id: 1,
@@ -37,11 +55,7 @@ describe('QuickView Component Pricing & Variant Logic', () => {
   }
 
   it('TEST 1 & 3: Displays default variant price initially and marks default variant as selected', () => {
-    render(
-      <MemoryRouter>
-        <QuickView product={productWithVariants} onClose={vi.fn()} />
-      </MemoryRouter>
-    )
+    renderQuickView(productWithVariants)
 
     // Should display ₹240 (default variant price), NOT ₹0
     expect(screen.getByText('₹240')).toBeTruthy()
@@ -54,11 +68,7 @@ describe('QuickView Component Pricing & Variant Logic', () => {
   })
 
   it('TEST 2 & 4: Immediately updates price when customer selects another variant', () => {
-    render(
-      <MemoryRouter>
-        <QuickView product={productWithVariants} onClose={vi.fn()} />
-      </MemoryRouter>
-    )
+    renderQuickView(productWithVariants)
 
     expect(screen.getByText('₹240')).toBeTruthy()
 
@@ -73,11 +83,7 @@ describe('QuickView Component Pricing & Variant Logic', () => {
   })
 
   it('TEST 4: Product with no variants uses product.price', () => {
-    render(
-      <MemoryRouter>
-        <QuickView product={productWithoutVariants} onClose={vi.fn()} />
-      </MemoryRouter>
-    )
+    renderQuickView(productWithoutVariants)
 
     expect(screen.getByText('₹500')).toBeTruthy()
     // No variant options rendered
@@ -90,11 +96,7 @@ describe('QuickView Component Pricing & Variant Logic', () => {
       price: 0,
     }
 
-    render(
-      <MemoryRouter>
-        <QuickView product={productZero} onClose={vi.fn()} />
-      </MemoryRouter>
-    )
+    renderQuickView(productZero)
 
     expect(screen.getByText('₹240')).toBeTruthy()
     expect(screen.queryByText('₹0')).toBeNull()
@@ -106,14 +108,20 @@ describe('QuickView Component Pricing & Variant Logic', () => {
       is_in_stock: false,
     }
 
-    render(
-      <MemoryRouter>
-        <QuickView product={oosProduct} onClose={vi.fn()} />
-      </MemoryRouter>
-    )
+    renderQuickView(oosProduct)
 
     const btn = screen.getByRole('button', { name: /out of stock/i })
     expect(btn).toBeTruthy()
     expect(btn.disabled).toBe(true)
+  })
+
+  it('adds the selected variant directly to the cart and closes', () => {
+    const onClose = vi.fn()
+    renderQuickView(productWithVariants, { onClose })
+
+    fireEvent.click(screen.getByRole('button', { name: '24 Pieces' }))
+    fireEvent.click(screen.getByRole('button', { name: /add to cart/i }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     // slow or cold-starting, gracefully fall back to the catalog snapshot so
     // the sitemap NEVER emits a partial or empty URL list.
     const [productsRes, categoriesRes, brandsRes] = await Promise.allSettled([
-      fetchPublicJson('/products'),
+      fetchPublicJson('/products/links'),
       fetchPublicJson('/categories'),
       fetchPublicJson('/brands'),
     ])

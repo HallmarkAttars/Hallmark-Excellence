@@ -335,7 +335,7 @@ describe('buildSeoForRoute', () => {
       if (value.endsWith('/categories')) {
         return jsonResponse({ categories: [{ id: 'c-1', name: 'Empty', slug: 'empty' }] })
       }
-      if (value.endsWith('/categories/empty/products')) return jsonResponse({ products: [] })
+      if (value.includes('/categories/empty/products')) return jsonResponse({ products: [] })
       throw new Error(`Unexpected URL ${value}`)
     })
     vi.stubGlobal('fetch', fetchMock)
@@ -348,7 +348,7 @@ describe('buildSeoForRoute', () => {
       if (value.endsWith('/categories')) {
         return jsonResponse({ categories: [{ id: 'c-1', name: 'Roll on Attars', slug: '1' }] })
       }
-      if (value.endsWith('/categories/1/products')) return jsonResponse({ products: [{ id: 'p-1' }] })
+      if (value.includes('/categories/1/products')) return jsonResponse({ products: [{ id: 'p-1' }] })
       throw new Error(`Unexpected URL ${value}`)
     })
     const populated = await buildSeoForRoute({ type: 'category', slug: '1' })

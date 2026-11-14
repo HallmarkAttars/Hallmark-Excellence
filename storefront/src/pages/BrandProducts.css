@@ -11,9 +11,7 @@
 .brand-header {
   position: relative;
   background-color: #1B1814;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  overflow: hidden;
   color: var(--cream);
   text-align: center;
   border-bottom: 1px solid rgba(198, 154, 75, 0.25);
@@ -25,6 +23,18 @@
   padding: 44px 24px;
 }
 
+/* Responsive hero artwork. <img srcSet> lets browsers download the mobile
+   crop on phones instead of the full desktop file. Decorative only. */
+.brand-header-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
 /* Subtle dark overlay over the hero image — the image stays clearly
    visible but the centred text remains readable on any artwork. */
 .brand-header::before {
@@ -33,11 +43,11 @@
   inset: 0;
   background: rgba(27, 24, 20, 0.45);
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 .brand-header > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 .brand-header-label {

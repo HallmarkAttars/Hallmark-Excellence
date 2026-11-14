@@ -187,6 +187,13 @@ export const BRAND_HERO_IMAGES = {
   'dahab 6ml': '/Dahab-hero.webp',
 }
 
+export const BRAND_HERO_MOBILE_IMAGES = {
+  'arees 12ml': '/arees12ml-hero-mobile.webp',
+  'arees bakhoor': '/bakhoor-hero-mobile.webp',
+  'arees luxury': '/areesluxury-hero-mobile.webp',
+  'dahab 6ml': '/Dahab-hero-mobile.webp',
+}
+
 // Normalized brand-name → hero image lookup (case/space-insensitive).
 // Returns null when the brand has no hero image (the plain dark header
 // remains) — never a hardcoded fallback image.
@@ -194,6 +201,12 @@ export function brandHeroImage(name) {
   if (!name) return null
   const key = String(name).trim().toLowerCase()
   return BRAND_HERO_IMAGES[key] || null
+}
+
+export function brandHeroMobileImage(name) {
+  if (!name) return null
+  const key = String(name).trim().toLowerCase()
+  return BRAND_HERO_MOBILE_IMAGES[key] || null
 }
 
 // --------------------------------------------------------------------------

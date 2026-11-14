@@ -5,7 +5,7 @@ import FilterSortControl from '../components/filter/FilterSortControl'
 import Pagination from '../components/ui/Pagination'
 import usePagination from '../hooks/usePagination'
 import { getBrandBySlug, getProductsByBrand } from '../services/mockApi'
-import { brandHeroImage } from '../data/content'
+import { brandHeroImage, brandHeroMobileImage } from '../data/content'
 import SEO from '../components/seo/SEO'
 import { buildBrandSeo } from '../utils/seo'
 import { brandPublicSlug } from '../utils/brandSlug'
@@ -121,6 +121,13 @@ export default function BrandProducts() {
   // Brand hero banner background — resolved from the brand name (see
   // content.js BRAND_HERO_IMAGES). null keeps the plain dark header.
   const heroImage = brandHeroImage(brandName) || brandHeroImage(brand?.name) || (isDahab ? '/Dahab-hero.webp' : null)
+  const heroMobileImage = brandHeroMobileImage(brandName) || brandHeroMobileImage(brand?.name) || (isDahab ? '/Dahab-hero-mobile.webp' : null)
+  const heroSrcSet = heroImage
+    ? [
+        heroMobileImage ? `${heroMobileImage} 800w` : null,
+        `${heroImage} 1600w`,
+      ].filter(Boolean).join(', ')
+    : undefined
 
   return (
     <div className="brand-page">
@@ -134,10 +141,19 @@ export default function BrandProducts() {
       {/* Compact premium collection header — the brand's hero image fills the
           background (subtle dark overlay keeps the text readable); the plain
           dark header remains when the brand has no image. */}
-      <header
-        className="brand-header"
-        style={heroImage ? { backgroundImage: `url('${heroImage}')` } : undefined}
-      >
+      <header className="brand-header">
+        {heroImage && (
+          <img
+            className="brand-header-image"
+            src={heroImage}
+            srcSet={heroSrcSet}
+            sizes="100vw"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+          />
+        )}
         {brand && (
           <>
             <p className="brand-header-label">{headerLabel}</p>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { cloudinarySrc } from '../../utils/productImage'
+import { cloudinarySrc, cloudinarySrcSet } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
 import { isProductInStock, getStockStatus } from '../../utils/stock'
 import { productPath } from '../../utils/seo'
 import { getDefaultVariant } from '../../utils/productPricing'
+import { getProductById } from '../../services/mockApi'
 import QuickView from './QuickView'
 import './ProductCard.css'
 
@@ -120,6 +121,14 @@ export default function ProductCard({
     e.currentTarget.src = PLACEHOLDER_IMG
   }
 
+  // Warm the product-detail cache on intent (hover/focus/touch) so opening the
+  // PDP does not wait for its own request. Catalog cards omit variants, so
+  // this is the one missing piece the detail page needs.
+  const prefetchDetails = () => {
+    if (product?.id == null || Array.isArray(product.variants)) return
+    getProductById(product.id).catch(() => {})
+  }
+
   return (
     <div className={`product-card ${hideImage ? 'product-card--no-image' : ''}`}>
       {!hideImage && (
@@ -128,10 +137,15 @@ export default function ProductCard({
             to={productPath(product)}
             className="product-card-image-link"
             onClick={handleNavigate}
+            onMouseEnter={prefetchDetails}
+            onFocus={prefetchDetails}
+            onTouchStart={prefetchDetails}
             aria-label={`View ${product.name}`}
           >
             <img
               src={cloudinarySrc(product.image, { width: 600 })}
+              srcSet={cloudinarySrcSet(product.image, [300, 450, 600, 900])}
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
               loading="lazy"
               decoding="async"
@@ -194,6 +208,9 @@ export default function ProductCard({
           to={productPath(product)}
           className="product-card-name-link"
           onClick={handleNavigate}
+          onMouseEnter={prefetchDetails}
+          onFocus={prefetchDetails}
+          onTouchStart={prefetchDetails}
         >
           <h3 className="product-card-name">{displayProductName(product.name)}</h3>
         </Link>

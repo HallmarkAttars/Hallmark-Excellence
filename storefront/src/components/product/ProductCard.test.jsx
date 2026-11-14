@@ -4,6 +4,16 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import ProductCard from './ProductCard'
 
+vi.mock('../../context/CartContext', () => ({
+  useCart: () => ({ addItem: vi.fn() }),
+}))
+vi.mock('../../context/ToastContext', () => ({
+  useToast: () => ({ notifyAddSuccess: vi.fn(), notifyAddError: vi.fn() }),
+}))
+vi.mock('../../services/mockApi', () => ({
+  getProductById: vi.fn().mockResolvedValue(null),
+}))
+
 describe('ProductCard Component', () => {
   afterEach(() => {
     cleanup()

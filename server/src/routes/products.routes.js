@@ -2,6 +2,7 @@ const express = require('express')
 const { requireAuth, requirePermission } = require('../middleware/auth.middleware')
 const {
   getProducts,
+  getProductLinks,
   getProductById,
   getRelatedProducts,
   getAdminProducts,
@@ -15,6 +16,7 @@ const router = express.Router()
 
 // --- Public ---
 router.get('/products', getProducts)
+router.get('/products/links', getProductLinks)
 router.get('/products/:id/related', getRelatedProducts)
 router.get('/products/:id', getProductById)
 

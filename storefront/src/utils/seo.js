@@ -61,7 +61,12 @@ export function priceFromProducts(products) {
   for (const product of list) {
     if (!product) continue
     if (product.is_active === false) continue
-    const variants = Array.isArray(product.variants) ? product.variants : []
+    // Only derive a "from" price when variant data is actually present. A
+    // lightweight link/summary row carries products.price, which for variant
+    // products is the bulk total (not the starting variant price) - showing
+    // that as "from" would mislead.
+    if (!Array.isArray(product.variants)) continue
+    const variants = product.variants
     if (variants.length > 0) {
       for (const variant of variants) {
         const raw = Number(variant?.total_price ?? variant?.price ?? 0)
@@ -470,6 +475,15 @@ export function buildFAQSchema(faqs = []) {
 // 5. Product Schema (with Binary Stock Availability: InStock / OutOfStock)
 // `variant` lets callers describe the exact purchasable size the visitor has
 // selected. When omitted, the product's default variant is used.
+function isPackagingProduct(product) {
+  const haystack = `${product?.name || ''} ${product?.category_name || ''}`
+  return /bottle|packaging|sprayer|empty jar|perfume box/i.test(haystack)
+}
+
+function packagingFallbackDescription(productName) {
+  return `${productName} - wholesale perfume and attar packaging supplied from Chennai. Suitable for retail and bulk orders, with delivery across India.`
+}
+
 export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant = null) {
   if (!product) return null
 
@@ -492,6 +506,7 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
   const productName = cleanProductName(product.name) || 'Product'
   const categoryName = cleanProductName(product.category_name)
   const cleanDescription = String(product.description || '').replace(/\s+/g, ' ').trim()
+  const packaging = isPackagingProduct(product)
   const productUrl = `${origin}${productPath(product)}`
   const image = cloudinarySrc(product.image, { width: 1200 }) || product.image
 
@@ -566,8 +581,10 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
     url: productUrl,
     image: image ? [image] : [`${origin}/Hero.webp`],
     description:
-      cleanDescription ||
-      `Shop ${productName} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
+      packaging
+        ? packagingFallbackDescription(productName)
+        : cleanDescription ||
+          `Shop ${productName} from Arees Perfumes. Pure, long-lasting attar crafted with excellence in Chennai.`,
     brand: {
       '@type': 'Brand',
       name: brandName,
@@ -591,17 +608,22 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   // suffix would read "| Arees Perfumes | Arees Perfumes".
   const brandSuffix =
     brandTitle && brandTitle.trim().toLowerCase() !== 'arees perfumes' ? ` | ${brandTitle}` : ''
-  const title = catTitle
-    ? (productName.toLowerCase().includes(catTitle.toLowerCase())
-        ? `${productName}${brandSuffix} | Arees Perfumes`
-        : `${productName} - ${catTitle}${brandSuffix} | Arees Perfumes`)
-    : `${productName}${brandSuffix} | Arees Perfumes`
+  const packaging = isPackagingProduct(product)
+  const title = packaging
+    ? `${productName}${catTitle ? ` - ${catTitle}` : ''} | Wholesale Packaging`
+    : catTitle
+      ? (productName.toLowerCase().includes(catTitle.toLowerCase())
+          ? `${productName}${brandSuffix} | Arees Perfumes`
+          : `${productName} - ${catTitle}${brandSuffix} | Arees Perfumes`)
+      : `${productName}${brandSuffix} | Arees Perfumes`
 
   const cleanDbDesc = String(product.description || '').replace(/\s+/g, ' ').trim()
   const lowerCat = catTitle.toLowerCase()
-  const productType = lowerCat
-    ? (lowerCat.includes('oil') ? lowerCat : `${lowerCat} oil`)
-    : 'fragrance'
+  const productType = packaging
+    ? 'perfume packaging'
+    : lowerCat
+      ? (lowerCat.includes('oil') ? lowerCat : `${lowerCat} oil`)
+      : 'fragrance'
 
   // SERP snippet upgrade: append honest price/availability/delivery cues so
   // product results carry a reason to click. Never invent a price — the floor
@@ -614,11 +636,11 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
     : Number(product.price || 0)
   const inStock = isProductInStock(product)
   const suffixBits = []
-  if (!cleanDbDesc.includes('₹') && Number.isFinite(lowestPrice) && lowestPrice > 0) {
+  if ((packaging || !cleanDbDesc.includes('₹')) && Number.isFinite(lowestPrice) && lowestPrice > 0) {
     suffixBits.push(`From ₹${Math.round(lowestPrice)}`)
   }
   suffixBits.push(inStock ? 'in stock' : 'check availability')
-  suffixBits.push('alcohol-free')
+  suffixBits.push(packaging ? 'wholesale' : 'alcohol-free')
   suffixBits.push('delivery across India')
   const snippetSuffix = suffixBits.join(' · ')
 
@@ -633,7 +655,9 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   }
 
   let description
-  if (cleanDbDesc && cleanDbDesc.length >= 60) {
+  if (packaging) {
+    description = withSnippetSuffix(packagingFallbackDescription(productName))
+  } else if (cleanDbDesc && cleanDbDesc.length >= 60) {
     description = withSnippetSuffix(cleanDbDesc)
   } else if (cleanDbDesc) {
     description = withSnippetSuffix(

@@ -44,6 +44,16 @@ const PRODUCT_SUMMARY_SELECT = `
   brands ( id, name, slug )
 `
 
+// Same as PRODUCT_SUMMARY_SELECT, plus the description text. Used by the
+// Shop page's fragrance-family filter, which reads the product copy but does
+// not need variants.
+const PRODUCT_SUMMARY_DESCRIPTION_SELECT = `
+  id, name, slug, description, price, compare_at_price, rating, review_count, is_featured, stock, is_in_stock,
+  category_id, brand_id, image,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
 // Fallback for the summary select on pre-migration databases (pricing /
 // rating / is_in_stock columns missing).
 const PRODUCT_SUMMARY_SELECT_BASE = `
@@ -51,6 +61,21 @@ const PRODUCT_SUMMARY_SELECT_BASE = `
   category_id, brand_id, image,
   categories ( id, name, slug ),
   brands ( id, name, slug )
+`
+
+const PRODUCT_SUMMARY_DESCRIPTION_SELECT_BASE = `
+  id, name, slug, description, price, is_featured, stock,
+  category_id, brand_id, image,
+  categories ( id, name, slug ),
+  brands ( id, name, slug )
+`
+
+// Minimal payload for crawler link lists, the sitemap and server-rendered hub
+// bodies. Carries only the product-level starting price, never variants or copy.
+const PRODUCT_LINKS_SELECT = `
+  id, name, slug, price, category_id, brand_id, created_at, updated_at,
+  categories ( slug ),
+  brands ( slug )
 `
 
 // Admin-facing select: also includes the manual display_order column (added
@@ -94,9 +119,9 @@ async function selectProducts(build) {
 // order (then newest). Degrades gracefully at each migration boundary:
 // display_order missing -> newest-first ordering; pricing columns missing
 // -> base select. NEVER alphabetical.
-async function selectPublicProducts(build, selectOverride) {
+async function selectPublicProducts(build, selectOverride, baseSelectOverride) {
   const select = selectOverride || PRODUCT_SELECT
-  const baseSelect = selectOverride ? PRODUCT_SUMMARY_SELECT_BASE : PRODUCT_SELECT_BASE
+  const baseSelect = baseSelectOverride || (selectOverride ? PRODUCT_SUMMARY_SELECT_BASE : PRODUCT_SELECT_BASE)
   let res = await build(select, true)
   if (isMissingOrderColumnError(res.error)) {
     console.warn('[products] display_order column missing — run server/db/migration_add_display_order.sql to enable manual product ordering.')
@@ -261,19 +286,26 @@ async function fetchVariantsByProducts(productIds) {
   if (!Array.isArray(productIds) || productIds.length === 0) return {}
 
   const CHUNK_SIZE = 50
-  let allVariants = []
-
+  const chunks = []
   for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
-    const chunk = productIds.slice(i, i + CHUNK_SIZE)
-    const { data, error } = await selectVariants((select) =>
-      supabase
-        .from('product_variants')
-        .select(select)
-        .in('product_id', chunk)
-    )
-    if (error) throw error
-    if (data) allVariants.push(...data)
+    chunks.push(productIds.slice(i, i + CHUNK_SIZE))
   }
+
+  // Run the independent chunks concurrently so a 400-product catalog costs one
+  // round-trip instead of eight sequential ones.
+  const results = await Promise.all(
+    chunks.map(async (chunk) => {
+      const { data, error } = await selectVariants((select) =>
+        supabase
+          .from('product_variants')
+          .select(select)
+          .in('product_id', chunk)
+      )
+      if (error) throw error
+      return data || []
+    })
+  )
+  const allVariants = results.flat()
 
   const grouped = {}
   for (const v of allVariants) {
@@ -324,6 +356,16 @@ function flattenProduct(row) {
   }
 }
 
+function flattenProductLink(row) {
+  if (!row) return null
+  const { categories, brands, ...rest } = row
+  return {
+    ...rest,
+    category_slug: categories?.slug || null,
+    brand_slug: brands?.slug || null,
+  }
+}
+
 // GET /api/products
 // Public. Only active products. Supports ?category_id= &brand_id= &search= &sort=
 // Lightweight card-only listing with ?summary=true (+ ?featured=true&limit=N)
@@ -338,12 +380,22 @@ async function getProducts(req, res) {
       featured,
       limit,
       summary,
+      with_description,
     } = req.query
     const isSummary = summary === 'true' || summary === '1'
     const isFeatured = featured === 'true' || featured === '1'
+    const includeDescription =
+      isSummary && (with_description === 'true' || with_description === '1')
+    const maxLimit = isSummary ? 500 : 50
     const limitValue = Number.isFinite(Number(limit))
-      ? Math.min(Math.max(Math.floor(Number(limit)), 1), 50)
-      : 50
+      ? Math.min(Math.max(Math.floor(Number(limit)), 1), maxLimit)
+      : maxLimit
+    const summarySelect = includeDescription
+      ? PRODUCT_SUMMARY_DESCRIPTION_SELECT
+      : PRODUCT_SUMMARY_SELECT
+    const summaryBaseSelect = includeDescription
+      ? PRODUCT_SUMMARY_DESCRIPTION_SELECT_BASE
+      : PRODUCT_SUMMARY_SELECT_BASE
 
     const { data, error } = await selectPublicProducts((select, useDisplayOrder) => {
       let q = supabase
@@ -370,7 +422,7 @@ async function getProducts(req, res) {
       if (isSummary) q = q.limit(limitValue)
 
       return q
-    }, isSummary ? PRODUCT_SUMMARY_SELECT : undefined)
+    }, isSummary ? summarySelect : undefined, isSummary ? summaryBaseSelect : undefined)
 
     if (error) {
       console.error('getProducts error:', error)
@@ -382,7 +434,7 @@ async function getProducts(req, res) {
     if (isSummary) {
       // Card listings only need the price from the products table itself;
       // variant attaches are skipped entirely (the whole point of summary).
-      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
       return res.json({ products: rows })
     }
 
@@ -395,9 +447,42 @@ async function getProducts(req, res) {
       console.error('getProducts fetchVariants error:', varErr)
     }
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ products: attachVariants(rows, variantsByProduct) })
   } catch (err) {
     console.error('getProducts error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+// GET /api/products/links
+// Public. Minimal active-product index for crawler link lists and the sitemap.
+// Intentionally excludes pricing, variants and description so the payload stays
+// a few KB instead of the ~800 KB full catalog.
+async function getProductLinks(req, res) {
+  try {
+    const { data, error } = await selectPublicProducts(
+      (select, useDisplayOrder) =>
+        applyProductOrder(
+          supabase
+            .from('products')
+            .select(select)
+            .eq('is_active', true),
+          useDisplayOrder
+        ),
+      PRODUCT_LINKS_SELECT,
+      PRODUCT_LINKS_SELECT
+    )
+
+    if (error) {
+      console.error('getProductLinks error:', error)
+      return res.status(500).json({ error: 'Failed to fetch product links.' })
+    }
+
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
+    return res.json({ products: (data || []).map(flattenProductLink).filter(Boolean) })
+  } catch (err) {
+    console.error('getProductLinks error:', err)
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
@@ -1219,6 +1304,7 @@ async function deleteProduct(req, res) {
 
 module.exports = {
   getProducts,
+  getProductLinks,
   getProductById,
   getRelatedProducts,
   getAdminProducts,

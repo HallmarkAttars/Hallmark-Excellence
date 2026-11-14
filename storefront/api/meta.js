@@ -647,7 +647,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     let productsChecked = false
     try {
       const productsResult = await fetchJson(
-        `/categories/${encodeURIComponent(category.slug)}/products`
+        `/categories/${encodeURIComponent(category.slug)}/products?summary=true`
       )
       products = Array.isArray(productsResult?.products) ? productsResult.products : []
       productsChecked = true
@@ -671,7 +671,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     if (!apiSlug || !publicSlug) throw httpError(404, 'Brand not found')
     const [data, productsResult] = await Promise.allSettled([
       fetchJson('/brands'),
-      fetchJson(`/brands/${encodeURIComponent(apiSlug)}/products`),
+      fetchJson(`/brands/${encodeURIComponent(apiSlug)}/products?summary=true`),
     ])
     if (data.status === 'rejected') throw data.reason
     const brand = (data.value?.brands || []).find((item) => String(item.slug) === String(apiSlug))
@@ -711,15 +711,21 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     // body. Best-effort fetches: on failure the builder falls back to its
     // static links, so the page never 500s.
     let pageData = {}
-    if (slug === 'home' || slug === 'shop' || slug === 'retail') {
-      const res = await safeFetchJson('/products')
+    if (slug === 'home') {
+      // The home body renders category/brand/product links plus a starting
+      // price, so the lightweight product index is enough.
+      const res = await safeFetchJson('/products/links')
+      pageData.products = Array.isArray(res?.products) ? res.products : []
+    } else if (slug === 'shop' || slug === 'retail') {
+      // Only link lists are rendered, so skip pricing/variants/descriptions.
+      const res = await safeFetchJson('/products/links')
       pageData.products = Array.isArray(res?.products) ? res.products : []
     }
     if (slug === 'categories') {
       const [catRes, brandRes, productRes] = await Promise.all([
         safeFetchJson('/categories'),
         safeFetchJson('/brands'),
-        safeFetchJson('/products'),
+        safeFetchJson('/products/links'),
       ])
       pageData.categories = Array.isArray(catRes?.categories) ? catRes.categories : []
       pageData.brands = Array.isArray(brandRes?.brands) ? brandRes.brands : []
@@ -728,7 +734,7 @@ export async function buildSeoForRoute({ type, id, slug } = {}) {
     if (slug === 'brands') {
       const [brandRes, productRes] = await Promise.all([
         safeFetchJson('/brands'),
-        safeFetchJson('/products'),
+        safeFetchJson('/products/links'),
       ])
       pageData.brands = Array.isArray(brandRes?.brands) ? brandRes.brands : []
       pageData.products = Array.isArray(productRes?.products) ? productRes.products : []

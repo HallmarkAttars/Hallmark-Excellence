@@ -124,13 +124,11 @@ export default function ProductDetail({ onAddToCart }) {
   // Frontend-only wishlist toggle (localStorage).
   const [wishlistIds, setWishlistIds] = useState(readWishlist)
   const addedTimer = useRef(null)
-  const addTimer = useRef(null)
   const addingRef = useRef(false)
 
   // Clear feedback timers on unmount.
   useEffect(() => () => {
     if (addedTimer.current) clearTimeout(addedTimer.current)
-    if (addTimer.current) clearTimeout(addTimer.current)
   }, [])
 
   useEffect(() => {
@@ -614,13 +612,11 @@ export default function ProductDetail({ onAddToCart }) {
         exactPiecesMode ? totalPieces : null
       )
       setSelectionInCart(true)
-      addTimer.current = setTimeout(() => {
-        addingRef.current = false
-        setAdding(false)
-        setAdded(true)
-        notifyAddSuccess(product)
-        addedTimer.current = setTimeout(() => setAdded(false), 2000)
-      }, 350)
+      addingRef.current = false
+      setAdding(false)
+      setAdded(true)
+      notifyAddSuccess(product)
+      addedTimer.current = setTimeout(() => setAdded(false), 2000)
     } catch {
       addingRef.current = false
       setAdding(false)

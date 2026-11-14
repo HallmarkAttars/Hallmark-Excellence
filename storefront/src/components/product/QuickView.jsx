@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { cloudinarySrc } from '../../utils/productImage'
 import { displayProductName } from '../../utils/productName'
 import { getStockStatus, isProductInStock } from '../../utils/stock'
 import { productPath } from '../../utils/seo'
 import { getDefaultVariant, getDisplayPrice } from '../../utils/productPricing'
+import { getProductById } from '../../services/mockApi'
+import { useCart } from '../../context/CartContext'
+import { useToast } from '../../context/ToastContext'
+import { trackEvent, CURRENCY } from '../../utils/analytics'
 import './QuickView.css'
 
-// Lightweight Quick View modal — opens over the product card using the SAME
-// product object already loaded in the grid (no extra fetch). The customer
-// can preview the product here, but adding to the cart always happens on the
-// product details page (variant + quantity selection), so "Add to Cart"
-// simply navigates there. Frontend-only; no data is created or changed.
+// Lightweight Quick View modal - opens over the product card using the SAME
+// product object already loaded in the grid. Catalog cards intentionally omit
+// variants, so the modal lazy-fetches the full product when it needs variant
+// pricing. Adding to cart happens directly here once details are available.
 
 const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
 
@@ -20,18 +23,61 @@ const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
 const unitDisplay = (unit) => String(unit || '').toLowerCase()
 
 export default function QuickView({ product, onClose, onNavigate }) {
-  const navigate = useNavigate()
+  const { addItem } = useCart()
+  const { notifyAddSuccess, notifyAddError } = useToast()
   const closeRef = useRef(null)
+  const [fullProduct, setFullProduct] = useState(null)
+  const [loadingDetails, setLoadingDetails] = useState(
+    () => !Array.isArray(product?.variants) && product?.id != null
+  )
+  const [detailsError, setDetailsError] = useState(false)
+  const [adding, setAdding] = useState(false)
 
-  const variants = Array.isArray(product?.variants) ? product.variants : []
+  const effectiveProduct = fullProduct || product
+  const variants = Array.isArray(effectiveProduct?.variants) ? effectiveProduct.variants : []
   const hasVariants = variants.length > 0
-  const defaultVar = getDefaultVariant(product)
+  const defaultVar = getDefaultVariant(effectiveProduct)
   // Initial state: automatically select the default active variant so its price displays immediately.
   const [selectedVariant, setSelectedVariant] = useState(() => defaultVar)
 
+  // Catalog list endpoints omit variants. Fetch the full product the first
+  // time Quick View opens so the customer can choose a size and add directly.
   useEffect(() => {
-    setSelectedVariant(getDefaultVariant(product))
-  }, [product])
+    if (!product?.id || Array.isArray(product?.variants)) {
+      setLoadingDetails(false)
+      setDetailsError(false)
+      setFullProduct(null)
+      return undefined
+    }
+
+    let alive = true
+    setFullProduct(null)
+    setLoadingDetails(true)
+    setDetailsError(false)
+    getProductById(product.id)
+      .then((data) => {
+        if (!alive) return
+        if (!data) {
+          setDetailsError(true)
+          return
+        }
+        setFullProduct({ ...product, ...data })
+      })
+      .catch(() => {
+        if (alive) setDetailsError(true)
+      })
+      .finally(() => {
+        if (alive) setLoadingDetails(false)
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [product?.id, product?.variants])
+
+  useEffect(() => {
+    setSelectedVariant(getDefaultVariant(effectiveProduct))
+  }, [effectiveProduct])
 
   const activeVariant = selectedVariant ?? defaultVar
 
@@ -39,8 +85,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
   // ONE unit of it; price-per-unit is display only. Variant-less products
   // keep their product-level price.
   const totalPrice = hasVariants
-    ? (activeVariant ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) : getDisplayPrice(product))
-    : Number(product?.price || 0)
+    ? (activeVariant ? Number(activeVariant.total_price ?? activeVariant.price ?? 0) : getDisplayPrice(effectiveProduct))
+    : Number(effectiveProduct?.price || 0)
   const perUnit = hasVariants && activeVariant
     ? Number(activeVariant.price_per_unit ?? activeVariant.price ?? 0)
     : null
@@ -48,13 +94,13 @@ export default function QuickView({ product, onClose, onNavigate }) {
   const variantSelected = hasVariants ? Boolean(activeVariant) : true
 
   // Stock resolution (Product-Level Boolean Availability)
-  const isInStock = isProductInStock(product)
+  const isInStock = isProductInStock(effectiveProduct)
   const stockInfo = getStockStatus(isInStock)
   const isOutOfStock = !isInStock
 
-  const hasRating = product.rating != null && Number.isFinite(Number(product.rating))
+  const hasRating = effectiveProduct.rating != null && Number.isFinite(Number(effectiveProduct.rating))
   const ratingDisplay = hasRating
-    ? Number(product.rating).toFixed(2).replace(/\.?0+$/, '')
+    ? Number(effectiveProduct.rating).toFixed(2).replace(/\.?0+$/, '')
     : ''
 
   const variantLabel = (v) =>
@@ -82,14 +128,36 @@ export default function QuickView({ product, onClose, onNavigate }) {
     }
   }, [onClose])
 
-  // Adding always happens on the product details page (variant + quantity are
-  // chosen there) — never directly from the quick view. Behavior preserved
-  // exactly as before; only the price visibility changed.
   const handleAdd = () => {
-    onClose()
-    if (onNavigate) onNavigate()
-    const target = productPath(product) + (activeVariant?.id ? `?variant=${activeVariant.id}` : '')
-    navigate(target)
+    if (isOutOfStock || adding || loadingDetails || detailsError) return
+    if (hasVariants && !activeVariant) return
+
+    try {
+      setAdding(true)
+      addItem(
+        {
+          ...effectiveProduct,
+          productId: effectiveProduct.id,
+          variantId: activeVariant?.id ?? null,
+          variant_id: activeVariant?.id ?? null,
+          variants: effectiveProduct.variants,
+        },
+        1,
+        activeVariant || null
+      )
+      trackEvent('add_to_cart', {
+        currency: CURRENCY,
+        value: Number(totalPrice) || 0,
+        item_id: effectiveProduct.id,
+        item_name: effectiveProduct.name,
+        ...(activeVariant?.id ? { variant: String(variantLabel(activeVariant) || activeVariant.id) } : {}),
+      })
+      notifyAddSuccess(effectiveProduct)
+      onClose()
+    } catch {
+      setAdding(false)
+      notifyAddError()
+    }
   }
 
   const handleViewDetails = () => {
@@ -97,13 +165,23 @@ export default function QuickView({ product, onClose, onNavigate }) {
     if (onNavigate) onNavigate()
   }
 
+  const addLabel = loadingDetails
+    ? 'Loading...'
+    : detailsError
+      ? 'Details unavailable'
+      : isOutOfStock
+        ? 'Out of Stock'
+        : adding
+          ? 'Adding...'
+          : 'Add to Cart'
+
   const modal = (
     <div className="quickview-backdrop" onClick={onClose} role="presentation">
       <div
         className="quickview-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label={`Quick view ${product.name}`}
+        aria-label={`Quick view ${effectiveProduct.name}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -118,24 +196,24 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
         <div className="quickview-media">
           <img
-            src={cloudinarySrc(product.image, { width: 700 })}
-            alt={`${product.name} | ${product.brand_name || 'Arees Perfumes'}`}
+            src={cloudinarySrc(effectiveProduct.image, { width: 700 })}
+            alt={`${effectiveProduct.name} | ${effectiveProduct.brand_name || 'Arees Perfumes'}`}
             decoding="async"
           />
         </div>
 
         <div className="quickview-info">
-          {product.brand_name && (
-            <p className="quickview-brand">{product.brand_name}</p>
+          {effectiveProduct.brand_name && (
+            <p className="quickview-brand">{effectiveProduct.brand_name}</p>
           )}
 
-          <h2 className="quickview-name">{displayProductName(product.name)}</h2>
+          <h2 className="quickview-name">{displayProductName(effectiveProduct.name)}</h2>
 
           {hasRating && (
             <p className="quickview-rating">
               <span aria-hidden="true">★</span>
               {ratingDisplay}
-              {product.review_count != null && ` (${product.review_count})`}
+              {effectiveProduct.review_count != null && ` (${effectiveProduct.review_count})`}
             </p>
           )}
 
@@ -156,8 +234,8 @@ export default function QuickView({ product, onClose, onNavigate }) {
             </p>
           )}
 
-          {product.description && (
-            <p className="quickview-desc">{product.description}</p>
+          {effectiveProduct.description && (
+            <p className="quickview-desc">{effectiveProduct.description}</p>
           )}
 
           {hasVariants && (
@@ -187,9 +265,9 @@ export default function QuickView({ product, onClose, onNavigate }) {
               type="button"
               className="quickview-add"
               onClick={handleAdd}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || adding || loadingDetails || detailsError}
             >
-              {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+              {addLabel}
             </button>
           </div>
 
@@ -207,4 +285,3 @@ export default function QuickView({ product, onClose, onNavigate }) {
 
   return createPortal(modal, document.body)
 }
-

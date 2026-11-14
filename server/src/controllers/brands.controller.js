@@ -60,6 +60,7 @@ async function getAdminBrands(req, res) {
 async function getBrandProducts(req, res) {
   try {
     const { slug } = req.params
+    const isSummary = req.query.summary === 'true' || req.query.summary === '1'
 
     const { data: brand, error: brandError } = await supabase
       .from('brands')
@@ -89,15 +90,23 @@ async function getBrandProducts(req, res) {
     // NOTE: PostgREST builders are MUTATED by .order(), so every attempt
     // must build a fresh query — never reuse a builder that already had an
     // order applied to it.
+    const brandProductSelect = isSummary
+      ? `
+          id, name, slug, price, compare_at_price,
+          rating, review_count, is_featured, image, stock, is_in_stock,
+          category_id, brand_id, is_active, created_at,
+          categories ( id, name, slug )
+        `
+      : `
+          id, name, slug, description, price, compare_at_price,
+          rating, review_count, is_featured, image, stock, is_in_stock,
+          category_id, brand_id, is_active, created_at,
+          categories ( id, name, slug )
+        `
     const buildBrandProducts = (useOrder) => {
       let q = supabase
         .from('products')
-        .select(`
-          id, name, slug, description, price, compare_at_price,
-          rating, review_count, is_featured, image, stock,
-          category_id, brand_id, is_active, created_at,
-          categories ( id, name, slug )
-        `)
+        .select(brandProductSelect)
         .eq('brand_id', brand.id)
         .eq('is_active', true)
       if (attarCategoryId) {
@@ -129,7 +138,12 @@ async function getBrandProducts(req, res) {
     }))
 
     // Attach variants so brand-page cards show the default variant's TOTAL
-    // price and the variant list — identical behaviour to /api/products.
+    // price and the variant list - identical behaviour to /api/products.
+    if (isSummary) {
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
+      return res.json({ brand, products: flattened })
+    }
+
     let variantsByProduct = {}
     try {
       variantsByProduct = await fetchVariantsByProducts(flattened.map((r) => r.id))
@@ -137,6 +151,7 @@ async function getBrandProducts(req, res) {
       console.error('getBrandProducts fetchVariants error:', varErr)
     }
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ brand, products: attachVariants(flattened, variantsByProduct) })
   } catch (err) {
     console.error('getBrandProducts error:', err)

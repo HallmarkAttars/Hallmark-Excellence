@@ -101,7 +101,13 @@ function cachedCatalogRead(key, loader, { refresh = false } = {}) {
 }
 
 export async function getProducts(options) {
-  return cachedCatalogRead('products', async () => (await api.get('/products')).products ?? [], options)
+  // Shop/search need card fields plus description (the fragrance-family
+  // filter reads the copy), but never variants. The server caps this summary
+  // response at 500 rows, which covers the live catalog.
+  return cachedCatalogRead('products', async () => {
+    const data = await api.get('/products?summary=true&with_description=true&limit=500')
+    return data.products ?? []
+  }, options)
 }
 
 // Lightweight card-only fetch for home-page highlights (hero orbit, social
@@ -160,7 +166,7 @@ export async function getProductsByCategory(slug, options) {
       (item) => normalizeCategorySlug(item.slug) === canonicalSlug
     )
     const apiSlug = category?.slug || slug
-    const data = await api.get(`/categories/${encodeURIComponent(apiSlug)}/products`)
+    const data = await api.get(`/categories/${encodeURIComponent(apiSlug)}/products?summary=true`)
     return data.products ?? []
   }, options)
 }
@@ -168,7 +174,7 @@ export async function getProductsByCategory(slug, options) {
 export async function getProductsByBrand(slug, options) {
   const resolvedSlug = brandApiSlug(slug)
   return cachedCatalogRead(`brand-products:${resolvedSlug}`, async () => {
-    const data = await api.get(`/brands/${resolvedSlug}/products`)
+    const data = await api.get(`/brands/${resolvedSlug}/products?summary=true`)
     return data.products ?? []
   }, options)
 }

@@ -11,7 +11,25 @@ const {
 
 // Builds { category_id: count } from the products table.
 // `activeOnly` controls whether inactive products count toward the total.
+// Prefers the SQL aggregate added by migration_add_catalog_performance.sql so
+// the API does not download every product row just to count categories.
 async function buildProductCounts(activeOnly) {
+  const rpc = await supabase.rpc('get_category_product_counts', { active_only: Boolean(activeOnly) })
+  if (!rpc.error && Array.isArray(rpc.data)) {
+    const counts = {}
+    for (const row of rpc.data) {
+      if (!row?.category_id) continue
+      counts[row.category_id] = Number(row.product_count) || 0
+    }
+    return counts
+  }
+
+  // Fallback for databases where the aggregate function has not been created.
+  const message = String(rpc.error?.message || '')
+  if (rpc.error && !/function|does not exist|could not find|schema cache/i.test(message)) {
+    throw rpc.error
+  }
+
   let query = supabase.from('products').select('category_id')
   if (activeOnly) query = query.eq('is_active', true)
 
@@ -69,6 +87,7 @@ async function getCategories(req, res) {
 async function getCategoryProducts(req, res) {
   try {
     const slugKey = String(req.params.slug || '').trim().toLowerCase()
+    const isSummary = req.query.summary === 'true' || req.query.summary === '1'
 
     const { data: categories, error: catError } = await supabase
       .from('categories')
@@ -85,12 +104,21 @@ async function getCategoryProducts(req, res) {
       return res.status(404).json({ error: 'Category not found.' })
     }
 
-    const categoryProductSelect = `
-      id, name, slug, description, price, compare_at_price,
-      rating, review_count, is_featured, image, stock,
-      category_id, brand_id, is_active, created_at,
-      brands ( id, name, slug )
-    `
+    const categoryProductSelect = isSummary
+      ? `
+        id, name, slug, price, compare_at_price,
+        rating, review_count, is_featured, image, stock, is_in_stock,
+        category_id, brand_id, is_active, created_at,
+        categories ( id, name, slug ),
+        brands ( id, name, slug )
+      `
+      : `
+        id, name, slug, description, price, compare_at_price,
+        rating, review_count, is_featured, image, stock, is_in_stock,
+        category_id, brand_id, is_active, created_at,
+        categories ( id, name, slug ),
+        brands ( id, name, slug )
+      `
     const buildCategoryProducts = (useOrder) =>
       applyProductOrder(
         supabase
@@ -115,12 +143,19 @@ async function getCategoryProducts(req, res) {
       return res.status(500).json({ error: 'Failed to fetch products.' })
     }
 
-    const flattened = products.map(({ brands, ...rest }) => ({
+    const flattened = products.map(({ brands, categories: productCategory, ...rest }) => ({
       ...rest,
       stock: Number.isFinite(Number(rest?.stock)) ? Math.max(0, Math.floor(Number(rest.stock))) : 0,
+      category_name: productCategory?.name || category.name || null,
+      category_slug: productCategory?.slug || category.slug || null,
       brand_name: brands?.name || null,
       brand_slug: brands?.slug || null,
     }))
+
+    if (isSummary) {
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
+      return res.json({ category, products: flattened })
+    }
 
     let variantsByProduct = {}
     try {
@@ -129,6 +164,7 @@ async function getCategoryProducts(req, res) {
       console.error('getCategoryProducts fetchVariants error:', varErr)
     }
 
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=300')
     return res.json({ category, products: attachVariants(flattened, variantsByProduct) })
   } catch (err) {
     console.error('getCategoryProducts error:', err)
