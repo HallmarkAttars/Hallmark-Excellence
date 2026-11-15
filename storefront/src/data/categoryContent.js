@@ -20,7 +20,7 @@
 // caller keeps its current behaviour.
 
 const CTA_LINE =
-  'Share your requirements by phone or WhatsApp on +91 98407 50467, or visit the shop at 83 & 84, Moore St, Mannadi, George Town, Chennai 600001.'
+  'Shop retail enquiries on +91 98400 78909; wholesale enquiries on +91 98407 50467. Or visit the shop at 83 & 84, Moore St, Mannadi, George Town, Chennai 600001.'
 
 export const CATEGORY_CONTENT = {
   bakhoor: {

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { getCatalogStatus, subscribeCatalogStatus } from '../../utils/catalogStatus'
-import { BUSINESS } from '../../data/content'
+import { SHOP } from '../../data/content'
 import { WHATSAPP_URL } from '../../utils/whatsapp'
 import './CatalogOutageNotice.css'
 
@@ -42,7 +42,7 @@ export default function CatalogOutageNotice() {
             ? `Showing products saved on ${savedDate} — prices and stock may have changed. `
             : 'Please try again in a moment. '}
           To confirm availability or order now, WhatsApp us or call{' '}
-          <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a>.
+          <a href={`tel:${SHOP.phoneTel}`}>{SHOP.phoneDisplay}</a>.
         </p>
         <div className="catalog-outage-actions">
           <a

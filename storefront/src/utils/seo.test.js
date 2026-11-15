@@ -45,6 +45,7 @@ import {
 } from './seo'
 import { normalizeCategorySlug } from './categorySlug'
 import { GUIDES } from '../data/guides.js'
+import { BUSINESS } from '../data/content.js'
 
 describe('canonical domain & brand identity', () => {
   it('pins the live www host as the canonical origin', () => {
@@ -319,6 +320,42 @@ describe('buildRobotsTxt', () => {
     expect(robots).not.toContain('Disallow: /brand')
     expect(robots).not.toContain('Disallow: /categories')
   })
+
+  it('explicitly welcomes search and AI crawlers, including training crawlers', () => {
+    const robots = buildRobotsTxt()
+    for (const agent of [
+      'Googlebot',
+      'Bingbot',
+      'GPTBot',
+      'OAI-SearchBot',
+      'ChatGPT-User',
+      'ClaudeBot',
+      'Claude-SearchBot',
+      'PerplexityBot',
+      'Google-Extended',
+      'CCBot',
+      'Applebot-Extended',
+      'Amazonbot',
+      'meta-externalagent',
+      'Bytespider',
+      'cohere-ai',
+      'Diffbot',
+      'AI2Bot',
+    ]) {
+      expect(robots).toContain(`User-agent: ${agent}`)
+    }
+    expect(robots).toContain('User-agent: *')
+    expect(robots).not.toContain('Disallow: /\n')
+  })
+
+  it('keeps private paths blocked in every crawler group', () => {
+    const robots = buildRobotsTxt()
+    const groups = robots.split(/\n\n+/).filter((group) => group.includes('User-agent:'))
+    for (const group of groups) {
+      expect(group).toContain('Disallow: /api/')
+      expect(group).toContain('Disallow: /admin/')
+    }
+  })
 })
 
 describe('Schema.org JSON-LD Builders', () => {
@@ -329,15 +366,13 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@type']).toBe('Organization')
       expect(schema.name).toBe('Arees Perfumes')
       expect(schema.alternateName).toContain('Hallmark of Excellence')
-      expect(schema.parentOrganization).toBeUndefined()
+      expect(schema.parentOrganization.name).toBe('Hikma Exports')
       expect(schema.description).toContain('Hallmark of Excellence')
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.url).toBe('https://www.areesperfumes.in')
-      expect(schema.telephone).toBe('+919840750467')
+      expect(schema.telephone).toBe('+919840078909')
       expect(schema.email).toBe('hikmaexports@gmail.com')
-      expect(schema.sameAs).toContain(
-        'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'
-      )
+      expect(schema.sameAs).toContain('https://www.instagram.com/aree___s')
       expect(schema.sameAs.join(' ')).not.toContain('linkedin')
     })
   })
@@ -362,14 +397,19 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.name).toBe('Arees Attars & Perfumes')
       expect(schema.alternateName).toContain('Arees Perfumes')
       expect(schema.alternateName).toContain('Hallmark of Excellence')
-      expect(schema.parentOrganization).toBeUndefined()
+      expect(schema.parentOrganization['@id']).toBe(
+        'https://www.areesperfumes.in/#organization'
+      )
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.address.postalCode).toBe('600001')
       expect(schema.address.streetAddress).toContain('Moore St')
-      expect(schema.telephone).toBe('+919840750467')
-      expect(schema.sameAs).toContain(
-        'https://www.instagram.com/aree___s?igsh=a2sxMHk4NzN2bDdo'
-      )
+      expect(schema.telephone).toBe('+919840078909')
+      expect(schema.geo.latitude).toBeCloseTo(13.094717)
+      expect(schema.geo.longitude).toBeCloseTo(80.290871)
+      expect(schema.openingHoursSpecification[0].opens).toBe('10:00')
+      expect(schema.openingHoursSpecification[0].closes).toBe('21:30')
+      expect(schema.sameAs).toContain(BUSINESS.googlePlaceUrl)
+      expect(schema.sameAs).toContain('https://www.instagram.com/aree___s')
       expect(schema.sameAs.join(' ')).not.toContain('linkedin')
     })
   })
@@ -412,6 +452,10 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@type']).toBe('Product')
       expect(schema.name).toBe('Arees Black Musk')
       expect(schema.brand.name).toBe('Arees Perfumes')
+      expect(schema.offers.seller['@id']).toBe(
+        'https://www.areesperfumes.in/#localbusiness'
+      )
+      expect(schema.offers.seller.name).toBe('Arees Attars & Perfumes')
       expect(schema.offers.price).toBe(450)
       expect(schema.offers.priceCurrency).toBe('INR')
       expect(schema.offers.availability).toBe('https://schema.org/InStock')
@@ -457,7 +501,7 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildProductSchema(product, 'https://www.areesperfumes.in', product.variants[1])
       expect(schema.offers.price).toBe(7776)
       expect(schema.offers.sku).toBe('v-50ml')
-      expect(schema.offers.seller.name).toBe('Arees Perfumes')
+      expect(schema.offers.seller.name).toBe('Arees Attars & Perfumes')
     })
 
     it('ignores inactive variants when choosing the default offer', () => {

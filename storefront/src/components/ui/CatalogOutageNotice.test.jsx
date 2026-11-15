@@ -28,9 +28,9 @@ describe('CatalogOutageNotice', () => {
     )
 
     const whatsapp = screen.getByRole('link', { name: /order on whatsapp/i })
-    expect(whatsapp.getAttribute('href')).toContain('wa.me/919840750467')
+    expect(whatsapp.getAttribute('href')).toContain('wa.me/919840078909')
 
     expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /\+91 98407 50467/ })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /\+91 98400 78909/ })).toBeTruthy()
   })
 })

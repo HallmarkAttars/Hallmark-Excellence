@@ -6,8 +6,8 @@ import { useCart } from '../context/CartContext'
 import { buildWholesaleSeo } from '../utils/seo'
 import { getBulkTiers, isValidBulkRule } from '../utils/brandBulk'
 import { brandPublicSlug } from '../utils/brandSlug'
-import { WHATSAPP_URL, trackWhatsAppLead } from '../utils/whatsapp'
-import { BUSINESS, WHOLESALE } from '../data/content'
+import { WHOLESALE_WHATSAPP_URL, trackWhatsAppLead } from '../utils/whatsapp'
+import { WHOLESALE, WHOLESALE_CONTACT } from '../data/content'
 import './Wholesale.css'
 
 const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
@@ -64,7 +64,7 @@ export default function Wholesale() {
             Request a wholesale quote
           </a>
           <a
-            href={WHATSAPP_URL}
+            href={WHOLESALE_WHATSAPP_URL}
             className="btn btn-outline"
             target="_blank"
             rel="noopener noreferrer"
@@ -259,10 +259,10 @@ export default function Wholesale() {
           <h2>Contact Our Wholesale Desk</h2>
           <p>Discuss MOQ, private label, export requirements or visit our trading office in Chennai:</p>
           <div className="wholesale-contact-details">
-            <p><strong>Boutique &amp; Trading Office:</strong> {BUSINESS.address}</p>
-            <p><strong>Wholesale Desk Hours:</strong> {BUSINESS.wholesaleHours}</p>
-            <p><strong>Direct Helpline / WhatsApp:</strong> <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a></p>
-            <p><strong>Wholesale Email:</strong> <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
+            <p><strong>Boutique &amp; Trading Office:</strong> {WHOLESALE_CONTACT.address}</p>
+            <p><strong>Wholesale Desk Hours:</strong> {WHOLESALE_CONTACT.hours}</p>
+            <p><strong>Hikma Exports / WhatsApp:</strong> <a href={`tel:${WHOLESALE_CONTACT.phoneTel}`}>{WHOLESALE_CONTACT.phoneDisplay}</a></p>
+            <p><strong>Wholesale Email:</strong> <a href={`mailto:${WHOLESALE_CONTACT.email}`}>{WHOLESALE_CONTACT.email}</a></p>
           </div>
           <p className="wholesale-hikma-link">
             <Link to="/hikma-exports">Learn about Hikma Exports and Hikma Perfumes -&gt;</Link>
@@ -272,7 +272,7 @@ export default function Wholesale() {
               Start a wholesale enquiry
             </a>
             <a
-              href={WHATSAPP_URL}
+              href={WHOLESALE_WHATSAPP_URL}
               className="btn btn-secondary"
               target="_blank"
               rel="noopener noreferrer"

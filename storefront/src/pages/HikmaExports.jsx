@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import SEO from '../components/seo/SEO'
 import { IMAGES } from '../config/assets'
-import { BUSINESS, HIKMA_EXPORTS } from '../data/content'
+import { BUSINESS, HIKMA_EXPORTS, WHOLESALE_CONTACT } from '../data/content'
 import { buildHikmaExportsSeo } from '../utils/seo'
 import './HikmaExports.css'
 
@@ -92,14 +92,14 @@ export default function HikmaExports() {
             Moore Street office, contact the Chennai team.
           </p>
           <div className="hikma-contact-details">
-            <p><strong>Address:</strong> {BUSINESS.address}</p>
+            <p><strong>Address:</strong> {WHOLESALE_CONTACT.address}</p>
             <p>
-              <strong>Phone / WhatsApp:</strong>{' '}
-              <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a>
+              <strong>Hikma Exports / WhatsApp:</strong>{' '}
+              <a href={`tel:${WHOLESALE_CONTACT.phoneTel}`}>{WHOLESALE_CONTACT.phoneDisplay}</a>
             </p>
             <p>
               <strong>Email:</strong>{' '}
-              <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a>
+              <a href={`mailto:${WHOLESALE_CONTACT.email}`}>{WHOLESALE_CONTACT.email}</a>
             </p>
           </div>
           <div className="hikma-actions hikma-actions--center">

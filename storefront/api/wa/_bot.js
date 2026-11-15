@@ -172,9 +172,10 @@ function infoActions() {
       text:
         '*Hikma Exports — Arees Perfumes*\n' +
         'Wholesale & retail attars, fragrance oils, bakhoor, bottles.\n\n' +
-        'Shop address: S-1, 145, AJ Beach Rd, North Street, Mannadi, George Town, Chennai - 600001\n' +
-        'Timings: any day, 9:00 AM–9:30 PM\n' +
-        'Phone: +91 98407 50467\n' +
+        'Shop address: 83 & 84, Moore St, Mannadi, George Town, Chennai - 600001\n' +
+        'Shop timings: Monday-Saturday, 10:00 AM-9:30 PM; Sunday closed\n' +
+        'Shop phone: +91 98400 78909\n' +
+        'Wholesale desk: +91 98407 50467 (9:00 AM-9:30 PM)\n' +
         'Website:\n' +
         `• Wholesale: ${SHOPIFY_URL}/wholesale\n` +
         `• Retail catalogue: ${SHOPIFY_URL}/shop\n` +

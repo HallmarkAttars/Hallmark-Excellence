@@ -184,7 +184,7 @@ export const LEGAL_PAGES = {
       {
         heading: 'Need help?',
         paragraphs: [
-          'Call or WhatsApp us at +91 98407 50467, or email hikmaexports@gmail.com. We aim to acknowledge and respond to support requests within 48 hours.',
+          'Call or WhatsApp the shop on +91 98400 78909, or email hikmaexports@gmail.com. Wholesale enquiries are handled by Hikma Exports on +91 98407 50467. We aim to acknowledge and respond to support requests within 48 hours.',
         ],
       },
     ],

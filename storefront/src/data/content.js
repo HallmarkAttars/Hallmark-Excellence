@@ -11,26 +11,73 @@
 // BUSINESS — single source of truth for contact & social information.
 // Footer, Contact page, order success and social strips all read from here.
 // --------------------------------------------------------------------------
-export const BUSINESS = {
-  name: 'Arees & Dahab',
-  tagline: 'The Art of Significance Attars',
-  phoneDisplay: '+91 98407 50467',
-  phoneTel: '+919840750467', // digits only �?" used for tel: links
-  email: 'hikmaexports@gmail.com',
-  wholesaleHours: '9:00 AM – 9:30 PM',
-  address: '83 & 84, Moore St, Mannadi, George Town, Chennai, Greater Chennai, Tamil Nadu 600001',
-  addressParts: {
-    streetAddress: '83 & 84, Moore St, Mannadi, George Town',
-    addressLocality: 'Chennai',
-    addressRegion: 'Tamil Nadu',
-    postalCode: '600001',
-    addressCountry: 'IN',
+const ADDRESS = '83 & 84, Moore St, Mannadi, George Town, Chennai, Greater Chennai, Tamil Nadu 600001'
+const ADDRESS_PARTS = {
+  streetAddress: '83 & 84, Moore St, Mannadi, George Town',
+  addressLocality: 'Chennai',
+  addressRegion: 'Tamil Nadu',
+  postalCode: '600001',
+  addressCountry: 'IN',
+}
+const MAP_EMBED_URL =
+  'https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed'
+const MAP_DIRECTIONS_URL =
+  'https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai'
+const GOOGLE_PLACE_ID = 'ChIJa5hHrcdvUjoRdEjj7LYXrvs'
+
+// The shop and the wholesale desk are separate public contacts. Keep their
+// names, phone numbers and hours distinct so schema and page copy never mix
+// the retail shop with the Hikma Exports trading desk.
+export const SHOP = {
+  name: 'Arees Attars & Perfumes',
+  phoneDisplay: '+91 98400 78909',
+  phoneTel: '+919840078909',
+  hours: [
+    'Monday - Saturday: 10:00 AM - 9:30 PM',
+    'Sunday: Closed',
+  ],
+  hoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      opens: '10:00',
+      closes: '21:30',
+    },
+  ],
+  address: ADDRESS,
+  addressParts: ADDRESS_PARTS,
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 13.094717,
+    longitude: 80.290871,
   },
-  mapEmbedUrl:
-    'https://www.google.com/maps?q=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai%2C%20Tamil%20Nadu%20600001&z=17&output=embed',
-  mapDirectionsUrl:
-    'https://www.google.com/maps/dir/?api=1&destination=Arees%20Attars%20%26%20Perfumes%2C%2083%20Moore%20Street%2C%20Mannady%2C%20Chennai',
-  // Google Business Profile (HIKMA Exports — same shop, 83 & 84 Moore St).
+}
+
+export const WHOLESALE_CONTACT = {
+  name: 'Hikma Exports',
+  phoneDisplay: '+91 98407 50467',
+  phoneTel: '+919840750467',
+  email: 'hikmaexports@gmail.com',
+  hours: '9:00 AM – 9:30 PM',
+  address: ADDRESS,
+  addressParts: ADDRESS_PARTS,
+}
+
+export const BUSINESS = {
+  name: SHOP.name,
+  tagline: 'The Art of Significance Attars',
+  phoneDisplay: SHOP.phoneDisplay,
+  phoneTel: SHOP.phoneTel,
+  email: WHOLESALE_CONTACT.email,
+  wholesaleHours: WHOLESALE_CONTACT.hours,
+  shop: SHOP,
+  wholesale: WHOLESALE_CONTACT,
+  address: SHOP.address,
+  addressParts: SHOP.addressParts,
+  geo: SHOP.geo,
+  mapEmbedUrl: MAP_EMBED_URL,
+  mapDirectionsUrl: MAP_DIRECTIONS_URL,
+  // Google Business Profile (Arees Attars & Perfumes — 83 & 84 Moore St).
   // Customers are invited to review this listing after ordering.
   //
   // NEVER copy review links out of a Google Search URL. The desktop/mobile
@@ -43,10 +90,11 @@ export const BUSINESS = {
   // Google's fixed encoding (base64 of 0A 12 09 <cell LE> 11 <cid LE>);
   // the encoder was validated against Google's canonical Sydney pair
   // (0x6b12ae37b47f5b37:0x8eaddfcd1b32ca52 → ChIJN1t_tDeuEmsRUsoyG83frY4).
-  googlePlaceId: 'ChIJa5hHrcdvUjoRdEjj7LYXrvs',
+  googlePlaceId: GOOGLE_PLACE_ID,
+  googlePlaceUrl: `https://www.google.com/maps/place/?q=place_id:${GOOGLE_PLACE_ID}`,
   // One tap straight to Google's "write a review" form (desktop + mobile).
   googleReviewUrl:
-    'https://search.google.com/local/writereview?placeid=ChIJa5hHrcdvUjoRdEjj7LYXrvs',
+    `https://search.google.com/local/writereview?placeid=${GOOGLE_PLACE_ID}`,
   // Stable fallback opening the listing (2 extra taps to the review form).
   googleMapsCid: 18135458823893370996,
   googleReviewFallbackUrl:
@@ -65,7 +113,7 @@ export const BUSINESS = {
 // --------------------------------------------------------------------------
 // INVOICE — branding for the customer invoice / order receipt.
 // companyName is the legal-style name printed on the invoice. Phone, email
-// and address are intentionally REUSED from BUSINESS above (never invented).
+// and address use the Hikma Exports wholesale contact (never invented).
 // --------------------------------------------------------------------------
 export const INVOICE = {
   // Legal-style name printed on the invoice (copyright line).
@@ -145,7 +193,7 @@ export const HOME_FAQS = [
     group: 'store-orders',
     question: 'Where is Arees Perfumes located?',
     answer:
-      'Our shop is at 83 & 84, Moore St, Mannadi, George Town, Chennai 600001. Walk in any day from 9:00 AM to 9:30 PM, or call/WhatsApp +91 98407 50467 for directions.',
+      `Our shop is at 83 & 84, Moore St, Mannadi, George Town, Chennai 600001. The shop is open Monday to Saturday from 10:00 AM to 9:30 PM and closed on Sunday. Call or WhatsApp the shop on ${SHOP.phoneDisplay} for directions. Wholesale enquiries are handled separately by ${WHOLESALE_CONTACT.name} on ${WHOLESALE_CONTACT.phoneDisplay}.`,
   },
   {
     group: 'store-orders',
@@ -463,7 +511,7 @@ export const HIKMA_EXPORTS = {
     {
       question: 'How do I place a wholesale or export enquiry?',
       answer:
-        'Use the wholesale enquiry form, call +91 98407 50467, email hikmaexports@gmail.com, or visit the Moore Street office in Mannadi, Chennai.',
+        `Use the wholesale enquiry form, call ${WHOLESALE_CONTACT.phoneDisplay}, email ${WHOLESALE_CONTACT.email}, or visit the Moore Street office in Mannadi, Chennai.`,
     },
     {
       question: 'What information should export buyers send?',
@@ -737,12 +785,9 @@ export const SOUTH_INDIA = {
     landmark: 'Landmark: Opposite Kalaiyam School, Mannadi, George Town',
     directionsLabel: 'Get Directions on Google Maps',
     hoursHeading: 'Visiting Hours',
-    hours: [
-      'Monday - Saturday: 10:00 AM - 9:00 PM',
-      'Sunday: Closed / Prior appointment',
-    ],
+    hours: SHOP.hours,
     contactHeading: 'Phone & WhatsApp',
-    wholesaleHours: 'Wholesale desk: 9:00 AM - 9:30 PM',
+    wholesaleHours: `Wholesale desk: ${WHOLESALE_CONTACT.hours} (${WHOLESALE_CONTACT.name}: ${WHOLESALE_CONTACT.phoneDisplay})`,
   },
   coverage: {
     heading: 'South India Delivery & Service Coverage',
@@ -775,7 +820,7 @@ export const SOUTH_INDIA = {
     {
       question: 'Where can I buy attar in Chennai?',
       answer:
-        'Visit the Arees Perfumes boutique at 83 & 84, Moore Street, Mannadi, George Town, Chennai 600001. You can also order online for delivery across India. The shop is open Monday to Saturday, 10:00 AM to 9:00 PM, with a wholesale desk until 9:30 PM.',
+        `Visit the ${SHOP.name} shop at 83 & 84, Moore Street, Mannadi, George Town, Chennai 600001. You can also order online for delivery across India. The shop is open Monday to Saturday, 10:00 AM to 9:30 PM and closed on Sunday. Call or WhatsApp the shop on ${SHOP.phoneDisplay}; wholesale enquiries are handled by ${WHOLESALE_CONTACT.name} on ${WHOLESALE_CONTACT.phoneDisplay}.`,
     },
     {
       question: 'Do you sell attar wholesale in Chennai?',

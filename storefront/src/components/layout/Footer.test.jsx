@@ -142,14 +142,14 @@ describe('Footer Component', () => {
 
       expect(contactBtn.getAttribute('aria-expanded')).toBe('true')
 
-      const phoneLink = screen.getByRole('link', { name: /\+91 98407 50467/i })
-      expect(phoneLink.getAttribute('href')).toBe('tel:+919840750467')
+      const phoneLink = screen.getByRole('link', { name: /\+91 98400 78909/i })
+      expect(phoneLink.getAttribute('href')).toBe('tel:+919840078909')
 
       const emailLink = screen.getByRole('link', { name: /hikmaexports@gmail\.com/i })
       expect(emailLink.getAttribute('href')).toBe('mailto:hikmaexports@gmail.com')
 
       const whatsappCta = screen.getByRole('link', { name: /chat with us on whatsapp/i })
-      expect(whatsappCta.getAttribute('href')).toContain('https://wa.me/919840750467')
+      expect(whatsappCta.getAttribute('href')).toContain('https://wa.me/919840078909')
       expect(whatsappCta.getAttribute('target')).toBe('_blank')
     })
   })

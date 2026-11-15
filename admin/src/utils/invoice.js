@@ -25,7 +25,7 @@ export const INVOICE_COMPANY = {
   // No website is configured in the admin app — the invoice contact strip
   // simply omits it (nothing fake is ever printed).
   website: '',
-  address: '83 Moore Street, Mannady, Chennai, Tamil Nadu 600001',
+  address: '83 & 84, Moore Street, Mannady, Chennai, Tamil Nadu 600001',
   gstNote: 'Prices are inclusive of applicable GST.',
   thanks: 'Thank you for your order.',
 }

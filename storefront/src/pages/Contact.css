@@ -1073,6 +1073,14 @@
   transition: color 0.2s ease;
 }
 .contact-info-link:hover { color: var(--gold-deep); }
+.contact-info-secondary {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--charcoal-soft);
+}
 
 /* Real interactive map — belongs to the info card, never overflows. The
    GET DIRECTIONS bar is attached directly below the iframe (no floating

@@ -1,8 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { fileURLToPath } from 'node:url'
+import { BUSINESS, SHOP } from './data/content.js'
 
 const html = readFileSync(fileURLToPath(new URL('../index.html', import.meta.url)), 'utf8')
+const schemas = [...html.matchAll(
+  /<script type="application\/ld\+json" data-seo="true">([\s\S]*?)<\/script>/g
+)].map((match) => JSON.parse(match[1]))
 
 // The Seorce third-party tag must never be able to delay app boot.
 // PSI trace 0bqz8lxyhb: this tag sat in <head> with `defer` BEFORE the Vite
@@ -86,5 +90,33 @@ describe('index.html home prerender internal links', () => {
     for (const slug of ['arees', 'bakhoor', 'arees-luxury', 'dahab']) {
       expect(html).toContain(`href="/brand/${slug}"`)
     }
+  })
+})
+
+describe('index.html baked homepage facts', () => {
+  const localBusiness = schemas.find((schema) => schema['@type'] === 'LocalBusiness')
+  const faq = schemas.find((schema) => schema['@type'] === 'FAQPage')
+
+  it('publishes the verified shop NAP in LocalBusiness schema', () => {
+    expect(localBusiness.name).toBe(SHOP.name)
+    expect(localBusiness.telephone).toBe(SHOP.phoneTel)
+    expect(localBusiness.geo.latitude).toBeCloseTo(SHOP.geo.latitude)
+    expect(localBusiness.geo.longitude).toBeCloseTo(SHOP.geo.longitude)
+    expect(localBusiness.hasMap).toBe(BUSINESS.mapDirectionsUrl)
+    expect(localBusiness.sameAs).toContain(BUSINESS.googlePlaceUrl)
+    expect(localBusiness.openingHoursSpecification[0].opens).toBe('10:00')
+    expect(localBusiness.openingHoursSpecification[0].closes).toBe('21:30')
+  })
+
+  it('keeps shop and wholesale phone numbers separate in FAQ copy', () => {
+    const text = faq.mainEntity[0].acceptedAnswer.text
+    expect(text).toContain('10:00 AM to 9:30 PM')
+    expect(text).toContain('closed on Sunday')
+    expect(text).toContain(SHOP.phoneDisplay)
+    expect(text).toContain('+91 98407 50467')
+  })
+
+  it('does not bake a drifting price into the no-JS body', () => {
+    expect(html).not.toContain('₹220')
   })
 })

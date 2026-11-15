@@ -21,7 +21,7 @@ import {
   CashOnDeliveryIcon,
   UpiIcon,
 } from '../components/icons'
-import { BUSINESS, CONTACT } from '../data/content'
+import { BUSINESS, CONTACT, SHOP, WHOLESALE_CONTACT } from '../data/content'
 import SEO from '../components/seo/SEO'
 import ReviewPrompt from '../components/review/ReviewPrompt'
 import { buildBreadcrumbsSchema } from '../utils/seo'
@@ -598,7 +598,7 @@ export default function Contact() {
               <li>We will contact you regarding transport or delivery charges once your order is ready for dispatch.</li>
               <li>
                 Please save our contact number:{' '}
-                <a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a>
+                <a href={`tel:${SHOP.phoneTel}`}>{SHOP.phoneDisplay}</a>
               </li>
             </ul>
           </section>
@@ -1235,10 +1235,14 @@ export default function Contact() {
                   <span className="contact-info-label">{CONTACT.info.phoneLabel}</span>
                   <a
                     className="contact-info-value contact-info-link"
-                    href={`tel:${BUSINESS.phoneTel}`}
+                    href={`tel:${SHOP.phoneTel}`}
                   >
-                    {BUSINESS.phoneDisplay}
+                    {SHOP.phoneDisplay}
                   </a>
+                  <span className="contact-info-value contact-info-secondary">
+                    Wholesale — Hikma Exports:{' '}
+                    <a href={`tel:${WHOLESALE_CONTACT.phoneTel}`}>{WHOLESALE_CONTACT.phoneDisplay}</a>
+                  </span>
                 </li>
                 <li className="contact-info-item">
                   <span className="contact-info-icon" aria-hidden="true">

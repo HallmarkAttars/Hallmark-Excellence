@@ -1,27 +1,36 @@
+import { SHOP, WHOLESALE_CONTACT } from '../data/content'
 import { trackEvent } from './analytics'
 
-// Single source of truth for the storefront's WhatsApp click-to-chat link:
-// the same number + pre-filled text is used by the navbar, footer, footer
-// social icon (resolved there when href is '#', see BUSINESS.social) and the
-// sticky floating button. Update the message here, once.
-//
-// The pre-filled message carries the buying intent up front so the wholesale
-// desk can answer with price lists and MOQ in the first reply. ASCII-safe
-// (hyphen, "I am") so it survives wa.me URL handling on all platforms.
-export const WHATSAPP_NUMBER = '919840750467'
+// Two WhatsApp destinations, kept separate so retail shoppers reach the shop
+// and trade buyers reach the Hikma Exports wholesale desk.
+export const WHATSAPP_NUMBER = SHOP.phoneTel.replace(/\D/g, '')
+export const WHOLESALE_WHATSAPP_NUMBER = WHOLESALE_CONTACT.phoneTel.replace(/\D/g, '')
 
 export const DEFAULT_WHATSAPP_MESSAGE =
-  'Hello Arees Perfumes - I am interested in wholesale/bulk attar supply via Hikma Exports. Please share the price list and MOQ.'
+  'Hello Arees Perfumes - I would like to ask about attars, oud and perfume oils. Please help me with availability and delivery.'
 
-export function buildWhatsAppUrl(message = DEFAULT_WHATSAPP_MESSAGE) {
+export const DEFAULT_WHOLESALE_WHATSAPP_MESSAGE =
+  'Hello Hikma Exports - I am interested in wholesale/bulk attar supply. Please share the price list and MOQ.'
+
+export function buildWhatsAppUrl(
+  message = DEFAULT_WHATSAPP_MESSAGE,
+  number = WHATSAPP_NUMBER
+) {
   const text = String(message ?? '').trim() || DEFAULT_WHATSAPP_MESSAGE
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
+}
+
+export function buildWholesaleWhatsAppUrl(
+  message = DEFAULT_WHOLESALE_WHATSAPP_MESSAGE
+) {
+  return buildWhatsAppUrl(message, WHOLESALE_WHATSAPP_NUMBER)
 }
 
 export const WHATSAPP_URL = buildWhatsAppUrl()
+export const WHOLESALE_WHATSAPP_URL = buildWholesaleWhatsAppUrl()
 
-// GA4 generate_lead — opening a WhatsApp chat is the storefront's primary
-// wholesale/enquiry CTA (header, footer and product pages all route here).
+// GA4 generate_lead — opening a WhatsApp chat is a primary enquiry CTA
+// (header, footer, product pages, and the wholesale desk).
 export function trackWhatsAppLead(source) {
   trackEvent('generate_lead', { channel: 'whatsapp', source })
 }

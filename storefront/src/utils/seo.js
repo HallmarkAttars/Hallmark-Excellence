@@ -9,7 +9,7 @@
 // Kept free of any direct DOM manipulation so they are 100% unit-testable.
 // ============================================================================
 
-import { ABOUT, BUSINESS, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../data/content.js'
+import { ABOUT, BUSINESS, HIKMA_EXPORTS, SHOP, SOUTH_INDIA, WHOLESALE, WHOLESALE_CONTACT } from '../data/content.js'
 import { GUIDES } from '../data/guides.js'
 import { getCategoryContent } from '../data/categoryContent.js'
 import { normalizeCategorySlug } from './categorySlug.js'
@@ -236,27 +236,62 @@ export function buildSitemapXml({ baseUrl, pages = STATIC_PAGES, categories = []
 // --------------------------------------------------------------------------
 export function buildRobotsTxt(baseUrl) {
   const base = String(baseUrl || CANONICAL_ORIGIN).replace(/\/+$/, '')
-  return [
-    'User-agent: *',
-    'Allow: /',
-    '',
-    'Disallow: /api/',
-    'Disallow: /admin/',
-    '',
-    `Sitemap: ${base}/sitemap.xml`,
-    '',
-  ].join('\n')
+  // Search engines and AI answer engines are explicitly welcomed, including
+  // crawlers that collect content for model training. Private endpoints stay
+  // blocked for every group.
+  const groups = [
+    ['*'],
+    ['Googlebot', 'Googlebot-Image', 'Googlebot-News', 'AdsBot-Google'],
+    ['Bingbot', 'msnbot'],
+    ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User'],
+    ['ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'anthropic-ai'],
+    ['PerplexityBot', 'Perplexity-User'],
+    ['Google-Extended'],
+    ['CCBot'],
+    ['Applebot', 'Applebot-Extended'],
+    ['Amazonbot'],
+    ['meta-externalagent', 'FacebookBot'],
+    ['Bytespider'],
+    ['cohere-ai'],
+    ['YouBot'],
+    ['Diffbot'],
+    ['AI2Bot'],
+  ]
+  const lines = []
+  for (const agents of groups) {
+    lines.push(...agents.map((agent) => `User-agent: ${agent}`))
+    lines.push('Allow: /', 'Disallow: /api/', 'Disallow: /admin/', '')
+  }
+  lines.push(`Sitemap: ${base}/sitemap.xml`, '')
+  return lines.join('\n')
 }
 
 // --------------------------------------------------------------------------
 // Schema.org JSON-LD Structured Data Builders
 // --------------------------------------------------------------------------
 
+function cleanProfileUrl(value) {
+  if (!value) return ''
+  return String(value).split('?')[0].split('#')[0]
+}
+
+function localBusinessSameAs() {
+  return [
+    BUSINESS.googlePlaceUrl,
+    cleanProfileUrl(BUSINESS.socialByKey('instagram')?.href),
+  ].filter(Boolean)
+}
+
+function organizationSameAs() {
+  return [cleanProfileUrl(BUSINESS.socialByKey('instagram')?.href)].filter(Boolean)
+}
+
 // 1. Organization Schema
 export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': `${origin}/#organization`,
     name: 'Arees Perfumes',
     // Google Business Profile name is the ground truth for local entity
     // matching, so the GBP trading name is listed with the brand names.
@@ -265,25 +300,28 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
       'Arees Perfumes is a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     url: origin,
     logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
-    email: 'hikmaexports@gmail.com',
-    telephone: '+919840750467',
+    email: WHOLESALE_CONTACT.email,
+    telephone: SHOP.phoneTel,
+    parentOrganization: {
+      '@type': 'Organization',
+      name: 'Hikma Exports',
+      alternateName: 'Hikma Perfumes',
+      url: `${origin}/hikma-exports`,
+      telephone: WHOLESALE_CONTACT.phoneTel,
+    },
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'customer support',
-      telephone: '+919840750467',
-      email: 'hikmaexports@gmail.com',
+      telephone: SHOP.phoneTel,
+      email: WHOLESALE_CONTACT.email,
       areaServed: ['IN'],
       availableLanguage: ['English', 'Tamil', 'Hindi'],
     },
     address: {
       '@type': 'PostalAddress',
-      streetAddress: '83 & 84, Moore St, Mannadi, George Town',
-      addressLocality: 'Chennai',
-      addressRegion: 'Tamil Nadu',
-      postalCode: '600001',
-      addressCountry: 'IN',
+      ...SHOP.addressParts,
     },
-    sameAs: [BUSINESS.socialByKey('instagram')?.href].filter(Boolean),
+    sameAs: organizationSameAs(),
   }
 }
 
@@ -298,6 +336,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
     description: DEFAULT_DESCRIPTION,
     publisher: {
       '@type': 'Organization',
+      '@id': `${origin}/#organization`,
       name: 'Arees Perfumes',
       logo: {
         '@type': 'ImageObject',
@@ -307,36 +346,33 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
   }
 }
 
-// 3. LocalBusiness Schema (Exact Chennai location from BUSINESS)
+// 3. LocalBusiness Schema (the public Arees Attars & Perfumes shop)
 export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
   return {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     '@id': `${origin}/#localbusiness`,
-    name: 'Arees Attars & Perfumes',
+    name: SHOP.name,
     alternateName: ['Arees Perfumes', 'Hallmark of Excellence'],
     description:
-      'Arees Perfumes is a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
+      'Arees Attars & Perfumes is the Chennai retail shop of the Arees Perfumes fragrance house, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     image: `${origin}/Hero.webp`,
     url: origin,
-    telephone: '+919840750467',
-    email: 'hikmaexports@gmail.com',
+    telephone: SHOP.phoneTel,
+    email: WHOLESALE_CONTACT.email,
     priceRange: '₹₹',
+    currenciesAccepted: 'INR',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: '83 & 84, Moore St, Mannadi, George Town',
-      addressLocality: 'Chennai',
-      addressRegion: 'Tamil Nadu',
-      postalCode: '600001',
-      addressCountry: 'IN',
+      ...SHOP.addressParts,
     },
-    geo: {
-      '@type': 'GeoCoordinates',
-      latitude: 13.0927,
-      longitude: 80.2872,
-    },
+    geo: SHOP.geo,
     hasMap: BUSINESS.mapDirectionsUrl,
-    sameAs: [BUSINESS.socialByKey('instagram')?.href].filter(Boolean),
+    openingHoursSpecification: SHOP.hoursSpecification,
+    sameAs: localBusinessSameAs(),
+    parentOrganization: {
+      '@id': `${origin}/#organization`,
+    },
     areaServed: ['Chennai', 'Tamil Nadu', 'South India', 'India'],
   }
 }
@@ -357,19 +393,19 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
       'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of the separate Arees and Dahab fragrance brands. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
     url: `${origin}/hikma-exports`,
     logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
-    email: BUSINESS.email,
-    telephone: BUSINESS.phoneTel,
+    email: WHOLESALE_CONTACT.email,
+    telephone: WHOLESALE_CONTACT.phoneTel,
     address: {
       '@type': 'PostalAddress',
-      ...BUSINESS.addressParts,
+      ...WHOLESALE_CONTACT.addressParts,
     },
     hasMap: BUSINESS.mapDirectionsUrl,
     ...(links.length ? { sameAs: links } : {}),
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'sales',
-      telephone: BUSINESS.phoneTel,
-      email: BUSINESS.email,
+      telephone: WHOLESALE_CONTACT.phoneTel,
+      email: WHOLESALE_CONTACT.email,
       areaServed: ['IN', 'SG', 'MY', 'AE', 'LK', 'MV'],
       availableLanguage: ['English', 'Tamil', 'Hindi'],
       hoursAvailable: {
@@ -424,11 +460,11 @@ export function buildWholesaleServiceSchema({ origin = CANONICAL_ORIGIN } = {}) 
       name: 'Hikma Exports',
       alternateName: 'Hikma Perfumes',
       url: `${origin}/hikma-exports`,
-      telephone: BUSINESS.phoneTel,
-      email: BUSINESS.email,
+      telephone: WHOLESALE_CONTACT.phoneTel,
+      email: WHOLESALE_CONTACT.email,
       address: {
         '@type': 'PostalAddress',
-        ...BUSINESS.addressParts,
+        ...WHOLESALE_CONTACT.addressParts,
       },
     },
     areaServed: ['India', 'Singapore', 'Malaysia', 'United Arab Emirates', 'Sri Lanka', 'Maldives'],
@@ -436,9 +472,9 @@ export function buildWholesaleServiceSchema({ origin = CANONICAL_ORIGIN } = {}) 
       '@type': 'ServiceChannel',
       servicePhone: {
         '@type': 'ContactPoint',
-        telephone: BUSINESS.phoneTel,
+        telephone: WHOLESALE_CONTACT.phoneTel,
         contactType: 'sales',
-        email: BUSINESS.email,
+        email: WHOLESALE_CONTACT.email,
         hoursAvailable: {
           '@type': 'OpeningHoursSpecification',
           dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
@@ -528,8 +564,10 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
     itemCondition: 'https://schema.org/NewCondition',
     url: productUrl,
     seller: {
-      '@type': 'Organization',
-      name: 'Arees Perfumes',
+      '@type': 'LocalBusiness',
+      '@id': `${origin}/#localbusiness`,
+      name: SHOP.name,
+      url: origin,
     },
   }
 

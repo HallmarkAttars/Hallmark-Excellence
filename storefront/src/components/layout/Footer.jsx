@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../../context/CartContext'
-import { FOOTER, BUSINESS } from '../../data/content'
+import { FOOTER, BUSINESS, SHOP } from '../../data/content'
 import { IMAGES } from '../../config/assets'
 import { sortBrandsByDisplayOrder } from '../../utils/brandOrder'
 import { brandPublicSlug } from '../../utils/brandSlug'
@@ -229,9 +229,9 @@ export default function Footer() {
                   aria-labelledby={isMobile ? contactTriggerId : undefined}
                   className={`footer-accordion-content ${isMobile && isContactOpen ? 'is-open' : ''}`}
                 >
-                  <a className="footer-contact-row" href={`tel:${BUSINESS.phoneTel}`}>
+                  <a className="footer-contact-row" href={`tel:${SHOP.phoneTel}`}>
                     <PhoneIcon />
-                    <span>{BUSINESS.phoneDisplay}</span>
+                    <span>{SHOP.phoneDisplay}</span>
                   </a>
                   <a className="footer-contact-row" href={`mailto:${BUSINESS.email}`}>
                     <MailIcon />

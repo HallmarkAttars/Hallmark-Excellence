@@ -1,6 +1,6 @@
 import { FORMSPREE_ENDPOINT, FORMSPREE_ERROR_MESSAGE } from './contactForm'
 import { getEmailError } from './email'
-import { buildWhatsAppUrl } from './whatsapp'
+import { buildWholesaleWhatsAppUrl as buildWholesaleChatUrl } from './whatsapp'
 
 export const BUYER_TYPES = [
   'Retailer',
@@ -119,7 +119,7 @@ export function buildWholesaleMessage(values) {
 }
 
 export function buildWholesaleWhatsAppUrl(values) {
-  return buildWhatsAppUrl(buildWholesaleMessage(values))
+  return buildWholesaleChatUrl(buildWholesaleMessage(values))
 }
 
 export async function submitWholesaleEnquiry(

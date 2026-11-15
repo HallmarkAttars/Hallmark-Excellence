@@ -28,7 +28,7 @@ import {
   buildFAQSchema,
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
-import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SOUTH_INDIA, WHOLESALE } from '../src/data/content.js'
+import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SHOP, SOUTH_INDIA, WHOLESALE, WHOLESALE_CONTACT } from '../src/data/content.js'
 import { getCategoryContent } from '../src/data/categoryContent.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
@@ -232,8 +232,12 @@ function renderLinks(links = []) {
     .join(' ')
 }
 
-function renderContact(heading) {
-  return `<section><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>Wholesale desk: ${escapeHtml(BUSINESS.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">Get directions</a></p></section>`
+function renderContact(heading, { wholesale = false } = {}) {
+  const phone = wholesale ? WHOLESALE_CONTACT : SHOP
+  const retailLine = wholesale
+    ? ''
+    : `<p>Wholesale desk: ${escapeHtml(WHOLESALE_CONTACT.hours)} — <a href="tel:${escapeHtml(WHOLESALE_CONTACT.phoneTel)}">${escapeHtml(WHOLESALE_CONTACT.phoneDisplay)}</a></p>`
+  return `<section><h2>${escapeHtml(heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p>${retailLine}<p>Phone / WhatsApp: <a href="tel:${escapeHtml(phone.phoneTel)}">${escapeHtml(phone.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(WHOLESALE_CONTACT.email)}">${escapeHtml(WHOLESALE_CONTACT.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">Get directions</a></p></section>`
 }
 
 // Raw, crawlable fallback for the two B2B landing pages. The React app
@@ -241,7 +245,7 @@ function renderContact(heading) {
 // page's primary copy, FAQs and contact details in the initial HTML.
 export function buildB2bBodyHtml(slug) {
   const contactHeading = slug === 'hikma-exports' ? 'Contact Hikma Exports' : 'Contact the Wholesale Desk'
-  const contact = renderContact(contactHeading)
+  const contact = renderContact(contactHeading, { wholesale: true })
 
   if (slug === 'wholesale') {
     return `<main data-prerender="true">
@@ -331,7 +335,7 @@ export function buildSouthIndiaBodyHtml() {
 <header><p>${escapeHtml(SOUTH_INDIA.eyebrow)}</p><h1>${escapeHtml(SOUTH_INDIA.title)}</h1><p>${escapeHtml(SOUTH_INDIA.intro)}</p></header>
 <section><h2>${escapeHtml(SOUTH_INDIA.heritage.heading)}</h2>${renderParagraphs(SOUTH_INDIA.heritage.paragraphs)}</section>
 <section><h2>Why Fragrance Buyers in South India Choose Arees</h2>${SOUTH_INDIA.reasons.map((reason) => `<article><h3>${escapeHtml(reason.title)}</h3><p>${escapeHtml(reason.description)}</p></article>`).join('')}</section>
-<section><h2>${escapeHtml(store.heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>${escapeHtml(store.landmark)}</p><p>${store.hours.map((line) => escapeHtml(line)).join(' ')}</p><p>${escapeHtml(store.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(BUSINESS.phoneTel)}">${escapeHtml(BUSINESS.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(BUSINESS.email)}">${escapeHtml(BUSINESS.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">${escapeHtml(store.directionsLabel)}</a></p></section>
+<section><h2>${escapeHtml(store.heading)}</h2><p>${escapeHtml(BUSINESS.address)}</p><p>${escapeHtml(store.landmark)}</p><p>${store.hours.map((line) => escapeHtml(line)).join(' ')}</p><p>${escapeHtml(store.wholesaleHours)}</p><p>Phone / WhatsApp: <a href="tel:${escapeHtml(SHOP.phoneTel)}">${escapeHtml(SHOP.phoneDisplay)}</a></p><p>Email: <a href="mailto:${escapeHtml(WHOLESALE_CONTACT.email)}">${escapeHtml(WHOLESALE_CONTACT.email)}</a></p><p><a href="${escapeHtml(BUSINESS.mapDirectionsUrl)}">${escapeHtml(store.directionsLabel)}</a></p></section>
 <section><h2>${escapeHtml(SOUTH_INDIA.coverage.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.coverage.intro)}</p>${SOUTH_INDIA.coverage.regions.map((region) => `<article><h3>${escapeHtml(region.title)}</h3><p>${escapeHtml(region.description)}</p></article>`).join('')}</section>
 <section><h2>${escapeHtml(SOUTH_INDIA.cta.heading)}</h2><p>${escapeHtml(SOUTH_INDIA.cta.intro)}</p><p><a href="/shop">Shop attars</a> <a href="/wholesale">Wholesale supply</a> <a href="/contact">Contact us</a></p><p>Popular collections: <a href="/categories/roll-on-attars">roll-on attars</a> <a href="/categories/bakhoor">bakhoor</a> <a href="/categories/fragrance-oils">fragrance oils</a>.</p></section>
 </main>`

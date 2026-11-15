@@ -16,7 +16,7 @@
 //     `notes` string (checkout response) — parsed transparently here.
 // ============================================================================
 
-import { BUSINESS, INVOICE } from '../data/content'
+import { BUSINESS, INVOICE, WHOLESALE_CONTACT } from '../data/content'
 
 // Company block printed on the invoice. Contact details come from the
 // existing BUSINESS config — nothing is invented here. If a value is not
@@ -29,12 +29,12 @@ export const INVOICE_COMPANY = {
   // invoice and used for the thank-you sign-off ("— Team Arees Perfumes").
   brandTitle: INVOICE.brandTitle || INVOICE.companyName || BUSINESS.name,
   tagline: BUSINESS.tagline || '',
-  phone: BUSINESS.phoneDisplay || '',
-  email: BUSINESS.email || '',
+  phone: WHOLESALE_CONTACT.phoneDisplay || '',
+  email: WHOLESALE_CONTACT.email || '',
   // Not configured today (BUSINESS has no website) — the contact strip
   // simply omits it; nothing fake is ever printed.
   website: BUSINESS.website || '',
-  address: BUSINESS.address || '',
+  address: WHOLESALE_CONTACT.address || '',
   gstNote: INVOICE.gstNote || 'Prices are inclusive of applicable GST.',
   thanks: INVOICE.thanks || 'Thank you for your order.',
 }

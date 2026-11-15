@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import SEO from '../components/seo/SEO'
 import { buildSouthIndiaSeo } from '../utils/seo'
-import { BUSINESS, SOUTH_INDIA } from '../data/content'
+import { BUSINESS, SHOP, SOUTH_INDIA } from '../data/content'
 import './SouthIndia.css'
 
 export default function SouthIndia() {
@@ -69,7 +69,7 @@ export default function SouthIndia() {
               <p>{SOUTH_INDIA.store.wholesaleHours}</p>
 
               <h4 style={{ marginTop: '16px' }}>{SOUTH_INDIA.store.contactHeading}</h4>
-              <p><a href={`tel:${BUSINESS.phoneTel}`}>{BUSINESS.phoneDisplay}</a></p>
+              <p><a href={`tel:${SHOP.phoneTel}`}>{SHOP.phoneDisplay}</a></p>
               <p><a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a></p>
             </div>
           </div>

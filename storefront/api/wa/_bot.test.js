@@ -298,8 +298,11 @@ describe('wa bot — tracking, info, human handoff', () => {
     const r = await handleInput({ kind: 'text', text: '3', from: '919840750467' }, session, { io })
     const info = r.actions[0]
     expect(info.type).toBe('text')
+    expect(info.text).toContain('+91 98400 78909')
     expect(info.text).toContain('+91 98407 50467')
-    expect(info.text).toContain('9:00 AM–9:30 PM')
+    expect(info.text).toContain('10:00 AM-9:30 PM')
+    expect(info.text).toContain('Sunday closed')
+    expect(info.text).toContain('Moore St')
     expect(info.text).toContain('Mannadi')
   })
 
