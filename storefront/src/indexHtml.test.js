@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { fileURLToPath } from 'node:url'
-import { BUSINESS, SHOP } from './data/content.js'
+import { BUSINESS, HERO, SHOP } from './data/content.js'
 
 const html = readFileSync(fileURLToPath(new URL('../index.html', import.meta.url)), 'utf8')
 const schemas = [...html.matchAll(
@@ -118,5 +118,11 @@ describe('index.html baked homepage facts', () => {
 
   it('does not bake a drifting price into the no-JS body', () => {
     expect(html).not.toContain('₹220')
+  })
+
+  it('keeps the baked homepage hero copy aligned with HERO content', () => {
+    const title = HERO.title.join(' ').replace(/&/g, '&amp;')
+    expect(html).toContain(`<h1>${title}</h1>`)
+    expect(html).toContain(`<p>${HERO.subtitle}</p>`)
   })
 })

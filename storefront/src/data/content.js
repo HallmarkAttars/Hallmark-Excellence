@@ -150,9 +150,9 @@ export const NAV_LINKS = [
 // --------------------------------------------------------------------------
 export const HERO = {
   eyebrow: 'THE ART OF FINE FRAGRANCE',
-  title: ['Buy Authentic', 'Non-Alcoholic Attars', '& Fragrance Oils Online'],
+  title: ['Attars &', 'Fragrance Oils', 'from Chennai'],
   subtitle:
-    'Arees Perfumes offers alcohol-free attars, oud and fragrance oils for retail and wholesale, with delivery across India.',
+    'Alcohol-free attars, oud and perfume oils, handcrafted in Chennai and delivered across India.',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories' },
 }

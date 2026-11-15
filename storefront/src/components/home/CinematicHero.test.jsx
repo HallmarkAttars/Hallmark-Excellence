@@ -26,9 +26,9 @@ describe('CinematicHero Component', () => {
     // Heading structure
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeTruthy()
-    expect(heading.textContent).toContain('Buy Authentic')
-    expect(heading.textContent).toContain('Non-Alcoholic Attars')
-    expect(heading.textContent).toContain('Fragrance Oils Online')
+    for (const line of HERO.title) {
+      expect(heading.textContent).toContain(line)
+    }
 
     // Luxury eyebrow sits above the H1 (decorative, aria-hidden)
     expect(screen.getByText(HERO.eyebrow)).toBeTruthy()
@@ -40,9 +40,12 @@ describe('CinematicHero Component', () => {
     // CTAs
     const primaryBtn = screen.getByRole('link', { name: new RegExp(HERO.primaryCta.label, 'i') })
     expect(primaryBtn.getAttribute('href')).toBe(HERO.primaryCta.to)
+    expect(primaryBtn.classList.contains('hero-btn-primary')).toBe(true)
 
     const secondaryBtn = screen.getByRole('link', { name: new RegExp(HERO.secondaryCta.label, 'i') })
     expect(secondaryBtn.getAttribute('href')).toBe(HERO.secondaryCta.to)
+    expect(secondaryBtn.classList.contains('hero-btn-secondary')).toBe(true)
+    expect(secondaryBtn.classList.contains('btn-outline-light')).toBe(false)
 
     // Layers
     expect(container.querySelector('.hero-background-layer')).toBeTruthy()

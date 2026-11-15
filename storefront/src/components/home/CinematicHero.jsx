@@ -352,8 +352,9 @@ export default function CinematicHero({
         <div className="hero-actions hero-reveal hero-reveal-3">
           <Link to={HERO.primaryCta.to} className="btn hero-btn hero-btn-primary">
             {HERO.primaryCta.label}
+            <span className="hero-btn-arrow" aria-hidden="true">→</span>
           </Link>
-          <Link to={HERO.secondaryCta.to} className="btn btn-outline-light hero-btn">
+          <Link to={HERO.secondaryCta.to} className="btn hero-btn hero-btn-secondary">
             {HERO.secondaryCta.label}
             <span className="hero-btn-arrow" aria-hidden="true">→</span>
           </Link>

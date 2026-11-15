@@ -92,18 +92,18 @@
 
 .hero-title {
   color: var(--cream);
-  font-size: clamp(3rem, 4.5vw, 4rem); /* desktop 48–64px */
-  line-height: 1.05;
+  font-size: clamp(2.8rem, 4.2vw, 3.6rem);
+  line-height: 1.04;
   font-weight: 500;
   letter-spacing: -0.01em;
-  margin: 0 0 22px;
-  max-width: 12ch;
+  margin: 0 0 18px;
+  max-width: 16ch;
 }
 
 /* Keep the headline in the copy column instead of letting the wider gallery
    plate force awkward single-word lines. */
 .hero--showcase .hero-title {
-  max-width: 15ch;
+  max-width: 16ch;
 }
 
 .hero--showcase .hero-tagline {
@@ -115,28 +115,79 @@
   font-size: 1.02rem;
   line-height: 1.65;
   max-width: min(33rem, calc(44vw - 48px));
-  margin: 0 0 34px;
+  margin: 0 0 24px;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  justify-content: flex-start;
+  gap: 12px;
 }
 
-.hero-btn-arrow { font-size: 1.05em; line-height: 1; }
+.hero .hero-btn {
+  min-height: 52px;
+  padding: 0 30px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.hero .hero-btn:hover {
+  transform: translateY(-1px);
+}
+
+.hero .hero-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.hero .hero-btn:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(184, 137, 56, 0.35);
+}
+
+.hero-btn-arrow {
+  font-size: 1.05em;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.hero-btn:hover .hero-btn-arrow {
+  transform: translateX(3px);
+}
 
 /* ---------- Primary CTA — "SHOP THE COLLECTION" ---------- */
 .hero-btn-primary {
   background: var(--white);
   color: var(--ink);
   border-color: var(--white);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
 }
 .hero-btn-primary:hover {
   background: #f5f1e8; /* soft warm cream */
   border-color: #f5f1e8;
   color: var(--ink);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+}
+
+/* ---------- Secondary CTA — "EXPLORE ATTARS" ---------- */
+.hero-btn-secondary {
+  background: rgba(15, 12, 9, 0.55);
+  border-color: rgba(248, 243, 234, 0.9);
+  color: var(--cream);
+}
+
+.hero-btn-secondary:hover {
+  background: rgba(184, 137, 56, 0.18);
+  border-color: var(--gold-light);
+  color: var(--white);
 }
 
 /* ---------- Tablet (768px – 1023px) ---------- */
@@ -224,7 +275,7 @@
   .hero--photo {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: center;
     aspect-ratio: auto;
     max-height: none;
     min-height: clamp(520px, 78svh, 620px);
@@ -254,7 +305,7 @@
     flex-direction: column;
     width: 100%;
     max-width: none;
-    padding: clamp(52px, 10vw, 72px) 20px clamp(32px, 7vw, 42px);
+    padding: clamp(40px, 8vh, 60px) 20px calc(var(--bottom-nav-h, 62px) + 14px);
     box-sizing: border-box;
   }
 
@@ -293,7 +344,7 @@
   }
 
   .hero--photo .hero-title {
-    font-size: clamp(34px, 9.2vw, 44px);
+    font-size: clamp(32px, 8.5vw, 40px);
   }
 
   .hero--showcase .hero-tagline,
@@ -310,7 +361,7 @@
   }
 
   .hero--photo .hero-tagline {
-    margin: 18px 0 0;
+    margin: 14px 0 20px;
   }
 
   .hero--showcase .hero-actions,
@@ -335,7 +386,7 @@
   }
 
   .hero--photo .hero-actions {
-    margin-top: 24px;
+    margin-top: 0;
   }
 
   .hero--showcase .hero-btn,
@@ -351,12 +402,12 @@
     padding-bottom: 0;
   }
 
-  .hero--photo .hero-actions .btn-outline-light,
-  .hero--showcase .hero-actions .btn-outline-light {
+  .hero--photo .hero-actions .hero-btn-secondary,
+  .hero--showcase .hero-actions .hero-btn-secondary {
     /* Perf: no backdrop blur on mobile — it re-filters the crossfading hero
        every frame. A more opaque tint reads the same over photos. */
-    background: rgba(15, 12, 9, 0.72);
-    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(15, 12, 9, 0.78);
+    border-color: rgba(255, 255, 255, 0.7);
     color: var(--white);
   }
 
@@ -428,28 +479,41 @@
 /* ---------- Landscape phones ---------- */
 @media (max-height: 480px) and (orientation: landscape) {
   .hero--photo {
-    min-height: 100svh;
+    min-height: calc(100svh - var(--header-h, 80px));
+  }
+
+  .hero--photo .hero-img,
+  .hero--photo .hero-bg {
+    object-position: 60% 35%;
+    background-position: 60% 35%;
   }
 
   .hero--photo .hero-content {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding-top: 8px;
+    padding-bottom: calc(var(--bottom-nav-h, 62px) + 6px);
+  }
+
+  .hero--photo .hero-eyebrow {
+    font-size: 0.62rem;
+    margin-bottom: 6px;
   }
 
   .hero--photo .hero-title {
-    font-size: clamp(1.6rem, 4.5vw, 2rem);
-    margin-bottom: 8px;
+    font-size: clamp(1.35rem, 3.6vw, 1.75rem);
+    line-height: 1.02;
+    margin-bottom: 4px;
   }
 
   .hero--photo .hero-tagline {
-    margin-top: 8px;
-    margin-bottom: 12px;
-    font-size: 13px;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.4;
   }
 
   .hero--photo .hero-actions {
     flex-direction: row;
-    margin-top: 14px;
+    margin-top: 0;
   }
 
   .hero--photo .hero-btn {
@@ -478,22 +542,24 @@
 
   .hero--showcase .hero-title,
   .hero--photo .hero-title {
-    font-size: clamp(1.7rem, 4.2vw, 2rem);
-    margin-bottom: 8px;
+    font-size: clamp(1.35rem, 3.6vw, 1.75rem);
+    line-height: 1.02;
+    margin-bottom: 4px;
   }
 
   .hero--showcase .hero-tagline,
   .hero--photo .hero-tagline {
-    margin-top: 8px;
-    margin-bottom: 12px;
-    font-size: 13px;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.4;
     max-width: 520px;
   }
 
   .hero--showcase .hero-actions,
   .hero--photo .hero-actions {
     flex-direction: row;
-    margin-top: 12px;
+    margin-top: 0;
   }
 
   .hero--showcase .hero-btn,
@@ -502,5 +568,20 @@
     height: 42px;
     min-height: 42px;
     padding: 0 24px;
+  }
+}
+
+/* Ultra-short landscape: keep both CTAs clear of the fixed bottom nav. */
+@media (max-height: 360px) and (orientation: landscape) {
+  .hero--photo .hero-eyebrow {
+    display: none;
+  }
+
+  .hero--photo .hero-title {
+    font-size: clamp(1.25rem, 3.4vw, 1.6rem);
+  }
+
+  .hero--photo .hero-tagline {
+    margin-bottom: 4px;
   }
 }

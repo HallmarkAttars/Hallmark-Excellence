@@ -39,9 +39,9 @@ describe('Hero Component', () => {
     // Heading
     const heading = screen.getByRole('heading', { level: 1 })
     expect(heading).toBeTruthy()
-    expect(heading.textContent).toContain('Buy Authentic')
-    expect(heading.textContent).toContain('Non-Alcoholic Attars')
-    expect(heading.textContent).toContain('Fragrance Oils Online')
+    for (const line of HERO.title) {
+      expect(heading.textContent).toContain(line)
+    }
 
     // Tagline
     expect(screen.getByText(HERO.subtitle)).toBeTruthy()
@@ -50,11 +50,14 @@ describe('Hero Component', () => {
     const primaryBtn = screen.getByRole('link', { name: new RegExp(HERO.primaryCta.label, 'i') })
     expect(primaryBtn).toBeTruthy()
     expect(primaryBtn.getAttribute('href')).toBe(HERO.primaryCta.to)
+    expect(primaryBtn.classList.contains('hero-btn-primary')).toBe(true)
 
     // Secondary CTA
     const secondaryBtn = screen.getByRole('link', { name: new RegExp(HERO.secondaryCta.label, 'i') })
     expect(secondaryBtn).toBeTruthy()
     expect(secondaryBtn.getAttribute('href')).toBe(HERO.secondaryCta.to)
+    expect(secondaryBtn.classList.contains('hero-btn-secondary')).toBe(true)
+    expect(secondaryBtn.classList.contains('btn-outline-light')).toBe(false)
   })
 
   it('renders overlay and content elements', () => {
