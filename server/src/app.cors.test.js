@@ -65,4 +65,24 @@ describe('CORS preflight (OPTIONS /api/products)', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('access-control-allow-origin')).toBeNull()
   })
+
+  it.runIf(process.env.ALLOW_VERCEL_PREVIEWS !== 'true')(
+    'rejects arbitrary Vercel preview origins by default',
+    async () => {
+      const res = await fetch(`${baseUrl}/api/health`, {
+        headers: { Origin: 'https://anything-goes.vercel.app' },
+      })
+      expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    }
+  )
+
+  it('sets baseline security headers and hides x-powered-by', async () => {
+    const res = await fetch(`${baseUrl}/api/health`)
+    expect(res.headers.get('x-powered-by')).toBeNull()
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('x-frame-options')).toBe('DENY')
+    expect(res.headers.get('referrer-policy')).toBe('no-referrer')
+    expect(res.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+    expect(res.headers.get('permissions-policy')).toContain('camera=()')
+  })
 })

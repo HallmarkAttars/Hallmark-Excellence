@@ -517,6 +517,31 @@ describe('meta handler', () => {
     expect(res.body).toContain('application/ld+json')
   })
 
+  it('never fetches the shell from an attacker-controlled host (SSRF guard)', async () => {
+    const fetched = []
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      const value = String(url)
+      fetched.push(value)
+      if (value.endsWith('/index.html')) return htmlResponse(shell)
+      if (value.includes('/products/11111111-1111-4111-8111-111111111111')) return jsonResponse({ product })
+      throw new Error(`Unexpected URL ${value}`)
+    }))
+
+    const res = createRes()
+    await handler(
+      {
+        query: { type: 'product', id: '11111111-1111-4111-8111-111111111111' },
+        headers: { host: '169.254.169.254', 'x-forwarded-host': 'evil.example.com' },
+        method: 'GET',
+      },
+      res
+    )
+
+    expect(res.statusCode).toBe(200)
+    expect(fetched.some((url) => url.includes('169.254.169.254') || url.includes('evil.example.com'))).toBe(false)
+    expect(fetched.some((url) => url === 'https://www.areesperfumes.in/index.html')).toBe(true)
+  })
+
   it('returns server-rendered Hikma Exports head with HTTP 200', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url) => {
       const value = String(url)

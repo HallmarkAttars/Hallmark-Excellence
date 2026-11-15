@@ -908,15 +908,44 @@ ${jsonLd}`
   return `${head}\n${html}`
 }
 
-async function fetchShell(req) {
+// Only ever fetch the HTML shell from a host we control. The Host /
+// X-Forwarded-Host headers are attacker-controlled, so using them unchecked
+// turns this function into an SSRF primitive. Unknown hosts fall through to
+// VERCEL_URL / the canonical origin instead of being fetched.
+function shellCandidates(req) {
   const headers = req?.headers || {}
-  const proto = String(headers['x-forwarded-proto'] || 'https').split(',')[0].trim()
-  const host = String(headers['x-forwarded-host'] || headers.host || '').split(',')[0].trim()
+  const rawProto = String(headers['x-forwarded-proto'] || 'https').split(',')[0].trim().toLowerCase()
+  const rawHost = String(headers['x-forwarded-host'] || headers.host || '').split(',')[0].trim()
+
+  let hostname = ''
+  let port = ''
+  let hasCredentials = false
+  try {
+    const parsed = new URL(`https://${rawHost}/`)
+    hostname = parsed.hostname.toLowerCase()
+    port = parsed.port ? `:${parsed.port}` : ''
+    hasCredentials = Boolean(parsed.username || parsed.password)
+  } catch {
+    // Malformed host — no host-derived candidate.
+  }
 
   const candidates = []
-  if (host) candidates.push(`${proto}://${host}/index.html`)
+  const isProductionHost = hostname === 'www.areesperfumes.in' || hostname === 'areesperfumes.in'
+  const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1'
+
+  if (!hasCredentials && isProductionHost) {
+    candidates.push(`https://${hostname}${port}/index.html`)
+  } else if (!hasCredentials && isLocalHost && (rawProto === 'http' || rawProto === 'https')) {
+    candidates.push(`${rawProto}://${hostname}${port}/index.html`)
+  }
+
   if (process.env.VERCEL_URL) candidates.push(`https://${process.env.VERCEL_URL}/index.html`)
   candidates.push(`${CANONICAL_ORIGIN}/index.html`)
+  return [...new Set(candidates)]
+}
+
+async function fetchShell(req) {
+  const candidates = shellCandidates(req)
 
   let lastError = null
   for (const url of [...new Set(candidates)]) {
