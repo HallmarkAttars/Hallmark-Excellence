@@ -1,37 +1,52 @@
-/* ReviewPrompt — inline "review us on Google" card on the order-success
-   screen and the Delivered tracking view. Self-contained: it never edits
-   Contact.css / TrackOrder.css. Same visual language as the other info
-   sections (cream fill, thin gold border, soft radius). */
+/* ReviewPrompt — inline Google-review card on the order-success screen and
+   the Delivered tracking view. Self-contained: it never edits Contact.css /
+   TrackOrder.css. Clear Google attribution, an honest-review invitation, a
+   listing fallback and a private help path. */
 .review-prompt {
   margin-top: 24px;
   padding: 24px 20px;
-  background: var(--cream-soft, #fbf8f1);
+  background: var(--surface, #ffffff);
   border: 1px solid #d8cbb8;
   border-radius: 14px;
-  text-align: center;
+  box-shadow: var(--shadow-soft, 0 6px 18px rgba(29, 25, 20, 0.06));
 }
 
-.review-prompt-stars {
+.review-prompt-google {
   display: inline-flex;
-  gap: 4px;
-  color: var(--gold, #b88938);
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 5px 10px;
+  border: 1px solid var(--line, rgba(184, 137, 56, 0.18));
+  border-radius: 999px;
+  color: var(--charcoal-soft, #5f584e);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .review-prompt-heading {
   margin: 0 0 6px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
   color: var(--charcoal, #1d1914);
+  font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+  line-height: 1.3;
 }
 
 .review-prompt-copy {
-  margin: 0 auto 16px;
-  max-width: 42ch;
-  font-size: 0.85rem;
-  line-height: 1.55;
+  max-width: 58ch;
+  margin: 0;
   color: var(--charcoal-soft, #5f584e);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.review-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 18px;
 }
 
 .review-prompt-cta {
@@ -39,11 +54,38 @@
   min-height: 44px;
 }
 
+.review-prompt-fallback {
+  color: var(--gold-deep, #8a6626);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.review-prompt-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 18px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft, rgba(184, 137, 56, 0.1));
+}
+
+.review-prompt-private {
+  color: var(--charcoal-soft, #5f584e);
+  font-size: 0.78rem;
+  text-underline-offset: 3px;
+}
+
+.review-prompt-private:hover {
+  color: var(--gold-deep, #8a6626);
+}
+
 .review-prompt-dismiss {
   display: inline-block;
-  margin: 10px auto 0;
-  padding: 10px 12px;
   min-height: 44px;
+  padding: 10px 4px;
   background: none;
   border: none;
   color: var(--charcoal-soft, #5f584e);
@@ -55,7 +97,9 @@
 }
 
 .review-prompt-dismiss:focus-visible,
-.review-prompt-cta:focus-visible {
+.review-prompt-cta:focus-visible,
+.review-prompt-fallback:focus-visible,
+.review-prompt-private:focus-visible {
   outline: 2px solid var(--gold, #b88938);
   outline-offset: 2px;
 }
@@ -66,9 +110,32 @@
   }
 }
 
+@media (max-width: 480px) {
+  .review-prompt-actions,
+  .review-prompt-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .review-prompt-actions .btn,
+  .review-prompt-fallback {
+    width: 100%;
+  }
+
+  .review-prompt-fallback {
+    text-align: center;
+  }
+
+  .review-prompt-dismiss {
+    align-self: flex-start;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .review-prompt,
   .review-prompt-cta,
+  .review-prompt-fallback,
+  .review-prompt-private,
   .review-prompt-dismiss {
     transition: none;
     animation: none;

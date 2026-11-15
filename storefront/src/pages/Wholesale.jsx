@@ -1,11 +1,50 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import SEO from '../components/seo/SEO'
+import WholesaleEnquiryForm from '../components/wholesale/WholesaleEnquiryForm'
+import { useCart } from '../context/CartContext'
 import { buildWholesaleSeo } from '../utils/seo'
+import { getBulkTiers, isValidBulkRule } from '../utils/brandBulk'
+import { brandPublicSlug } from '../utils/brandSlug'
+import { WHATSAPP_URL, trackWhatsAppLead } from '../utils/whatsapp'
 import { BUSINESS, WHOLESALE } from '../data/content'
 import './Wholesale.css'
 
+const formatPrice = (value) => `₹${Number(value).toLocaleString('en-IN')}`
+
 export default function Wholesale() {
   const seo = buildWholesaleSeo()
+  const { brands, brandsLoaded } = useCart()
+  const [searchParams] = useSearchParams()
+  const prefilledProduct = searchParams.get('product') || ''
+
+  const liveBrands = useMemo(
+    () =>
+      (brands || [])
+        .filter(isValidBulkRule)
+        .map((brand) => ({
+          id: brand.id,
+          name: brand.name,
+          collection: brand.collection_label || '',
+          slug: brandPublicSlug(brand.slug),
+          displayOrder: Number(brand.display_order) || 0,
+          tiers: getBulkTiers(brand) || [],
+        }))
+        .filter((brand) => brand.tiers.length > 0)
+        .sort(
+          (a, b) =>
+            a.displayOrder - b.displayOrder || a.name.localeCompare(b.name)
+        ),
+    [brands]
+  )
+
+  useEffect(() => {
+    if (window.location.hash !== '#wholesale-enquiry') return
+    const target = document.getElementById('wholesale-enquiry')
+    if (!target) return
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  }, [])
 
   return (
     <div className="wholesale-page">
@@ -20,9 +59,28 @@ export default function Wholesale() {
         <p className="eyebrow">{WHOLESALE.eyebrow}</p>
         <h1>{WHOLESALE.title}</h1>
         <p>{WHOLESALE.intro}</p>
+        <div className="wholesale-hero-actions">
+          <a href="#wholesale-enquiry" className="btn btn-gold">
+            Request a wholesale quote
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            className="btn btn-outline"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackWhatsAppLead('wholesale-hero')}
+          >
+            WhatsApp the trade desk
+          </a>
+        </div>
       </header>
 
       <div className="container wholesale-container">
+        <ul className="wholesale-trust-row" aria-label="Trade credentials">
+          <li><strong>GST</strong> GST-registered business</li>
+          <li><strong>IEC</strong> Export documentation on request</li>
+          <li><strong>Chennai</strong> Dispatch from Mannadi, George Town</li>
+        </ul>
         <section className="wholesale-overview">
           <div className="wholesale-intro-card">
             <h2>{WHOLESALE.overviewHeading}</h2>
@@ -100,18 +158,50 @@ export default function Wholesale() {
           </figure>
         </section>
 
-        <section className="wholesale-tiers-section">
-          <h2>Transparent Bulk Quantity Tiers</h2>
+        <section className="wholesale-tiers-section" aria-labelledby="wholesale-live-heading">
+          <h2 id="wholesale-live-heading">Live Per-Brand Bulk Rates</h2>
           <p className="wholesale-section-sub">{WHOLESALE.tiersNote}</p>
-          <div className="wholesale-tiers-grid">
-            {WHOLESALE.tiers.map((tier) => (
-              <div key={tier.badge} className="tier-card">
-                <span className="tier-badge">{tier.badge}</span>
-                <h4>{tier.heading}</h4>
-                <p>{tier.description}</p>
-              </div>
-            ))}
-          </div>
+          {!brandsLoaded ? (
+            <p className="wholesale-tier-status" role="status">
+              Loading the current brand rates…
+            </p>
+          ) : liveBrands.length > 0 ? (
+            <div className="wholesale-live-tier-grid">
+              {liveBrands.map((brand) => (
+                <article key={brand.id} className="live-tier-card">
+                  <span className="tier-badge">{brand.collection || 'Brand'}</span>
+                  <h3>{brand.name}</h3>
+                  <p className="live-tier-moq">
+                    MOQ {brand.tiers[0].minQuantity} pieces
+                  </p>
+                  <ul className="live-tier-rates">
+                    {brand.tiers.map((tier, index) => (
+                      <li
+                        key={`${brand.id}-${tier.minQuantity}`}
+                        className={index === brand.tiers.length - 1 ? 'is-best' : undefined}
+                      >
+                        <span>{tier.minQuantity}+ pieces</span>
+                        <strong>
+                          {formatPrice(tier.price)}
+                          <small>/piece</small>
+                        </strong>
+                      </li>
+                    ))}
+                  </ul>
+                  {brand.slug && (
+                    <Link to={`/brand/${brand.slug}`} className="wholesale-link">
+                      Shop {brand.name} -&gt;
+                    </Link>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="wholesale-tier-status">
+              <p>Live brand rates are temporarily unavailable.</p>
+              <a href="#wholesale-enquiry">Request current tiers and a written quote</a>
+            </div>
+          )}
         </section>
 
         <section className="wholesale-process">
@@ -126,6 +216,8 @@ export default function Wholesale() {
             ))}
           </div>
         </section>
+
+        <WholesaleEnquiryForm initialProduct={prefilledProduct} />
 
         <section className="wholesale-overview">
           <div className="wholesale-intro-card">
@@ -176,8 +268,21 @@ export default function Wholesale() {
             <Link to="/hikma-exports">Learn about Hikma Exports and Hikma Perfumes -&gt;</Link>
           </p>
           <div className="wholesale-buttons">
-            <Link to="/contact" className="btn btn-primary">Submit Wholesale Enquiry</Link>
-            <Link to="/shop" className="btn btn-secondary">Browse Complete Catalogue</Link>
+            <a href="#wholesale-enquiry" className="btn btn-primary">
+              Start a wholesale enquiry
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              className="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackWhatsAppLead('wholesale-contact')}
+            >
+              WhatsApp the trade desk
+            </a>
+            <Link to="/shop" className="btn btn-outline">
+              Browse the catalogue
+            </Link>
           </div>
         </section>
       </div>

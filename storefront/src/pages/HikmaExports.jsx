@@ -78,7 +78,7 @@ export default function HikmaExports() {
         <section className="hikma-related" aria-labelledby="hikma-related-heading">
           <h2 id="hikma-related-heading">Explore the Hikma Exports Group</h2>
           <div className="hikma-related-links">
-            <Link to="/about">About Arees & Dahab</Link>
+            <Link to="/about">About Arees and Dahab</Link>
             <Link to="/brand/arees">Arees Perfumes</Link>
             <Link to="/brand/dahab">Dahab</Link>
             <Link to="/wholesale">Wholesale Attars</Link>

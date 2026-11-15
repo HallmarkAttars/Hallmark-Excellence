@@ -354,7 +354,7 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
     name: 'Hikma Exports',
     alternateName: ['Hikma Perfumes'],
     description:
-      'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of Arees & Dahab. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
+      'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of the separate Arees and Dahab fragrance brands. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
     url: `${origin}/hikma-exports`,
     logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
     email: BUSINESS.email,
@@ -417,7 +417,7 @@ export function buildWholesaleServiceSchema({ origin = CANONICAL_ORIGIN } = {}) 
     name: 'Wholesale Attars & Perfume Oils Supply',
     serviceType: 'Wholesale attar and perfume oil supply',
     description:
-      'Wholesale supply of alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor and perfume packaging from Hikma Exports in Chennai, for retailers, perfumers, distributors and export buyers. Loose attar and fragrance oil orders start at 100 g; Arees and Dahab branded packs start at 60 pieces across a combined branded order.',
+      'Wholesale supply of alcohol-free attars, oud and fragrance oils, roll-on perfumes, bakhoor and perfume packaging from Hikma Exports in Chennai, for retailers, perfumers, distributors and export buyers. Loose attar and fragrance oil orders start at 100 g; the separate Arees and Dahab brands start from 6 pieces with live per-brand tiers.',
     url: `${origin}/wholesale`,
     provider: {
       '@type': 'Organization',
@@ -756,7 +756,7 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN, pr
     description = 'Source concentrated fragrance oils and attar bases in bulk from Hikma Exports in Mannadi, Chennai. Explore 290+ alcohol-free scents for retailers, perfumers and export buyers.'
     introDesc = 'Explore concentrated fragrance oils and traditional attar bases supplied by Hikma Exports from Mannadi, George Town, Chennai. The range covers floral, woody, musky, amber and oud-led profiles for retailers, perfumers, distributors and export buyers. Share the scents, pack sizes and quantities you need for a wholesale quotation.'
   } else if (lowerSlug === '1') {
-    title = 'Wholesale Roll-On Attars in Chennai | Arees & Dahab | Hikma Exports'
+    title = 'Wholesale Roll-On Attars in Chennai | Arees and Dahab | Hikma Exports'
     description = 'Source alcohol-free 6ml and 8ml roll-on attars in bulk from Arees Perfumes and Dahab. Wholesale and export enquiries are handled by Hikma Exports in Mannadi, Chennai.'
     introDesc = 'Browse ready-to-retail roll-on attars from the Arees and Dahab collections, supplied wholesale by Hikma Exports in Chennai. These alcohol-free fragrance oils are packed for retail shelves, gifting and distribution. Share your preferred scents, pack sizes and quantities to request wholesale pricing.'
   } else if (lowerSlug.includes('fragrance') || lowerSlug.includes('oil')) {
@@ -878,7 +878,7 @@ export function buildWholesaleSeo({ origin = CANONICAL_ORIGIN } = {}) {
   return {
     title: 'Perfume & Attar Wholesale in Chennai | Hikma Exports',
     description:
-      'Perfume and attar wholesale in Chennai from Hikma Exports. Loose oils from 100 g, Arees and Dahab branded packs from 60 pieces, private label and export support. GST and IEC available.',
+      'Perfume and attar wholesale in Chennai from Hikma Exports. Loose oils from 100 g, separate Arees and Dahab brand tiers from 6 pieces, private label and export support. GST and IEC available.',
     canonical: '/wholesale',
     image: DEFAULT_OG_IMAGE,
     type: 'website',

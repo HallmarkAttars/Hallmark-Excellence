@@ -1,0 +1,204 @@
+.wholesale-enquiry {
+  scroll-margin-top: calc(var(--header-h, 80px) + 16px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+}
+
+.wholesale-enquiry-head {
+  max-width: 720px;
+  margin: 0 auto 24px;
+  text-align: center;
+}
+
+.wholesale-enquiry-kicker {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: var(--gold-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wholesale-enquiry-head h2,
+.wholesale-enquiry-success h2 {
+  margin: 0 0 10px;
+  color: var(--text-heading);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  line-height: 1.25;
+}
+
+.wholesale-enquiry-head p,
+.wholesale-enquiry-success p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.wholesale-enquiry-form {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.wholesale-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.wholesale-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.wholesale-form-grid .wholesale-field {
+  margin-bottom: 0;
+}
+
+.wholesale-field > span:first-child {
+  color: var(--text-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.wholesale-field input,
+.wholesale-field select,
+.wholesale-field textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid var(--line-strong, rgba(29, 25, 20, 0.45));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-heading);
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.wholesale-field textarea {
+  min-height: 104px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.wholesale-field input:focus,
+.wholesale-field select:focus,
+.wholesale-field textarea:focus {
+  outline: 2px solid var(--gold-deep);
+  outline-offset: 1px;
+  border-color: var(--gold-deep);
+}
+
+.wholesale-field input[aria-invalid='true'],
+.wholesale-field textarea[aria-invalid='true'] {
+  border-color: #a12626;
+}
+
+.wholesale-field-hint {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.wholesale-field-error {
+  color: #a12626;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.wholesale-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.wholesale-form-alert {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(161, 38, 38, 0.35);
+  border-radius: 8px;
+  background: #fdf1f1;
+  color: #8c1f1f;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.wholesale-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.wholesale-form-actions .btn {
+  min-height: 46px;
+  padding-inline: 24px;
+}
+
+.wholesale-form-actions .btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.wholesale-form-whatsapp {
+  color: var(--gold-deep);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.wholesale-enquiry-success {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 4px 0;
+  text-align: center;
+}
+
+.wholesale-enquiry-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+@media (max-width: 640px) {
+  .wholesale-enquiry {
+    padding: 24px 16px;
+  }
+
+  .wholesale-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .wholesale-form-grid .wholesale-field {
+    margin-bottom: 16px;
+  }
+
+  .wholesale-form-actions,
+  .wholesale-enquiry-success-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wholesale-form-actions .btn,
+  .wholesale-enquiry-success-actions .btn {
+    width: 100%;
+  }
+
+  .wholesale-form-whatsapp {
+    text-align: center;
+  }
+}

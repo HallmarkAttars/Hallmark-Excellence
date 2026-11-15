@@ -667,7 +667,8 @@ describe('Schema.org JSON-LD Builders', () => {
       const seo = buildWholesaleSeo()
       expect(seo.title).toContain('Perfume & Attar Wholesale')
       expect(seo.description).toContain('100 g')
-      expect(seo.description).toContain('60 pieces')
+      expect(seo.description).toContain('6 pieces')
+      expect(seo.description).toContain('separate Arees and Dahab')
       expect(seo.canonical).toBe('/wholesale')
       expect(seo.schema.map((item) => item['@type'])).toEqual(
         expect.arrayContaining(['Service', 'FAQPage', 'BreadcrumbList'])
@@ -682,7 +683,8 @@ describe('Schema.org JSON-LD Builders', () => {
         expect.arrayContaining(['India', 'Singapore', 'United Arab Emirates', 'Maldives'])
       )
       expect(schema.description).toContain('100 g')
-      expect(schema.description).toContain('60 pieces')
+      expect(schema.description).toContain('6 pieces')
+      expect(schema.description).toContain('separate Arees and Dahab')
     })
   })
 

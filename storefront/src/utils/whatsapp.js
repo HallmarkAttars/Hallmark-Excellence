@@ -8,8 +8,17 @@ import { trackEvent } from './analytics'
 // The pre-filled message carries the buying intent up front so the wholesale
 // desk can answer with price lists and MOQ in the first reply. ASCII-safe
 // (hyphen, "I am") so it survives wa.me URL handling on all platforms.
-export const WHATSAPP_URL =
-  'https://wa.me/919840750467?text=Hello%20Arees%20Perfumes%20-%20I%20am%20interested%20in%20wholesale%2Fbulk%20attar%20supply%20via%20Hikma%20Exports.%20Please%20share%20the%20price%20list%20and%20MOQ.'
+export const WHATSAPP_NUMBER = '919840750467'
+
+export const DEFAULT_WHATSAPP_MESSAGE =
+  'Hello Arees Perfumes - I am interested in wholesale/bulk attar supply via Hikma Exports. Please share the price list and MOQ.'
+
+export function buildWhatsAppUrl(message = DEFAULT_WHATSAPP_MESSAGE) {
+  const text = String(message ?? '').trim() || DEFAULT_WHATSAPP_MESSAGE
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
+}
+
+export const WHATSAPP_URL = buildWhatsAppUrl()
 
 // GA4 generate_lead — opening a WhatsApp chat is the storefront's primary
 // wholesale/enquiry CTA (header, footer and product pages all route here).

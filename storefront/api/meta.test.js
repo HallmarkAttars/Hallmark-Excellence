@@ -145,8 +145,8 @@ describe('buildB2bBodyHtml', () => {
     expect(html).toContain('What to Include in Your Wholesale Enquiry')
     expect(html).toContain('What is the wholesale minimum order quantity?')
     expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100g - 10kg')
-    expect(html).toContain('<strong>Arees &amp; Dahab branded packs:</strong> Minimum 60 pieces')
-    expect(html).toContain('Private label')
+    expect(html).toContain('<strong>Branded Arees / Dahab packs:</strong> From 6 pieces, per brand')
+    expect(html).toContain('Private Label &amp; Event Orders')
     expect(html).toContain('GST-registered business with IEC')
   })
 
@@ -157,7 +157,7 @@ describe('buildB2bBodyHtml', () => {
     expect(html).toContain('What are the wholesale desk hours and lead time?')
     expect(html).toContain('Singapore, Malaysia, the UAE, Sri Lanka and the Maldives')
     expect(html).toContain('<strong>Loose attar / fragrance oil MOQ:</strong> 100g - 10kg')
-    expect(html).toContain('<strong>Arees &amp; Dahab branded packs:</strong> Minimum 60 pieces')
+    expect(html).toContain('<strong>Branded Arees / Dahab packs:</strong> From 6 pieces, per brand')
     expect(html).toContain('GST-registered business with IEC')
   })
 
@@ -171,7 +171,7 @@ describe('static body fallbacks', () => {
     const home = buildStaticBodyHtml('home')
     expect(home).toContain('<h2>Wholesale &amp; Export</h2>')
     expect(home).toContain('loose attar and fragrance oils from 100 g')
-    expect(home).toContain('branded Arees packs from 60 pieces')
+    expect(home).toContain('branded Arees and Dahab packs from 6 pieces per brand')
     expect(home).not.toContain('Arees Perfumes and Dahab')
 
     const southIndia = buildStaticBodyHtml('attar-perfume-shop-south-india')

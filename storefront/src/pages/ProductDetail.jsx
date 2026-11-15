@@ -22,9 +22,10 @@ import ProductGrid from '../components/product/ProductGrid'
 import SkeletonProductDetail from '../components/skeleton/SkeletonProductDetail'
 import SkeletonProductGrid from '../components/skeleton/SkeletonProductGrid'
 import SEO from '../components/seo/SEO'
-import { buildProductSeo, cleanProductName } from '../utils/seo'
+import { buildProductSeo, cleanProductName, productPath } from '../utils/seo'
 import { normalizeCategorySlug } from '../utils/categorySlug'
 import { brandPublicSlug } from '../utils/brandSlug'
+import { buildWholesaleQuotePath } from '../utils/wholesaleQuote'
 import { getFamilyLabel, getProductFamilies } from '../data/fragranceFamilies'
 import { isFragranceOilProduct } from '../utils/exactPieces'
 import './ProductDetail.css'
@@ -633,6 +634,17 @@ export default function ProductDetail({ onAddToCart }) {
   const productFamilies = getProductFamilies(product)
   const productFamilyLabels = productFamilies.map(getFamilyLabel)
   const seo = buildProductSeo(product, { variant: activeVariant })
+  const wholesaleQuantityText = exactPiecesMode
+    ? `${totalPieces} pieces`
+    : hasVariants && activeVariant
+      ? `${quantity} x ${variantLabel(activeVariant)}`
+      : `${quantity} units`
+  const wholesaleQuotePath = buildWholesaleQuotePath({
+    productName: displayName,
+    productUrl: productPath(product),
+    variantLabel: activeVariant ? variantLabel(activeVariant) : '',
+    quantityText: wholesaleQuantityText,
+  })
 
   return (
     <div className="container product-detail">
@@ -745,7 +757,8 @@ export default function ProductDetail({ onAddToCart }) {
           )}
 
           <p className="pd-wholesale-link">
-            Buying in bulk? <Link to="/wholesale">Request wholesale pricing</Link>.
+            Buying in bulk?{' '}
+            <Link to={wholesaleQuotePath}>Send this selection to our trade desk</Link>.
           </p>
 
           {/* Bulk-pricing card — brand-level, live, one source of truth.
@@ -809,6 +822,10 @@ export default function ProductDetail({ onAddToCart }) {
                   {brandTitle} {pieceWord(brandRemaining)} to unlock bulk price
                 </p>
               )}
+              <p className="pd-bulk-quote">
+                Need a different pack or private label?{' '}
+                <Link to={wholesaleQuotePath}>Request a quote for this item</Link>.
+              </p>
             </div>
           )}
 

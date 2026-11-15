@@ -72,7 +72,7 @@ export const CATEGORY_CONTENT = {
       {
         heading: 'Wholesale for Shops and Distributors',
         paragraphs: [
-          'Roll-on attars are supplied wholesale by Hikma Exports from Mannadi, Chennai. Branded packs start from 60 pieces with mixed scents available, and loose attar oil for refilling your own vials starts at 100 g. Share your counter mix and quantities for a formal quotation.',
+          'Roll-on attars are supplied wholesale by Hikma Exports from Mannadi, Chennai. Arees and Dahab are separate brands with their own minimums, starting from 6 pieces depending on the line; mixed scents are available. Loose attar oil for refilling your own vials starts at 100 g. Share your counter mix and quantities for a formal quotation.',
         ],
       },
     ],

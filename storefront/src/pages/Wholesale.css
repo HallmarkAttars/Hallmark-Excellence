@@ -8,6 +8,47 @@
   gap: 56px;
 }
 
+.wholesale-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.wholesale-hero-actions .btn {
+  min-height: 46px;
+  padding-inline: 22px;
+}
+
+.wholesale-trust-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: -24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wholesale-trust-row li {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.wholesale-trust-row strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--gold-deep);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .wholesale-overview .wholesale-intro-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -154,6 +195,108 @@
   line-height: 1.45;
 }
 
+.wholesale-live-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.live-tier-card {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.live-tier-card .tier-badge {
+  align-self: flex-start;
+}
+
+.live-tier-card h3 {
+  margin: 0 0 4px;
+  color: var(--text-heading);
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.live-tier-moq {
+  margin: 0 0 14px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.live-tier-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line-soft);
+}
+
+.live-tier-rates li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.live-tier-rates li.is-best {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.live-tier-rates strong {
+  color: var(--text-heading);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.live-tier-rates li.is-best strong {
+  color: var(--gold-deep);
+}
+
+.live-tier-rates small {
+  margin-left: 1px;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.live-tier-card .wholesale-link {
+  margin-top: auto;
+}
+
+.wholesale-tier-status {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.wholesale-tier-status p {
+  margin: 0 0 8px;
+}
+
+.wholesale-tier-status a {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
 .process-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -290,6 +433,11 @@
 }
 
 @media (max-width: 640px) {
+  .wholesale-trust-row {
+    grid-template-columns: 1fr;
+    margin-top: -32px;
+  }
+
   .wholesale-showcase {
     margin-top: 28px;
   }
@@ -297,4 +445,14 @@
   .wholesale-showcase figcaption {
     font-size: 0.8rem;
   }
+
+  .wholesale-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wholesale-hero-actions .btn {
+    width: 100%;
+  }
 }
+

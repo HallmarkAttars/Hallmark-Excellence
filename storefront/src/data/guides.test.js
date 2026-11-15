@@ -82,7 +82,7 @@ describe('guides dataset', () => {
     })
     expect(guide.sections.map((section) => section.heading)).toEqual(
       expect.arrayContaining([
-        'MOQs and Pack Sizes: 100g and 60 Pieces',
+        'MOQs and Pack Sizes: 100g and From 6 Pieces',
         'Export Documents and Chennai Logistics',
       ])
     )

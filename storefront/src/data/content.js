@@ -163,7 +163,7 @@ export const HOME_FAQS = [
     group: 'wholesale-export',
     question: 'Can I order wholesale or in bulk?',
     answer:
-      'Yes. Loose attar and fragrance oil orders start at 100 g and branded packs from 60 pieces, supplied from our Chennai wholesale desk. Share your scents, sizes and quantities for a formal quotation.',
+      'Yes. Loose attar and fragrance oil orders start at 100 g, and branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line. Share your scents, sizes and quantities for a formal quotation from our Chennai wholesale desk.',
   },
   {
     group: 'wholesale-export',
@@ -264,14 +264,14 @@ export const ABOUT = {
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees Perfumes is a Chennai fragrance house operating under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for customers, perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Arees Perfumes is a Chennai fragrance brand under Hikma Exports, operating alongside Dahab under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for customers, perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },
   hikma: {
     heading: 'Our Fragrance House',
     paragraphs: [
-      'Hallmark of Excellence brings together our retail fragrance house, wholesale supply and packaging expertise. Arees Perfumes is the customer-facing fragrance brand, focused on alcohol-free attars, oud oils, fragrance oils, bakhoor and roll-on perfumes.',
+      'Hallmark of Excellence brings together our retail fragrance houses, wholesale supply and packaging expertise. Arees Perfumes and Dahab are separate fragrance brands under Hikma Exports, focused on alcohol-free attars, oud oils, fragrance oils, bakhoor and roll-on perfumes.',
       'From 83 & 84, Moore Street, Mannadi, George Town, Chennai, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes, and perfume packaging to customers and trade partners across India.',
     ],
   },
@@ -320,10 +320,10 @@ export const HIKMA_EXPORTS = {
   eyebrow: 'Hikma Exports',
   title: 'Hikma Exports: Perfume Wholesaler & Exporter in Chennai',
   intro:
-    'Hikma Exports is the Chennai-based parent company of Arees & Dahab and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers in India and international markets.',
+    'Hikma Exports is the Chennai-based parent company of the separate Arees and Dahab fragrance brands and the fragrance house behind Hikma Perfumes. From Mannadi, George Town, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers in India and international markets.',
   quickFacts: [
     { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
-    { label: 'Arees & Dahab branded packs', value: 'Minimum 60 pieces' },
+    { label: 'Branded Arees / Dahab packs', value: 'From 6 pieces, per brand' },
     { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
     { label: 'Export', value: 'India and international markets' },
     { label: 'Private label', value: 'Own-brand, event and function orders' },
@@ -353,7 +353,7 @@ export const HIKMA_EXPORTS = {
     {
       heading: 'MOQ, Wholesale Desk Hours & Order Terms',
       paragraphs: [
-        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so buyers can mix the two brands within the same requirement.',
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands with their own minimums, starting from 6 pieces depending on the line. Each brand is priced against its own live tiers.',
         'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, pack sizes and destination.',
         'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
       ],
@@ -382,7 +382,7 @@ export const HIKMA_EXPORTS = {
     {
       heading: 'Arees Perfumes, Dahab & the Hikma Exports Group',
       paragraphs: [
-        'Hikma Exports is the parent company of Arees & Dahab. Arees Perfumes and Dahab are the group\'s retail fragrance brands, while Hikma Perfumes supports wholesale and trade supply.',
+        'Hikma Exports is the parent company of the separate Arees and Dahab fragrance brands. Arees Perfumes and Dahab are the group\'s retail fragrance brands, while Hikma Perfumes supports wholesale and trade supply.',
         'This structure keeps retail collections and bulk supply under one quality standard, with a single Chennai team handling fragrance development, packing and order coordination.',
       ],
     },
@@ -428,7 +428,7 @@ export const HIKMA_EXPORTS = {
     {
       question: 'What is Hikma Exports?',
       answer:
-        'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of Arees & Dahab. It trades as Hikma Perfumes and supplies attars, oud oils, fragrance oils, bakhoor and packaging from Mannadi, George Town.',
+        'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of the separate Arees and Dahab fragrance brands. It trades as Hikma Perfumes and supplies attars, oud oils, fragrance oils, bakhoor and packaging from Mannadi, George Town.',
     },
     {
       question: 'Is Hikma Perfumes the same company as Hikma Exports?',
@@ -443,7 +443,7 @@ export const HIKMA_EXPORTS = {
     {
       question: 'What is the minimum order quantity?',
       answer:
-        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement.',
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab have separate bulk rules, starting from 6 pieces depending on the brand and line. Each brand is priced independently.',
     },
     {
       question: 'What are the wholesale desk hours and lead time?',
@@ -491,11 +491,11 @@ export const WHOLESALE = {
   eyebrow: 'B2B & Commercial Supply',
   title: 'Perfume & Attar Wholesale in Chennai',
   intro:
-    'Hikma Exports supplies alcohol-free attars, concentrated fragrance oils, roll-on perfumes and perfume packaging to retailers, perfumers, distributors and export buyers from Mannadi, George Town, Chennai.',
+    'Hikma Exports supplies alcohol-free attars, concentrated fragrance oils, roll-on perfumes and perfume packaging through its separate Arees and Dahab fragrance brands to retailers, perfumers, distributors and export buyers from Mannadi, George Town, Chennai.',
   overviewHeading: 'Wholesale Perfume Supply from Chennai',
   overviewParagraphs: [
-    'Arees Perfumes supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, event buyers and boutique fragrance brands. Based in Mannadi, George Town, Chennai, and operating under Hallmark of Excellence and Hikma Exports, we combine traditional Arabian perfumery with commercial order support.',
-    'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement. Export orders are handled for buyers in India and international markets.',
+    'Hikma Exports, the parent company of the separate Arees and Dahab fragrance brands, supplies wholesale attars and bulk perfume oils to perfumers, retailers, gift shops, event buyers and boutique fragrance brands. Based in Mannadi, George Town, Chennai, the team combines traditional Arabian perfumery with commercial order support.',
+    'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands under Hikma Exports, each with its own bulk minimums and live per-brand tiers — minimum quantities start from 6 pieces depending on the line. Export orders are handled for buyers in India and international markets.',
   ],
   guideCta: {
     label: 'Read the 2027 wholesale attar sourcing guide',
@@ -503,17 +503,17 @@ export const WHOLESALE = {
   },
   quickFacts: [
     { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
-    { label: 'Arees & Dahab branded packs', value: 'Minimum 60 pieces' },
+    { label: 'Branded Arees / Dahab packs', value: 'From 6 pieces, per brand' },
+    { label: 'Bulk pricing', value: 'Live per-brand tiers' },
     { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
     { label: 'Export', value: 'India + Singapore, Malaysia, UAE, Sri Lanka, Maldives' },
-    { label: 'Private label', value: 'Own-brand, event and function orders' },
     { label: 'Business documents', value: 'GST-registered business with IEC' },
   ],
   productRange: [
     {
       title: 'Wholesale Roll-on Attars',
       description:
-        'Ready-to-retail 6ml and 8ml roll-on attar bottles under the Arees and Dahab collections. Branded packs start at 60 pieces across a combined order.',
+        'Ready-to-retail 6ml and 8ml roll-on attar bottles under the separate Arees and Dahab collections. Branded packs start from 6 pieces depending on the brand and line; each brand is priced separately.',
       links: [
         { label: 'View Roll-On Attars', to: '/categories/roll-on-attars' },
         { label: 'Explore Arees Wholesale', to: '/brand/arees' },
@@ -559,29 +559,12 @@ export const WHOLESALE = {
     caption:
       'Roll-on bottle formats: patti, 6ml/8ml, super patti, gold patti and colour bottles in 2ml–24ml.',
   },
-  tiers: [
-    {
-      badge: 'Starter Tier',
-      heading: '60 – 120 Pieces',
-      description: 'Ideal for independent perfume retailers, boutiques, and initial store stock.',
-    },
-    {
-      badge: 'Commercial Tier',
-      heading: '180 Pieces',
-      description: 'Optimised rates for growing perfume shops and regional distributors.',
-    },
-    {
-      badge: 'Master Wholesale',
-      heading: '216+ Pieces',
-      description: 'Our lowest per-piece wholesale price for volume distributors and bulk trading partners.',
-    },
-  ],
   tiersNote:
-    'Branded Arees/Dahab packs start at 60 pieces combined. Loose attar and fragrance oil orders start at 100 g. Volume pricing and dispatch lead time are confirmed in the quotation.',
+    'Rates below are live per-brand tiers from the catalogue. Arees and Dahab are separate brands and do not combine toward one tier; minimums start from 6 pieces depending on the line. Loose attar and fragrance oil orders start at 100 g. Private-label and larger requirements are quoted individually.',
   process: [
     {
       title: 'Browse Real Catalogue',
-      description: 'Explore all 370+ active products with live pricing and variant configurations.',
+      description: 'Explore the live catalogue with current pricing and variant configurations.',
     },
     {
       title: 'Assemble Order Request',
@@ -607,7 +590,7 @@ export const WHOLESALE = {
     {
       heading: 'MOQ, Wholesale Desk Hours & Order Terms',
       paragraphs: [
-        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order.',
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands with separate bulk rules; minimum quantities start from 6 pieces depending on the line.',
         'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, quantities and destination.',
         'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
       ],
@@ -661,7 +644,7 @@ export const WHOLESALE = {
     {
       question: 'What is the wholesale minimum order quantity?',
       answer:
-        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order, so the two brands can be mixed within the same requirement.',
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab have separate bulk rules, starting from 6 pieces depending on the brand and line. Each brand is priced independently.',
     },
     {
       question: 'What are the wholesale desk hours and lead time?',
@@ -740,7 +723,7 @@ export const SOUTH_INDIA = {
     {
       title: 'Wholesale MOQ & Export Support',
       description:
-        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab branded packs start at 60 pieces across a combined branded order. Export orders are handled for buyers in India and markets including Singapore, Malaysia, the UAE, Sri Lanka and the Maldives.',
+        'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands with their own bulk minimums, starting from 6 pieces depending on the line. Export orders are handled for buyers in India and markets including Singapore, Malaysia, the UAE, Sri Lanka and the Maldives.',
     },
     {
       title: 'Private Label for Events & Functions',
@@ -797,7 +780,7 @@ export const SOUTH_INDIA = {
     {
       question: 'Do you sell attar wholesale in Chennai?',
       answer:
-        'Yes. Loose attar and fragrance oil orders start at 100 g, and branded Arees and Dahab packs start at 60 pieces across a combined order. Wholesale and export enquiries are handled by Hikma Exports from the same Chennai address.',
+        'Yes. Loose attar and fragrance oil orders start at 100 g, and branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line. Wholesale and export enquiries are handled by Hikma Exports from the same Chennai address.',
     },
     {
       question: 'Do you deliver attars across South India?',
@@ -894,7 +877,7 @@ export const FOOTER = {
       ],
     },
   ],
-  copyright: `© ${new Date().getFullYear()} Hikma Exports (Arees & Dahab). All rights reserved.`,
+  copyright: `© ${new Date().getFullYear()} Hikma Exports (Arees and Dahab brands). All rights reserved.`,
 }
 
 // --------------------------------------------------------------------------

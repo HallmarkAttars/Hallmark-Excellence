@@ -6,6 +6,7 @@ import { displayProductName } from '../../utils/productName'
 import { getStockStatus, isProductInStock } from '../../utils/stock'
 import { productPath } from '../../utils/seo'
 import { getDefaultVariant, getDisplayPrice } from '../../utils/productPricing'
+import { buildWholesaleQuotePath } from '../../utils/wholesaleQuote'
 import { getProductById } from '../../services/mockApi'
 import { useCart } from '../../context/CartContext'
 import { useToast } from '../../context/ToastContext'
@@ -108,6 +109,13 @@ export default function QuickView({ product, onClose, onNavigate }) {
     (v.quantity_value != null && v.quantity_unit
       ? `${v.quantity_value} ${v.quantity_unit}`
       : '')
+
+  const wholesaleQuotePath = buildWholesaleQuotePath({
+    productName: displayProductName(effectiveProduct),
+    productUrl: productPath(product),
+    variantLabel: activeVariant ? variantLabel(activeVariant) : '',
+    quantityText: activeVariant ? `1 x ${variantLabel(activeVariant)}` : '1 unit',
+  })
 
   // Close on Escape + lock body scroll while the modal is open.
   // Focus moves into the dialog; returning to the trigger on close.
@@ -277,6 +285,14 @@ export default function QuickView({ product, onClose, onNavigate }) {
             onClick={handleViewDetails}
           >
             View Full Details →
+          </Link>
+
+          <Link
+            to={wholesaleQuotePath}
+            className="quickview-quote-link"
+            onClick={handleViewDetails}
+          >
+            Request a wholesale quote for this item →
           </Link>
         </div>
       </div>

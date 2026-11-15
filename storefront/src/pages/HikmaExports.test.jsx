@@ -23,7 +23,7 @@ describe('HikmaExports page', () => {
     expect(screen.getByRole('link', { name: /Wholesale Enquiry/i }).getAttribute('href')).toBe('/wholesale')
     expect(screen.getByRole('heading', { name: /Hikma Exports FAQs/i })).toBeTruthy()
     expect(screen.getByText('100g - 10kg')).toBeTruthy()
-    expect(screen.getByText('Minimum 60 pieces')).toBeTruthy()
+    expect(screen.getByText('From 6 pieces, per brand')).toBeTruthy()
     expect(screen.getByText('GST-registered business with IEC')).toBeTruthy()
   })
 })

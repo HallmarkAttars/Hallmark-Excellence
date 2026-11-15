@@ -97,7 +97,7 @@ export default function HomeFaqs({ products }) {
           <h3>Wholesale &amp; Bulk Supply</h3>
           <p>
             Retailers, perfumers and gift shops: loose attar and fragrance oils from 100 g, branded
-            Arees packs from 60 pieces — supplied from our Chennai wholesale desk.
+            Arees and Dahab packs from 6 pieces per brand — supplied from our Chennai wholesale desk.
           </p>
           <div className="home-faqs-wholesale-links">
             <Link className="home-faqs-wholesale-btn" to="/wholesale">Wholesale enquiry</Link>

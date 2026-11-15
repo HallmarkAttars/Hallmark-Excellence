@@ -31,6 +31,10 @@
   --charcoal-soft: #5F584E;  /* secondary text */
   --ink: #1D1914;
   --white: #FFFFFF;
+  --surface: #FFFFFF;        /* shared page/section surface */
+  --text-muted: #5F584E;     /* shared secondary text */
+  --text-heading: #1D1914;   /* shared heading text */
+  --gold-soft: #F1E4CC;      /* soft gold fill for badges */
   --stage: #FAF9F6;          /* product photo stage (near-white warm) */
   --footer: #191713;         /* deep warm black/brown footer */
 

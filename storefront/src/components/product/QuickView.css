@@ -335,6 +335,16 @@
 }
 .quickview-details-link:hover { color: var(--charcoal); border-color: var(--gold); }
 
+.quickview-quote-link {
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--charcoal-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.quickview-quote-link:hover { color: var(--gold-deep); }
+
 /* ---------- Mobile: stack media above info ---------- */
 @media (max-width: 767px) {
   .quickview-backdrop { padding: 12px; align-items: center; }

@@ -249,7 +249,7 @@ export function buildB2bBodyHtml(slug) {
 <section><h2>${escapeHtml(WHOLESALE.overviewHeading)}</h2>${renderParagraphs(WHOLESALE.overviewParagraphs)}</section>
 ${renderQuickFacts(WHOLESALE.quickFacts)}
 <section><h2>Our Wholesale Product Range</h2>${WHOLESALE.productRange.map((item) => `<article><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.description)}</p><p>${renderLinks(item.links)}</p></article>`).join('')}</section>
-<section><h2>Transparent Bulk Quantity Tiers</h2><p>${escapeHtml(WHOLESALE.tiersNote)}</p>${WHOLESALE.tiers.map((tier) => `<article><h3>${escapeHtml(tier.heading)}</h3><p>${escapeHtml(tier.description)}</p></article>`).join('')}</section>
+<section><h2>Transparent Bulk Quantity Tiers</h2><p>${escapeHtml(WHOLESALE.tiersNote)}</p></section>
 <section><h2>How Wholesale Ordering Works</h2>${WHOLESALE.process.map((step) => `<article><h3>${escapeHtml(step.title)}</h3><p>${escapeHtml(step.description)}</p></article>`).join('')}</section>
 ${renderSections(WHOLESALE.sections)}
 <section><h2>What to Include in Your Wholesale Enquiry</h2><ul>${WHOLESALE.buyerChecklist.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>
@@ -318,7 +318,7 @@ ${priceLine}
 <section><h2>Shop Attars, Oud &amp; Fragrance Oils</h2><p>Browse alcohol-free attars and concentrated perfume oils from Arees Perfumes.</p><p><a href="/shop">Shop all attars</a> <a href="/categories">Explore categories</a> <a href="/brands">Our brands</a></p></section>
 <section><h2>Shop by Category</h2>${renderCategoryLinks()}</section>
 <section><h2>Shop by Brand</h2>${renderBrandLinks()}</section>
-<section><h2>Wholesale &amp; Export</h2><p>Our Chennai wholesale desk supplies loose attar and fragrance oils from 100 g, branded Arees packs from 60 pieces, private-label orders and quotation-based export support.</p><p><a href="/wholesale">Wholesale enquiry</a></p></section>
+<section><h2>Wholesale &amp; Export</h2><p>Our Chennai wholesale desk supplies loose attar and fragrance oils from 100 g, branded Arees and Dahab packs from 6 pieces per brand, private-label orders and quotation-based export support.</p><p><a href="/wholesale">Wholesale enquiry</a></p></section>
 <section><h2>Fragrance Guides</h2><p>Practical guides to choosing, storing and sourcing attars and perfume oils.</p><p><a href="/guides">Read the guides</a></p></section>
 <section><h2>Frequently Asked Questions</h2>${renderFaqs(HOME_FAQS)}</section>
 <p><a href="/contact">Contact Arees Perfumes</a></p>

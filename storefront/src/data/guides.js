@@ -806,7 +806,7 @@ export const GUIDES = [
         heading: 'What to Check Before Buying',
         paragraphs: [
           'Check the cap seals firmly (pocket carry lives and dies by the cap), that the ball rolls smoothly without flooding, and that the vial is filled evenly. Ask which family the scent belongs to and try it for a day. Price should match the material: everyday florals and musks cost less, oud-led blends more.',
-          'For shops: branded roll-on packs are supplied wholesale from 60 pieces via Hikma Exports, with mixed-scent packs available so a counter can offer variety without overstocking a single scent.',
+          'For shops: branded roll-on packs are supplied wholesale from 6 pieces depending on the brand and line via Hikma Exports, with mixed-scent packs available so a counter can offer variety without overstocking a single scent.',
         ],
       },
     ],
@@ -856,10 +856,10 @@ export const GUIDES = [
         ],
       },
       {
-        heading: 'MOQs and Pack Sizes: 100g and 60 Pieces',
+        heading: 'MOQs and Pack Sizes: 100g and From 6 Pieces',
         paragraphs: [
-          'At Hallmark of Excellence, loose attar and fragrance oil orders start at 100g and can move up in weight. Branded Arees Perfumes packs start at 60 pieces across a combined branded order, which lets a retailer test several scents without committing to 60 pieces of one fragrance.',
-          'Ask how mixed orders are priced. A combined order can lower the risk of dead stock, but the quotation should still show the quantity and unit price for each scent or pack. For private label, the minimum depends on the bottle, cap, label and artwork, so confirm those details before comparing quotes.',
+          'At Hallmark of Excellence, loose attar and fragrance oil orders start at 100g and can move up in weight. Branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line, which lets a retailer test several scents without committing to a large single-fragrance run.',
+          'Ask how mixed orders are priced. Each brand and line has its own bulk rule, but a mixed order can lower the risk of dead stock; the quotation should still show the quantity and unit price for each scent or pack. For private label, the minimum depends on the bottle, cap, label and artwork, so confirm those details before comparing quotes.',
           'Do not compare a 100g loose oil price with a 6ml retail pack price. Calculate the cost per finished unit, including the bottle, cap, label, packing and freight. That is the number that decides your margin.',
         ],
       },
@@ -907,12 +907,12 @@ export const GUIDES = [
       {
         question: 'What is the minimum order for wholesale attar?',
         answer:
-          'Loose attar and fragrance oil orders start at 100g. Branded Arees Perfumes packs start at 60 pieces across a combined branded order. Private label minimums depend on the bottle, cap, label and artwork.',
+          'Loose attar and fragrance oil orders start at 100g. Branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line. Private label minimums depend on the bottle, cap, label and artwork.',
       },
       {
-        question: 'Can I mix scents in a 60-piece wholesale order?',
+        question: 'Can I mix scents in a wholesale order?',
         answer:
-          'Yes, the minimum applies across a combined branded order, so you can test several scents instead of committing to one. Confirm the exact mix and unit prices in the quotation.',
+          'Yes. You can mix scents within a brand and line, and each brand has its own minimum, starting from 6 pieces depending on the line. Confirm the exact mix and unit prices in the quotation.',
       },
       {
         question: 'Do you supply private label attar and perfume oil?',
