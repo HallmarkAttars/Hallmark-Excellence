@@ -161,9 +161,8 @@ export const NAV_LINKS = [
 // --------------------------------------------------------------------------
 export const HERO = {
   eyebrow: 'THE ART OF FINE FRAGRANCE',
-  title: ['Attars &', 'Fragrance Oils', 'from Chennai'],
-  subtitle:
-    'Alcohol-free attars, oud and perfume oils, handcrafted in Chennai and delivered across India.',
+  title: ['YOUR SCENT,', 'YOUR SIGNATURE'],
+  subtitle: 'Discover fragrances that define your beauty',
   primaryCta: { label: 'Shop the Collection', to: '/shop' },
   secondaryCta: { label: 'Explore Attars', to: '/categories' },
 }
