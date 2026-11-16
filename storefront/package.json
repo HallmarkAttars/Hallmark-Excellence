@@ -13,6 +13,7 @@
     "hero:graphics": "node scripts/generate-hero-graphics.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "react": "^18.3.1",
