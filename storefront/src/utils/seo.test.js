@@ -587,6 +587,18 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.description.length).toBeLessThanOrEqual(160)
     })
 
+    it('ends a truncated product snippet at a complete sentence when one fits', () => {
+      const seo = buildProductSeo({
+        ...product,
+        name: 'Sumaiya',
+        description:
+          'Sumaiya is a soft floral roll-on attar with rose, jasmine and a clean musk finish. This attar is a practical choice for gifting, travel and everyday fragrance wear. It can be worn alone or layered with other attars to build a personal signature. Supplied in Dahab 6ml roll-on packs for retail, gifting and wholesale orders across India.',
+      })
+      expect(seo.description).toContain('clean musk finish.')
+      expect(seo.description).not.toContain('This attar is…')
+      expect(seo.description.length).toBeLessThanOrEqual(160)
+    })
+
     it('adds the canonical product URL to Product schema', () => {
       const seo = buildProductSeo(product)
       expect(seo.schema[0].url).toBe('https://www.areesperfumes.in/product/p-201')
@@ -692,10 +704,10 @@ describe('Schema.org JSON-LD Builders', () => {
       const arees = buildBrandSeo({ name: 'Arees 8ml', slug: 'arees' }, 'arees')
       const dahab = buildBrandSeo({ name: 'Dahab 6ml', slug: 'dahab' }, 'dahab')
 
-      expect(arees.brandName).toBe('Arees Perfumes')
+      expect(arees.brandName).toBe('Arees')
       expect(arees.title).toBe('Arees Perfumes | Attars, Oud & Perfume Oils')
       expect(arees.description.length).toBeLessThanOrEqual(160)
-      expect(dahab.brandName).toBe('Dahab Attars')
+      expect(dahab.brandName).toBe('Dahab')
       expect(dahab.title.length).toBeLessThanOrEqual(60)
       expect(dahab.description.length).toBeLessThanOrEqual(160)
     })

@@ -2,8 +2,8 @@ import { brandPublicSlug } from './brandSlug.js'
 
 const BRAND_COPY = {
   arees: {
-    name: 'Arees Perfumes',
-    heading: 'Arees Perfumes & Attars',
+    name: 'Arees',
+    heading: 'Arees',
     label: 'Signature Arees Collection',
     intro:
       'Discover the complete Arees Perfumes collection — authentic, alcohol-free attars, oud, musk and traditional fragrance oils crafted with heritage in Chennai.',
@@ -12,9 +12,9 @@ const BRAND_COPY = {
       'Discover Arees and Arees Perfumes: alcohol-free attars, musk, oud and concentrated fragrance oils crafted in Chennai. Retail and wholesale across India.',
   },
   dahab: {
-    name: 'Dahab Attars',
-    heading: 'Dahab Perfumes & Dahab Attars',
-    label: 'Dahab Perfumes & Attars Collection',
+    name: 'Dahab',
+    heading: 'Dahab',
+    label: 'Dahab Attars Collection',
     intro:
       'Authentic Dahab Perfumes and Dahab Attars — concentrated, 100% alcohol-free fragrance oils known for their rich projection, enduring sillage, and exquisite oriental character.',
     title: 'Dahab Attars | Alcohol-Free Perfume Oils | Chennai',
@@ -23,7 +23,7 @@ const BRAND_COPY = {
   },
   'arees-luxury': {
     name: 'Arees Luxury',
-    heading: 'Arees Luxury Perfumes',
+    heading: 'Arees Luxury',
     label: 'Artisanal Arees Luxury Collection',
     intro:
       'The pinnacle of royal oriental perfumery — Arees Luxury Perfumes features vintage oud, precious amber, velvety rose, and signature musk formulations crafted for true connoisseurs.',
@@ -43,7 +43,7 @@ const BRAND_COPY = {
   },
   'arees-12ml': {
     name: 'Arees 12ml',
-    heading: 'Arees 12ml Perfumes',
+    heading: 'Arees 12ml',
     label: 'Arees 12ml Collection',
     intro:
       'Discover the Arees 12ml collection of alcohol-free attars and concentrated perfume oils from Arees Perfumes in Chennai.',

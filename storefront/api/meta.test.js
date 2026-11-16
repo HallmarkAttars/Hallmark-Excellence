@@ -247,8 +247,8 @@ describe('static body fallbacks', () => {
     expect(html).toContain('Dahab is a golden, floral attar collection')
     expect(html).toContain('href="/product/dahab-rose"')
     expect(html).toContain('href="/categories/roll-on-attars"')
-    expect(html).toContain('<h1>Dahab Perfumes &amp; Dahab Attars</h1>')
-    expect(html).toContain('Products by Dahab Attars')
+    expect(html).toContain('<h1>Dahab</h1>')
+    expect(html).toContain('Products by Dahab')
     expect(html).not.toContain('<h1>Dahab 6ml</h1>')
   })
 
@@ -261,8 +261,8 @@ describe('static body fallbacks', () => {
       'arees',
       [{ id: 'p-1', name: 'Pink Musk', slug: 'pink-musk' }]
     )
-    expect(html).toContain('<h1>Arees Perfumes &amp; Attars</h1>')
-    expect(html).toContain('Products by Arees Perfumes')
+    expect(html).toContain('<h1>Arees</h1>')
+    expect(html).toContain('Products by Arees')
     expect(html).not.toContain('<h1>Arees 8ml</h1>')
   })
 })

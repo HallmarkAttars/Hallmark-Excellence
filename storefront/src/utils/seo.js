@@ -686,6 +686,10 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   const truncateWords = (value, maxLength) => {
     const text = String(value ?? '').replace(/\s+/g, ' ').trim()
     if (text.length <= maxLength) return text
+    const sentenceEnd = text.slice(0, maxLength + 1).search(/[.!?](?=\s|$)/)
+    if (sentenceEnd >= Math.max(40, Math.floor(maxLength * 0.6))) {
+      return text.slice(0, sentenceEnd + 1)
+    }
     const cutoff = Math.max(0, maxLength - 1)
     const slice = text.slice(0, cutoff)
     const lastSpace = slice.lastIndexOf(' ')
