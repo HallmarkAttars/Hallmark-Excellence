@@ -43,8 +43,8 @@ function printTable(json) {
   const dims = json.rows[0].dimensionValues.length
   const mets = json.rows[0].metricValues.length
   const header =
-    dims.map((_, i) => `d${i}`.padEnd(30)).join('') +
-    mets.map((_, i) => `m${i}`.padStart(9)).join('')
+    Array.from({ length: dims }, (_, i) => `d${i}`.padEnd(30)).join('') +
+    Array.from({ length: mets }, (_, i) => `m${i}`.padStart(9)).join('')
   console.log(header)
   for (const row of json.rows) {
     console.log(
