@@ -1,4 +1,4 @@
-import { brandPublicSlug } from './brandSlug'
+import { brandPublicSlug } from './brandSlug.js'
 
 const BRAND_COPY = {
   arees: {
