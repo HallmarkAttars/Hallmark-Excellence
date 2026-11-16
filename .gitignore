@@ -33,6 +33,10 @@ Thumbs.db
 # --- Agents / Skills ---
 .agents/
 skills-lock.json
+.kilo/plans/
+
+# --- Generated sample invoices ---
+*.pdf
 
 # --- GSC automation: service-account key + generated reports ---
 tools/gsc/key.json
