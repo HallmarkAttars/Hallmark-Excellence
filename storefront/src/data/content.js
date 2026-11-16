@@ -58,7 +58,18 @@ export const WHOLESALE_CONTACT = {
   phoneDisplay: '+91 98407 50467',
   phoneTel: '+919840750467',
   email: 'hikmaexports@gmail.com',
-  hours: '9:00 AM – 9:30 PM',
+  hours: 'Monday - Saturday: 9:00 AM - 9:30 PM',
+  closed: 'Sunday: Closed',
+  hoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      opens: '09:00',
+      closes: '21:30',
+    },
+  ],
+  googleMapsUrl:
+    'https://www.google.com/maps/search/?api=1&query=HIKMA%20Exports%2C%2083%20%26%2084%20Moore%20Street%2C%20Mannadi%2C%20Chennai',
   address: ADDRESS,
   addressParts: ADDRESS_PARTS,
 }
@@ -117,7 +128,7 @@ export const BUSINESS = {
 // --------------------------------------------------------------------------
 export const INVOICE = {
   // Legal-style name printed on the invoice (copyright line).
-  companyName: 'Hallmark of Excellence',
+  companyName: 'Hikma Exports',
   // Premium header brand title (reference design) — stacked centred on the
   // invoice and used for the thank-you sign-off ("— Team Arees Perfumes").
   // Falls back to companyName when unset.
@@ -308,26 +319,32 @@ export const SOCIAL_STRIP = {
 // --------------------------------------------------------------------------
 export const ABOUT = {
   eyebrow: 'Our Story',
-  title: 'Arees Perfumes by Hallmark of Excellence',
+  title: 'Arees Perfumes by Hikma Exports',
   story: {
     heading: 'A Craft, Not a Category',
     paragraphs: [
-      'Arees Perfumes is a Chennai fragrance brand under Hikma Exports, operating alongside Dahab under Hallmark of Excellence. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for customers, perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Arees Perfumes is a Chennai fragrance brand under Hikma Exports, operating alongside its sister brand Dahab. With 30 years of experience in the perfumery industry, we offer attars, oud oils, fine fragrances, and packaging solutions for customers, perfumers, retailers, wholesalers, and fragrance businesses from Mannadi, George Town.',
+      'Hikma Exports is the parent company. Hallmark of Excellence is the trade name shown on our logo and is not a separate parent company.',
       'Our goal is simple: to bring all your perfumery needs together in one place.',
     ],
   },
   hikma: {
     heading: 'Our Fragrance House',
     paragraphs: [
-      'Hallmark of Excellence brings together our retail fragrance houses, wholesale supply and packaging expertise. Arees Perfumes and Dahab are separate fragrance brands under Hikma Exports, focused on alcohol-free attars, oud oils, fragrance oils, bakhoor and roll-on perfumes.',
+      'Hikma Exports brings together our retail fragrance houses, wholesale supply and packaging expertise. Arees Perfumes and Dahab are separate fragrance brands under Hikma Exports, focused on alcohol-free attars, oud oils, fragrance oils, bakhoor and roll-on perfumes.',
       'From 83 & 84, Moore Street, Mannadi, George Town, Chennai, we supply alcohol-free attars, oud oils, fragrance oils, bakhoor, roll-on perfumes, and perfume packaging to customers and trade partners across India.',
     ],
   },
   faqs: [
     {
-      question: 'Is Arees Perfumes part of Hallmark of Excellence?',
+      question: 'Who owns Arees Perfumes?',
       answer:
-        'Yes. Arees Perfumes is the retail fragrance house of Hallmark of Excellence in Chennai.',
+        'Arees Perfumes is a retail fragrance brand under Hikma Exports, the Chennai-based parent company. Dahab is its sister retail brand.',
+    },
+    {
+      question: 'What is Hallmark of Excellence?',
+      answer:
+        'Hallmark of Excellence is the trade name shown on the Arees Perfumes and Dahab logo. It is not a separate parent company; Hikma Exports is the parent company.',
     },
     {
       question: 'Where is Arees Perfumes located?',
@@ -372,7 +389,7 @@ export const HIKMA_EXPORTS = {
   quickFacts: [
     { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
     { label: 'Branded Arees / Dahab packs', value: 'From 6 pieces, per brand' },
-    { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
+    { label: 'Wholesale desk hours', value: 'Mon–Sat: 9:00 AM – 9:30 PM; Sun closed' },
     { label: 'Export', value: 'India and international markets' },
     { label: 'Private label', value: 'Own-brand, event and function orders' },
     { label: 'Business documents', value: 'GST-registered business with IEC' },
@@ -402,7 +419,7 @@ export const HIKMA_EXPORTS = {
       heading: 'MOQ, Wholesale Desk Hours & Order Terms',
       paragraphs: [
         'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands with their own minimums, starting from 6 pieces depending on the line. Each brand is priced against its own live tiers.',
-        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, pack sizes and destination.',
+        'The wholesale desk is available Monday to Saturday from 9:00 AM to 9:30 PM, and is closed on Sunday. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, pack sizes and destination.',
         'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
       ],
     },
@@ -484,6 +501,11 @@ export const HIKMA_EXPORTS = {
         'Hikma Perfumes is the fragrance identity used by Hikma Exports. Arees Perfumes and Dahab are the group\'s retail brands, while Hikma Perfumes supports wholesale and trade supply.',
     },
     {
+      question: 'What is Hallmark of Excellence?',
+      answer:
+        'Hallmark of Excellence is the trade name shown on the Arees Perfumes and Dahab logo. It is not a separate parent company; Hikma Exports is the parent company.',
+    },
+    {
       question: 'Where is Hikma Exports located?',
       answer:
         'Hikma Exports operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, the same location as Arees Perfumes and Dahab.',
@@ -496,7 +518,7 @@ export const HIKMA_EXPORTS = {
     {
       question: 'What are the wholesale desk hours and lead time?',
       answer:
-        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
+        'The wholesale desk is available Monday to Saturday from 9:00 AM to 9:30 PM, and is closed on Sunday. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
     },
     {
       question: 'Does Hikma Exports handle international export orders?',
@@ -529,7 +551,10 @@ export const HIKMA_EXPORTS = {
         'Yes. Hikma Exports is a GST-registered business with an Import Export Code (IEC). Registration numbers and destination-specific documents are shared with buyers as part of the quotation.',
     },
   ],
-  sameAs: [BUSINESS.socialByKey('instagram').href],
+  sameAs: [
+    WHOLESALE_CONTACT.googleMapsUrl,
+    BUSINESS.socialByKey('instagram').href,
+  ],
 }
 
 // --------------------------------------------------------------------------
@@ -553,7 +578,7 @@ export const WHOLESALE = {
     { label: 'Loose attar / fragrance oil MOQ', value: '100g - 10kg' },
     { label: 'Branded Arees / Dahab packs', value: 'From 6 pieces, per brand' },
     { label: 'Bulk pricing', value: 'Live per-brand tiers' },
-    { label: 'Wholesale desk hours', value: '9:00 AM – 9:30 PM' },
+    { label: 'Wholesale desk hours', value: 'Mon–Sat: 9:00 AM – 9:30 PM; Sun closed' },
     { label: 'Export', value: 'India + Singapore, Malaysia, UAE, Sri Lanka, Maldives' },
     { label: 'Business documents', value: 'GST-registered business with IEC' },
   ],
@@ -639,7 +664,7 @@ export const WHOLESALE = {
       heading: 'MOQ, Wholesale Desk Hours & Order Terms',
       paragraphs: [
         'Loose attar and fragrance oil orders start at 100 g. Arees and Dahab are separate brands with separate bulk rules; minimum quantities start from 6 pieces depending on the line.',
-        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, quantities and destination.',
+        'The wholesale desk is available Monday to Saturday from 9:00 AM to 9:30 PM, and is closed on Sunday. Production and dispatch lead time is confirmed in the quotation because it depends on the product mix, quantities and destination.',
         'GST invoicing is available for domestic orders. For export orders, IEC and destination-specific documentation are confirmed with the quotation.',
       ],
     },
@@ -697,7 +722,7 @@ export const WHOLESALE = {
     {
       question: 'What are the wholesale desk hours and lead time?',
       answer:
-        'The wholesale desk is available from 9:00 AM to 9:30 PM. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
+        'The wholesale desk is available Monday to Saturday from 9:00 AM to 9:30 PM, and is closed on Sunday. Production and dispatch lead time is confirmed in the written quotation because it depends on the product mix, quantities and destination.',
     },
     {
       question: 'Can I order both roll-on attars and fragrance oils in bulk?',
@@ -727,7 +752,7 @@ export const WHOLESALE = {
     {
       question: 'Where is the wholesale office?',
       answer:
-        'The wholesale desk operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001, and is available from 9:00 AM to 9:30 PM.',
+        'The wholesale desk operates from 83 & 84, Moore Street, Mannadi, George Town, Chennai, Tamil Nadu 600001. It is available Monday to Saturday from 9:00 AM to 9:30 PM and is closed on Sunday.',
     },
   ],
 }

@@ -82,8 +82,8 @@ export function invoiceFileName(orderId) {
   return `Invoice-${safe || 'ORDER'}.pdf`
 }
 
-// Brand name split into two centred lines — "Hallmark of Excellence" becomes
-// ["HALLMARK OF", "EXCELLENCE"] (uppercased, split at the last space). The
+// Company name split into two centred lines — "Hikma Exports" becomes
+// ["HIKMA", "EXPORTS"] (uppercased, split at the last space). The
 // luxury header renders these stacked under one another with the tagline
 // below. A single-word name simply returns one line.
 export function invoiceBrandLines(name) {

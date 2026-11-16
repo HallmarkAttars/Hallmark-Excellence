@@ -41,7 +41,7 @@ export function collectBrandHeroImages(brands = [], products = []) {
       src: optSrc,
       webp: optWebp,
       mobileWebp: mobileWebp || null,
-      alt: alt || (brandName ? `${brandName} — Hallmark Luxury Fragrance Collection` : 'Arees Perfumes — Hallmark luxury perfume and attar collection'),
+      alt: alt || (brandName ? `${brandName} — Signature Luxury Fragrance Collection` : 'Arees Perfumes — signature luxury perfume and attar collection'),
       brandName: brandName || null,
     })
   }
@@ -50,7 +50,7 @@ export function collectBrandHeroImages(brands = [], products = []) {
   addImage(
     IMAGES.heroBackground,
     IMAGES.heroBackgroundWebp,
-    'Arees Perfumes — Hallmark luxury perfume and attar collection',
+    'Arees Perfumes — signature luxury perfume and attar collection',
     'Arees Perfumes',
     IMAGES.heroBackgroundMobile
   )

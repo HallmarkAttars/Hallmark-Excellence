@@ -1,7 +1,7 @@
 // ============================================================================
 // Invoice PDF / print — premium A4 document generation (no screenshots).
 //
-// DESIGN: luxury attar invoice for Hallmark of Excellence.
+// DESIGN: luxury attar invoice for Hikma Exports.
 //   • Frame   — thin DOUBLE gold page border (outer line + inner hairline)
 //               with gold diamond accents at the four corners
 //   • Header  — logo (left) · two-line serif brand + tagline (centre) ·
@@ -38,7 +38,7 @@ import {
   invoiceBrandLines,
 } from '../../utils/invoice'
 
-// --- Palette (Hallmark Excellence luxury) ----------------------------------
+// --- Palette (Hikma luxury) -------------------------------------------------
 const INK = [23, 21, 18] // #171512
 const TEXT = [26, 24, 21] // #1A1815
 const MUTED = [111, 106, 99] // #6F6A63

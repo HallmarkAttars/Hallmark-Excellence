@@ -229,7 +229,7 @@ describe('company block — brand title vs legal name', () => {
     // Header brand + thank-you sign-off use the luxury title…
     expect(inv.company.brandTitle).toBe('Arees Perfumes')
     // …while the footer copyright keeps the legal company name.
-    expect(inv.company.name).toBe('Hallmark of Excellence')
+    expect(inv.company.name).toBe('Hikma Exports')
   })
 })
 

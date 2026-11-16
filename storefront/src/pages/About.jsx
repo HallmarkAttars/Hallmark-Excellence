@@ -17,8 +17,8 @@ export default function About() {
   return (
     <div>
       <SEO
-        title="About Arees Perfumes | Chennai Fragrance House"
-        description="Learn about Arees Perfumes, a Chennai fragrance house from Hallmark of Excellence, offering alcohol-free attars, oud and perfume oils for retail and wholesale."
+        title="About Arees Perfumes | Hikma Exports Chennai"
+        description="Learn about Arees Perfumes, a Chennai fragrance brand under Hikma Exports, offering alcohol-free attars, oud and perfume oils for retail and wholesale."
         canonical="/about"
         schema={aboutSchema}
       />

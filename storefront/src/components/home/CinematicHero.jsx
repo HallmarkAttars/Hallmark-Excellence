@@ -11,7 +11,7 @@ const DEFAULT_FADE_DURATION = 1800 // 1.8s smooth crossfade
 const MOTION_VARIANTS_COUNT = 6
 const MOBILE_MEDIA = '(max-width: 767px)'
 
-const fallbackAlt = 'Arees Perfumes — Hallmark luxury perfume and attar collection'
+const fallbackAlt = 'Arees Perfumes — signature luxury perfume and attar collection'
 
 /**
  * CinematicHero — Luxury perfume cinematic slideshow with Ken Burns camera

@@ -176,7 +176,7 @@ describe('static body fallbacks', () => {
 
     const southIndia = buildStaticBodyHtml('attar-perfume-shop-south-india')
     expect(southIndia).toContain('<h1>Attar Shop in Chennai &amp; South India</h1>')
-    expect(southIndia).toContain('Wholesale desk: 9:00 AM')
+    expect(southIndia).toContain('Wholesale desk: Monday - Saturday: 9:00 AM')
     expect(southIndia).toContain('Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, and Telangana')
   })
 

@@ -858,7 +858,7 @@ export const GUIDES = [
       {
         heading: 'MOQs and Pack Sizes: 100g and From 6 Pieces',
         paragraphs: [
-          'At Hallmark of Excellence, loose attar and fragrance oil orders start at 100g and can move up in weight. Branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line, which lets a retailer test several scents without committing to a large single-fragrance run.',
+          'At Hikma Exports, loose attar and fragrance oil orders start at 100g and can move up in weight. Branded Arees and Dahab packs have separate minimums starting from 6 pieces depending on the line, which lets a retailer test several scents without committing to a large single-fragrance run.',
           'Ask how mixed orders are priced. Each brand and line has its own bulk rule, but a mixed order can lower the risk of dead stock; the quotation should still show the quantity and unit price for each scent or pack. For private label, the minimum depends on the bottle, cap, label and artwork, so confirm those details before comparing quotes.',
           'Do not compare a 100g loose oil price with a 6ml retail pack price. Calculate the cost per finished unit, including the bottle, cap, label, packing and freight. That is the number that decides your margin.',
         ],

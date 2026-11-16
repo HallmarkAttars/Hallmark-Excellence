@@ -284,7 +284,10 @@ function localBusinessSameAs() {
 }
 
 function organizationSameAs() {
-  return [cleanProfileUrl(BUSINESS.socialByKey('instagram')?.href)].filter(Boolean)
+  return [
+    BUSINESS.googlePlaceUrl,
+    cleanProfileUrl(BUSINESS.socialByKey('instagram')?.href),
+  ].filter(Boolean)
 }
 
 // 1. Organization Schema
@@ -296,19 +299,21 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     name: 'Arees Perfumes',
     // Google Business Profile name is the ground truth for local entity
     // matching, so the GBP trading name is listed with the brand names.
-    alternateName: ['Arees Attars & Perfumes', 'Hallmark of Excellence'],
+    alternateName: ['Arees Attars & Perfumes'],
     description:
-      'Arees Perfumes is a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
+      'Arees Perfumes is the Chennai retail fragrance brand of Hikma Exports, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     url: origin,
     logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
     email: WHOLESALE_CONTACT.email,
     telephone: SHOP.phoneTel,
     parentOrganization: {
       '@type': 'Organization',
+      '@id': `${origin}/hikma-exports#organization`,
       name: 'Hikma Exports',
       alternateName: 'Hikma Perfumes',
       url: `${origin}/hikma-exports`,
       telephone: WHOLESALE_CONTACT.phoneTel,
+      sameAs: [WHOLESALE_CONTACT.googleMapsUrl],
     },
     contactPoint: {
       '@type': 'ContactPoint',
@@ -332,7 +337,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Arees Perfumes',
-    alternateName: 'Hallmark of Excellence',
+    alternateName: 'Arees Attars & Perfumes',
     url: origin,
     description: DEFAULT_DESCRIPTION,
     publisher: {
@@ -354,9 +359,9 @@ export function buildLocalBusinessSchema(origin = CANONICAL_ORIGIN) {
     '@type': 'LocalBusiness',
     '@id': `${origin}/#localbusiness`,
     name: SHOP.name,
-    alternateName: ['Arees Perfumes', 'Hallmark of Excellence'],
+    alternateName: ['Arees Perfumes'],
     description:
-      'Arees Attars & Perfumes is the Chennai retail shop of the Arees Perfumes fragrance house, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
+      'Arees Attars & Perfumes is the Chennai retail shop of Arees Perfumes, a fragrance brand under Hikma Exports, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     image: `${origin}/Hero.webp`,
     url: origin,
     telephone: SHOP.phoneTel,
@@ -400,7 +405,8 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
       '@type': 'PostalAddress',
       ...WHOLESALE_CONTACT.addressParts,
     },
-    hasMap: BUSINESS.mapDirectionsUrl,
+    hasMap: WHOLESALE_CONTACT.googleMapsUrl,
+    openingHoursSpecification: WHOLESALE_CONTACT.hoursSpecification,
     ...(links.length ? { sameAs: links } : {}),
     contactPoint: {
       '@type': 'ContactPoint',
@@ -416,14 +422,14 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
         closes: '21:30',
       },
     },
-    subOrganization: [
+    brand: [
       {
-        '@type': 'Organization',
+        '@type': 'Brand',
         name: 'Arees Perfumes',
         url: `${origin}/brand/arees`,
       },
       {
-        '@type': 'Organization',
+        '@type': 'Brand',
         name: 'Dahab',
         url: `${origin}/brand/dahab`,
       },
@@ -1063,9 +1069,9 @@ const STATIC_PAGE_SEO = {
   '/hikma-exports': buildHikmaExportsSeo(),
   '/guides': buildGuidesIndexSeo(),
   '/about': {
-    title: 'About Arees Perfumes | Chennai Fragrance House',
+    title: 'About Arees Perfumes | Hikma Exports Chennai',
     description:
-      'Learn about Arees Perfumes, a Chennai fragrance house from Hallmark of Excellence, offering alcohol-free attars, oud and perfume oils for retail and wholesale.',
+      'Learn about Arees Perfumes, a Chennai fragrance brand under Hikma Exports, offering alcohol-free attars, oud and perfume oils for retail and wholesale.',
     canonical: '/about',
     type: 'website',
     schema: [

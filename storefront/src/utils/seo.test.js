@@ -365,13 +365,18 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema['@context']).toBe('https://schema.org')
       expect(schema['@type']).toBe('Organization')
       expect(schema.name).toBe('Arees Perfumes')
-      expect(schema.alternateName).toContain('Hallmark of Excellence')
+      expect(schema.alternateName).toEqual(['Arees Attars & Perfumes'])
       expect(schema.parentOrganization.name).toBe('Hikma Exports')
-      expect(schema.description).toContain('Hallmark of Excellence')
+      expect(schema.parentOrganization['@id']).toBe(
+        'https://www.areesperfumes.in/hikma-exports#organization'
+      )
+      expect(schema.description).toContain('Hikma Exports')
+      expect(schema.description).not.toContain('Hallmark of Excellence')
       expect(schema.address.addressLocality).toBe('Chennai')
       expect(schema.url).toBe('https://www.areesperfumes.in')
       expect(schema.telephone).toBe('+919840078909')
       expect(schema.email).toBe('hikmaexports@gmail.com')
+      expect(schema.sameAs).toContain(BUSINESS.googlePlaceUrl)
       expect(schema.sameAs).toContain('https://www.instagram.com/aree___s')
       expect(schema.sameAs.join(' ')).not.toContain('linkedin')
     })
@@ -382,7 +387,7 @@ describe('Schema.org JSON-LD Builders', () => {
       const schema = buildWebSiteSchema()
       expect(schema['@type']).toBe('WebSite')
       expect(schema.name).toBe('Arees Perfumes')
-      expect(schema.alternateName).toBe('Hallmark of Excellence')
+      expect(schema.alternateName).toBe('Arees Attars & Perfumes')
       expect(schema.url).toBe('https://www.areesperfumes.in')
     })
   })
@@ -395,8 +400,8 @@ describe('Schema.org JSON-LD Builders', () => {
       // brand stays in alternateName so both entity names stay consistent
       // across GBP, the storefront and structured data.
       expect(schema.name).toBe('Arees Attars & Perfumes')
-      expect(schema.alternateName).toContain('Arees Perfumes')
-      expect(schema.alternateName).toContain('Hallmark of Excellence')
+      expect(schema.alternateName).toEqual(['Arees Perfumes'])
+      expect(schema.description).toContain('Hikma Exports')
       expect(schema.parentOrganization['@id']).toBe(
         'https://www.areesperfumes.in/#organization'
       )
@@ -765,10 +770,13 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.alternateName).toContain('Hikma Perfumes')
       expect(schema.address.streetAddress).toContain('Moore St')
       expect(schema.address.postalCode).toBe('600001')
-      expect(schema.subOrganization.map((item) => item.name)).toEqual(
+      expect(schema.brand.map((item) => item.name)).toEqual(
         expect.arrayContaining(['Arees Perfumes', 'Dahab'])
       )
       expect(schema.hasMap).toContain('google.com/maps')
+      expect(schema.hasMap).toContain('HIKMA%20Exports')
+      expect(schema.openingHoursSpecification[0].opens).toBe('09:00')
+      expect(schema.openingHoursSpecification[0].closes).toBe('21:30')
     })
 
     it('accepts a Google Business Profile URL as sameAs', () => {
@@ -787,6 +795,9 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.schema.map((item) => item['@type'])).toEqual(
         expect.arrayContaining(['Organization', 'FAQPage', 'BreadcrumbList'])
       )
+      expect(seo.schema[0].sameAs).toContain(
+        'https://www.google.com/maps/search/?api=1&query=HIKMA%20Exports%2C%2083%20%26%2084%20Moore%20Street%2C%20Mannadi%2C%20Chennai'
+      )
     })
 
     it('returns static descriptors for server-rendered routes', () => {
@@ -795,14 +806,14 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(buildStaticPageSeo('missing-page')).toBeNull()
     })
 
-    it('keeps retail static pages on Arees + Hallmark branding', () => {
+    it('uses Hikma Exports as the parent entity on retail static pages', () => {
       const about = buildStaticPageSeo('about')
       const contact = buildStaticPageSeo('contact')
       expect(about.title).toContain('Arees Perfumes')
-      expect(about.title).not.toContain('Hikma')
-      expect(about.description).toContain('Hallmark of Excellence')
+      expect(about.title).toContain('Hikma Exports')
+      expect(about.description).toContain('Hikma Exports')
+      expect(about.description).not.toContain('Hallmark of Excellence')
       expect(contact.title).toContain('Arees Perfumes')
-      expect(contact.title).not.toContain('Hikma')
     })
   })
 
