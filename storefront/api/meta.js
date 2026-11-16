@@ -28,6 +28,8 @@ import {
   buildFAQSchema,
 } from '../src/utils/seo.js'
 import { brandApiSlug, brandPublicSlug } from '../src/utils/brandSlug.js'
+import { brandDisplay } from '../src/utils/brandDisplay.js'
+import { cloudinarySrc, cloudinarySrcSet } from '../src/utils/productImage.js'
 import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SHOP, SOUTH_INDIA, WHOLESALE, WHOLESALE_CONTACT } from '../src/data/content.js'
 import { getCategoryContent } from '../src/data/categoryContent.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
@@ -480,6 +482,11 @@ export function buildProductBodyHtml(product, related = []) {
   const categorySlug = categoryName ? normalizeCategorySlug(product.category_slug || 'attars') : ''
   const description = cleanProductName(product.description)
     || `${productName} is an alcohol-free fragrance from Arees Perfumes, available for retail and wholesale from Chennai.`
+  const image = cloudinarySrc(product.image, { width: 900 }) || product.image
+  const imageSrcSet = cloudinarySrcSet(product.image, [450, 600, 900])
+  const imageAlt = [productName, brandName, categoryName, 'Arees Perfumes']
+    .filter(Boolean)
+    .join(' - ')
 
   // Crawlable price + availability from the same data the page renders.
   const variants = Array.isArray(product.variants) ? product.variants : []
@@ -500,6 +507,7 @@ export function buildProductBodyHtml(product, related = []) {
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/shop">Shop</a>${categoryName ? ` / <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a>` : ''}</nav>
 <h1>${escapeHtml(productName)}</h1>
+${image ? `<img src="${escapeHtml(image)}"${imageSrcSet ? ` srcset="${escapeHtml(imageSrcSet)}" sizes="(max-width: 767px) 92vw, 50vw"` : ''} alt="${escapeHtml(imageAlt)}" decoding="async" fetchpriority="high" />` : ''}
 <p>${escapeHtml(description)}</p>
 <p>${[priceLine, stockLine].filter(Boolean).join(' — ') || 'Available at Arees Perfumes, Mannadi, Chennai'}</p>
 <p>Brand: ${brandSlug ? `<a href="/brand/${escapeHtml(brandSlug)}">${escapeHtml(brandName)}</a>` : escapeHtml(brandName)}${categorySlug ? ` | Category: <a href="/categories/${escapeHtml(categorySlug)}">${escapeHtml(categoryName)}</a>` : ''}</p>
@@ -564,7 +572,8 @@ ${editorialHtml}
 
 export function buildBrandBodyHtml(brand, slug, products = []) {
   if (!brand?.name) return ''
-  const brandName = cleanProductName(brand.name)
+  const display = brandDisplay(brand, slug)
+  const brandName = display.name
   const description = cleanProductName(brand.long_description) || cleanProductName(brand.description)
   const tagline = cleanProductName(brand.tagline)
   const links = (Array.isArray(products) ? products : [])
@@ -580,7 +589,7 @@ export function buildBrandBodyHtml(brand, slug, products = []) {
     .join('')
   return `<main data-prerender="true">
 <nav><a href="/">Home</a> / <a href="/brands">Brands</a></nav>
-<h1>${escapeHtml(brandName)}</h1>
+<h1>${escapeHtml(display.heading)}</h1>
 ${description ? `<p>${escapeHtml(description)}</p>` : `<p>Explore ${escapeHtml(brandName)} attars and fragrance oils from Arees Perfumes in Chennai.</p>`}
 ${tagline ? `<p>${escapeHtml(tagline)}.</p>` : ''}
 ${links ? `<section><h2>Products by ${escapeHtml(brandName)}</h2><ul>${links}</ul></section>` : ''}

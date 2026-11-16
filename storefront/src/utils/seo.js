@@ -16,6 +16,7 @@ import { normalizeCategorySlug } from './categorySlug.js'
 import { isProductInStock } from './stock.js'
 import { cloudinarySrc, cloudinarySrcSet } from './productImage.js'
 import { brandPublicSlug } from './brandSlug.js'
+import { brandDisplay } from './brandDisplay.js'
 
 export { normalizeCategorySlug } from './categorySlug.js'
 
@@ -682,14 +683,25 @@ export function buildProductSeo(product, { origin = CANONICAL_ORIGIN, variant = 
   suffixBits.push('delivery across India')
   const snippetSuffix = suffixBits.join(' · ')
 
+  const truncateWords = (value, maxLength) => {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim()
+    if (text.length <= maxLength) return text
+    const cutoff = Math.max(0, maxLength - 1)
+    const slice = text.slice(0, cutoff)
+    const lastSpace = slice.lastIndexOf(' ')
+    const safe = lastSpace > Math.max(20, Math.floor(cutoff * 0.6))
+      ? slice.slice(0, lastSpace)
+      : slice
+    return `${safe.replace(/[\s,;:.!?-]+$/, '')}…`
+  }
+
   const withSnippetSuffix = (base) => {
     const separator = ' — '
     const room = 160 - separator.length - snippetSuffix.length
     if (room >= 40) {
-      const trimmed = base.length > room ? `${base.slice(0, room - 3).trim()}...` : base
-      return `${trimmed}${separator}${snippetSuffix}`
+      return `${truncateWords(base, room)}${separator}${snippetSuffix}`
     }
-    return base.length > 160 ? `${base.slice(0, 157).trim()}...` : base
+    return truncateWords(base, 160)
   }
 
   let description
@@ -862,29 +874,11 @@ export function buildCategorySeo(category, slug, { origin = CANONICAL_ORIGIN, pr
 
 // 4c. Brand page SEO descriptor.
 export function buildBrandSeo(brand, slug, { origin = CANONICAL_ORIGIN, products = [] } = {}) {
-  const publicSlug = brandPublicSlug(slug)
-  const lowerSlug = String(publicSlug || '').toLowerCase()
-  const isArees = lowerSlug === 'arees'
-  const isDahab = lowerSlug === 'dahab'
-  const isLuxury = lowerSlug === 'arees-luxury'
-
-  const brandName = isLuxury
-    ? 'Arees Luxury'
-    : (cleanProductName(brand?.name) || (isArees ? 'Arees Perfumes' : isDahab ? 'Dahab Attars' : 'Brand'))
-
-  let title = `${brandName} Perfumes & Attars | Arees Perfumes`
-  let description = `Discover authentic ${brandName} fragrances at Arees Perfumes. Pure, 100% alcohol-free concentrated oils delivered across India.`
-
-  if (isArees) {
-    title = 'Arees & Arees Perfumes | Authentic Pure Attars & Oils | Arees Perfumes'
-    description = 'Discover signature Arees and Arees Perfumes. 100% alcohol-free pure attars, musk, oud, and concentrated fragrance oils crafted in Chennai. Order retail or wholesale across India.'
-  } else if (isDahab) {
-    title = 'Dahab Perfumes & Dahab Attars | Pure Concentrated Oils | Arees Perfumes'
-    description = 'Shop authentic Dahab Perfumes and Dahab Attars. Renowned concentrated perfume oils with rich oriental projection, enduring sillage, and alcohol-free purity.'
-  } else if (isLuxury) {
-    title = 'Arees Luxury & Arees Luxury Perfumes | Artisanal Attars | Arees Perfumes'
-    description = 'Experience Arees Luxury and Arees Luxury Perfumes. Rare vintage oud, exotic amber, velvety rose, and royal artisanal attars formulated for discerning fragrance lovers.'
-  }
+  const display = brandDisplay(brand, slug)
+  const publicSlug = display.slug
+  const brandName = display.name
+  const title = display.title
+  const description = display.description
 
   const breadcrumbs = [
     { name: 'Home', path: '/' },
@@ -916,7 +910,7 @@ export function buildWholesaleSeo({ origin = CANONICAL_ORIGIN } = {}) {
   return {
     title: 'Perfume & Attar Wholesale in Chennai | Hikma Exports',
     description:
-      'Perfume and attar wholesale in Chennai from Hikma Exports. Loose oils from 100 g, separate Arees and Dahab brand tiers from 6 pieces, private label and export support. GST and IEC available.',
+      'Perfume and attar wholesale in Chennai from Hikma Exports. Loose oils from 100 g, separate Arees and Dahab packs from 6 pieces, private label, export support.',
     canonical: '/wholesale',
     image: DEFAULT_OG_IMAGE,
     type: 'website',
@@ -939,7 +933,7 @@ export function buildHikmaExportsSeo({ origin = CANONICAL_ORIGIN, sameAs = HIKMA
   return {
     title: 'Perfume Exporter in Chennai | Hikma Exports & Hikma Perfumes',
     description:
-      'Hikma Exports is a Chennai perfume wholesaler and exporter, trading as Hikma Perfumes. Attars, oud and fragrance oils, private label and export support for India, Singapore, Malaysia, UAE, Sri Lanka and Maldives.',
+      'Chennai perfume wholesaler and exporter Hikma Exports, trading as Hikma Perfumes. Attars, oud, fragrance oils, private label and export support across India.',
     canonical: '/hikma-exports',
     image: DEFAULT_OG_IMAGE,
     type: 'website',

@@ -688,6 +688,18 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.canonical).toBe('/brand/arees-luxury')
     })
 
+    it('uses public collection names and readable metadata for size-qualified API brands', () => {
+      const arees = buildBrandSeo({ name: 'Arees 8ml', slug: 'arees' }, 'arees')
+      const dahab = buildBrandSeo({ name: 'Dahab 6ml', slug: 'dahab' }, 'dahab')
+
+      expect(arees.brandName).toBe('Arees Perfumes')
+      expect(arees.title).toBe('Arees Perfumes | Attars, Oud & Perfume Oils')
+      expect(arees.description.length).toBeLessThanOrEqual(160)
+      expect(dahab.brandName).toBe('Dahab Attars')
+      expect(dahab.title.length).toBeLessThanOrEqual(60)
+      expect(dahab.description.length).toBeLessThanOrEqual(160)
+    })
+
     it('canonicalizes the legacy Oud Al Haramain slug to Arees Luxury', () => {
       const seo = buildBrandSeo({ name: 'Arees Luxury', slug: 'oud-al-haramain' }, 'oud-al-haramain')
       expect(seo.canonical).toBe('/brand/arees-luxury')
@@ -713,6 +725,7 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(seo.description).toContain('100 g')
       expect(seo.description).toContain('6 pieces')
       expect(seo.description).toContain('separate Arees and Dahab')
+      expect(seo.description.length).toBeLessThanOrEqual(160)
       expect(seo.canonical).toBe('/wholesale')
       expect(seo.schema.map((item) => item['@type'])).toEqual(
         expect.arrayContaining(['Service', 'FAQPage', 'BreadcrumbList'])
@@ -757,6 +770,7 @@ describe('Schema.org JSON-LD Builders', () => {
       const seo = buildHikmaExportsSeo()
       expect(seo.title).toContain('Hikma Exports')
       expect(seo.title).toContain('Hikma Perfumes')
+      expect(seo.description.length).toBeLessThanOrEqual(160)
       expect(seo.canonical).toBe('/hikma-exports')
       expect(seo.schema.map((item) => item['@type'])).toEqual(
         expect.arrayContaining(['Organization', 'FAQPage', 'BreadcrumbList'])

@@ -10,6 +10,7 @@ import { brandHeroImage, brandHeroMobileImage } from '../data/content'
 import SEO from '../components/seo/SEO'
 import { buildBrandSeo } from '../utils/seo'
 import { brandPublicSlug } from '../utils/brandSlug'
+import { brandDisplay } from '../utils/brandDisplay'
 import './BrandProducts.css'
 
 export default function BrandProducts() {
@@ -90,10 +91,8 @@ export default function BrandProducts() {
   })
 
   const publicSlug = brandPublicSlug(slug)
-  const lowerSlug = String(publicSlug || '').toLowerCase()
-  const isArees = lowerSlug === 'arees'
-  const isDahab = lowerSlug === 'dahab'
-  const isLuxury = lowerSlug === 'arees-luxury'
+  const display = brandDisplay(brand, publicSlug)
+  const isDahab = publicSlug === 'dahab'
 
   const {
     brandName,
@@ -102,23 +101,9 @@ export default function BrandProducts() {
     schema: brandSchema,
   } = buildBrandSeo(brand, publicSlug, { products })
 
-  let h1Title = brandName
-  let headerLabel = `${brandName} Collection`
-  let headerDesc = brand?.tagline || `Explore the complete ${brandName} fragrance collection.`
-
-  if (isArees) {
-    h1Title = 'Arees Perfumes & Attars'
-    headerLabel = 'Signature Arees Collection'
-    headerDesc = 'Discover the complete Arees Perfumes collection — authentic, alcohol-free attars, oud, musk and traditional fragrance oils crafted with heritage in Chennai.'
-  } else if (isDahab) {
-    h1Title = 'Dahab Perfumes & Dahab Attars'
-    headerLabel = 'Dahab Perfumes & Attars Collection'
-    headerDesc = 'Authentic Dahab Perfumes and Dahab Attars — concentrated, 100% alcohol-free fragrance oils known for their rich projection, enduring sillage, and exquisite oriental character.'
-  } else if (isLuxury) {
-    h1Title = 'Arees Luxury Perfumes'
-    headerLabel = 'Artisanal Arees Luxury Collection'
-    headerDesc = 'The pinnacle of royal oriental perfumery — Arees Luxury Perfumes features vintage oud, precious amber, velvety rose, and signature musk formulations crafted for true connoisseurs.'
-  }
+  const h1Title = display.heading
+  const headerLabel = display.label
+  const headerDesc = display.intro
 
   // Active-state badge on the combined control — purely presentational.
   const activeCount = (categoryFilter !== 'all' ? 1 : 0) + (sort !== 'default' ? 1 : 0)

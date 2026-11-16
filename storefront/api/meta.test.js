@@ -247,6 +247,23 @@ describe('static body fallbacks', () => {
     expect(html).toContain('Dahab is a golden, floral attar collection')
     expect(html).toContain('href="/product/dahab-rose"')
     expect(html).toContain('href="/categories/roll-on-attars"')
+    expect(html).toContain('<h1>Dahab Perfumes &amp; Dahab Attars</h1>')
+    expect(html).toContain('Products by Dahab Attars')
+    expect(html).not.toContain('<h1>Dahab 6ml</h1>')
+  })
+
+  it('uses the public collection heading for size-qualified Arees brands', () => {
+    const html = buildBrandBodyHtml(
+      {
+        name: 'Arees 8ml',
+        long_description: 'Arees is a bold, smoky oud and amber collection from Chennai.',
+      },
+      'arees',
+      [{ id: 'p-1', name: 'Pink Musk', slug: 'pink-musk' }]
+    )
+    expect(html).toContain('<h1>Arees Perfumes &amp; Attars</h1>')
+    expect(html).toContain('Products by Arees Perfumes')
+    expect(html).not.toContain('<h1>Arees 8ml</h1>')
   })
 })
 
@@ -853,6 +870,7 @@ describe('buildProductBodyHtml internal links', () => {
     category_name: 'Roll on Attars',
     category_slug: '1',
     description: 'A soft pink musk roll-on attar.',
+    image: 'https://example.com/pink-musk.jpg',
     price: 500,
     is_in_stock: true,
   }
@@ -861,6 +879,15 @@ describe('buildProductBodyHtml internal links', () => {
     const html = buildProductBodyHtml(product, [])
     expect(html).toContain('<a href="/brand/arees">Arees 8ml</a>')
     expect(html).toContain('<a href="/categories/roll-on-attars">Roll on Attars</a>')
+  })
+
+  it('renders the product image with a descriptive alt in the initial HTML', () => {
+    const html = buildProductBodyHtml(product, [])
+    expect(html).toContain('<img src="https://example.com/pink-musk.jpg"')
+    expect(html).toContain(
+      'alt="Pink Musk - Arees 8ml - Roll on Attars - Arees Perfumes"'
+    )
+    expect(html).toContain('fetchpriority="high"')
   })
 
   it('maps API-only brand slugs to their public brand URL', () => {
