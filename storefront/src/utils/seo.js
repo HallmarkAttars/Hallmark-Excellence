@@ -1065,7 +1065,7 @@ const STATIC_PAGE_SEO = {
   '/about': {
     title: 'About Arees Perfumes | Chennai Fragrance House',
     description:
-      'Learn about Arees Perfumes, a Chennai fragrance house under Hallmark of Excellence, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
+      'Learn about Arees Perfumes, a Chennai fragrance house from Hallmark of Excellence, offering alcohol-free attars, oud and perfume oils for retail and wholesale.',
     canonical: '/about',
     type: 'website',
     schema: [
