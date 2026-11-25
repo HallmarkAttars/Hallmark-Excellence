@@ -28,8 +28,9 @@ export const CANONICAL_ORIGIN = 'https://www.areesperfumes.in'
 export const DEFAULT_BRAND = 'Arees Perfumes'
 export const DEFAULT_TITLE = 'Arees Perfumes | Attars, Bakhoor & Arabic Perfumes in Chennai'
 export const DEFAULT_DESCRIPTION =
-  'Premium attars, bakhoor, oud and Arabic perfumes from Arees Perfumes — alcohol-free, delivered across India, with retail and wholesale supply from Chennai.'
-export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/Hero.webp`
+  'Premium attars, bakhoor, oud and Arabic perfumes from Arees Perfumes — alcohol-free, delivered across India, with retail, wholesale and export supply from Chennai.'
+export const BRAND_LOGO = `${CANONICAL_ORIGIN}/HE%20color%20Logo.png`
+export const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-image.jpg`
 
 const WWW_HOST = 'www.areesperfumes.in'
 const APEX_HOST = 'areesperfumes.in'
@@ -303,7 +304,17 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
     description:
       'Arees Perfumes is the Chennai retail fragrance brand of Hikma Exports, offering alcohol-free attars, oud, bakhoor and perfume oils for retail and wholesale.',
     url: origin,
-    logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
+    logo: `${origin}/HE%20color%20Logo.png`,
+    slogan: 'Alcohol-free attars, oud and perfume oils from Chennai',
+    knowsAbout: [
+      'Attar',
+      'Oud oil',
+      'Fragrance oil',
+      'Bakhoor',
+      'Roll-on perfume',
+      'Perfume packaging',
+      'Wholesale perfume supply',
+    ],
     email: WHOLESALE_CONTACT.email,
     telephone: SHOP.phoneTel,
     parentOrganization: {
@@ -327,6 +338,7 @@ export function buildOrganizationSchema(origin = CANONICAL_ORIGIN) {
       '@type': 'PostalAddress',
       ...SHOP.addressParts,
     },
+    areaServed: ['Chennai', 'Tamil Nadu', 'South India', 'India'],
     sameAs: organizationSameAs(),
   }
 }
@@ -346,7 +358,7 @@ export function buildWebSiteSchema(origin = CANONICAL_ORIGIN) {
       name: 'Arees Perfumes',
       logo: {
         '@type': 'ImageObject',
-        url: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
+        url: `${origin}/HE%20color%20Logo.png`,
       },
     },
   }
@@ -398,7 +410,7 @@ export function buildHikmaExportsSchema({ origin = CANONICAL_ORIGIN, sameAs = []
     description:
       'Hikma Exports is a Chennai-based perfume wholesaler and exporter, and the parent company of the separate Arees and Dahab fragrance brands. Its fragrance identity, Hikma Perfumes, supplies attars, oud oils, fragrance oils, bakhoor and perfume packaging for wholesale and export.',
     url: `${origin}/hikma-exports`,
-    logo: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
+    logo: `${origin}/HE%20color%20Logo.png`,
     email: WHOLESALE_CONTACT.email,
     telephone: WHOLESALE_CONTACT.phoneTel,
     address: {
@@ -576,6 +588,13 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
       name: SHOP.name,
       url: origin,
     },
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'IN',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 23,
+      merchantReturnLink: `${origin}/shipping-returns`,
+    },
   }
 
   let offers
@@ -624,6 +643,7 @@ export function buildProductSchema(product, origin = CANONICAL_ORIGIN, variant =
     '@type': 'Product',
     name: productName,
     url: productUrl,
+    ...(product.sku || product.id ? { sku: String(product.sku || product.id) } : {}),
     image: image ? [image] : [`${origin}/Hero.webp`],
     description:
       packaging
@@ -1024,7 +1044,7 @@ export function buildArticleSchema(guide, { origin = CANONICAL_ORIGIN } = {}) {
       name: 'Arees Perfumes',
       logo: {
         '@type': 'ImageObject',
-        url: `${origin}/WhatsApp%20Image%202026-10-29%20at%2010.04.11%20PM.jpeg`,
+        url: `${origin}/HE%20color%20Logo.png`,
       },
     },
     mainEntityOfPage: {

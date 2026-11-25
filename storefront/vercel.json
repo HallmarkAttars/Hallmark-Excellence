@@ -76,6 +76,8 @@
     }
   ],
   "redirects": [
+    { "source": "/:path*", "has": [{ "type": "host", "value": "areesperfumes.in" }], "destination": "https://www.areesperfumes.in/:path*", "permanent": true },
+    { "source": "/:path*", "has": [{ "type": "header", "key": "x-forwarded-proto", "value": "http" }], "destination": "https://www.areesperfumes.in/:path*", "permanent": true },
     { "source": "/categories/Display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },
     { "source": "/categories/Display%20bottles", "destination": "/categories/display-bottles", "permanent": true },
     { "source": "/categories/display%20bottles%20", "destination": "/categories/display-bottles", "permanent": true },

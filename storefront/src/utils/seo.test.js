@@ -20,6 +20,8 @@ import {
   DEFAULT_BRAND,
   DEFAULT_TITLE,
   DEFAULT_DESCRIPTION,
+  DEFAULT_OG_IMAGE,
+  BRAND_LOGO,
   STATIC_PAGES,
   productPath,
   buildOrganizationSchema,
@@ -379,6 +381,19 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.sameAs).toContain(BUSINESS.googlePlaceUrl)
       expect(schema.sameAs).toContain('https://www.instagram.com/aree___s')
       expect(schema.sameAs.join(' ')).not.toContain('linkedin')
+      expect(schema.logo).toBe(BRAND_LOGO)
+      expect(schema.slogan).toContain('Chennai')
+      expect(schema.knowsAbout).toEqual(
+        expect.arrayContaining(['Attar', 'Oud oil', 'Bakhoor'])
+      )
+      expect(schema.areaServed).toEqual(
+        expect.arrayContaining(['Chennai', 'India'])
+      )
+    })
+
+    it('uses a dedicated 1200x630 social image and a clean brand logo', () => {
+      expect(DEFAULT_OG_IMAGE).toBe(`${CANONICAL_ORIGIN}/og-image.jpg`)
+      expect(BRAND_LOGO).toBe(`${CANONICAL_ORIGIN}/HE%20color%20Logo.png`)
     })
   })
 
@@ -465,6 +480,13 @@ describe('Schema.org JSON-LD Builders', () => {
       expect(schema.offers.priceCurrency).toBe('INR')
       expect(schema.offers.availability).toBe('https://schema.org/InStock')
       expect(schema.offers.url).toBe('https://www.areesperfumes.in/product/p-101')
+      expect(schema.sku).toBe('p-101')
+      expect(schema.offers.hasMerchantReturnPolicy).toMatchObject({
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'IN',
+        merchantReturnDays: 23,
+        merchantReturnLink: 'https://www.areesperfumes.in/shipping-returns',
+      })
     })
 
     it('generates Product schema with OutOfStock availability when is_in_stock is false', () => {
