@@ -42,14 +42,30 @@ describe('buildHomeHeroImages', () => {
     }
   })
 
-  it('renders every slide full-bleed on desktop and mobile', () => {
+  it('renders every slide as a framed showcase that preserves the baked-in artwork', () => {
     const images = buildHomeHeroImages()
 
     for (const image of images) {
-      expect(image.layout).toBe('photo')
-      expect(image.fit).toBe('cover')
-      expect(image.mobileFit).toBe('cover')
-      expect(image.duration).toBe(7000)
+      expect(image.layout).toBe('showcase')
+      expect(image.fit).toBe('contain')
+      expect(image.mobileFit).toBe('contain')
+      expect(image.duration).toBe(6000)
+    }
+  })
+
+  it('links each slide to the brand or wholesale page it represents', () => {
+    const images = buildHomeHeroImages()
+
+    expect(images.map((img) => img.href)).toEqual([
+      '/brand/arees',
+      '/brand/bakhoor',
+      '/wholesale',
+      '/brand/arees-12ml',
+      '/wholesale',
+    ])
+
+    for (const image of images) {
+      expect(image.href.startsWith('/')).toBe(true)
     }
   })
 

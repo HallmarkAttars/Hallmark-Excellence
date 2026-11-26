@@ -168,6 +168,16 @@ export const HERO = {
 }
 
 // --------------------------------------------------------------------------
+// ANNOUNCEMENTS — rotating bar above the header (Ajmal-style).
+// Factual messages only; every link resolves to a real page.
+// --------------------------------------------------------------------------
+export const ANNOUNCEMENTS = [
+  { label: 'Delivery across India', to: '/shipping-returns' },
+  { label: 'Wholesale & export enquiries', to: '/wholesale' },
+  { label: 'Shop the collection', to: '/shop' },
+]
+
+// --------------------------------------------------------------------------
 // HOMEPAGE — section headings for the shared category / featured grids
 // --------------------------------------------------------------------------
 export const HOME_CATEGORIES = {

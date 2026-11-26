@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { CartProvider } from './context/CartContext'
 import { ToastProvider } from './context/ToastContext'
 import Navbar from './components/layout/Navbar'
+import AnnouncementBar from './components/layout/AnnouncementBar'
 import Footer from './components/layout/Footer'
 import StickyWhatsApp from './components/ui/StickyWhatsApp'
 import BackToTop from './components/ui/BackToTop'
@@ -120,6 +121,7 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <a href="#main-content" className="skip-link">Skip to main content</a>
+            <AnnouncementBar />
             <Navbar />
             <CatalogOutageNotice />
             <PageContent />

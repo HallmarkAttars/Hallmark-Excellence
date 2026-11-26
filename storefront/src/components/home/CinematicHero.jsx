@@ -6,7 +6,7 @@ import { buildHomeHeroImages } from '../../utils/homeHeroImages'
 import './Hero.css'
 import './CinematicHero.css'
 
-const DEFAULT_DISPLAY_DURATION = 5500 // ~5.5s display before crossfade starts
+const DEFAULT_DISPLAY_DURATION = 6000 // ~6s display before crossfade starts
 const DEFAULT_FADE_DURATION = 1800 // 1.8s smooth crossfade
 const MOTION_VARIANTS_COUNT = 6
 const MOBILE_MEDIA = '(max-width: 767px)'
@@ -119,6 +119,9 @@ export default function CinematicHero({
   })
   const [outgoingSlide, setOutgoingSlide] = useState(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  // Paused while the user hovers or focuses the hero, so the slide they are
+  // reading never advances underneath them.
+  const [isPaused, setIsPaused] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -195,7 +198,7 @@ export default function CinematicHero({
 
   // Schedule next slide transition after this slide's display duration
   useEffect(() => {
-    if (totalSlides <= 1) return
+    if (totalSlides <= 1 || isPaused) return
 
     const timer = setTimeout(() => {
       stepCounterRef.current += 1
@@ -213,7 +216,29 @@ export default function CinematicHero({
     }, activeDuration)
 
     return () => clearTimeout(timer)
-  }, [activeSlide, activeDuration, totalSlides])
+  }, [activeSlide, activeDuration, totalSlides, isPaused])
+
+  // Manual navigation from the arrows / dots. Wraps around and reuses the same
+  // crossfade + Ken Burns handoff as the automatic advance.
+  const goTo = (index) => {
+    if (totalSlides <= 1) return
+    const target = ((index % totalSlides) + totalSlides) % totalSlides
+    if (target === activeSlide.index) return
+    stepCounterRef.current += 1
+    setOutgoingSlide(activeSlide)
+    setIsTransitioning(true)
+    setActiveSlide({
+      index: target,
+      variant: (activeSlide.variant + 1) % MOTION_VARIANTS_COUNT,
+      key: `slide-${target}-${stepCounterRef.current}`,
+    })
+  }
+
+  const activeSlideData = validSlides[activeSlide.index] || validSlides[0]
+  const activeHref = activeSlideData?.href || null
+  const activeLinkLabel = activeSlideData?.brandName
+    ? `Shop ${activeSlideData.brandName}`
+    : 'Shop this collection'
 
   const motionClassFor = (slideIndex, variant) => {
     const slide = validSlides[slideIndex]
@@ -287,7 +312,13 @@ export default function CinematicHero({
   }
 
   return (
-    <section className={`hero hero--${activeLayout}`}>
+    <section
+      className={`hero hero--${activeLayout}`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+    >
       {/* Background image layer: contains the continuous cinematic slideshow */}
       <div className="hero-background-layer">
         {/* Outgoing slide: stays at full opacity underneath during crossfade */}
@@ -360,6 +391,52 @@ export default function CinematicHero({
           </Link>
         </div>
       </div>
+
+      {/* Whole-slide link (Ajmal-style): the artwork itself is clickable.
+          Sits above the image but below the copy/controls; the copy column
+          ignores pointer events except its own buttons (see Hero.css). Placed
+          after the copy so keyboard focus reaches the CTAs first. */}
+      {activeHref && (
+        <Link
+          to={activeHref}
+          className="hero-slide-link"
+          aria-label={activeLinkLabel}
+        />
+      )}
+
+      {/* Slide controls — arrows (desktop) + dots (all sizes) */}
+      {totalSlides > 1 && (
+        <nav className="hero-nav" aria-label="Hero slides">
+          <button
+            type="button"
+            className="hero-arrow hero-arrow--prev"
+            aria-label="Previous slide"
+            onClick={() => goTo(activeSlide.index - 1)}
+          >
+            ‹
+          </button>
+          <div className="hero-dots">
+            {validSlides.map((slide, i) => (
+              <button
+                key={`dot-${slide.src || i}`}
+                type="button"
+                className={`hero-dot ${i === activeSlide.index ? 'is-active' : ''}`}
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={i === activeSlide.index ? 'true' : undefined}
+                onClick={() => goTo(i)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="hero-arrow hero-arrow--next"
+            aria-label="Next slide"
+            onClick={() => goTo(activeSlide.index + 1)}
+          >
+            ›
+          </button>
+        </nav>
+      )}
     </section>
   )
 }

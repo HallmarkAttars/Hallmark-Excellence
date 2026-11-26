@@ -367,7 +367,7 @@
 @media (max-width: 1023px) {
   .hero--showcase {
     --showcase-stage-w: min(calc(100vw - clamp(32px, 10vw, 96px)), 600px);
-    --showcase-stage-h: calc(var(--showcase-stage-w) * 0.8333);
+    --showcase-stage-h: var(--showcase-stage-w);
   }
 
   .cinematic-showcase-panel {
@@ -377,7 +377,7 @@
     bottom: auto;
     width: var(--showcase-stage-w);
     height: auto;
-    aspect-ratio: 6 / 5;
+    aspect-ratio: 1 / 1;
     transform: translateX(-50%);
   }
 

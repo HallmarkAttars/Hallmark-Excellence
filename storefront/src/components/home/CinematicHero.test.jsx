@@ -144,34 +144,83 @@ describe('CinematicHero Component', () => {
     )
 
     const img = container.querySelector(
-      '.cinematic-hero-slide--active .cinematic-hero-img'
+      '.cinematic-hero-slide--active .cinematic-showcase-art'
     )
     expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
 
     const mobileSource = container.querySelector(
-      '.cinematic-hero-picture source[media]'
+      '.cinematic-hero-slide--active .cinematic-showcase-picture source[media]'
     )
     expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
   })
 
-  it('renders the curated hero as full-bleed photo slides', () => {
+  it('renders the curated hero as framed showcase slides', () => {
     const { container } = render(
       <MemoryRouter>
         <CinematicHero />
       </MemoryRouter>
     )
 
-    expect(container.querySelector('.hero--photo')).toBeTruthy()
-    expect(container.querySelector('.cinematic-showcase')).toBeNull()
+    expect(container.querySelector('.hero--showcase')).toBeTruthy()
+    expect(container.querySelector('.cinematic-showcase')).toBeTruthy()
 
-    const img = container.querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
+    const img = container.querySelector(
+      '.cinematic-hero-slide--active .cinematic-showcase-art'
+    )
     expect(img).toBeTruthy()
     expect(img.getAttribute('src')).toBe('/hero/rollon-8ml.webp')
     expect(img.getAttribute('fetchpriority')).toBe('high')
     expect(img.style.getPropertyValue('--hero-mobile-focus')).toBe('50% 42%')
 
-    const mobileSource = container.querySelector('.cinematic-hero-picture source[media]')
+    const mobileSource = container.querySelector(
+      '.cinematic-hero-slide--active .cinematic-showcase-picture source[media]'
+    )
     expect(mobileSource.getAttribute('srcset')).toBe('/hero/rollon-8ml-mobile.webp')
+  })
+
+  it('renders slide controls and links the active slide to its page', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero />
+      </MemoryRouter>
+    )
+
+    // Stretched whole-slide link points at the first graphic's page.
+    const slideLink = container.querySelector('.hero-slide-link')
+    expect(slideLink).toBeTruthy()
+    expect(slideLink.getAttribute('href')).toBe('/brand/arees')
+    expect(slideLink.getAttribute('aria-label')).toMatch(/Arees 8ml Roll-On/i)
+
+    // One dot per curated slide; the first is current.
+    const dots = container.querySelectorAll('.hero-dot')
+    expect(dots).toHaveLength(5)
+    expect(dots[0].classList.contains('is-active')).toBe(true)
+
+    // Arrow buttons exist (hidden on mobile via CSS, still in the DOM).
+    expect(screen.getByRole('button', { name: /previous slide/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /next slide/i })).toBeTruthy()
+  })
+
+  it('jumps to a slide via its dot and updates the slide link', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CinematicHero />
+      </MemoryRouter>
+    )
+
+    const dots = container.querySelectorAll('.hero-dot')
+    act(() => {
+      dots[3].click()
+    })
+
+    expect(
+      container
+        .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
+        .getAttribute('src')
+    ).toBe('/hero/luxury-12ml.webp')
+    expect(container.querySelector('.hero-slide-link').getAttribute('href')).toBe(
+      '/brand/arees-12ml'
+    )
   })
 
   it('cycles through the five curated catalogue graphics with crossfade', () => {
@@ -192,7 +241,7 @@ describe('CinematicHero Component', () => {
     for (let i = 0; i < expectedSlides.length; i += 1) {
       expect(
         container
-          .querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
+          .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
           .getAttribute('src')
       ).toBe(expectedSlides[i])
 
@@ -204,7 +253,7 @@ describe('CinematicHero Component', () => {
     // After the last slide the rotation loops back to the first graphic.
     expect(
       container
-        .querySelector('.cinematic-hero-slide--active .cinematic-hero-img')
+        .querySelector('.cinematic-hero-slide--active .cinematic-showcase-art')
         .getAttribute('src')
     ).toBe(expectedSlides[0])
   })
