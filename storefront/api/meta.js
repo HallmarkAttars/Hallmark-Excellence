@@ -953,6 +953,8 @@ function shellCandidates(req) {
   }
 
   if (process.env.VERCEL_URL) candidates.push(`https://${process.env.VERCEL_URL}/index.html`)
+  if (process.env.DEPLOY_PRIME_URL) candidates.push(`${process.env.DEPLOY_PRIME_URL.replace(/\/$/, '')}/index.html`)
+  if (process.env.URL) candidates.push(`${process.env.URL.replace(/\/$/, '')}/index.html`)
   candidates.push(`${CANONICAL_ORIGIN}/index.html`)
   return [...new Set(candidates)]
 }

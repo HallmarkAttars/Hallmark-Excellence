@@ -1,0 +1,268 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/categories/1"
+  to = "/categories/roll-on-attars"
+  status = 301
+
+[[redirects]]
+  from = "/categories/3"
+  to = "/categories/spray-bottles"
+  status = 301
+
+[[redirects]]
+  from = "/categories/10"
+  to = "/categories/fragrance-oils"
+  status = 301
+
+[[redirects]]
+  from = "/categories/Display bottles"
+  to = "/categories/display-bottles"
+  status = 301
+
+[[redirects]]
+  from = "/categories/Display%20bottles"
+  to = "/categories/display-bottles"
+  status = 301
+
+[[redirects]]
+  from = "/categories/display bottles"
+  to = "/categories/display-bottles"
+  status = 301
+
+[[redirects]]
+  from = "/categories/display%20bottles"
+  to = "/categories/display-bottles"
+  status = 301
+
+[[redirects]]
+  from = "/categories/Face wash"
+  to = "/categories/face-wash"
+  status = 301
+
+[[redirects]]
+  from = "/categories/Face%20wash"
+  to = "/categories/face-wash"
+  status = 301
+
+[[redirects]]
+  from = "/categories/face wash"
+  to = "/categories/face-wash"
+  status = 301
+
+[[redirects]]
+  from = "/categories/face%20wash"
+  to = "/categories/face-wash"
+  status = 301
+
+[[redirects]]
+  from = "/categories/Bakhoor"
+  to = "/categories/bakhoor"
+  status = 301
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 200
+
+[[redirects]]
+  from = "/robots.txt"
+  to = "/.netlify/functions/robots"
+  status = 200
+
+[[redirects]]
+  from = "/api/wa-webhook"
+  to = "/.netlify/functions/wa-webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/wa-cron"
+  to = "/.netlify/functions/wa-cron"
+  status = 200
+
+[[redirects]]
+  from = "/hikma-exports"
+  to = "/.netlify/functions/meta?type=page&slug=hikma-exports"
+  status = 200
+
+[[redirects]]
+  from = "/guides"
+  to = "/.netlify/functions/meta?type=page&slug=guides"
+  status = 200
+
+[[redirects]]
+  from = "/guides/:slug"
+  to = "/.netlify/functions/meta?type=guide&slug=:slug"
+  status = 200
+
+[[redirects]]
+  from = "/about"
+  to = "/.netlify/functions/meta?type=page&slug=about"
+  status = 200
+
+[[redirects]]
+  from = "/wholesale"
+  to = "/.netlify/functions/meta?type=page&slug=wholesale"
+  status = 200
+
+[[redirects]]
+  from = "/wholesale-attars"
+  to = "/.netlify/functions/meta?type=page&slug=wholesale"
+  status = 200
+
+[[redirects]]
+  from = "/contact"
+  to = "/.netlify/functions/meta?type=page&slug=contact"
+  status = 200
+
+[[redirects]]
+  from = "/shop"
+  to = "/.netlify/functions/meta?type=page&slug=shop"
+  status = 200
+
+[[redirects]]
+  from = "/categories"
+  to = "/.netlify/functions/meta?type=page&slug=categories"
+  status = 200
+
+[[redirects]]
+  from = "/brands"
+  to = "/.netlify/functions/meta?type=page&slug=brands"
+  status = 200
+
+[[redirects]]
+  from = "/retail"
+  to = "/.netlify/functions/meta?type=page&slug=retail"
+  status = 200
+
+[[redirects]]
+  from = "/retail-attars"
+  to = "/.netlify/functions/meta?type=page&slug=retail"
+  status = 200
+
+[[redirects]]
+  from = "/attar-perfume-shop-south-india"
+  to = "/.netlify/functions/meta?type=page&slug=attar-perfume-shop-south-india"
+  status = 200
+
+[[redirects]]
+  from = "/south-india"
+  to = "/.netlify/functions/meta?type=page&slug=attar-perfume-shop-south-india"
+  status = 200
+
+[[redirects]]
+  from = "/privacy-policy"
+  to = "/.netlify/functions/meta?type=utility&slug=privacy-policy"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/.netlify/functions/meta?type=utility&slug=terms"
+  status = 200
+
+[[redirects]]
+  from = "/shipping-returns"
+  to = "/.netlify/functions/meta?type=utility&slug=shipping-returns"
+  status = 200
+
+[[redirects]]
+  from = "/product/:id"
+  to = "/.netlify/functions/meta?type=product&id=:id"
+  status = 200
+
+[[redirects]]
+  from = "/categories/:slug"
+  to = "/.netlify/functions/meta?type=category&slug=:slug"
+  status = 200
+
+[[redirects]]
+  from = "/brand/:slug"
+  to = "/.netlify/functions/meta?type=brand&slug=:slug"
+  status = 200
+
+[[redirects]]
+  from = "/cart"
+  to = "/.netlify/functions/meta?type=utility&slug=cart"
+  status = 200
+
+[[redirects]]
+  from = "/checkout"
+  to = "/.netlify/functions/meta?type=utility&slug=checkout"
+  status = 200
+
+[[redirects]]
+  from = "/track-order"
+  to = "/.netlify/functions/meta?type=utility&slug=track-order"
+  status = 200
+
+[[redirects]]
+  from = "/view-order"
+  to = "/.netlify/functions/meta?type=utility&slug=view-order"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/meta?type=page&slug=home"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/meta?type=notfound"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Content-Security-Policy = "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/*.jpeg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/*.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000, stale-while-revalidate=86400"
