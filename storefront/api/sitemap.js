@@ -12,7 +12,11 @@
 import { buildSitemapXml, resolveSiteUrl } from '../src/utils/seo.js'
 import { SITEMAP_CATALOG_FALLBACK } from '../src/data/sitemapCatalog.js'
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
+// Read at request time so the same module works on runtimes (Cloudflare Pages
+// Functions) where `process.env` is populated per request, not at import.
+function apiBaseUrl() {
+  return process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
+}
 
 // Keep the upstream request inside the platform function timeout.
 const FETCH_TIMEOUT_MS = 8000
@@ -21,7 +25,7 @@ async function fetchPublicJson(path) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await fetch(`${apiBaseUrl()}${path}`, {
       signal: controller.signal,
       headers: { accept: 'application/json' },
     })

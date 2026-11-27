@@ -34,7 +34,11 @@ import { ABOUT, BUSINESS, CONTACT, HERO, HOME_FAQS, HIKMA_EXPORTS, SHOP, SOUTH_I
 import { getCategoryContent } from '../src/data/categoryContent.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
+// Read at request time so the same module works on runtimes (Cloudflare Pages
+// Functions) where `process.env` is populated per request, not at import.
+function apiBaseUrl() {
+  return process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
+}
 const FETCH_TIMEOUT_MS = 5000
 const SHELL_TIMEOUT_MS = 3000
 
@@ -81,7 +85,7 @@ async function fetchJson(path) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await fetch(`${apiBaseUrl()}${path}`, {
       signal: controller.signal,
       headers: { accept: 'application/json' },
     })
@@ -953,6 +957,7 @@ function shellCandidates(req) {
   }
 
   if (process.env.VERCEL_URL) candidates.push(`https://${process.env.VERCEL_URL}/index.html`)
+  if (process.env.CF_PAGES_URL) candidates.push(`${process.env.CF_PAGES_URL.replace(/\/$/, '')}/index.html`)
   if (process.env.DEPLOY_PRIME_URL) candidates.push(`${process.env.DEPLOY_PRIME_URL.replace(/\/$/, '')}/index.html`)
   if (process.env.URL) candidates.push(`${process.env.URL.replace(/\/$/, '')}/index.html`)
   candidates.push(`${CANONICAL_ORIGIN}/index.html`)

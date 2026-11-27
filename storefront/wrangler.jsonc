@@ -1,0 +1,15 @@
+{
+  // Workers Builds project for the storefront. `main` + `assets` keeps the
+  // existing SEO/WhatsApp handlers (Pages-style functions) while serving the
+  // Vite `dist/` output as static assets.
+  "name": "hikma-exports",
+  "main": "./worker.js",
+  "compatibility_date": "2026-11-27",
+  "compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "none",
+    "run_worker_first": ["/"]
+  }
+}

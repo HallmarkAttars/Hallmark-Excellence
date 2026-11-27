@@ -15,6 +15,7 @@
 // Always answers Meta 200 quickly — failing/dangling webhooks get disabled.
 
 import { createHmac } from 'node:crypto'
+import { Buffer } from 'node:buffer'
 import { handleWithStatusSweep, sessionIdFrom, defaultSession } from './wa/_bot.js'
 import * as store from './wa/_store.js'
 import { makeSender, textMessage, listMessage, buttonsMessage, imageMessage } from './wa/_graph.js'
