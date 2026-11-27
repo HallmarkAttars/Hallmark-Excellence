@@ -1,0 +1,19 @@
+# Root config for the storefront Netlify site.
+#
+# The Netlify project's UI build settings were empty, so the repo root was
+# published as-is (no build, no functions, no redirects). This file forces the
+# build to run in storefront/, where storefront/netlify.toml defines the build
+# command, publish dir, functions, redirects and headers.
+#
+# Note: the `base` set here overrides the UI base directory for every Netlify
+# site built from this repo. The admin dashboard should therefore be deployed
+# from a separate branch/repo (with its own root netlify.toml setting
+# base = "admin").
+[build]
+  base = "storefront"
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
