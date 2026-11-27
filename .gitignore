@@ -49,3 +49,6 @@ tools/ga4/key.json
 # Service-account credentials (never commit)
 .secrets/
 tools/seo/reports/
+
+# --- Stray nested repo pointer (not a real submodule; breaks CI clones) ---
+/Hallmark-Excellence/
