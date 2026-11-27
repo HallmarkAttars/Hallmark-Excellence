@@ -52,3 +52,6 @@ tools/seo/reports/
 
 # --- Stray nested repo pointer (not a real submodule; breaks CI clones) ---
 /Hallmark-Excellence/
+
+# --- Local scratch scripts (never publish; may contain test credentials) ---
+scratch/

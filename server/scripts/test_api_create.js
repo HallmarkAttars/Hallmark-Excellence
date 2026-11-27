@@ -45,10 +45,13 @@ async function makeRequest(method, path, body, token) {
 
 async function run() {
   console.log('=== Step 1: Login ===');
-  const loginRes = await makeRequest('POST', '/api/auth/login', {
-    email: 'admin@test.com',
-    password: 'test123'
-  });
+  const email = process.env.TEST_ADMIN_EMAIL;
+  const password = process.env.TEST_ADMIN_PASSWORD;
+  if (!email || !password) {
+    console.error('TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD must be set');
+    return;
+  }
+  const loginRes = await makeRequest('POST', '/api/auth/login', { email, password });
   console.log('Login status:', loginRes.status);
   console.log('Login body:', JSON.stringify(loginRes.body).substring(0, 200));
   
