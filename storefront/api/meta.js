@@ -35,8 +35,8 @@ import { getCategoryContent } from '../src/data/categoryContent.js'
 import { GUIDES, getGuideBySlug } from '../src/data/guides.js'
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
-const FETCH_TIMEOUT_MS = 8000
-const SHELL_TIMEOUT_MS = 5000
+const FETCH_TIMEOUT_MS = 5000
+const SHELL_TIMEOUT_MS = 3000
 
 // Last-good rendered metadata per route. Vercel keeps a warm function instance
 // for a while, so when the upstream API is briefly unreachable we can still

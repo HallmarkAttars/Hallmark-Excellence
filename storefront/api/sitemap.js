@@ -15,7 +15,7 @@ import { SITEMAP_CATALOG_FALLBACK } from '../src/data/sitemapCatalog.js'
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.areesperfumes.in/api'
 
 // Keep the upstream request inside the platform function timeout.
-const FETCH_TIMEOUT_MS = 10000
+const FETCH_TIMEOUT_MS = 8000
 
 async function fetchPublicJson(path) {
   const controller = new AbortController()

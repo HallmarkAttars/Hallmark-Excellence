@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/sitemap.js": {
-      "maxDuration": 15
+      "maxDuration": 10
     },
     "api/meta.js": {
-      "maxDuration": 15
+      "maxDuration": 10
     }
   },
   "crons": [
