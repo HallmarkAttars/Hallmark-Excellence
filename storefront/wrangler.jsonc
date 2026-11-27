@@ -6,6 +6,13 @@
   "main": "./worker.js",
   "compatibility_date": "2026-11-27",
   "compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
+  "vars": {
+    "SITE_URL": "https://www.areesperfumes.in",
+    "VITE_API_BASE_URL": "https://api.areesperfumes.in/api"
+  },
+  "triggers": {
+    "crons": ["0 4 * * *"]
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

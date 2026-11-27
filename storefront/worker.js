@@ -24,4 +24,14 @@ export default {
     }
     return onRequest({ request, env, ctx })
   },
+
+  async scheduled(_event, env, ctx) {
+    const request = new Request('https://internal/api/wa-cron', {
+      headers: { 'x-wa-cron-auth': env.WA_CRON_SECRET || '' },
+    })
+    const response = await onRequest({ request, env, ctx })
+    if (!response.ok) {
+      console.error('[cron] wa-cron failed', response.status, await response.text())
+    }
+  },
 }

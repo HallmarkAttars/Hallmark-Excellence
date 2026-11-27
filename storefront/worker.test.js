@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isStaticAsset } from './worker.js'
+import worker, { isStaticAsset } from './worker.js'
 
 describe('worker static asset routing', () => {
   it('treats built assets and public files as static', () => {
@@ -19,5 +19,13 @@ describe('worker static asset routing', () => {
     expect(isStaticAsset('/sitemap.xml')).toBe(false)
     expect(isStaticAsset('/robots.txt')).toBe(false)
     expect(isStaticAsset('/api/wa-webhook')).toBe(false)
+  })
+})
+
+describe('worker scheduled handler', () => {
+  it('runs the daily WhatsApp cron sweep', async () => {
+    await expect(
+      worker.scheduled({ cron: '0 4 * * *', scheduledTime: Date.now() }, {}, { waitUntil() {} }),
+    ).resolves.toBeUndefined()
   })
 })
