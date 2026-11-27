@@ -22,17 +22,7 @@
   status = 301
 
 [[redirects]]
-  from = "/categories/Display bottles"
-  to = "/categories/display-bottles"
-  status = 301
-
-[[redirects]]
   from = "/categories/Display%20bottles"
-  to = "/categories/display-bottles"
-  status = 301
-
-[[redirects]]
-  from = "/categories/display bottles"
   to = "/categories/display-bottles"
   status = 301
 
@@ -42,17 +32,7 @@
   status = 301
 
 [[redirects]]
-  from = "/categories/Face wash"
-  to = "/categories/face-wash"
-  status = 301
-
-[[redirects]]
   from = "/categories/Face%20wash"
-  to = "/categories/face-wash"
-  status = 301
-
-[[redirects]]
-  from = "/categories/face wash"
   to = "/categories/face-wash"
   status = 301
 
